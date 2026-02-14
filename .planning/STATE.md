@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 6 in progress - Expiration Worker. Plan 1 complete, Plan 2 next.
+**Current focus:** Phase 6 complete - Expiration Worker. Ready for Phase 7.
 
 ## Current Position
 
-Phase: 6 of 7 (Expiration Worker)
-Plan: 1 of 2 in current phase -- COMPLETE
-Status: Plan 1 complete. node-cron worker with 5-minute cron, expiration guards in all three retrieval paths, worker lifecycle in server.ts. All 133 tests pass.
-Last activity: 2026-02-14 -- Completed 06-01-PLAN.md (expiration worker + guards)
+Phase: 6 of 7 (Expiration Worker) -- COMPLETE
+Plan: 2 of 2 in current phase -- COMPLETE
+Status: Phase 6 complete. Expiration worker + guards (Plan 1) and 13 integration tests (Plan 2). All 146 tests pass.
+Last activity: 2026-02-14 -- Completed 06-02-PLAN.md (expiration integration tests)
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 3min
-- Total execution time: 0.87 hours
+- Total execution time: 0.90 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [████████░░] 81%
 | 03-security-hardening | 2 | 6min | 3min |
 | 04-frontend-create-and-reveal | 4 | 13min | 3min |
 | 05-password-protection | 3 | 8min | 3min |
-| 06-expiration-worker | 1 | 8min | 8min |
+| 06-expiration-worker | 2 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 3min, 2min, 3min, 8min
-- Trend: stable (06-01 slightly longer due to flaky test investigation)
+- Last 5 plans: 3min, 2min, 3min, 8min, 2min
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -110,6 +110,9 @@ Recent decisions affecting current work:
 - [06-01]: Expiration guards placed BEFORE password checks to prevent expired password-protected secrets from entering password flow
 - [06-01]: getSecretMeta has no inline cleanup (no transaction context) -- relies on worker or next retrieval
 - [06-01]: Worker uses result.rowCount from pg driver passthrough for deletion count
+- [06-02]: cleanExpiredSecrets extracted as exported function for testability (cron scheduling separate from business logic)
+- [06-02]: Expiration tests use direct DB inserts with past timestamps instead of setTimeout/timing (immediate, deterministic)
+- [06-02]: Ciphertext zeroing verified by code review rather than runtime intermediate state inspection
 
 ### Pending Todos
 
@@ -123,5 +126,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 06-01-PLAN.md (expiration worker + guards)
+Stopped at: Completed 06-02-PLAN.md (expiration integration tests) -- Phase 6 complete
 Resume file: None
