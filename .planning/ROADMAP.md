@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Encryption Foundation** - Client-side crypto module with AES-256-GCM, key generation, and ciphertext padding
 - [x] **Phase 2: Database and API** - Server-side secret storage with atomic read-and-destroy and zero-knowledge guarantees
 - [x] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
-- [ ] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
+- [x] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
 - [ ] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
 - [ ] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
 - [ ] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
@@ -87,10 +87,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Vite + Tailwind setup, HTML shell, client router, API client, copy button, and Express production serving
-- [ ] 04-02-PLAN.md — Create page with textarea/expiration/password and confirmation page with shareable link
-- [ ] 04-03-PLAN.md — Two-step reveal page with interstitial, client-side decryption, and error states
-- [ ] 04-04-PLAN.md — Responsive polish and end-to-end human verification checkpoint
+- [x] 04-01-PLAN.md — Vite + Tailwind setup, HTML shell, client router, API client, copy button, and Express production serving
+- [x] 04-02-PLAN.md — Create page with textarea/expiration/password and confirmation page with shareable link
+- [x] 04-03-PLAN.md — Two-step reveal page with interstitial, client-side decryption, and error states
+- [x] 04-04-PLAN.md — Responsive polish and end-to-end human verification checkpoint
 
 ### Phase 5: Password Protection
 **Goal**: Senders can optionally add a password to secrets, and recipients must enter the correct password before the secret is revealed -- with automatic destruction after 3 wrong attempts
@@ -142,7 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
-| 4. Frontend Create and Reveal | 0/4 | In Progress | - |
+| 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
 | 5. Password Protection | 0/TBD | Not started | - |
 | 6. Expiration Worker | 0/TBD | Not started | - |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
