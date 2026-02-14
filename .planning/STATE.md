@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 5 of 7 (Password Protection)
-Plan: 1 of 3 in current phase -- COMPLETE
-Status: Plan 05-01 complete. Backend password protection layer implemented with Argon2id hashing, meta/verify endpoints, and 3-attempt auto-destroy.
-Last activity: 2026-02-14 -- Completed 05-01 (backend password protection)
+Plan: 3 of 3 in current phase -- COMPLETE
+Status: Plan 05-03 complete. Integration tests proving all Phase 5 password protection success criteria.
+Last activity: 2026-02-14 -- Completed 05-03 (password protection integration tests)
 
-Progress: [████████░░] 72%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 3min
-- Total execution time: 0.65 hours
+- Total execution time: 0.68 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [████████░░] 72%
 | 02-database-and-api | 3 | 8min | 3min |
 | 03-security-hardening | 2 | 6min | 3min |
 | 04-frontend-create-and-reveal | 4 | 13min | 3min |
-| 05-password-protection | 1 | 3min | 3min |
+| 05-password-protection | 2 | 5min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 2min, 5min, 3min, 3min
+- Last 5 plans: 2min, 5min, 3min, 3min, 2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -99,6 +99,8 @@ Recent decisions affecting current work:
 - [05-01]: retrieveAndDestroy rejects password-protected secrets to prevent bypass via GET /:id
 - [05-01]: verifySecretLimiter: 15 attempts per 15 minutes per IP (defense-in-depth)
 - [05-01]: Route order: POST /, GET /:id/meta, POST /:id/verify, GET /:id (meta/verify before catch-all)
+- [05-03]: Auto-destroy 3rd wrong attempt returns 404 (attemptsRemaining: 0 maps to not-found for anti-enumeration)
+- [05-03]: Anti-enumeration verified via both verify and meta endpoints for destroyed secrets
 
 ### Pending Todos
 
@@ -112,5 +114,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 05-01-PLAN.md (backend password protection)
+Stopped at: Completed 05-03-PLAN.md (password protection integration tests)
 Resume file: None
