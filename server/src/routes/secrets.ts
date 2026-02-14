@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { validateBody, validateParams } from '../middleware/validate.js';
+import { createSecretLimiter } from '../middleware/rate-limit.js';
 import { CreateSecretSchema, SecretIdParamSchema } from '../../../shared/types/api.js';
 import { createSecret, retrieveAndDestroy } from '../services/secrets.service.js';
 
@@ -13,45 +14,56 @@ const SECRET_NOT_AVAILABLE = {
   message: 'This secret does not exist, has already been viewed, or has expired.',
 } as const;
 
-export const secretsRouter = Router();
-
 /**
- * POST / (mounted at /api/secrets)
- * Create a new secret from an encrypted ciphertext blob.
- * The server never inspects or transforms the ciphertext.
+ * Create a fresh secrets router with its own rate limiter instance.
+ *
+ * Factory pattern ensures each Express app (including test instances
+ * created by buildApp()) gets independent rate limit counters.
  */
-secretsRouter.post(
-  '/',
-  validateBody(CreateSecretSchema),
-  async (req, res) => {
-    const secret = await createSecret(req.body.ciphertext, req.body.expiresIn);
+export function createSecretsRouter() {
+  const router = Router();
 
-    res.status(201).json({
-      id: secret.id,
-      expiresAt: secret.expiresAt.toISOString(),
-    });
-  },
-);
+  /**
+   * POST / (mounted at /api/secrets)
+   * Create a new secret from an encrypted ciphertext blob.
+   * The server never inspects or transforms the ciphertext.
+   */
+  router.post(
+    '/',
+    createSecretLimiter(),
+    validateBody(CreateSecretSchema),
+    async (req, res) => {
+      const secret = await createSecret(req.body.ciphertext, req.body.expiresIn);
 
-/**
- * GET /:id
- * Retrieve and atomically destroy a secret.
- * Returns identical 404 for nonexistent, expired, and already-viewed secrets.
- */
-secretsRouter.get(
-  '/:id',
-  validateParams(SecretIdParamSchema),
-  async (req, res) => {
-    const secret = await retrieveAndDestroy(req.params.id as string);
+      res.status(201).json({
+        id: secret.id,
+        expiresAt: secret.expiresAt.toISOString(),
+      });
+    },
+  );
 
-    if (!secret) {
-      res.status(404).json(SECRET_NOT_AVAILABLE);
-      return;
-    }
+  /**
+   * GET /:id
+   * Retrieve and atomically destroy a secret.
+   * Returns identical 404 for nonexistent, expired, and already-viewed secrets.
+   */
+  router.get(
+    '/:id',
+    validateParams(SecretIdParamSchema),
+    async (req, res) => {
+      const secret = await retrieveAndDestroy(req.params.id as string);
 
-    res.status(200).json({
-      ciphertext: secret.ciphertext,
-      expiresAt: secret.expiresAt.toISOString(),
-    });
-  },
-);
+      if (!secret) {
+        res.status(404).json(SECRET_NOT_AVAILABLE);
+        return;
+      }
+
+      res.status(200).json({
+        ciphertext: secret.ciphertext,
+        expiresAt: secret.expiresAt.toISOString(),
+      });
+    },
+  );
+
+  return router;
+}

@@ -1,5 +1,6 @@
-import { describe, test, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 import request from 'supertest';
+import type { Express } from 'express';
 import { buildApp } from '../../app.js';
 import { db } from '../../db/connection.js';
 import { pool } from '../../db/connection.js';
@@ -7,10 +8,17 @@ import { secrets } from '../../db/schema.js';
 import { sql } from 'drizzle-orm';
 import { redactUrl } from '../../middleware/logger.js';
 
-const app = buildApp();
-
 // Valid base64-encoded ciphertext for tests
 const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';
+
+// Fresh app per test to isolate rate limiter state.
+// Each buildApp() creates a new router with its own MemoryStore,
+// so rate limit counters don't bleed across tests.
+let app: Express;
+
+beforeEach(() => {
+  app = buildApp();
+});
 
 beforeAll(async () => {
   // Ensure secrets table exists (idempotent)
