@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Database and API)
-Plan: 1 of 3 in current phase
-Status: Executing Phase 2 -- Plan 01 complete
-Last activity: 2026-02-14 -- Completed 02-01 (server foundation, schema, env, logger, types)
+Plan: 2 of 3 in current phase
+Status: Executing Phase 2 -- Plan 02 complete
+Last activity: 2026-02-14 -- Completed 02-02 (core API, routes, services, app factory)
 
-Progress: [███░░░░░░░] 24%
+Progress: [████░░░░░░] 29%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 3min
-- Total execution time: 0.22 hours
+- Total plans completed: 6
+- Average duration: 2min
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-encryption-foundation | 4 | 10min | 2min |
-| 02-database-and-api | 1 | 3min | 3min |
+| 02-database-and-api | 2 | 5min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 2min, 3min, 3min
+- Last 5 plans: 2min, 2min, 3min, 3min, 2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -61,6 +61,10 @@ Recent decisions affecting current work:
 - [02-01]: pg Pool imported via pg default then destructured for NodeNext CJS compatibility
 - [02-01]: Password columns included in initial schema as nullable to avoid Phase 5 migration
 - [02-01]: Ciphertext stored as PostgreSQL text (not bytea) since Phase 1 outputs base64 strings
+- [02-02]: ZodType used for generic schema constraint (zod 4.x removed ZodSchema)
+- [02-02]: Express 5 req.params.id typed as string via assertion after Zod validation
+- [02-02]: Server tsconfig rootDir expanded to project root to include shared types
+- [02-02]: Ciphertext zeroing uses null byte repeat matching original length before deletion
 
 ### Pending Todos
 
@@ -74,5 +78,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 02-01-PLAN.md (server foundation, schema, env, logger, types)
+Stopped at: Completed 02-02-PLAN.md (core API, routes, services, app factory)
 Resume file: None
