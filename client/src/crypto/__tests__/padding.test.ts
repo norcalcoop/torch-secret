@@ -104,6 +104,11 @@ describe('padPlaintext', () => {
       expect(remaining[i]).toBe(0);
     }
   });
+
+  it('should throw when input exceeds maximum size', () => {
+    const oversized = new Uint8Array(100_001);
+    expect(() => padPlaintext(oversized)).toThrow('exceeds maximum size');
+  });
 });
 
 describe('unpadPlaintext', () => {
@@ -147,6 +152,11 @@ describe('unpadPlaintext', () => {
     const view = new DataView(badPadded.buffer);
     view.setUint32(0, 999, false); // claims 999 bytes but buffer only has 252 after prefix
     expect(() => unpadPlaintext(badPadded)).toThrow('Invalid padding');
+  });
+
+  it('should throw on buffer too small for length prefix', () => {
+    const tinyBuffer = new Uint8Array(3); // less than 4 bytes needed for uint32
+    expect(() => unpadPlaintext(tinyBuffer)).toThrow('buffer too small');
   });
 });
 
