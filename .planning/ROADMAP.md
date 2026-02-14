@@ -101,10 +101,12 @@ Plans:
   2. The password is verified server-side using Argon2 or bcrypt, with constant-time comparison to prevent timing attacks
   3. After 3 incorrect password attempts, the secret is automatically and permanently destroyed
   4. During password entry, the user sees how many attempts remain (e.g., "2 attempts remaining")
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Backend password protection: Argon2id service, API types, secrets service, route handlers
+- [ ] 05-02-PLAN.md — Frontend password flow: create page field, reveal page password entry, API client
+- [ ] 05-03-PLAN.md — Integration tests proving all Phase 5 success criteria
 
 ### Phase 6: Expiration Worker
 **Goal**: Expired secrets are automatically cleaned up and users requesting expired secrets see a clear message
@@ -143,6 +145,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
-| 5. Password Protection | 0/TBD | Not started | - |
+| 5. Password Protection | 0/3 | Not started | - |
 | 6. Expiration Worker | 0/TBD | Not started | - |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
