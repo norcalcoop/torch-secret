@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Database and API)
-Plan: 0 of ? in current phase
-Status: Phase 1 Complete -- Ready for Phase 2 planning
-Last activity: 2026-02-14 -- Completed 01-04 (encrypt, decrypt, barrel export)
+Plan: 1 of 3 in current phase
+Status: Executing Phase 2 -- Plan 01 complete
+Last activity: 2026-02-14 -- Completed 02-01 (server foundation, schema, env, logger, types)
 
-Progress: [██░░░░░░░░] 14%
+Progress: [███░░░░░░░] 24%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 2min
-- Total execution time: 0.17 hours
+- Total plans completed: 5
+- Average duration: 3min
+- Total execution time: 0.22 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-encryption-foundation | 4 | 10min | 2min |
+| 02-database-and-api | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 2min, 2min, 3min
+- Last 5 plans: 2min, 2min, 3min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -56,6 +57,10 @@ Recent decisions affecting current work:
 - [01-04]: IV prepended to ciphertext as single base64 blob for transport simplicity
 - [01-04]: Generic decryption error message to prevent oracle attacks
 - [01-04]: Barrel export excludes internal utilities -- only public API exposed
+- [02-01]: Use pinoHttp named export (not default) for NodeNext CJS interop compatibility
+- [02-01]: pg Pool imported via pg default then destructured for NodeNext CJS compatibility
+- [02-01]: Password columns included in initial schema as nullable to avoid Phase 5 migration
+- [02-01]: Ciphertext stored as PostgreSQL text (not bytea) since Phase 1 outputs base64 strings
 
 ### Pending Todos
 
@@ -69,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 01-04-PLAN.md (encrypt, decrypt, barrel export) -- Phase 1 complete
+Stopped at: Completed 02-01-PLAN.md (server foundation, schema, env, logger, types)
 Resume file: None
