@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 4 in progress - Frontend Create and Reveal
+**Current focus:** Phase 5 in progress - Password Protection
 
 ## Current Position
 
-Phase: 4 of 7 (Frontend Create and Reveal) -- PHASE COMPLETE
-Plan: 4 of 4 in current phase -- COMPLETE
-Status: Phase 4 complete. Full end-to-end create-share-reveal flow verified on desktop and mobile. Ready for Phase 5 (password protection).
-Last activity: 2026-02-14 -- Completed 04-04 (end-to-end integration and responsive polish)
+Phase: 5 of 7 (Password Protection)
+Plan: 1 of 3 in current phase -- COMPLETE
+Status: Plan 05-01 complete. Backend password protection layer implemented with Argon2id hashing, meta/verify endpoints, and 3-attempt auto-destroy.
+Last activity: 2026-02-14 -- Completed 05-01 (backend password protection)
 
-Progress: [███████░░░] 66%
+Progress: [████████░░] 72%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 3min
-- Total execution time: 0.60 hours
+- Total execution time: 0.65 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: [███████░░░] 66%
 | 02-database-and-api | 3 | 8min | 3min |
 | 03-security-hardening | 2 | 6min | 3min |
 | 04-frontend-create-and-reveal | 4 | 13min | 3min |
+| 05-password-protection | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 3min, 2min, 5min, 3min
+- Last 5 plans: 3min, 2min, 5min, 3min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -93,6 +94,11 @@ Recent decisions affecting current work:
 - [04-04]: All pages use consistent responsive heading pattern: text-2xl sm:text-3xl
 - [04-04]: All interactive elements have min-h-[44px] for WCAG 2.5.5 touch target compliance
 - [04-04]: Focus states standardized across all pages: focus:ring-2 focus:ring-primary-500
+- [05-01]: Argon2id with OWASP minimum params (m=19456, t=2, p=1) via argon2 npm package
+- [05-01]: Password service is thin wrapper around argon2 for testability and library swappability
+- [05-01]: retrieveAndDestroy rejects password-protected secrets to prevent bypass via GET /:id
+- [05-01]: verifySecretLimiter: 15 attempts per 15 minutes per IP (defense-in-depth)
+- [05-01]: Route order: POST /, GET /:id/meta, POST /:id/verify, GET /:id (meta/verify before catch-all)
 
 ### Pending Todos
 
@@ -101,10 +107,10 @@ None yet.
 ### Blockers/Concerns
 
 - [Research]: ~~Ciphertext padding strategy not yet decided~~ RESOLVED in 01-02: PADME with 256-byte minimum tier, max 12% overhead.
-- [Research]: Password hashing algorithm not decided (Argon2id vs bcrypt). Resolve during Phase 5 planning.
+- [Research]: ~~Password hashing algorithm not decided (Argon2id vs bcrypt). Resolve during Phase 5 planning.~~ RESOLVED in 05-01: Argon2id with OWASP params via argon2 npm package.
 
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed Phase 4 (04-04-PLAN.md - end-to-end integration and responsive polish)
+Stopped at: Completed 05-01-PLAN.md (backend password protection)
 Resume file: None
