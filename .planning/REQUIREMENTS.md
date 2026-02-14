@@ -115,53 +115,53 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENCR-01 | — | Pending |
-| ENCR-02 | — | Pending |
-| ENCR-03 | — | Pending |
-| ENCR-04 | — | Pending |
-| ENCR-05 | — | Pending |
-| CREA-01 | — | Pending |
-| CREA-02 | — | Pending |
-| CREA-03 | — | Pending |
-| CREA-04 | — | Pending |
-| CREA-05 | — | Pending |
-| RETR-01 | — | Pending |
-| RETR-02 | — | Pending |
-| RETR-03 | — | Pending |
-| RETR-04 | — | Pending |
-| RETR-05 | — | Pending |
-| RETR-06 | — | Pending |
-| PASS-01 | — | Pending |
-| PASS-02 | — | Pending |
-| PASS-03 | — | Pending |
-| PASS-04 | — | Pending |
-| PASS-05 | — | Pending |
-| EXPR-01 | — | Pending |
-| EXPR-02 | — | Pending |
-| EXPR-03 | — | Pending |
-| COPY-01 | — | Pending |
-| COPY-02 | — | Pending |
-| COPY-03 | — | Pending |
-| SECR-01 | — | Pending |
-| SECR-02 | — | Pending |
-| SECR-03 | — | Pending |
-| SECR-04 | — | Pending |
-| SECR-05 | — | Pending |
-| SECR-06 | — | Pending |
-| SECR-07 | — | Pending |
-| SECR-08 | — | Pending |
-| SECR-09 | — | Pending |
-| UXUI-01 | — | Pending |
-| UXUI-02 | — | Pending |
-| UXUI-03 | — | Pending |
-| UXUI-04 | — | Pending |
-| UXUI-05 | — | Pending |
+| ENCR-01 | Phase 1 | Pending |
+| ENCR-02 | Phase 1 | Pending |
+| ENCR-03 | Phase 1 | Pending |
+| ENCR-04 | Phase 1 | Pending |
+| ENCR-05 | Phase 1 | Pending |
+| CREA-01 | Phase 4 | Pending |
+| CREA-02 | Phase 4 | Pending |
+| CREA-03 | Phase 4 | Pending |
+| CREA-04 | Phase 4 | Pending |
+| CREA-05 | Phase 4 | Pending |
+| RETR-01 | Phase 4 | Pending |
+| RETR-02 | Phase 4 | Pending |
+| RETR-03 | Phase 2 | Pending |
+| RETR-04 | Phase 2 | Pending |
+| RETR-05 | Phase 4 | Pending |
+| RETR-06 | Phase 4 | Pending |
+| PASS-01 | Phase 5 | Pending |
+| PASS-02 | Phase 5 | Pending |
+| PASS-03 | Phase 5 | Pending |
+| PASS-04 | Phase 5 | Pending |
+| PASS-05 | Phase 5 | Pending |
+| EXPR-01 | Phase 6 | Pending |
+| EXPR-02 | Phase 6 | Pending |
+| EXPR-03 | Phase 4 | Pending |
+| COPY-01 | Phase 4 | Pending |
+| COPY-02 | Phase 4 | Pending |
+| COPY-03 | Phase 4 | Pending |
+| SECR-01 | Phase 2 | Pending |
+| SECR-02 | Phase 3 | Pending |
+| SECR-03 | Phase 3 | Pending |
+| SECR-04 | Phase 3 | Pending |
+| SECR-05 | Phase 3 | Pending |
+| SECR-06 | Phase 3 | Pending |
+| SECR-07 | Phase 2 | Pending |
+| SECR-08 | Phase 2 | Pending |
+| SECR-09 | Phase 2 | Pending |
+| UXUI-01 | Phase 4 | Pending |
+| UXUI-02 | Phase 4 | Pending |
+| UXUI-03 | Phase 7 | Pending |
+| UXUI-04 | Phase 4 | Pending |
+| UXUI-05 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 41 total
-- Mapped to phases: 0
-- Unmapped: 41 (updated during roadmap creation)
+- Mapped to phases: 41
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-13*
-*Last updated: 2026-02-13 after initial definition*
+*Last updated: 2026-02-13 after roadmap creation*
