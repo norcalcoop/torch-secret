@@ -36,7 +36,7 @@ export async function createSecret(
  * Atomically retrieves and destroys a secret using a three-step
  * transaction: SELECT -> ZERO ciphertext -> DELETE.
  *
- * The ciphertext is overwritten with null bytes before row deletion
+ * The ciphertext is overwritten with zero characters before row deletion
  * to mitigate data remanence in PostgreSQL's WAL and shared buffers
  * (SECR-08).
  *
@@ -58,11 +58,12 @@ export async function retrieveAndDestroy(
       return null;
     }
 
-    // Step 2: ZERO -- overwrite ciphertext with null bytes before deletion
-    // Mitigates data remanence in PostgreSQL WAL and shared buffers
+    // Step 2: ZERO -- overwrite ciphertext with zero characters before deletion
+    // PostgreSQL text columns cannot contain null bytes (\x00), so we use '0'.
+    // This still mitigates data remanence in PostgreSQL WAL and shared buffers.
     await tx
       .update(secrets)
-      .set({ ciphertext: '\x00'.repeat(secret.ciphertext.length) })
+      .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
       .where(eq(secrets.id, id));
 
     // Step 3: DELETE -- remove the row entirely
