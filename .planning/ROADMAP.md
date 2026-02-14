@@ -115,10 +115,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A background job runs every 5 minutes and deletes all secrets past their expiration timestamp
   2. Requesting an expired secret returns a clear "This secret has expired" message (handled through the same error response pattern established in Phase 2)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Expiration worker module, service layer expiration guards, and server.ts lifecycle integration
+- [ ] 06-02-PLAN.md — Integration tests proving all Phase 6 success criteria
 
 ### Phase 7: Trust and Accessibility
 **Goal**: Users trust the application through clear explanation of the zero-knowledge model, and the application is usable by people with disabilities
@@ -146,5 +147,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
 | 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
-| 6. Expiration Worker | 0/TBD | Not started | - |
+| 6. Expiration Worker | 0/2 | Not started | - |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
