@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Encryption Foundation** - Client-side crypto module with AES-256-GCM, key generation, and ciphertext padding
 - [x] **Phase 2: Database and API** - Server-side secret storage with atomic read-and-destroy and zero-knowledge guarantees
-- [ ] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
+- [x] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
 - [ ] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
 - [ ] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
 - [ ] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
@@ -70,8 +70,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Security middleware (CSP nonce, helmet, HTTPS redirect, rate limiter) and Express app wiring
-- [ ] 03-02-PLAN.md — Integration tests proving all Phase 3 success criteria
+- [x] 03-01-PLAN.md — Security middleware (CSP nonce, helmet, HTTPS redirect, rate limiter) and Express app wiring
+- [x] 03-02-PLAN.md — Integration tests proving all Phase 3 success criteria
 
 ### Phase 4: Frontend Create and Reveal
 **Goal**: Users can create a secret, receive a shareable link, and recipients can view the secret exactly once through a two-step reveal flow -- the complete end-to-end user journey works
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|---------------|--------|-----------|
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
-| 3. Security Hardening | 0/2 | Not started | - |
+| 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
 | 4. Frontend Create and Reveal | 0/TBD | Not started | - |
 | 5. Password Protection | 0/TBD | Not started | - |
 | 6. Expiration Worker | 0/TBD | Not started | - |
