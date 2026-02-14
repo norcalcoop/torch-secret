@@ -1,3 +1,5 @@
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import express from 'express';
 import { cspNonceMiddleware, createHelmetMiddleware, httpsRedirect } from './middleware/security.js';
 import { httpLogger } from './middleware/logger.js';
@@ -18,7 +20,8 @@ import { createSecretsRouter } from './routes/secrets.js';
  * 5. httpLogger   -- logging
  * 6. json parser  -- body parsing
  * 7. routes       -- API endpoints
- * 8. errorHandler -- MUST be last
+ * 8. static assets + SPA catch-all (production only, when client/dist exists)
+ * 9. errorHandler -- MUST be last
  */
 export function buildApp() {
   const app = express();
@@ -44,6 +47,30 @@ export function buildApp() {
 
   // Mount API routes (factory creates fresh router + rate limiter per app)
   app.use('/api/secrets', createSecretsRouter());
+
+  // Serve built frontend assets in production (or when client/dist exists)
+  const clientDistPath = resolve(import.meta.dirname, '../../client/dist');
+  if (existsSync(clientDistPath)) {
+    // Serve static assets (JS, CSS, images) -- index:false because we handle HTML ourselves
+    app.use(express.static(clientDistPath, { index: false }));
+
+    // Read HTML template once at startup for nonce injection
+    const htmlTemplate = readFileSync(
+      resolve(clientDistPath, 'index.html'),
+      'utf-8',
+    );
+
+    // SPA catch-all: inject per-request CSP nonce into HTML template
+    // Express 5 requires named wildcard parameter (path-to-regexp v8+)
+    app.get('{*path}', (req, res) => {
+      const html = htmlTemplate.replaceAll(
+        '__CSP_NONCE__',
+        res.locals.cspNonce,
+      );
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    });
+  }
 
   // Global error handler (MUST be last middleware)
   app.use(errorHandler);
