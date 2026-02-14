@@ -31,7 +31,7 @@ export async function renderCreatePage(
   header.className = 'text-center space-y-2';
 
   const heading = document.createElement('h1');
-  heading.className = 'text-3xl font-bold text-gray-900';
+  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900';
   heading.textContent = 'Share a Secret';
 
   const subtext = document.createElement('p');
@@ -106,7 +106,7 @@ export async function renderCreatePage(
 
   const summary = document.createElement('summary');
   summary.className =
-    'px-4 py-3 text-sm font-medium text-gray-600 cursor-pointer select-none';
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-gray-600 cursor-pointer select-none focus:ring-2 focus:ring-primary-500 focus:outline-none rounded-lg';
   summary.textContent = 'Advanced options';
 
   const detailsContent = document.createElement('div');
@@ -142,7 +142,7 @@ export async function renderCreatePage(
   const submitButton = document.createElement('button');
   submitButton.type = 'submit';
   submitButton.className =
-    'w-full py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full min-h-[44px] py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 

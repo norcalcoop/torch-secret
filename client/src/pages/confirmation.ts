@@ -75,7 +75,7 @@ export function renderConfirmationPage(
 
   // -- Heading --
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl font-bold text-gray-900';
+  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900';
   heading.textContent = 'Your Secure Link is Ready';
   wrapper.appendChild(heading);
 
@@ -83,8 +83,9 @@ export function renderConfirmationPage(
   const urlSection = document.createElement('div');
   urlSection.className = 'space-y-3';
 
-  const urlLabel = document.createElement('p');
-  urlLabel.className = 'text-sm text-gray-500';
+  const urlLabel = document.createElement('label');
+  urlLabel.htmlFor = 'share-url';
+  urlLabel.className = 'block text-sm text-gray-500';
   urlLabel.textContent = 'Share this link with your recipient:';
   urlSection.appendChild(urlLabel);
 
@@ -93,11 +94,12 @@ export function renderConfirmationPage(
     'flex items-stretch gap-0 rounded-lg border border-gray-200 overflow-hidden';
 
   const urlInput = document.createElement('input');
+  urlInput.id = 'share-url';
   urlInput.type = 'text';
   urlInput.readOnly = true;
   urlInput.value = shareUrl;
   urlInput.className =
-    'flex-1 min-w-0 px-3 py-2 bg-gray-50 text-gray-700 text-sm font-mono border-none focus:outline-none select-all';
+    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-gray-50 text-gray-700 text-sm font-mono border-none focus:outline-none select-all';
 
   // Select all text on focus for easy manual copying
   urlInput.addEventListener('focus', () => {
@@ -136,7 +138,7 @@ export function renderConfirmationPage(
   const createAnotherButton = document.createElement('button');
   createAnotherButton.type = 'button';
   createAnotherButton.className =
-    'text-primary-600 hover:text-primary-700 font-medium transition-colors cursor-pointer';
+    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-none rounded font-medium transition-colors cursor-pointer';
   createAnotherButton.textContent = 'Create Another Secret';
   createAnotherButton.addEventListener('click', () => {
     navigate('/');

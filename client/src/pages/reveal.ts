@@ -126,7 +126,7 @@ export async function renderRevealPage(
 
     // Heading
     const heading = document.createElement('h1');
-    heading.className = 'text-2xl font-bold text-gray-800 mb-3';
+    heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
     heading.textContent = "You've received a secret";
 
     // Subtext
@@ -139,7 +139,7 @@ export async function renderRevealPage(
     const button = document.createElement('button');
     button.type = 'button';
     button.className =
-      'bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors cursor-pointer';
+      'bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer';
     button.textContent = 'Reveal Secret';
     button.addEventListener('click', handleReveal);
 
@@ -166,7 +166,7 @@ function renderRevealedSecret(
 
   // Heading
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl font-bold text-gray-800 mb-3';
+  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
   heading.textContent = 'Secret Revealed';
 
   // Destruction notice
@@ -178,7 +178,7 @@ function renderRevealedSecret(
   // Secret display area -- uses textContent for XSS prevention
   const pre = document.createElement('pre');
   pre.className =
-    'whitespace-pre-wrap break-words bg-white border border-gray-200 rounded-lg p-4 text-sm font-mono max-h-96 overflow-y-auto mb-6';
+    'whitespace-pre-wrap break-words overflow-x-hidden bg-white border border-gray-200 rounded-lg p-4 text-sm font-mono max-h-96 overflow-y-auto mb-6';
   pre.textContent = plaintext; // NEVER use innerHTML
 
   // Copy button
@@ -186,14 +186,14 @@ function renderRevealedSecret(
 
   // Actions row
   const actions = document.createElement('div');
-  actions.className = 'flex items-center gap-4';
+  actions.className = 'flex flex-col sm:flex-row items-center gap-4';
   actions.appendChild(copyButton);
 
   // "Create a New Secret" link
   const newSecretLink = document.createElement('a');
   newSecretLink.href = '/';
   newSecretLink.className =
-    'text-primary-600 hover:text-primary-700 font-medium transition-colors';
+    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-none rounded font-medium transition-colors';
   newSecretLink.textContent = 'Create a New Secret';
   newSecretLink.addEventListener('click', (e) => {
     e.preventDefault();

@@ -20,7 +20,7 @@ export function createCopyButton(
   button.textContent = defaultLabel;
   button.type = 'button';
   button.className =
-    'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors cursor-pointer';
+    'inline-flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer';
 
   button.addEventListener('click', async () => {
     const text = getText();

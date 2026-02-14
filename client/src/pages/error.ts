@@ -79,7 +79,7 @@ export function renderErrorPage(
 
   // Heading
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl font-bold text-gray-800 mb-3';
+  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
   heading.textContent = config.heading;
 
   // Description
@@ -91,7 +91,7 @@ export function renderErrorPage(
   const link = document.createElement('a');
   link.href = '/';
   link.className =
-    'inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium';
+    'inline-flex items-center gap-2 px-6 py-3 min-h-[44px] rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors font-medium';
   link.textContent = 'Create a New Secret';
   link.addEventListener('click', (e) => {
     e.preventDefault();
