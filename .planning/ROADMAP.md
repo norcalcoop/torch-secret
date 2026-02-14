@@ -84,12 +84,13 @@ Plans:
   4. After reveal, the URL fragment is stripped from the browser address bar and the secret text is displayed with a one-click copy button and visual "Copied!" confirmation
   5. Visiting an already-viewed, expired, or invalid link shows a clear, distinct error message for each state -- and all error responses from the API are identical to prevent enumeration
   6. The entire flow works on mobile phones, tablets, and desktop with a responsive layout
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Vite + Tailwind setup, HTML shell, client router, API client, copy button, and Express production serving
+- [ ] 04-02-PLAN.md — Create page with textarea/expiration/password and confirmation page with shareable link
+- [ ] 04-03-PLAN.md — Two-step reveal page with interstitial, client-side decryption, and error states
+- [ ] 04-04-PLAN.md — Responsive polish and end-to-end human verification checkpoint
 
 ### Phase 5: Password Protection
 **Goal**: Senders can optionally add a password to secrets, and recipients must enter the correct password before the secret is revealed -- with automatic destruction after 3 wrong attempts
@@ -141,7 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
-| 4. Frontend Create and Reveal | 0/TBD | Not started | - |
+| 4. Frontend Create and Reveal | 0/4 | In Progress | - |
 | 5. Password Protection | 0/TBD | Not started | - |
 | 6. Expiration Worker | 0/TBD | Not started | - |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
