@@ -50,6 +50,9 @@ Recent decisions affecting current work:
 - [01-03]: Imported keys are non-extractable and decrypt-only (defense in depth for receiving side)
 - [01-03]: Validate base64url key length before calling crypto.subtle for clear error messages
 - [01-03]: generateKey returns both CryptoKey and base64url string in one call to avoid redundant export
+- [01-02]: PADME algorithm chosen over power-of-2 padding: max 12% overhead vs up to 100%
+- [01-02]: 4-byte big-endian uint32 length prefix supports up to 4GB (far exceeds 10K char limit)
+- [01-02]: 100KB max input validation to prevent excessive memory allocation
 
 ### Pending Todos
 
@@ -57,11 +60,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research]: Ciphertext padding strategy not yet decided (PKCS7-style, power-of-2, or constant to max size). Resolve during Phase 1 planning.
+- [Research]: ~~Ciphertext padding strategy not yet decided~~ RESOLVED in 01-02: PADME with 256-byte minimum tier, max 12% overhead.
 - [Research]: Password hashing algorithm not decided (Argon2id vs bcrypt). Resolve during Phase 5 planning.
 
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 01-03-PLAN.md (key management)
+Stopped at: Completed 01-02-PLAN.md (PADME padding)
 Resume file: None
