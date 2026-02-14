@@ -9,6 +9,32 @@ import { logger } from '../middleware/logger.js';
 let task: ScheduledTask | null = null;
 
 /**
+ * Bulk-delete expired secrets using a two-step process:
+ * 1. Zero ciphertext for all expired rows (data remanence mitigation, SECR-08)
+ * 2. Delete the zeroed rows
+ *
+ * Never logs secret IDs (SECR-09).
+ *
+ * @returns Number of deleted rows
+ */
+export async function cleanExpiredSecrets(): Promise<number> {
+  const now = new Date();
+
+  // Step 1: Zero ciphertext for all expired secrets (data remanence mitigation)
+  await db
+    .update(secrets)
+    .set({ ciphertext: '0' })
+    .where(lte(secrets.expiresAt, now));
+
+  // Step 2: Delete the zeroed rows
+  const result = await db
+    .delete(secrets)
+    .where(lte(secrets.expiresAt, now));
+
+  return result.rowCount ?? 0;
+}
+
+/**
  * Start the expiration cleanup worker.
  *
  * Runs every 5 minutes to bulk-delete expired secrets using a two-step
@@ -18,20 +44,7 @@ let task: ScheduledTask | null = null;
 export function startExpirationWorker(): void {
   task = cron.schedule('*/5 * * * *', async () => {
     try {
-      const now = new Date();
-
-      // Step 1: Zero ciphertext for all expired secrets (data remanence mitigation)
-      await db
-        .update(secrets)
-        .set({ ciphertext: '0' })
-        .where(lte(secrets.expiresAt, now));
-
-      // Step 2: Delete the zeroed rows
-      const result = await db
-        .delete(secrets)
-        .where(lte(secrets.expiresAt, now));
-
-      const deletedCount = result.rowCount ?? 0;
+      const deletedCount = await cleanExpiredSecrets();
 
       if (deletedCount > 0) {
         logger.info({ deletedCount }, 'Expired secrets cleaned up');
