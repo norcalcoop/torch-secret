@@ -13,7 +13,7 @@ SecureShare delivers a zero-knowledge, one-time secret sharing web app in 7 phas
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Encryption Foundation** - Client-side crypto module with AES-256-GCM, key generation, and ciphertext padding
-- [ ] **Phase 2: Database and API** - Server-side secret storage with atomic read-and-destroy and zero-knowledge guarantees
+- [x] **Phase 2: Database and API** - Server-side secret storage with atomic read-and-destroy and zero-knowledge guarantees
 - [ ] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
 - [ ] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
 - [ ] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
@@ -53,9 +53,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Server project setup, database schema, connection, env config, logging, and shared API types
-- [ ] 02-02-PLAN.md — Validation middleware, error handler, secrets service, route handlers, and app factory
-- [ ] 02-03-PLAN.md — Integration tests proving all Phase 2 success criteria
+- [x] 02-01-PLAN.md — Server project setup, database schema, connection, env config, logging, and shared API types
+- [x] 02-02-PLAN.md — Validation middleware, error handler, secrets service, route handlers, and app factory
+- [x] 02-03-PLAN.md — Integration tests proving all Phase 2 success criteria
 
 ### Phase 3: Security Hardening
 **Goal**: All HTTP-level security protections are in place so that the frontend can be deployed without exposing the zero-knowledge model to XSS, referrer leakage, or abuse
@@ -138,7 +138,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
-| 2. Database and API | 0/3 | Not started | - |
+| 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
 | 3. Security Hardening | 0/TBD | Not started | - |
 | 4. Frontend Create and Reveal | 0/TBD | Not started | - |
 | 5. Password Protection | 0/TBD | Not started | - |
