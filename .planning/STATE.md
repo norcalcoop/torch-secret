@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 2 - Database and API
+**Current focus:** Phase 3 - Security Hardening
 
 ## Current Position
 
-Phase: 2 of 7 (Database and API) -- COMPLETE
-Plan: 3 of 3 in current phase -- COMPLETE
-Status: Phase 2 complete -- ready for Phase 3 planning
-Last activity: 2026-02-14 -- Completed 02-03 (integration tests proving all Phase 2 success criteria)
+Phase: 3 of 7 (Security Hardening)
+Plan: 1 of 2 in current phase -- COMPLETE
+Status: Plan 03-01 complete -- security middleware installed and wired. Ready for 03-02 (integration tests).
+Last activity: 2026-02-14 -- Completed 03-01 (security middleware: CSP, rate limiting, HTTPS redirect, helmet)
 
-Progress: [████░░░░░░] 33%
+Progress: [████▌░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 2min
-- Total execution time: 0.28 hours
+- Total execution time: 0.35 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [████░░░░░░] 33%
 |-------|-------|-------|----------|
 | 01-encryption-foundation | 4 | 10min | 2min |
 | 02-database-and-api | 3 | 8min | 3min |
+| 03-security-hardening | 1 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 3min, 3min, 2min, 3min
+- Last 5 plans: 3min, 3min, 2min, 3min, 4min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -68,6 +69,11 @@ Recent decisions affecting current work:
 - [02-03]: Ciphertext zeroing uses '0' character repeat instead of null bytes (PostgreSQL text columns reject \x00)
 - [02-03]: Single vitest config covers both client and server tests (no workspace split needed)
 - [02-03]: Integration tests use real PostgreSQL (not mocked) to verify transaction atomicity
+- [03-01]: Helmet CSP directive functions typed as (IncomingMessage, ServerResponse) to match helmet's type contract, cast to Express Response for res.locals access
+- [03-01]: HSTS conditionally disabled in non-production (not just short max-age) to prevent browser lockout
+- [03-01]: secretsRouter refactored to factory function (createSecretsRouter) for rate limiter test isolation
+- [03-01]: No cors package -- Express without cors enforces same-origin by default
+- [03-01]: Rate limiter is a factory function creating fresh MemoryStore per app instance
 
 ### Pending Todos
 
@@ -81,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 02-03-PLAN.md (integration tests -- Phase 2 complete)
+Stopped at: Completed 03-01-PLAN.md (security middleware -- CSP, rate limiting, HTTPS redirect, helmet)
 Resume file: None
