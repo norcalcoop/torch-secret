@@ -71,6 +71,17 @@ export async function retrieveAndDestroy(
       return null;
     }
 
+    // Expiration guard: treat expired secrets as not-found (SECR-07 anti-enumeration)
+    // Opportunistically clean up the expired row since we're already in a transaction
+    if (secret.expiresAt <= new Date()) {
+      await tx
+        .update(secrets)
+        .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+        .where(eq(secrets.id, id));
+      await tx.delete(secrets).where(eq(secrets.id, id));
+      return null;
+    }
+
     // Reject password-protected secrets -- they must go through verifyAndRetrieve
     if (secret.passwordHash !== null) {
       return null;
@@ -108,11 +119,18 @@ export async function getSecretMeta(id: string): Promise<{
     .select({
       passwordHash: secrets.passwordHash,
       passwordAttempts: secrets.passwordAttempts,
+      expiresAt: secrets.expiresAt,
     })
     .from(secrets)
     .where(eq(secrets.id, id));
 
   if (!secret) {
+    return null;
+  }
+
+  // Expiration guard: treat expired secrets as not-found (SECR-07 anti-enumeration)
+  // No inline cleanup here (no transaction context) -- worker or next retrieval will clean up
+  if (secret.expiresAt <= new Date()) {
     return null;
   }
 
@@ -152,6 +170,17 @@ export async function verifyAndRetrieve(
       .where(eq(secrets.id, id));
 
     if (!secret) {
+      return null;
+    }
+
+    // Expiration guard: treat expired secrets as not-found (SECR-07 anti-enumeration)
+    // Opportunistically clean up the expired row since we're already in a transaction
+    if (secret.expiresAt <= new Date()) {
+      await tx
+        .update(secrets)
+        .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+        .where(eq(secrets.id, id));
+      await tx.delete(secrets).where(eq(secrets.id, id));
       return null;
     }
 
