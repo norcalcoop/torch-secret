@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Database and API** - Server-side secret storage with atomic read-and-destroy and zero-knowledge guarantees
 - [x] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
 - [x] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
-- [ ] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
+- [x] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
 - [ ] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
 - [ ] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
 
@@ -104,9 +104,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Backend password protection: Argon2id service, API types, secrets service, route handlers
-- [ ] 05-02-PLAN.md — Frontend password flow: create page field, reveal page password entry, API client
-- [ ] 05-03-PLAN.md — Integration tests proving all Phase 5 success criteria
+- [x] 05-01-PLAN.md — Backend password protection: Argon2id service, API types, secrets service, route handlers
+- [x] 05-02-PLAN.md — Frontend password flow: create page field, reveal page password entry, API client
+- [x] 05-03-PLAN.md — Integration tests proving all Phase 5 success criteria
 
 ### Phase 6: Expiration Worker
 **Goal**: Expired secrets are automatically cleaned up and users requesting expired secrets see a clear message
@@ -145,6 +145,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
-| 5. Password Protection | 0/3 | Not started | - |
+| 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
 | 6. Expiration Worker | 0/TBD | Not started | - |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
