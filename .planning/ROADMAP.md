@@ -67,10 +67,11 @@ Plans:
   3. All HTTP requests are redirected to HTTPS and responses include Strict-Transport-Security headers
   4. All responses include Referrer-Policy: no-referrer, preventing URL fragment leakage through referrer headers
   5. CORS is restricted to same-origin only; cross-origin API requests are rejected
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Security middleware (CSP nonce, helmet, HTTPS redirect, rate limiter) and Express app wiring
+- [ ] 03-02-PLAN.md — Integration tests proving all Phase 3 success criteria
 
 ### Phase 4: Frontend Create and Reveal
 **Goal**: Users can create a secret, receive a shareable link, and recipients can view the secret exactly once through a two-step reveal flow -- the complete end-to-end user journey works
@@ -139,7 +140,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|---------------|--------|-----------|
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
 | 2. Database and API | 3/3 | ✓ Complete | 2026-02-14 |
-| 3. Security Hardening | 0/TBD | Not started | - |
+| 3. Security Hardening | 0/2 | Not started | - |
 | 4. Frontend Create and Reveal | 0/TBD | Not started | - |
 | 5. Password Protection | 0/TBD | Not started | - |
 | 6. Expiration Worker | 0/TBD | Not started | - |
