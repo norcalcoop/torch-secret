@@ -8,6 +8,8 @@
 import type {
   CreateSecretResponse,
   SecretResponse,
+  MetaResponse,
+  VerifySecretResponse,
 } from '../../../shared/types/api.js';
 
 /**
@@ -33,11 +35,12 @@ export class ApiError extends Error {
 export async function createSecret(
   ciphertext: string,
   expiresIn: '1h' | '24h' | '7d' | '30d',
+  password?: string,
 ): Promise<CreateSecretResponse> {
   const res = await fetch('/api/secrets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ciphertext, expiresIn }),
+    body: JSON.stringify({ ciphertext, expiresIn, ...(password ? { password } : {}) }),
   });
 
   if (!res.ok) {
@@ -61,4 +64,43 @@ export async function getSecret(id: string): Promise<SecretResponse> {
   }
 
   return res.json() as Promise<SecretResponse>;
+}
+
+/**
+ * Fetch secret metadata without consuming the secret.
+ *
+ * Returns whether a password is required and remaining attempts.
+ * Does NOT trigger the atomic read-and-destroy.
+ */
+export async function getSecretMeta(id: string): Promise<MetaResponse> {
+  const res = await fetch(`/api/secrets/${id}/meta`);
+
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+
+  return res.json() as Promise<MetaResponse>;
+}
+
+/**
+ * Submit a password for a password-protected secret.
+ *
+ * On success, returns the ciphertext (atomically destroyed server-side).
+ * On wrong password, throws ApiError with status 403 and attemptsRemaining in body.
+ */
+export async function verifySecretPassword(
+  id: string,
+  password: string,
+): Promise<VerifySecretResponse> {
+  const res = await fetch(`/api/secrets/${id}/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+
+  return res.json() as Promise<VerifySecretResponse>;
 }

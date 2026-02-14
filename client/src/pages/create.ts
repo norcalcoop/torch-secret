@@ -2,8 +2,8 @@
  * Create secret page.
  *
  * Renders the complete secret creation form: textarea with character counter,
- * expiration selector, disabled password field (Phase 5 placeholder), and submit
- * button that encrypts in the browser and posts to the API.
+ * expiration selector, optional password field, and submit button that encrypts
+ * in the browser and posts to the API.
  *
  * After successful creation, renders the confirmation page in the same container
  * (state-based transition, not URL-based).
@@ -100,7 +100,7 @@ export async function renderCreatePage(
   expirationGroup.appendChild(expirationSelect);
   form.appendChild(expirationGroup);
 
-  // -- Advanced options (password placeholder for Phase 5) --
+  // -- Advanced options (password protection) --
   const details = document.createElement('details');
   details.className = 'border border-gray-200 rounded-lg';
 
@@ -114,16 +114,16 @@ export async function renderCreatePage(
 
   const passwordLabel = document.createElement('label');
   passwordLabel.htmlFor = 'password';
-  passwordLabel.className = 'block text-sm font-medium text-gray-400';
+  passwordLabel.className = 'block text-sm font-medium text-gray-700';
   passwordLabel.textContent = 'Password protection';
 
   const passwordInput = document.createElement('input');
   passwordInput.type = 'password';
   passwordInput.id = 'password';
-  passwordInput.disabled = true;
-  passwordInput.placeholder = 'Password protection (coming soon)';
+  passwordInput.placeholder = 'Optional password';
+  passwordInput.maxLength = 128;
   passwordInput.className =
-    'w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-400 placeholder-gray-300 cursor-not-allowed';
+    'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none';
 
   detailsContent.appendChild(passwordLabel);
   detailsContent.appendChild(passwordInput);
@@ -168,21 +168,26 @@ export async function renderCreatePage(
       | '7d'
       | '30d';
 
+    // Get optional password
+    const password = passwordInput.value || undefined;
+
     // Disable form during submission
     submitButton.disabled = true;
     textarea.disabled = true;
     expirationSelect.disabled = true;
+    passwordInput.disabled = true;
 
     try {
       // Step 1: Encrypt in the browser
       submitButton.textContent = 'Encrypting...';
       const result = await encrypt(text);
 
-      // Step 2: Send to API
+      // Step 2: Send to API (include password only if provided)
       submitButton.textContent = 'Sending...';
       const response = await createSecret(
         result.payload.ciphertext,
         expiresIn,
+        password,
       );
 
       // Step 3: Build share URL with key in fragment
@@ -195,6 +200,7 @@ export async function renderCreatePage(
       submitButton.disabled = false;
       textarea.disabled = false;
       expirationSelect.disabled = false;
+      passwordInput.disabled = false;
       submitButton.textContent = 'Create Secure Link';
 
       const message =
