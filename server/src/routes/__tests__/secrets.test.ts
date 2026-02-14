@@ -394,3 +394,233 @@ describe('GET /api/secrets/:id bypass prevention', () => {
     expect(bypassRes.body).toEqual(nonexistentRes.body);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 5: POST /api/secrets/:id/verify
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets/:id/verify', () => {
+  test('returns ciphertext on correct password with 200', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const verifyRes = await request(app)
+      .post(`/api/secrets/${createRes.body.id}/verify`)
+      .send({ password: 'correct-password' })
+      .expect(200);
+
+    expect(verifyRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
+    expect(verifyRes.body.expiresAt).toBeDefined();
+    expect(new Date(verifyRes.body.expiresAt).toISOString()).toBe(verifyRes.body.expiresAt);
+  });
+
+  test('destroys secret after successful verification (one-time use)', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    // First verify -- should succeed
+    await request(app)
+      .post(`/api/secrets/${createRes.body.id}/verify`)
+      .send({ password: 'correct-password' })
+      .expect(200);
+
+    // Second verify -- secret is gone
+    await request(app)
+      .post(`/api/secrets/${createRes.body.id}/verify`)
+      .send({ password: 'correct-password' })
+      .expect(404);
+  });
+
+  test('returns 403 with attemptsRemaining on wrong password', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const verifyRes = await request(app)
+      .post(`/api/secrets/${createRes.body.id}/verify`)
+      .send({ password: 'wrong-password' })
+      .expect(403);
+
+    expect(verifyRes.body).toEqual({
+      error: 'wrong_password',
+      attemptsRemaining: 2,
+    });
+  });
+
+  test('decrements attemptsRemaining on each wrong attempt', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // First wrong attempt
+    const wrong1 = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-1' })
+      .expect(403);
+    expect(wrong1.body.attemptsRemaining).toBe(2);
+
+    // Second wrong attempt
+    const wrong2 = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-2' })
+      .expect(403);
+    expect(wrong2.body.attemptsRemaining).toBe(1);
+
+    // Meta should reflect decremented attempts
+    const metaRes = await request(app)
+      .get(`/api/secrets/${id}/meta`)
+      .expect(200);
+    expect(metaRes.body.passwordAttemptsRemaining).toBe(1);
+  });
+
+  test('auto-destroys secret after 3 wrong attempts', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Wrong attempt 1
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-1' })
+      .expect(403);
+
+    // Wrong attempt 2
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-2' })
+      .expect(403);
+
+    // Wrong attempt 3 -- triggers auto-destroy, returns 404 (0 attempts = destroyed)
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-3' })
+      .expect(404);
+
+    // Meta should return 404 (secret is gone)
+    await request(app)
+      .get(`/api/secrets/${id}/meta`)
+      .expect(404);
+
+    // Direct DB: row no longer exists
+    const rows = await db
+      .select()
+      .from(secrets)
+      .where(sql`${secrets.id} = ${id}`);
+    expect(rows).toHaveLength(0);
+  });
+
+  test('correct password still works after 2 wrong attempts', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // 2 wrong attempts
+    const wrong1 = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-1' })
+      .expect(403);
+    expect(wrong1.body.attemptsRemaining).toBe(2);
+
+    const wrong2 = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-2' })
+      .expect(403);
+    expect(wrong2.body.attemptsRemaining).toBe(1);
+
+    // Correct password on 3rd attempt -- should still succeed
+    const verifyRes = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'correct-password' })
+      .expect(200);
+
+    expect(verifyRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
+  });
+
+  test('returns 404 for nonexistent secret', async () => {
+    await request(app)
+      .post('/api/secrets/xxxxxxxxxxxxxxxxxxx01/verify')
+      .send({ password: 'any-password' })
+      .expect(404);
+  });
+
+  test('returns 400 for missing password in body', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const res = await request(app)
+      .post(`/api/secrets/${createRes.body.id}/verify`)
+      .send({})
+      .expect(400);
+
+    expect(res.body.error).toBe('validation_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: Anti-enumeration (password)
+// ---------------------------------------------------------------------------
+describe('anti-enumeration (password)', () => {
+  test('destroyed secret response is identical to nonexistent secret response', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Destroy via 3 wrong attempts
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-1' })
+      .expect(403);
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-2' })
+      .expect(403);
+    await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'wrong-3' })
+      .expect(404);
+
+    // POST verify to destroyed ID
+    const destroyedVerifyRes = await request(app)
+      .post(`/api/secrets/${id}/verify`)
+      .send({ password: 'any-password' })
+      .expect(404);
+
+    // POST verify to fake ID
+    const fakeVerifyRes = await request(app)
+      .post('/api/secrets/xxxxxxxxxxxxxxxxxxx01/verify')
+      .send({ password: 'any-password' })
+      .expect(404);
+
+    // Response bodies must be identical
+    expect(destroyedVerifyRes.body).toEqual(fakeVerifyRes.body);
+
+    // Also verify via meta endpoint
+    const destroyedMetaRes = await request(app)
+      .get(`/api/secrets/${id}/meta`)
+      .expect(404);
+
+    const fakeMetaRes = await request(app)
+      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01/meta')
+      .expect(404);
+
+    expect(destroyedMetaRes.body).toEqual(fakeMetaRes.body);
+  });
+});
