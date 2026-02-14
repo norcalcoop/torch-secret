@@ -50,11 +50,12 @@ Plans:
   3. A second GET to the same secret ID returns an error response identical to a request for a nonexistent or expired secret (no enumeration possible)
   4. Before deletion, ciphertext is overwritten with zeros in the database row (data remanence mitigation)
   5. Application logs contain no secret IDs, ciphertext, or PII
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Server project setup, database schema, connection, env config, logging, and shared API types
+- [ ] 02-02-PLAN.md — Validation middleware, error handler, secrets service, route handlers, and app factory
+- [ ] 02-03-PLAN.md — Integration tests proving all Phase 2 success criteria
 
 ### Phase 3: Security Hardening
 **Goal**: All HTTP-level security protections are in place so that the frontend can be deployed without exposing the zero-knowledge model to XSS, referrer leakage, or abuse
@@ -137,7 +138,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Encryption Foundation | 4/4 | ✓ Complete | 2026-02-13 |
-| 2. Database and API | 0/TBD | Not started | - |
+| 2. Database and API | 0/3 | Not started | - |
 | 3. Security Hardening | 0/TBD | Not started | - |
 | 4. Frontend Create and Reveal | 0/TBD | Not started | - |
 | 5. Password Protection | 0/TBD | Not started | - |
