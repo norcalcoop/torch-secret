@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 3 COMPLETE - Ready for Phase 4
+**Current focus:** Phase 4 in progress - Frontend Create and Reveal
 
 ## Current Position
 
-Phase: 3 of 7 (Security Hardening) -- COMPLETE
-Plan: 2 of 2 in current phase -- COMPLETE
-Status: Phase 3 complete. All security middleware installed, wired, and verified with 14 integration tests. Ready for Phase 4 (Frontend Create and Reveal).
-Last activity: 2026-02-14 -- Completed 03-02 (security integration tests: CSP, rate limiting, HSTS, Referrer-Policy, CORS)
+Phase: 4 of 7 (Frontend Create and Reveal)
+Plan: 1 of 4 in current phase -- COMPLETE
+Status: Plan 04-01 complete. Vite + Tailwind CSS build toolchain, SPA router, API client, copy button, and Express production serving all wired. Ready for 04-02 (create page).
+Last activity: 2026-02-14 -- Completed 04-01 (frontend toolchain and SPA skeleton)
 
-Progress: [████▌░░░░░] 43%
+Progress: [█████░░░░░] 48%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 2min
-- Total execution time: 0.38 hours
+- Total execution time: 0.43 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [████▌░░░░░] 43%
 | 01-encryption-foundation | 4 | 10min | 2min |
 | 02-database-and-api | 3 | 8min | 3min |
 | 03-security-hardening | 2 | 6min | 3min |
+| 04-frontend-create-and-reveal | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 2min, 3min, 4min, 2min
+- Last 5 plans: 2min, 3min, 4min, 2min, 3min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -77,6 +78,11 @@ Recent decisions affecting current work:
 - [03-02]: draft-7 rate limit header is combined 'RateLimit' (not 'RateLimit-Limit') in express-rate-limit 8.x
 - [03-02]: HSTS test uses environment-conditional assertion to verify correct behavior per NODE_ENV
 - [03-02]: Rate limit tests use isolated buildApp() instances to prevent counter bleed
+- [04-01]: Express 5 catch-all uses {*path} syntax (path-to-regexp v8+ requires named wildcard parameters)
+- [04-01]: Placeholder page modules required for Vite/Rollup dynamic import resolution at build time
+- [04-01]: Tailwind theme uses oklch color space for perceptually uniform custom color palette
+- [04-01]: Static serving conditional on client/dist existence so server starts in dev without a build
+- [04-01]: HTML template read once at startup, nonce-replaced per request for performance
 
 ### Pending Todos
 
@@ -90,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 03-02-PLAN.md (security integration tests -- 14 tests for all 5 Phase 3 success criteria)
+Stopped at: Completed 04-01-PLAN.md (frontend toolchain and SPA skeleton)
 Resume file: None
