@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Security Hardening** - CSP, rate limiting, HTTPS, CORS, and referrer protection before frontend goes live
 - [x] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
 - [x] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
-- [ ] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
+- [x] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
 - [ ] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
 
 ## Phase Details
@@ -118,8 +118,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Expiration worker module, service layer expiration guards, and server.ts lifecycle integration
-- [ ] 06-02-PLAN.md — Integration tests proving all Phase 6 success criteria
+- [x] 06-01-PLAN.md — Expiration worker module, service layer expiration guards, and server.ts lifecycle integration
+- [x] 06-02-PLAN.md — Integration tests proving all Phase 6 success criteria
 
 ### Phase 7: Trust and Accessibility
 **Goal**: Users trust the application through clear explanation of the zero-knowledge model, and the application is usable by people with disabilities
@@ -147,5 +147,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Security Hardening | 2/2 | ✓ Complete | 2026-02-14 |
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
 | 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
-| 6. Expiration Worker | 0/2 | Not started | - |
+| 6. Expiration Worker | 2/2 | ✓ Complete | 2026-02-14 |
 | 7. Trust and Accessibility | 0/TBD | Not started | - |
