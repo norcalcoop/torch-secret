@@ -19,9 +19,9 @@ Progress: [██████░░░░] 57%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 2min
-- Total execution time: 0.47 hours
+- Total plans completed: 12
+- Average duration: 3min
+- Total execution time: 0.55 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [██████░░░░] 57%
 | 01-encryption-foundation | 4 | 10min | 2min |
 | 02-database-and-api | 3 | 8min | 3min |
 | 03-security-hardening | 2 | 6min | 3min |
-| 04-frontend-create-and-reveal | 2 | 5min | 3min |
+| 04-frontend-create-and-reveal | 3 | 10min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 4min, 2min, 3min, 2min
+- Last 5 plans: 4min, 2min, 3min, 2min, 5min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -83,6 +83,10 @@ Recent decisions affecting current work:
 - [04-01]: Tailwind theme uses oklch color space for perceptually uniform custom color palette
 - [04-01]: Static serving conditional on client/dist existence so server starts in dev without a build
 - [04-01]: HTML template read once at startup, nonce-replaced per request for performance
+- [04-02]: Confirmation page is state-based (not URL-based) -- refresh returns to create page since key is gone from memory
+- [04-02]: Password field is disabled inside collapsible details/summary element (Phase 5 placeholder)
+- [04-02]: Share URL displayed in readonly input with select-on-focus for easy manual copying
+- [04-02]: Character counter uses danger-500 color at max length to indicate limit reached
 - [04-03]: Reveal page uses closure-scoped key variable with null cleanup after decryption (best-effort memory management)
 - [04-03]: All API error responses (404, 410, unknown) map to generic 'not_available' error to prevent secret enumeration
 - [04-03]: Error page uses Unicode emoji icons for visual distinction without external assets
@@ -99,5 +103,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 04-03-PLAN.md (reveal page and secret display)
+Stopped at: Completed 04-02-PLAN.md (create page and confirmation flow)
 Resume file: None
