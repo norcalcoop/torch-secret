@@ -244,3 +244,153 @@ describe('logger redaction', () => {
     expect(output).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 5: Password-protected secret creation
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets with password', () => {
+  test('creates password-protected secret and returns 201 with same shape as non-password secret', async () => {
+    const res = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .expect(201);
+
+    expect(res.body.id).toBeDefined();
+    expect(res.body.id).toHaveLength(21);
+    expect(res.body.expiresAt).toBeDefined();
+    expect(new Date(res.body.expiresAt).toISOString()).toBe(res.body.expiresAt);
+  });
+
+  test('stores password hash in database, not plaintext', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Direct DB query to verify hash format
+    const [row] = await db
+      .select()
+      .from(secrets)
+      .where(sql`${secrets.id} = ${id}`);
+
+    expect(row.passwordHash).not.toBeNull();
+    expect(row.passwordHash).not.toBe('test-password-123');
+    expect(row.passwordHash!.startsWith('$argon2id$')).toBe(true);
+  });
+
+  test('rejects password over 128 characters with 400', async () => {
+    const longPassword = 'a'.repeat(129);
+    const res = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: longPassword })
+      .expect(400);
+
+    expect(res.body.error).toBe('validation_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: GET /api/secrets/:id/meta
+// ---------------------------------------------------------------------------
+describe('GET /api/secrets/:id/meta', () => {
+  test('returns requiresPassword true for password-protected secret', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .expect(201);
+
+    const res = await request(app)
+      .get(`/api/secrets/${createRes.body.id}/meta`)
+      .expect(200);
+
+    expect(res.body).toEqual({
+      requiresPassword: true,
+      passwordAttemptsRemaining: 3,
+    });
+  });
+
+  test('returns requiresPassword false for non-password secret', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .expect(201);
+
+    const res = await request(app)
+      .get(`/api/secrets/${createRes.body.id}/meta`)
+      .expect(200);
+
+    expect(res.body).toEqual({
+      requiresPassword: false,
+      passwordAttemptsRemaining: 3,
+    });
+  });
+
+  test('returns 404 for nonexistent secret', async () => {
+    const res = await request(app)
+      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01/meta')
+      .expect(404);
+
+    expect(res.body).toEqual({
+      error: 'not_found',
+      message: 'This secret does not exist, has already been viewed, or has expired.',
+    });
+  });
+
+  test('does not consume the secret (can be called multiple times)', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Call meta twice
+    await request(app).get(`/api/secrets/${id}/meta`).expect(200);
+    await request(app).get(`/api/secrets/${id}/meta`).expect(200);
+
+    // Secret should still be retrievable via GET /:id (non-password)
+    const getRes = await request(app)
+      .get(`/api/secrets/${id}`)
+      .expect(200);
+
+    expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5: GET /api/secrets/:id bypass prevention
+// ---------------------------------------------------------------------------
+describe('GET /api/secrets/:id bypass prevention', () => {
+  test('returns 404 for password-protected secret (cannot bypass password)', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .expect(201);
+
+    await request(app)
+      .get(`/api/secrets/${createRes.body.id}`)
+      .expect(404);
+  });
+
+  test('404 response for password-protected secret is identical to nonexistent secret', async () => {
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .expect(201);
+
+    // Password-bypass attempt
+    const bypassRes = await request(app)
+      .get(`/api/secrets/${createRes.body.id}`)
+      .expect(404);
+
+    // Nonexistent ID
+    const nonexistentRes = await request(app)
+      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01')
+      .expect(404);
+
+    // Response bodies must be identical (anti-enumeration)
+    expect(bypassRes.body).toEqual(nonexistentRes.body);
+  });
+});
