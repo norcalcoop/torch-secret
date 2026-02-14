@@ -1,5 +1,5 @@
 /**
- * Reveal secret page - two-step reveal flow.
+ * Reveal secret page - two-step reveal flow with password protection.
  *
  * SECURITY-CRITICAL: This page implements the anti-bot/anti-prefetch
  * interstitial pattern. The API is NEVER called until the user explicitly
@@ -9,13 +9,20 @@
  * Flow:
  *   1. Extract key from URL fragment, strip fragment immediately
  *   2. Validate inputs (key present, ID valid)
- *   3. Show interstitial with "Reveal Secret" button (NO API call)
- *   4. On click: fetch ciphertext, decrypt client-side, display plaintext
- *   5. On error: show appropriate error page
+ *   3. Check metadata to determine if password is required
+ *   4a. If password required: show password entry form with attempt counter
+ *   4b. If no password: show interstitial with "Reveal Secret" button (NO API call)
+ *   5. On action: fetch/verify ciphertext, decrypt client-side, display plaintext
+ *   6. On error: show appropriate error page
  */
 
 import { decrypt } from '../crypto/index.js';
-import { getSecret, ApiError } from '../api/client.js';
+import {
+  getSecret,
+  getSecretMeta,
+  verifySecretPassword,
+  ApiError,
+} from '../api/client.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { renderErrorPage } from './error.js';
@@ -60,12 +67,30 @@ export async function renderRevealPage(
     return;
   }
 
-  // Step D: Render interstitial -- NO API call happens here
-  renderInterstitial(container, id, key);
+  // Step C2: Show loading spinner while checking metadata
+  clearContainer(container);
+  container.appendChild(createLoadingSpinner('Checking secret...'));
+
+  // Step C3: Call getSecretMeta to determine if password is required
+  try {
+    const meta = await getSecretMeta(id);
+
+    // Step C5: If password required, show password entry form
+    if (meta.requiresPassword) {
+      renderPasswordEntry(container, id, key, meta.passwordAttemptsRemaining);
+    } else {
+      // Step C6: No password required, show existing interstitial
+      renderInterstitial(container, id, key);
+    }
+  } catch {
+    // Step C4: If error (404 or any), show not available
+    renderErrorPage(container, 'not_available');
+    return;
+  }
 
   /**
    * Handle the reveal action when the user clicks "Reveal Secret".
-   * This is the ONLY place where the API is called.
+   * This is the ONLY place where the non-password API is called.
    */
   async function handleReveal(): Promise<void> {
     // Clear container and show loading spinner
@@ -147,6 +172,175 @@ export async function renderRevealPage(
     wrapper.appendChild(heading);
     wrapper.appendChild(subtext);
     wrapper.appendChild(button);
+    target.appendChild(wrapper);
+  }
+
+  /**
+   * Render the password entry form for password-protected secrets.
+   *
+   * SECURITY: The encryption key stays in closure scope and is nulled
+   * after successful decryption, same as the handleReveal pattern.
+   * Uses verifySecretPassword exclusively (never getSecret for password-protected secrets).
+   */
+  function renderPasswordEntry(
+    target: HTMLElement,
+    secretId: string,
+    encryptionKey: string,
+    attemptsRemaining: number,
+  ): void {
+    clearContainer(target);
+
+    const wrapper = document.createElement('div');
+    wrapper.className =
+      'flex flex-col items-center justify-center text-center py-16 px-4';
+
+    // Lock icon (matching interstitial style)
+    const icon = document.createElement('div');
+    icon.className = 'text-6xl mb-6';
+    icon.textContent = '\u{1F512}'; // Lock
+
+    // Heading
+    const heading = document.createElement('h1');
+    heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
+    heading.textContent = 'Password Required';
+
+    // Subtext
+    const subtext = document.createElement('p');
+    subtext.className = 'text-gray-500 mb-6 max-w-md';
+    subtext.textContent =
+      'This secret is password protected. Enter the password to reveal it.';
+
+    // Attempt counter
+    const attemptText = document.createElement('p');
+    attemptText.className = `text-sm font-medium mb-6 ${attemptsRemaining <= 1 ? 'text-danger-500' : 'text-warning-500'}`;
+    attemptText.textContent = attemptsRemaining === 1
+      ? '1 attempt remaining'
+      : `${attemptsRemaining} attempts remaining`;
+
+    // Form container (max width for readability)
+    const form = document.createElement('form');
+    form.className = 'w-full max-w-sm space-y-4';
+    form.noValidate = true;
+
+    // Password input group
+    const inputGroup = document.createElement('div');
+    inputGroup.className = 'space-y-1 text-left';
+
+    const passwordLabel = document.createElement('label');
+    passwordLabel.htmlFor = 'reveal-password';
+    passwordLabel.className = 'block text-sm font-medium text-gray-700';
+    passwordLabel.textContent = 'Password';
+
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'password';
+    passwordInput.id = 'reveal-password';
+    passwordInput.placeholder = 'Enter password';
+    passwordInput.maxLength = 128;
+    passwordInput.required = true;
+    passwordInput.className =
+      'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none';
+
+    inputGroup.appendChild(passwordLabel);
+    inputGroup.appendChild(passwordInput);
+    form.appendChild(inputGroup);
+
+    // Error message area (hidden initially)
+    const errorArea = document.createElement('div');
+    errorArea.className =
+      'hidden px-4 py-3 rounded-lg bg-danger-500/10 text-danger-500 text-sm';
+    errorArea.setAttribute('role', 'alert');
+    form.appendChild(errorArea);
+
+    // Submit button
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className =
+      'w-full bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    submitButton.textContent = 'Verify Password';
+    form.appendChild(submitButton);
+
+    // Form submit handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Hide previous errors
+      errorArea.classList.add('hidden');
+      errorArea.textContent = '';
+
+      const passwordValue = passwordInput.value;
+      if (!passwordValue) {
+        errorArea.textContent = 'Please enter a password.';
+        errorArea.classList.remove('hidden');
+        return;
+      }
+
+      // Disable form during verification
+      passwordInput.disabled = true;
+      submitButton.disabled = true;
+      submitButton.textContent = 'Verifying...';
+
+      try {
+        // Call verify endpoint (atomically destroys on success)
+        const { ciphertext } = await verifySecretPassword(secretId, passwordValue);
+
+        // Decrypt client-side
+        const plaintext = await decrypt(ciphertext, encryptionKey);
+
+        // Render the revealed secret
+        renderRevealedSecret(container, plaintext);
+
+        // Best-effort memory cleanup
+        key = null;
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 403) {
+          // Wrong password -- parse remaining attempts from error body
+          const body = err.body as { attemptsRemaining?: number };
+          const remaining = body.attemptsRemaining ?? 0;
+
+          if (remaining === 0) {
+            // Secret was auto-destroyed after max wrong attempts
+            renderErrorPage(container, 'destroyed');
+            return;
+          }
+
+          // Update attempt counter text and style
+          attemptText.textContent = remaining === 1
+            ? '1 attempt remaining'
+            : `${remaining} attempts remaining`;
+          attemptText.className = `text-sm font-medium mb-6 ${remaining <= 1 ? 'text-danger-500' : 'text-warning-500'}`;
+
+          // Show error message
+          errorArea.textContent = remaining === 1
+            ? `Wrong password. 1 attempt remaining.`
+            : `Wrong password. ${remaining} attempts remaining.`;
+          errorArea.classList.remove('hidden');
+
+          // Re-enable form
+          passwordInput.disabled = false;
+          submitButton.disabled = false;
+          submitButton.textContent = 'Verify Password';
+          passwordInput.value = '';
+          passwordInput.focus();
+        } else if (err instanceof ApiError && err.status === 404) {
+          // Secret gone (concurrent destroy or expired)
+          renderErrorPage(container, 'not_available');
+        } else if (
+          err instanceof Error &&
+          err.message.includes('Decryption failed')
+        ) {
+          renderErrorPage(container, 'decrypt_failed');
+        } else {
+          // Unknown error -- show generic message
+          renderErrorPage(container, 'not_available');
+        }
+      }
+    });
+
+    wrapper.appendChild(icon);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(subtext);
+    wrapper.appendChild(attemptText);
+    wrapper.appendChild(form);
     target.appendChild(wrapper);
   }
 }

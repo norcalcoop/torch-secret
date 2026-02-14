@@ -12,7 +12,8 @@ export type ErrorType =
   | 'not_found'
   | 'not_available'
   | 'no_key'
-  | 'decrypt_failed';
+  | 'decrypt_failed'
+  | 'destroyed';
 
 /**
  * Error message configuration by type.
@@ -44,6 +45,12 @@ const ERROR_CONFIG: Record<
     heading: 'Page Not Found',
     message: 'The page you are looking for does not exist.',
     icon: '\u{1F50D}', // Magnifying glass
+  },
+  destroyed: {
+    heading: 'Secret Destroyed',
+    message:
+      'This secret has been permanently destroyed due to too many incorrect password attempts.',
+    icon: '\u{1F4A5}', // Collision/explosion
   },
 };
 
