@@ -29,3 +29,28 @@ export function createSecretLimiter() {
     // Default keyGenerator uses req.ip, which works correctly with trust proxy
   });
 }
+
+/**
+ * Create a rate limiter for POST /api/secrets/:id/verify.
+ *
+ * Returns a fresh middleware instance with its own MemoryStore.
+ * Stricter than createSecretLimiter -- defense-in-depth on top of
+ * the per-secret 3-attempt auto-destroy limit.
+ *
+ * Allows max 15 password verification attempts per IP per 15 minutes
+ * across ALL secrets (not per-secret). Prevents brute-force campaigns
+ * even when targeting multiple secrets.
+ */
+export function verifySecretLimiter() {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 15, // 15 attempts per window per IP
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    statusCode: 429,
+    message: {
+      error: 'rate_limited',
+      message: 'Too many password attempts. Please try again later.',
+    },
+  });
+}
