@@ -1,7 +1,10 @@
 import pino from 'pino';
-import { pinoHttp } from 'pino-http';
-import type { IncomingMessage } from 'node:http';
+import pinoHttpModule from 'pino-http';
 import { env } from '../config/env.js';
+
+// pino-http is CJS — NodeNext resolves default as module namespace, not the function.
+// The callable is on .default at runtime.
+const pinoHttp = (pinoHttpModule as unknown as { default: typeof pinoHttpModule.default }).default ?? pinoHttpModule.default;
 
 /** Base pino logger with sensitive header redaction */
 export const logger = pino({
@@ -16,18 +19,22 @@ export const logger = pino({
   },
 });
 
+/** Redact secret IDs from URL paths to prevent log leakage */
+function redactUrl(url: string | undefined): string | undefined {
+  return url?.replace(
+    /\/api\/secrets\/[A-Za-z0-9_-]+/g,
+    '/api/secrets/[REDACTED]'
+  );
+}
+
 /** HTTP request logger middleware that redacts secret IDs from URL paths */
 export const httpLogger = pinoHttp({
   logger,
   serializers: {
-    req(req: IncomingMessage) {
+    req(raw: Record<string, unknown>) {
       return {
-        method: req.method,
-        // Replace secret IDs in /api/secrets/:id paths to prevent log leakage
-        url: req.url?.replace(
-          /\/api\/secrets\/[A-Za-z0-9_-]+/g,
-          '/api/secrets/[REDACTED]'
-        ),
+        method: raw.method,
+        url: redactUrl(raw.url as string | undefined),
       };
     },
   },
@@ -35,3 +42,5 @@ export const httpLogger = pinoHttp({
   autoLogging: true,
   wrapSerializers: false,
 });
+
+export { redactUrl };
