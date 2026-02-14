@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 5 complete - Password Protection. Ready for Phase 6.
+**Current focus:** Phase 6 in progress - Expiration Worker. Plan 1 complete, Plan 2 next.
 
 ## Current Position
 
-Phase: 5 of 7 (Password Protection) -- PHASE COMPLETE
-Plan: 3 of 3 in current phase -- COMPLETE
-Status: Phase 5 complete. Optional password protection with Argon2id hashing, 3-attempt auto-destroy, frontend password entry flow, and 18 integration tests. All 133 tests pass.
-Last activity: 2026-02-14 -- Completed Phase 5 execution and verification
+Phase: 6 of 7 (Expiration Worker)
+Plan: 1 of 2 in current phase -- COMPLETE
+Status: Plan 1 complete. node-cron worker with 5-minute cron, expiration guards in all three retrieval paths, worker lifecycle in server.ts. All 133 tests pass.
+Last activity: 2026-02-14 -- Completed 06-01-PLAN.md (expiration worker + guards)
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: 3min
-- Total execution time: 0.73 hours
+- Total execution time: 0.87 hours
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [████████░░] 76%
 | 03-security-hardening | 2 | 6min | 3min |
 | 04-frontend-create-and-reveal | 4 | 13min | 3min |
 | 05-password-protection | 3 | 8min | 3min |
+| 06-expiration-worker | 1 | 8min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 3min, 3min, 2min, 3min
-- Trend: stable
+- Last 5 plans: 3min, 3min, 2min, 3min, 8min
+- Trend: stable (06-01 slightly longer due to flaky test investigation)
 
 *Updated after each plan completion*
 
@@ -105,6 +106,10 @@ Recent decisions affecting current work:
 - [05-02]: Password input cleared and re-focused after wrong attempt for improved UX
 - [05-03]: Auto-destroy 3rd wrong attempt returns 404 (attemptsRemaining: 0 maps to not-found for anti-enumeration)
 - [05-03]: Anti-enumeration verified via both verify and meta endpoints for destroyed secrets
+- [06-01]: Worker uses single-character '0' for batch ciphertext zeroing (not length-matched) per Research Pitfall 6
+- [06-01]: Expiration guards placed BEFORE password checks to prevent expired password-protected secrets from entering password flow
+- [06-01]: getSecretMeta has no inline cleanup (no transaction context) -- relies on worker or next retrieval
+- [06-01]: Worker uses result.rowCount from pg driver passthrough for deletion count
 
 ### Pending Todos
 
@@ -118,5 +123,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed Phase 5 (password protection) -- all 3 plans, verification passed
+Stopped at: Completed 06-01-PLAN.md (expiration worker + guards)
 Resume file: None
