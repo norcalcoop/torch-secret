@@ -1,10 +1,16 @@
 import pino from 'pino';
-import pinoHttpModule from 'pino-http';
+import pinoHttpDefault from 'pino-http';
+import type { Options, HttpLogger } from 'pino-http';
 import { env } from '../config/env.js';
 
-// pino-http is CJS — NodeNext resolves default as module namespace, not the function.
-// The callable is on .default at runtime.
-const pinoHttp = (pinoHttpModule as unknown as { default: typeof pinoHttpModule.default }).default ?? pinoHttpModule.default;
+// pino-http is CJS. Under NodeNext the default import is the module namespace
+// (callable lives at .default); under bundler+esModuleInterop it IS the callable.
+// Use runtime detection with explicit type annotation.
+const pinoHttp = (
+  typeof (pinoHttpDefault as any).default === 'function'
+    ? (pinoHttpDefault as any).default
+    : pinoHttpDefault
+) as (opts?: Options) => HttpLogger;
 
 /** Base pino logger with sensitive header redaction */
 export const logger = pino({
