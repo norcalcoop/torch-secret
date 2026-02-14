@@ -10,6 +10,8 @@ export const CreateSecretSchema = z.object({
   ciphertext: z.string().min(1).max(200_000),
   /** How long until the secret expires */
   expiresIn: z.enum(['1h', '24h', '7d', '30d']),
+  /** Optional password for password-protected secrets (Phase 5) */
+  password: z.string().min(1).max(128).optional(),
 });
 
 export type CreateSecretRequest = z.infer<typeof CreateSecretSchema>;
@@ -40,4 +42,36 @@ export interface SecretResponse {
 export interface ErrorResponse {
   error: string;
   message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5: Password Protection
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for verifying a password-protected secret.
+ * Used by POST /api/secrets/:id/verify.
+ */
+export const VerifySecretSchema = z.object({
+  password: z.string().min(1).max(128),
+});
+
+export type VerifySecretRequest = z.infer<typeof VerifySecretSchema>;
+
+/** Response from GET /api/secrets/:id/meta (non-destructive metadata check) */
+export interface MetaResponse {
+  requiresPassword: boolean;
+  passwordAttemptsRemaining: number;
+}
+
+/** Response from POST /api/secrets/:id/verify on successful password verification */
+export interface VerifySecretResponse {
+  ciphertext: string;
+  expiresAt: string;
+}
+
+/** Error response from POST /api/secrets/:id/verify on wrong password */
+export interface VerifyErrorResponse {
+  error: 'wrong_password';
+  attemptsRemaining: number;
 }
