@@ -32,11 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The encryption key is encoded into a URL fragment format that is never included in any server request
   4. Ciphertext is padded to fixed block sizes so that two secrets of different lengths produce same-size ciphertext within the same block tier
   5. All crypto operations use Web Crypto API (crypto.subtle) and crypto.getRandomValues -- no Math.random, no third-party crypto libraries
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Types, constants, and base64/base64url encoding utilities (TDD)
+- [ ] 01-02-PLAN.md — PADME plaintext padding module (TDD)
+- [ ] 01-03-PLAN.md — Key generation, export, and import module (TDD)
+- [ ] 01-04-PLAN.md — Encrypt, decrypt, and barrel export integration (TDD)
 
 ### Phase 2: Database and API
 **Goal**: The server can store encrypted blobs and destroy them atomically on first retrieval -- it never sees plaintext and leaves no recoverable traces
@@ -134,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Encryption Foundation | 0/TBD | Not started | - |
+| 1. Encryption Foundation | 0/4 | Planning complete | - |
 | 2. Database and API | 0/TBD | Not started | - |
 | 3. Security Hardening | 0/TBD | Not started | - |
 | 4. Frontend Create and Reveal | 0/TBD | Not started | - |
