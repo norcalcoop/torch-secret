@@ -43,58 +43,43 @@
  * underlying CSS variables (required for theme
  * switching in Phase 13).
  *
- * NOTE: Legacy primary/danger/success/warning tokens
- * are preserved below for backward compatibility.
- * Plan 02 migrates all usages, then removes them.
+ * --color-*: initial clears Tailwind's default
+ * color palette, preventing accidental use of
+ * non-semantic colors (gray-*, slate-*, etc.).
  * ============================================= */
 @theme inline {
-  /* New semantic surface tokens */
+  --color-*: initial;
+
+  /* Semantic surface tokens */
   --color-bg: var(--ds-color-bg);
   --color-surface: var(--ds-color-surface);
   --color-surface-raised: var(--ds-color-surface-raised);
   --color-surface-overlay: var(--ds-color-surface-overlay);
 
-  /* New semantic text tokens */
+  /* Semantic text tokens */
   --color-text-primary: var(--ds-color-text-primary);
   --color-text-secondary: var(--ds-color-text-secondary);
   --color-text-tertiary: var(--ds-color-text-tertiary);
   --color-text-muted: var(--ds-color-text-muted);
 
-  /* New semantic accent tokens */
+  /* Semantic accent tokens */
   --color-accent: var(--ds-color-accent);
   --color-accent-hover: var(--ds-color-accent-hover);
 
-  /* New semantic border token */
+  /* Semantic border token */
   --color-border: var(--ds-color-border);
 
-  /* New semantic status tokens */
+  /* Semantic status tokens */
   --color-danger: var(--ds-color-danger);
   --color-success: var(--ds-color-success);
   --color-warning: var(--ds-color-warning);
 
-  /* New semantic icon token */
+  /* Semantic icon token */
   --color-icon: var(--ds-color-icon);
 
   /* Keep white/black for button text, backgrounds, etc. */
   --color-white: #fff;
   --color-black: #000;
-
-  /* ---- Legacy tokens (backward compatibility) ----
-   * These map old primary/danger/success/warning names
-   * to new semantic values so existing components keep
-   * working until Plan 02 migrates them.
-   * ------------------------------------------------ */
-  --color-primary-50: var(--ds-color-accent);
-  --color-primary-100: var(--ds-color-accent);
-  --color-primary-200: var(--ds-color-accent);
-  --color-primary-300: var(--ds-color-accent);
-  --color-primary-400: var(--ds-color-accent);
-  --color-primary-500: var(--ds-color-accent);
-  --color-primary-600: var(--ds-color-accent);
-  --color-primary-700: var(--ds-color-accent-hover);
-  --color-danger-500: var(--ds-color-danger);
-  --color-success-500: var(--ds-color-success);
-  --color-warning-500: var(--ds-color-warning);
 }
 
 /* =============================================
