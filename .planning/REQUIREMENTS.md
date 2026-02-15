@@ -94,48 +94,48 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THEME-01 | — | Pending |
-| THEME-02 | — | Pending |
-| THEME-03 | — | Pending |
-| THEME-04 | — | Pending |
-| THEME-05 | — | Pending |
-| THEME-06 | — | Pending |
-| THEME-07 | — | Pending |
-| TYPO-01 | — | Pending |
-| TYPO-02 | — | Pending |
-| TYPO-03 | — | Pending |
-| ICON-01 | — | Pending |
-| ICON-02 | — | Pending |
-| ICON-03 | — | Pending |
-| LAYOUT-01 | — | Pending |
-| LAYOUT-02 | — | Pending |
-| LAYOUT-03 | — | Pending |
-| LAYOUT-04 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| UI-07 | — | Pending |
-| UI-08 | — | Pending |
-| UI-09 | — | Pending |
-| SEO-01 | — | Pending |
-| SEO-02 | — | Pending |
-| SEO-03 | — | Pending |
-| SEO-04 | — | Pending |
-| SEO-05 | — | Pending |
-| SEO-06 | — | Pending |
-| SEO-07 | — | Pending |
-| SEO-08 | — | Pending |
-| SEO-09 | — | Pending |
-| SEO-10 | — | Pending |
+| THEME-01 | Phase 9 | Pending |
+| THEME-02 | Phase 13 | Pending |
+| THEME-03 | Phase 13 | Pending |
+| THEME-04 | Phase 9 | Pending |
+| THEME-05 | Phase 13 | Pending |
+| THEME-06 | Phase 11 | Pending |
+| THEME-07 | Phase 9 | Pending |
+| TYPO-01 | Phase 9 | Pending |
+| TYPO-02 | Phase 9 | Pending |
+| TYPO-03 | Phase 12 | Pending |
+| ICON-01 | Phase 11 | Pending |
+| ICON-02 | Phase 9 | Pending |
+| ICON-03 | Phase 13 | Pending |
+| LAYOUT-01 | Phase 11 | Pending |
+| LAYOUT-02 | Phase 11 | Pending |
+| LAYOUT-03 | Phase 11 | Pending |
+| LAYOUT-04 | Phase 11 | Pending |
+| UI-01 | Phase 12 | Pending |
+| UI-02 | Phase 12 | Pending |
+| UI-03 | Phase 12 | Pending |
+| UI-04 | Phase 12 | Pending |
+| UI-05 | Phase 12 | Pending |
+| UI-06 | Phase 13 | Pending |
+| UI-07 | Phase 13 | Pending |
+| UI-08 | Phase 13 | Pending |
+| UI-09 | Phase 13 | Pending |
+| SEO-01 | Phase 14 | Pending |
+| SEO-02 | Phase 10 | Pending |
+| SEO-03 | Phase 10 | Pending |
+| SEO-04 | Phase 10 | Pending |
+| SEO-05 | Phase 14 | Pending |
+| SEO-06 | Phase 14 | Pending |
+| SEO-07 | Phase 14 | Pending |
+| SEO-08 | Phase 10 | Pending |
+| SEO-09 | Phase 10 | Pending |
+| SEO-10 | Phase 14 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30 (pending roadmap creation)
+- v2.0 requirements: 36 total
+- Mapped to phases: 36
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-15*
-*Last updated: 2026-02-15 after initial definition*
+*Last updated: 2026-02-15 after roadmap creation*
