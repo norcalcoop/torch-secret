@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
 - [x] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
 - [x] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
+- [ ] **Phase 8: Tech Debt Cleanup** - Fix flaky test, WCAG contrast fix, test isolation, Redis rate limiting
 
 ## Phase Details
 
@@ -138,7 +139,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 (Phases 6 and 7 depend on Phase 2 and Phase 4 respectively, not on Phase 5, so they could run after their dependencies. The listed order is the recommended sequence.)
 
 | Phase | Plans Complete | Status | Completed |
@@ -150,3 +151,14 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
 | 6. Expiration Worker | 2/2 | ✓ Complete | 2026-02-14 |
 | 7. Trust and Accessibility | 2/2 | ✓ Complete | 2026-02-15 |
+| 8. Tech Debt Cleanup | 0/2 | Planned | — |
+
+### Phase 8: Tech Debt Cleanup
+
+**Goal:** Eliminate all tech debt from the v1 milestone audit: fix flaky tests via sequential server test execution, fix WCAG color contrast on character counter, and add Redis-backed rate limiting for multi-instance production deployments
+**Depends on:** Phase 7
+**Plans:** 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Fix test parallelism: migrate vitest config to projects with sequential server tests
+- [ ] 08-02-PLAN.md — WCAG color contrast fix and Redis-backed rate limiting
