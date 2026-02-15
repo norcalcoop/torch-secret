@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /secret/
+
+Sitemap: https://secureshare.example.com/sitemap.xml

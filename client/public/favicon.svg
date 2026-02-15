@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .shield { fill: #4d8bf5; }
+    @media (prefers-color-scheme: dark) {
+      .shield { fill: #7fb3ff; }
+    }
+  </style>
+  <path class="shield" d="M16 2C13.5 4.5 10 6 7 6c-1 0-2 0-3 0v10c0 7 5 10.5 12 14 7-3.5 12-7 12-14V6c-1 0-2 0-3 0-3 0-6.5-1.5-9-4z"/>
+</svg>

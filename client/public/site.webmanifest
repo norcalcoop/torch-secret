@@ -1,0 +1,21 @@
+{
+  "name": "SecureShare",
+  "short_name": "SecureShare",
+  "description": "Share secrets securely with zero-knowledge, one-time encrypted links",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#1a1625",
+  "theme_color": "#1a1625",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    }
+  ]
+}
