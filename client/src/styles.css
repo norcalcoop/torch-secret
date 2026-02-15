@@ -1,15 +1,117 @@
 @import "tailwindcss";
+@import "@fontsource-variable/jetbrains-mono";
 
+/* =============================================
+ * Design System: Raw theme variables
+ * These change per-theme (Phase 13 adds light theme values)
+ * ============================================= */
+:root {
+  color-scheme: dark;
+
+  /* Background & Surfaces */
+  --ds-color-bg:              oklch(0.23 0.038 283);
+  --ds-color-surface:         oklch(0.27 0.055 282);
+  --ds-color-surface-raised:  oklch(0.30 0.057 282);
+  --ds-color-surface-overlay: oklch(0.34 0.059 283);
+
+  /* Text hierarchy */
+  --ds-color-text-primary:    oklch(0.96 0.020 286);
+  --ds-color-text-secondary:  oklch(0.84 0.033 286);
+  --ds-color-text-tertiary:   oklch(0.67 0.047 285);
+  --ds-color-text-muted:      oklch(0.65 0.053 285);
+
+  /* Interactive accent (electric blue) */
+  --ds-color-accent:          oklch(0.71 0.143 255);
+  --ds-color-accent-hover:    oklch(0.62 0.188 260);
+
+  /* Borders */
+  --ds-color-border:          oklch(0.36 0.058 283);
+
+  /* Status */
+  --ds-color-danger:          oklch(0.64 0.208 25);
+  --ds-color-success:         oklch(0.72 0.192 150);
+  --ds-color-warning:         oklch(0.77 0.165 70);
+
+  /* Icons */
+  --ds-color-icon:            oklch(0.67 0.047 285);
+}
+
+/* =============================================
+ * Map raw variables to Tailwind utility classes
+ *
+ * Uses @theme inline so utilities reference the
+ * underlying CSS variables (required for theme
+ * switching in Phase 13).
+ *
+ * NOTE: Legacy primary/danger/success/warning tokens
+ * are preserved below for backward compatibility.
+ * Plan 02 migrates all usages, then removes them.
+ * ============================================= */
+@theme inline {
+  /* New semantic surface tokens */
+  --color-bg: var(--ds-color-bg);
+  --color-surface: var(--ds-color-surface);
+  --color-surface-raised: var(--ds-color-surface-raised);
+  --color-surface-overlay: var(--ds-color-surface-overlay);
+
+  /* New semantic text tokens */
+  --color-text-primary: var(--ds-color-text-primary);
+  --color-text-secondary: var(--ds-color-text-secondary);
+  --color-text-tertiary: var(--ds-color-text-tertiary);
+  --color-text-muted: var(--ds-color-text-muted);
+
+  /* New semantic accent tokens */
+  --color-accent: var(--ds-color-accent);
+  --color-accent-hover: var(--ds-color-accent-hover);
+
+  /* New semantic border token */
+  --color-border: var(--ds-color-border);
+
+  /* New semantic status tokens */
+  --color-danger: var(--ds-color-danger);
+  --color-success: var(--ds-color-success);
+  --color-warning: var(--ds-color-warning);
+
+  /* New semantic icon token */
+  --color-icon: var(--ds-color-icon);
+
+  /* Keep white/black for button text, backgrounds, etc. */
+  --color-white: #fff;
+  --color-black: #000;
+
+  /* ---- Legacy tokens (backward compatibility) ----
+   * These map old primary/danger/success/warning names
+   * to new semantic values so existing components keep
+   * working until Plan 02 migrates them.
+   * ------------------------------------------------ */
+  --color-primary-50: var(--ds-color-accent);
+  --color-primary-100: var(--ds-color-accent);
+  --color-primary-200: var(--ds-color-accent);
+  --color-primary-300: var(--ds-color-accent);
+  --color-primary-400: var(--ds-color-accent);
+  --color-primary-500: var(--ds-color-accent);
+  --color-primary-600: var(--ds-color-accent);
+  --color-primary-700: var(--ds-color-accent-hover);
+  --color-danger-500: var(--ds-color-danger);
+  --color-success-500: var(--ds-color-success);
+  --color-warning-500: var(--ds-color-warning);
+}
+
+/* =============================================
+ * Static theme values (no CSS variable refs)
+ * ============================================= */
 @theme {
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.87 0.08 250);
-  --color-primary-300: oklch(0.78 0.12 250);
-  --color-primary-400: oklch(0.68 0.16 250);
-  --color-primary-500: oklch(0.58 0.19 250);
-  --color-primary-600: oklch(0.50 0.19 250);
-  --color-primary-700: oklch(0.42 0.17 250);
-  --color-danger-500: oklch(0.60 0.18 25);
-  --color-success-500: oklch(0.65 0.15 145);
-  --color-warning-500: oklch(0.75 0.15 85);
+  /* Typography */
+  --font-heading: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --font-body: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+
+  /* Type scale (Major Third, 1.25 ratio from 1rem base) */
+  --text-xs: 0.64rem;
+  --text-sm: 0.8rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.563rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
 }
