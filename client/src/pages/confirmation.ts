@@ -43,7 +43,7 @@ export function renderConfirmationPage(
 
   const icon = document.createElement('div');
   icon.className =
-    'w-16 h-16 rounded-full bg-success-500/10 flex items-center justify-center';
+    'w-16 h-16 rounded-full bg-success/10 flex items-center justify-center';
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
@@ -53,7 +53,7 @@ export function renderConfirmationPage(
   svg.setAttribute('stroke-linecap', 'round');
   svg.setAttribute('stroke-linejoin', 'round');
   svg.setAttribute('aria-hidden', 'true');
-  svg.classList.add('w-8', 'h-8', 'text-success-500');
+  svg.classList.add('w-8', 'h-8', 'text-success');
 
   // Shield with checkmark path
   const shieldPath = document.createElementNS(
@@ -79,7 +79,7 @@ export function renderConfirmationPage(
 
   // -- Heading --
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900';
+  heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary';
   heading.textContent = 'Your Secure Link is Ready';
   wrapper.appendChild(heading);
 
@@ -89,13 +89,13 @@ export function renderConfirmationPage(
 
   const urlLabel = document.createElement('label');
   urlLabel.htmlFor = 'share-url';
-  urlLabel.className = 'block text-sm text-gray-500';
+  urlLabel.className = 'block text-sm text-text-muted';
   urlLabel.textContent = 'Share this link with your recipient:';
   urlSection.appendChild(urlLabel);
 
   const urlDisplay = document.createElement('div');
   urlDisplay.className =
-    'flex items-stretch gap-0 rounded-lg border border-gray-200 overflow-hidden';
+    'flex items-stretch gap-0 rounded-lg border border-border overflow-hidden';
 
   const urlInput = document.createElement('input');
   urlInput.id = 'share-url';
@@ -103,7 +103,7 @@ export function renderConfirmationPage(
   urlInput.readOnly = true;
   urlInput.value = shareUrl;
   urlInput.className =
-    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-gray-50 text-gray-700 text-sm font-mono border-none focus:outline-hidden select-all';
+    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-surface text-text-secondary text-sm font-mono border-none focus:outline-hidden select-all';
 
   // Select all text on focus for easy manual copying
   urlInput.addEventListener('focus', () => {
@@ -126,14 +126,14 @@ export function renderConfirmationPage(
   // -- Expiration notice --
   const expiresDate = new Date(expiresAt);
   const expirationNotice = document.createElement('p');
-  expirationNotice.className = 'text-sm text-gray-500';
+  expirationNotice.className = 'text-sm text-text-muted';
   expirationNotice.textContent = `This link expires on ${expiresDate.toLocaleString()}`;
   wrapper.appendChild(expirationNotice);
 
   // -- Warning text --
   const warning = document.createElement('div');
   warning.className =
-    'px-4 py-3 rounded-lg bg-primary-50 text-primary-700 text-sm';
+    'px-4 py-3 rounded-lg bg-accent/10 text-accent text-sm';
   warning.textContent =
     'This link can only be viewed once. Once opened, the secret is permanently destroyed.';
   wrapper.appendChild(warning);
@@ -142,7 +142,7 @@ export function renderConfirmationPage(
   const createAnotherButton = document.createElement('button');
   createAnotherButton.type = 'button';
   createAnotherButton.className =
-    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded font-medium transition-colors cursor-pointer';
+    'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden rounded font-medium transition-colors cursor-pointer';
   createAnotherButton.textContent = 'Create Another Secret';
   createAnotherButton.addEventListener('click', () => {
     navigate('/');

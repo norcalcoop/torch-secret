@@ -152,12 +152,12 @@ export async function renderRevealPage(
 
     // Heading
     const heading = document.createElement('h1');
-    heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
+    heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
     heading.textContent = "You've received a secret";
 
     // Subtext
     const subtext = document.createElement('p');
-    subtext.className = 'text-gray-500 mb-8 max-w-md';
+    subtext.className = 'text-text-muted mb-8 max-w-md';
     subtext.textContent =
       'This secret can only be viewed once. Once revealed, it will be permanently destroyed.';
 
@@ -165,7 +165,7 @@ export async function renderRevealPage(
     const button = document.createElement('button');
     button.type = 'button';
     button.className =
-      'bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer';
+      'bg-accent text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
     button.textContent = 'Reveal Secret';
     button.addEventListener('click', handleReveal);
 
@@ -203,18 +203,18 @@ export async function renderRevealPage(
 
     // Heading
     const heading = document.createElement('h1');
-    heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
+    heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
     heading.textContent = 'Password Required';
 
     // Subtext
     const subtext = document.createElement('p');
-    subtext.className = 'text-gray-500 mb-6 max-w-md';
+    subtext.className = 'text-text-muted mb-6 max-w-md';
     subtext.textContent =
       'This secret is password protected. Enter the password to reveal it.';
 
     // Attempt counter
     const attemptText = document.createElement('p');
-    attemptText.className = `text-sm font-medium mb-6 ${attemptsRemaining <= 1 ? 'text-danger-500' : 'text-warning-500'}`;
+    attemptText.className = `text-sm font-medium mb-6 ${attemptsRemaining <= 1 ? 'text-danger' : 'text-warning'}`;
     attemptText.textContent = attemptsRemaining === 1
       ? '1 attempt remaining'
       : `${attemptsRemaining} attempts remaining`;
@@ -230,7 +230,7 @@ export async function renderRevealPage(
 
     const passwordLabel = document.createElement('label');
     passwordLabel.htmlFor = 'reveal-password';
-    passwordLabel.className = 'block text-sm font-medium text-gray-700';
+    passwordLabel.className = 'block text-sm font-medium text-text-secondary';
     passwordLabel.textContent = 'Password';
 
     const passwordInput = document.createElement('input');
@@ -241,7 +241,7 @@ export async function renderRevealPage(
     passwordInput.required = true;
     passwordInput.autocomplete = 'current-password';
     passwordInput.className =
-      'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden';
+      'w-full px-3 py-2 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
 
     inputGroup.appendChild(passwordLabel);
     inputGroup.appendChild(passwordInput);
@@ -250,7 +250,7 @@ export async function renderRevealPage(
     // Error message area (hidden initially)
     const errorArea = document.createElement('div');
     errorArea.className =
-      'hidden px-4 py-3 rounded-lg bg-danger-500/10 text-danger-500 text-sm';
+      'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
     errorArea.setAttribute('role', 'alert');
     form.appendChild(errorArea);
 
@@ -258,7 +258,7 @@ export async function renderRevealPage(
     const submitButton = document.createElement('button');
     submitButton.type = 'submit';
     submitButton.className =
-      'w-full bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+      'w-full bg-accent text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
     submitButton.textContent = 'Verify Password';
     form.appendChild(submitButton);
 
@@ -310,7 +310,7 @@ export async function renderRevealPage(
           attemptText.textContent = remaining === 1
             ? '1 attempt remaining'
             : `${remaining} attempts remaining`;
-          attemptText.className = `text-sm font-medium mb-6 ${remaining <= 1 ? 'text-danger-500' : 'text-warning-500'}`;
+          attemptText.className = `text-sm font-medium mb-6 ${remaining <= 1 ? 'text-danger' : 'text-warning'}`;
 
           // Show error message
           errorArea.textContent = remaining === 1
@@ -363,19 +363,19 @@ function renderRevealedSecret(
 
   // Heading
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
+  heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
   heading.textContent = 'Secret Revealed';
 
   // Destruction notice
   const notice = document.createElement('p');
-  notice.className = 'text-gray-500 mb-6';
+  notice.className = 'text-text-muted mb-6';
   notice.textContent =
     'This secret has been permanently destroyed from our servers.';
 
   // Secret display area -- uses textContent for XSS prevention
   const pre = document.createElement('pre');
   pre.className =
-    'whitespace-pre-wrap break-words overflow-x-hidden bg-white border border-gray-200 rounded-lg p-4 text-sm font-mono max-h-96 overflow-y-auto mb-6';
+    'whitespace-pre-wrap break-words overflow-x-hidden bg-surface border border-border rounded-lg p-4 text-sm font-mono max-h-96 overflow-y-auto mb-6';
   pre.textContent = plaintext; // NEVER use innerHTML
 
   // Copy button
@@ -390,7 +390,7 @@ function renderRevealedSecret(
   const newSecretLink = document.createElement('a');
   newSecretLink.href = '/';
   newSecretLink.className =
-    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded font-medium transition-colors';
+    'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:outline-hidden rounded font-medium transition-colors';
   newSecretLink.textContent = 'Create a New Secret';
   newSecretLink.addEventListener('click', (e) => {
     e.preventDefault();

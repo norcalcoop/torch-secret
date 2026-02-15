@@ -87,19 +87,19 @@ export function renderErrorPage(
 
   // Heading
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900 mb-3';
+  heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
   heading.textContent = config.heading;
 
   // Description
   const message = document.createElement('p');
-  message.className = 'text-gray-500 mb-8 max-w-md';
+  message.className = 'text-text-muted mb-8 max-w-md';
   message.textContent = config.message;
 
   // Back link
   const link = document.createElement('a');
   link.href = '/';
   link.className =
-    'inline-flex items-center gap-2 px-6 py-3 min-h-[44px] rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors font-medium';
+    'inline-flex items-center gap-2 px-6 py-3 min-h-[44px] rounded-lg bg-accent text-white hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors font-medium';
   link.textContent = 'Create a New Secret';
   link.addEventListener('click', (e) => {
     e.preventDefault();

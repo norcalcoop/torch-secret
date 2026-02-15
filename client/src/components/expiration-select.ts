@@ -27,7 +27,7 @@ export function createExpirationSelect(): HTMLSelectElement {
   const select = document.createElement('select');
   select.id = 'expiration';
   select.className =
-    'w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 focus:outline-hidden';
+    'w-full min-h-[44px] px-3 py-2 border border-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
 
   for (const option of EXPIRATION_OPTIONS) {
     const opt = document.createElement('option');

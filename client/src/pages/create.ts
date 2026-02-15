@@ -31,11 +31,11 @@ export async function renderCreatePage(
   header.className = 'text-center space-y-2';
 
   const heading = document.createElement('h1');
-  heading.className = 'text-2xl sm:text-3xl font-bold text-gray-900';
+  heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary';
   heading.textContent = 'Share a Secret';
 
   const subtext = document.createElement('p');
-  subtext.className = 'text-gray-500';
+  subtext.className = 'text-text-muted';
   subtext.textContent =
     'End-to-end encrypted. One-time view. No accounts.';
 
@@ -54,7 +54,7 @@ export async function renderCreatePage(
 
   const textareaLabel = document.createElement('label');
   textareaLabel.htmlFor = 'secret-text';
-  textareaLabel.className = 'block text-sm font-medium text-gray-700';
+  textareaLabel.className = 'block text-sm font-medium text-text-secondary';
   textareaLabel.textContent = 'Your secret';
 
   const textarea = document.createElement('textarea');
@@ -64,19 +64,19 @@ export async function renderCreatePage(
   textarea.rows = 6;
   textarea.required = true;
   textarea.className =
-    'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden resize-y';
+    'w-full px-3 py-2 border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden resize-y';
 
   const counter = document.createElement('div');
-  counter.className = 'text-right text-sm text-gray-500';
+  counter.className = 'text-right text-sm text-text-muted';
   counter.textContent = `0 / ${MAX_LENGTH.toLocaleString()}`;
 
   textarea.addEventListener('input', () => {
     const len = textarea.value.length;
     counter.textContent = `${len.toLocaleString()} / ${MAX_LENGTH.toLocaleString()}`;
     if (len >= MAX_LENGTH) {
-      counter.classList.add('text-danger-500');
+      counter.classList.add('text-danger');
     } else {
-      counter.classList.remove('text-danger-500');
+      counter.classList.remove('text-danger');
     }
   });
 
@@ -91,7 +91,7 @@ export async function renderCreatePage(
 
   const expirationLabel = document.createElement('label');
   expirationLabel.htmlFor = 'expiration';
-  expirationLabel.className = 'block text-sm font-medium text-gray-700';
+  expirationLabel.className = 'block text-sm font-medium text-text-secondary';
   expirationLabel.textContent = 'Expires after';
 
   const expirationSelect = createExpirationSelect();
@@ -102,11 +102,11 @@ export async function renderCreatePage(
 
   // -- Advanced options (password protection) --
   const details = document.createElement('details');
-  details.className = 'border border-gray-200 rounded-lg';
+  details.className = 'border border-border rounded-lg';
 
   const summary = document.createElement('summary');
   summary.className =
-    'px-4 py-3 min-h-[44px] text-sm font-medium text-gray-600 cursor-pointer select-none focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded-lg';
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
   summary.textContent = 'Advanced options';
 
   const detailsContent = document.createElement('div');
@@ -114,7 +114,7 @@ export async function renderCreatePage(
 
   const passwordLabel = document.createElement('label');
   passwordLabel.htmlFor = 'password';
-  passwordLabel.className = 'block text-sm font-medium text-gray-700';
+  passwordLabel.className = 'block text-sm font-medium text-text-secondary';
   passwordLabel.textContent = 'Password protection';
 
   const passwordInput = document.createElement('input');
@@ -124,7 +124,7 @@ export async function renderCreatePage(
   passwordInput.maxLength = 128;
   passwordInput.autocomplete = 'new-password';
   passwordInput.className =
-    'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden';
+    'w-full px-3 py-2 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
 
   detailsContent.appendChild(passwordLabel);
   detailsContent.appendChild(passwordInput);
@@ -135,7 +135,7 @@ export async function renderCreatePage(
   // -- Error display area --
   const errorArea = document.createElement('div');
   errorArea.className =
-    'hidden px-4 py-3 rounded-lg bg-danger-500/10 text-danger-500 text-sm';
+    'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
   errorArea.setAttribute('role', 'alert');
   form.appendChild(errorArea);
 
@@ -143,7 +143,7 @@ export async function renderCreatePage(
   const submitButton = document.createElement('button');
   submitButton.type = 'submit';
   submitButton.className =
-    'w-full min-h-[44px] py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full min-h-[44px] py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 
@@ -234,12 +234,12 @@ function showError(errorArea: HTMLElement, message: string): void {
 function createHowItWorksSection(): HTMLElement {
   const section = document.createElement('section');
   section.setAttribute('aria-labelledby', 'how-it-works-heading');
-  section.className = 'mt-12 pt-8 border-t border-gray-200';
+  section.className = 'mt-12 pt-8 border-t border-border';
 
   const heading = document.createElement('h2');
   heading.id = 'how-it-works-heading';
   heading.className =
-    'text-xl sm:text-2xl font-bold text-gray-900 text-center mb-8';
+    'text-xl sm:text-2xl font-heading font-semibold text-text-primary text-center mb-8';
   heading.textContent = 'How It Works';
   section.appendChild(heading);
 
@@ -273,16 +273,16 @@ function createHowItWorksSection(): HTMLElement {
 
     const circle = document.createElement('div');
     circle.className =
-      'w-10 h-10 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center mx-auto text-lg';
+      'w-10 h-10 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center mx-auto text-lg';
     circle.textContent = step.number;
     circle.setAttribute('aria-hidden', 'true');
 
     const title = document.createElement('h3');
-    title.className = 'font-semibold text-gray-900';
+    title.className = 'font-semibold text-text-primary';
     title.textContent = step.title;
 
     const description = document.createElement('p');
-    description.className = 'text-sm text-gray-600 leading-relaxed';
+    description.className = 'text-sm text-text-tertiary leading-relaxed';
     description.textContent = step.description;
 
     card.appendChild(circle);
