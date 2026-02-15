@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 8 - Tech Debt Cleanup. Planned, ready to execute.
+**Current focus:** All phases complete. Project ready for deployment.
 
 ## Current Position
 
-Phase: 8 of 8 (Tech Debt Cleanup) -- IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Plan 08-01 complete (test flakiness fix). Plan 08-02 remaining.
-Last activity: 2026-02-15 -- Completed 08-01-PLAN.md
+Phase: 8 of 8 (Tech Debt Cleanup) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: All plans complete. Phase 8 done. All 8 phases finished.
+Last activity: 2026-02-15 -- Completed 08-02-PLAN.md
 
-Progress: [█████████░] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 22
 - Average duration: 3min
-- Total execution time: 1.05 hours
+- Total execution time: 1.08 hours
 
 **By Phase:**
 
@@ -34,10 +34,10 @@ Progress: [█████████░] 95%
 | 05-password-protection | 3 | 8min | 3min |
 | 06-expiration-worker | 2 | 10min | 5min |
 | 07-trust-and-accessibility | 2 | 8min | 4min |
-| 08-tech-debt-cleanup | 1 | 1min | 1min |
+| 08-tech-debt-cleanup | 2 | 3min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 8min, 2min, 3min, 5min, 1min
+- Last 5 plans: 2min, 3min, 5min, 1min, 2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -125,6 +125,9 @@ Recent decisions affecting current work:
 - [07-02]: vitest-axe matchers extended manually via expect.extend (extend-expect entry point empty in vitest-axe 0.1.0)
 - [08-01]: Projects-based vitest config over workspace split for single-file simplicity
 - [08-01]: fileParallelism: false for server project only (client retains parallel for speed)
+- [08-02]: text-gray-500 for counter (4.84:1 ratio) over text-gray-600 to maintain visual hierarchy distinction from body text
+- [08-02]: passOnStoreError: true to prefer availability over strict rate enforcement during Redis outages
+- [08-02]: Redis client created once in buildApp() and injected through router factory to limiter factories
 
 ### Roadmap Evolution
 
@@ -142,5 +145,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 08-01-PLAN.md (Test flakiness fix)
+Stopped at: Completed 08-02-PLAN.md (WCAG counter contrast and Redis rate limiting) -- ALL 8 PHASES COMPLETE
 Resume file: None
