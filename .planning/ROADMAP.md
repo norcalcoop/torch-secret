@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Frontend Create and Reveal** - Full user-facing flow from secret creation through one-time retrieval with two-step reveal
 - [x] **Phase 5: Password Protection** - Optional password layer with server-side hashing, attempt limiting, and auto-destroy
 - [x] **Phase 6: Expiration Worker** - Background cleanup job and expired secret handling
-- [ ] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
+- [x] **Phase 7: Trust and Accessibility** - "How it works" trust content and WCAG 2.1 AA compliance
 
 ## Phase Details
 
@@ -132,8 +132,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — SPA accessibility infrastructure: skip link, landmarks, route announcements, ARIA fixes, outline-hidden migration
-- [ ] 07-02-PLAN.md — "How It Works" trust section, vitest-axe accessibility tests, and color contrast verification
+- [x] 07-01-PLAN.md — SPA accessibility infrastructure: skip link, landmarks, route announcements, ARIA fixes, outline-hidden migration
+- [x] 07-02-PLAN.md — "How It Works" trust section, vitest-axe accessibility tests, and color contrast verification
 
 ## Progress
 
@@ -149,4 +149,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
 | 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
 | 6. Expiration Worker | 2/2 | ✓ Complete | 2026-02-14 |
-| 7. Trust and Accessibility | 0/2 | Not started | - |
+| 7. Trust and Accessibility | 2/2 | ✓ Complete | 2026-02-15 |
