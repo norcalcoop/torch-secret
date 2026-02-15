@@ -67,7 +67,7 @@ export async function renderCreatePage(
     'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden resize-y';
 
   const counter = document.createElement('div');
-  counter.className = 'text-right text-sm text-gray-400';
+  counter.className = 'text-right text-sm text-gray-500';
   counter.textContent = `0 / ${MAX_LENGTH.toLocaleString()}`;
 
   textarea.addEventListener('input', () => {

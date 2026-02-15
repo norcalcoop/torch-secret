@@ -1,21 +1,36 @@
-import { rateLimit } from 'express-rate-limit';
+import { type Store, rateLimit } from 'express-rate-limit';
+import { RedisStore, type RedisReply } from 'rate-limit-redis';
+import type { Redis } from 'ioredis';
+
+/**
+ * Create a RedisStore for rate limiting when a Redis client is provided,
+ * otherwise return undefined to use the default MemoryStore.
+ *
+ * passOnStoreError is handled at the rateLimit() call site, not here.
+ */
+function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
+  if (!redisClient) return undefined; // MemoryStore (default)
+  return new RedisStore({
+    sendCommand: (...args: string[]) =>
+      redisClient.call(...args) as Promise<RedisReply>,
+    prefix: prefix ?? 'rl:',
+  });
+}
 
 /**
  * Create a rate limiter for POST /api/secrets.
  *
- * Returns a fresh middleware instance with its own MemoryStore.
- * This factory pattern ensures each Express app (including test
- * instances) gets an independent rate limit counter.
+ * Returns a fresh middleware instance. Uses RedisStore when a Redis
+ * client is provided (multi-instance deployments), otherwise falls
+ * back to MemoryStore (default). passOnStoreError ensures requests
+ * are allowed through if Redis is temporarily unavailable.
  *
  * Allows max 10 secret creations per IP per hour.
  * Applied as route-level middleware (NOT global) so that
  * GET /api/secrets/:id remains unrestricted -- retrieving
  * a secret is a one-time operation, not abuse-prone.
- *
- * Uses MemoryStore (default). For multi-instance production
- * deployments, swap to rate-limit-redis + ioredis.
  */
-export function createSecretLimiter() {
+export function createSecretLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     limit: 10, // 10 requests per window per IP
@@ -26,6 +41,8 @@ export function createSecretLimiter() {
       error: 'rate_limited',
       message: 'Too many secrets created. Please try again later.',
     },
+    store: createStore(redisClient, 'rl:create:'),
+    passOnStoreError: true,
     // Default keyGenerator uses req.ip, which works correctly with trust proxy
   });
 }
@@ -33,15 +50,16 @@ export function createSecretLimiter() {
 /**
  * Create a rate limiter for POST /api/secrets/:id/verify.
  *
- * Returns a fresh middleware instance with its own MemoryStore.
- * Stricter than createSecretLimiter -- defense-in-depth on top of
- * the per-secret 3-attempt auto-destroy limit.
+ * Returns a fresh middleware instance. Uses RedisStore when a Redis
+ * client is provided, otherwise falls back to MemoryStore.
+ * passOnStoreError ensures requests are allowed through if Redis
+ * is temporarily unavailable.
  *
  * Allows max 15 password verification attempts per IP per 15 minutes
  * across ALL secrets (not per-secret). Prevents brute-force campaigns
  * even when targeting multiple secrets.
  */
-export function verifySecretLimiter() {
+export function verifySecretLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     limit: 15, // 15 attempts per window per IP
@@ -52,5 +70,7 @@ export function verifySecretLimiter() {
       error: 'rate_limited',
       message: 'Too many password attempts. Please try again later.',
     },
+    store: createStore(redisClient, 'rl:verify:'),
+    passOnStoreError: true,
   });
 }

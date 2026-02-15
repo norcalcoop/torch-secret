@@ -1,10 +1,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
+import { Redis } from 'ioredis';
 import { cspNonceMiddleware, createHelmetMiddleware, httpsRedirect } from './middleware/security.js';
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createSecretsRouter } from './routes/secrets.js';
+import { env } from './config/env.js';
 
 /**
  * Express app factory.
@@ -26,6 +28,12 @@ import { createSecretsRouter } from './routes/secrets.js';
 export function buildApp() {
   const app = express();
 
+  // Create Redis client for distributed rate limiting (opt-in via REDIS_URL)
+  let redisClient: InstanceType<typeof Redis> | undefined;
+  if (env.REDIS_URL) {
+    redisClient = new Redis(env.REDIS_URL);
+  }
+
   // Trust first proxy hop (enables correct req.ip for rate limiting
   // and req.secure for HTTPS redirect behind reverse proxy)
   app.set('trust proxy', 1);
@@ -46,7 +54,7 @@ export function buildApp() {
   app.use(express.json({ limit: '100kb' }));
 
   // Mount API routes (factory creates fresh router + rate limiter per app)
-  app.use('/api/secrets', createSecretsRouter());
+  app.use('/api/secrets', createSecretsRouter(redisClient));
 
   // Serve built frontend assets in production (or when client/dist exists)
   const clientDistPath = resolve(import.meta.dirname, '../../client/dist');

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Redis } from 'ioredis';
 import { validateBody, validateParams } from '../middleware/validate.js';
 import { createSecretLimiter, verifySecretLimiter } from '../middleware/rate-limit.js';
 import {
@@ -35,7 +36,7 @@ const SECRET_NOT_AVAILABLE = {
  * 3. POST /:id/verify (password verification -- MUST be before GET /:id)
  * 4. GET /:id       (retrieve and destroy -- catch-all for :id)
  */
-export function createSecretsRouter() {
+export function createSecretsRouter(redisClient?: Redis) {
   const router = Router();
 
   /**
@@ -46,7 +47,7 @@ export function createSecretsRouter() {
    */
   router.post(
     '/',
-    createSecretLimiter(),
+    createSecretLimiter(redisClient),
     validateBody(CreateSecretSchema),
     async (req, res) => {
       const secret = await createSecret(
@@ -96,7 +97,7 @@ export function createSecretsRouter() {
    */
   router.post(
     '/:id/verify',
-    verifySecretLimiter(),
+    verifySecretLimiter(redisClient),
     validateParams(SecretIdParamSchema),
     validateBody(VerifySecretSchema),
     async (req, res) => {
