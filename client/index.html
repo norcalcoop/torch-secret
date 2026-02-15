@@ -17,7 +17,29 @@
     </a>
     <div id="route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <main id="main-content">
-      <div id="app" class="max-w-2xl mx-auto px-4 py-8"></div>
+      <div id="app" class="max-w-2xl mx-auto px-4 py-8">
+        <noscript>
+          <div style="max-width: 36rem; margin: 2rem auto; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; color: #e8e4f0; line-height: 1.6;">
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #f0ecf8;">SecureShare</h1>
+            <p style="margin-bottom: 0.75rem;">
+              Share secrets securely with zero-knowledge, one-time encrypted links.
+              Your secret is encrypted entirely in your browser before it ever reaches our server.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              <strong>How it works:</strong> Paste your secret, get an encrypted link, share it.
+              The recipient views it once, then it's permanently destroyed. No accounts required.
+            </p>
+            <p style="margin-bottom: 0.75rem; padding: 0.75rem; border-left: 3px solid #4d8bf5; background: rgba(77, 139, 245, 0.1);">
+              <strong>Security:</strong> AES-256-GCM encryption. The encryption key lives only in the URL fragment
+              and never reaches the server. Even a complete database breach reveals nothing.
+            </p>
+            <p style="color: #a89ec4; font-size: 0.875rem; margin-top: 1rem;">
+              JavaScript is required to use SecureShare. Encryption and decryption
+              happen entirely in your browser using the Web Crypto API.
+            </p>
+          </div>
+        </noscript>
+      </div>
     </main>
     <script type="module" src="/src/app.ts"></script>
   </body>
