@@ -20,7 +20,7 @@ export function createCopyButton(
   button.textContent = defaultLabel;
   button.type = 'button';
   button.className =
-    'inline-flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer';
+    'inline-flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer';
 
   button.addEventListener('click', async () => {
     const text = getText();
@@ -34,9 +34,11 @@ export function createCopyButton(
         fallbackCopy(text);
         showSuccess(button, defaultLabel);
       } catch {
+        button.setAttribute('aria-live', 'polite');
         button.textContent = 'Failed to copy';
         setTimeout(() => {
           button.textContent = defaultLabel;
+          button.removeAttribute('aria-live');
         }, 2000);
       }
     }
@@ -49,11 +51,13 @@ export function createCopyButton(
  * Show "Copied!" feedback on the button, then restore after 2 seconds.
  */
 function showSuccess(button: HTMLButtonElement, defaultLabel: string): void {
+  button.setAttribute('aria-live', 'polite');
   button.textContent = 'Copied!';
   button.classList.add('text-success-500');
   setTimeout(() => {
     button.textContent = defaultLabel;
     button.classList.remove('text-success-500');
+    button.removeAttribute('aria-live');
   }, 2000);
 }
 

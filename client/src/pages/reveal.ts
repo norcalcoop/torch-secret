@@ -144,10 +144,11 @@ export async function renderRevealPage(
     wrapper.className =
       'flex flex-col items-center justify-center text-center py-16 px-4';
 
-    // Shield/lock icon
+    // Shield/lock icon (decorative, hidden from screen readers)
     const icon = document.createElement('div');
     icon.className = 'text-6xl mb-6';
     icon.textContent = '\u{1F6E1}\u{FE0F}'; // Shield
+    icon.setAttribute('aria-hidden', 'true');
 
     // Heading
     const heading = document.createElement('h1');
@@ -164,7 +165,7 @@ export async function renderRevealPage(
     const button = document.createElement('button');
     button.type = 'button';
     button.className =
-      'bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer';
+      'bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer';
     button.textContent = 'Reveal Secret';
     button.addEventListener('click', handleReveal);
 
@@ -194,10 +195,11 @@ export async function renderRevealPage(
     wrapper.className =
       'flex flex-col items-center justify-center text-center py-16 px-4';
 
-    // Lock icon (matching interstitial style)
+    // Lock icon (matching interstitial style, decorative)
     const icon = document.createElement('div');
     icon.className = 'text-6xl mb-6';
     icon.textContent = '\u{1F512}'; // Lock
+    icon.setAttribute('aria-hidden', 'true');
 
     // Heading
     const heading = document.createElement('h1');
@@ -237,8 +239,9 @@ export async function renderRevealPage(
     passwordInput.placeholder = 'Enter password';
     passwordInput.maxLength = 128;
     passwordInput.required = true;
+    passwordInput.autocomplete = 'current-password';
     passwordInput.className =
-      'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none';
+      'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden';
 
     inputGroup.appendChild(passwordLabel);
     inputGroup.appendChild(passwordInput);
@@ -255,7 +258,7 @@ export async function renderRevealPage(
     const submitButton = document.createElement('button');
     submitButton.type = 'submit';
     submitButton.className =
-      'w-full bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+      'w-full bg-primary-600 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
     submitButton.textContent = 'Verify Password';
     form.appendChild(submitButton);
 
@@ -387,7 +390,7 @@ function renderRevealedSecret(
   const newSecretLink = document.createElement('a');
   newSecretLink.href = '/';
   newSecretLink.className =
-    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-none rounded font-medium transition-colors';
+    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded font-medium transition-colors';
   newSecretLink.textContent = 'Create a New Secret';
   newSecretLink.addEventListener('click', (e) => {
     e.preventDefault();

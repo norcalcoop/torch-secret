@@ -14,11 +14,14 @@
 export function createLoadingSpinner(message?: string): HTMLDivElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'flex flex-col items-center justify-center gap-3 py-12';
+  wrapper.setAttribute('role', 'status');
+  wrapper.setAttribute('aria-live', 'polite');
 
-  // Spinner: a spinning border-based circle
+  // Spinner: a spinning border-based circle (decorative, hidden from screen readers)
   const spinner = document.createElement('div');
   spinner.className =
-    'h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600';
+    'h-10 w-10 animate-spin motion-reduce:animate-none rounded-full border-4 border-primary-200 border-t-primary-600';
+  spinner.setAttribute('aria-hidden', 'true');
 
   // Message text below the spinner
   const text = document.createElement('p');

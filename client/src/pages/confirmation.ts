@@ -8,7 +8,7 @@
  */
 
 import { createCopyButton } from '../components/copy-button.js';
-import { navigate } from '../router.js';
+import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
 
 /**
  * Render the confirmation page after successful secret creation.
@@ -25,6 +25,9 @@ export function renderConfirmationPage(
   shareUrl: string,
   expiresAt: string,
 ): void {
+  // Update page title and announce to screen readers
+  updatePageMeta('Your Secure Link is Ready');
+
   // Clear existing content
   while (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -49,6 +52,7 @@ export function renderConfirmationPage(
   svg.setAttribute('stroke-width', '2');
   svg.setAttribute('stroke-linecap', 'round');
   svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('w-8', 'h-8', 'text-success-500');
 
   // Shield with checkmark path
@@ -99,7 +103,7 @@ export function renderConfirmationPage(
   urlInput.readOnly = true;
   urlInput.value = shareUrl;
   urlInput.className =
-    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-gray-50 text-gray-700 text-sm font-mono border-none focus:outline-none select-all';
+    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-gray-50 text-gray-700 text-sm font-mono border-none focus:outline-hidden select-all';
 
   // Select all text on focus for easy manual copying
   urlInput.addEventListener('focus', () => {
@@ -138,7 +142,7 @@ export function renderConfirmationPage(
   const createAnotherButton = document.createElement('button');
   createAnotherButton.type = 'button';
   createAnotherButton.className =
-    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-none rounded font-medium transition-colors cursor-pointer';
+    'inline-block min-h-[44px] py-2 text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded font-medium transition-colors cursor-pointer';
   createAnotherButton.textContent = 'Create Another Secret';
   createAnotherButton.addEventListener('click', () => {
     navigate('/');
@@ -146,4 +150,7 @@ export function renderConfirmationPage(
   wrapper.appendChild(createAnotherButton);
 
   container.appendChild(wrapper);
+
+  // Move focus to heading for screen reader users
+  focusPageHeading();
 }

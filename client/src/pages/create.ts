@@ -64,7 +64,7 @@ export async function renderCreatePage(
   textarea.rows = 6;
   textarea.required = true;
   textarea.className =
-    'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none resize-y';
+    'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden resize-y';
 
   const counter = document.createElement('div');
   counter.className = 'text-right text-sm text-gray-400';
@@ -106,7 +106,7 @@ export async function renderCreatePage(
 
   const summary = document.createElement('summary');
   summary.className =
-    'px-4 py-3 min-h-[44px] text-sm font-medium text-gray-600 cursor-pointer select-none focus:ring-2 focus:ring-primary-500 focus:outline-none rounded-lg';
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-gray-600 cursor-pointer select-none focus:ring-2 focus:ring-primary-500 focus:outline-hidden rounded-lg';
   summary.textContent = 'Advanced options';
 
   const detailsContent = document.createElement('div');
@@ -122,8 +122,9 @@ export async function renderCreatePage(
   passwordInput.id = 'password';
   passwordInput.placeholder = 'Optional password';
   passwordInput.maxLength = 128;
+  passwordInput.autocomplete = 'new-password';
   passwordInput.className =
-    'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none';
+    'w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-hidden';
 
   detailsContent.appendChild(passwordLabel);
   detailsContent.appendChild(passwordInput);
@@ -142,7 +143,7 @@ export async function renderCreatePage(
   const submitButton = document.createElement('button');
   submitButton.type = 'submit';
   submitButton.className =
-    'w-full min-h-[44px] py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-none transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full min-h-[44px] py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 
