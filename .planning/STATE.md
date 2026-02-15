@@ -78,5 +78,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 10-02-PLAN.md — Phase 10 fully complete, Phase 11 next
-Resume file: None
+Stopped at: Phase 11 context gathered
+Resume file: .planning/phases/11-layout-shell-component-migration/11-CONTEXT.md
