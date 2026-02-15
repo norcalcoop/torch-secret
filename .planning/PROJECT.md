@@ -27,7 +27,17 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ### Active
 
-(None — v1.0 shipped. Define next milestone requirements with `/gsd:new-milestone`)
+**Current Milestone: v2.0 Developer-Grade UI & SEO**
+
+**Goal:** Transform SecureShare's visual identity into a polished, dark-themed developer tool with full SEO infrastructure — same zero-knowledge functionality, professional presentation.
+
+**Target features:**
+- Dark terminal-inspired theme with glassmorphism cards and dot-grid background
+- Monospace typography for headings, Lucide SVG icons replacing emoji
+- Persistent brand header + trust footer across all pages
+- Code-block styling for revealed secrets, micro-interactions
+- Complete SEO infrastructure (meta tags, OG/Twitter cards, favicons, robots.txt, sitemap, JSON-LD, web manifest)
+- Enhanced UI: textarea security indicator, "Why Trust Us?" section, destruction confirmation badge
 
 ### Out of Scope
 
@@ -76,4 +86,4 @@ Redis-backed rate limiting with MemoryStore fallback for single-instance deploym
 | Projects-based vitest config | Single-file config with sequential server tests; eliminated flaky tests | ✓ Good |
 
 ---
-*Last updated: 2026-02-15 after v1.0 milestone*
+*Last updated: 2026-02-14 after v2.0 milestone started*
