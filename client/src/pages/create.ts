@@ -213,6 +213,7 @@ export async function renderCreatePage(
   });
 
   wrapper.appendChild(form);
+  wrapper.appendChild(createHowItWorksSection());
   container.appendChild(wrapper);
 }
 
@@ -222,4 +223,74 @@ export async function renderCreatePage(
 function showError(errorArea: HTMLElement, message: string): void {
   errorArea.textContent = message;
   errorArea.classList.remove('hidden');
+}
+
+/**
+ * Build the "How It Works" trust section explaining zero-knowledge encryption.
+ *
+ * Three steps: browser encryption, encrypted storage, one-time destruction.
+ * Placed below the form to build user confidence before they share a secret.
+ */
+function createHowItWorksSection(): HTMLElement {
+  const section = document.createElement('section');
+  section.setAttribute('aria-labelledby', 'how-it-works-heading');
+  section.className = 'mt-12 pt-8 border-t border-gray-200';
+
+  const heading = document.createElement('h2');
+  heading.id = 'how-it-works-heading';
+  heading.className =
+    'text-xl sm:text-2xl font-bold text-gray-900 text-center mb-8';
+  heading.textContent = 'How It Works';
+  section.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-6';
+
+  const steps: Array<{ number: string; title: string; description: string }> = [
+    {
+      number: '1',
+      title: 'Encrypted in Your Browser',
+      description:
+        'Your secret is encrypted on your device before anything is sent. The encryption key stays in your browser and never reaches our server.',
+    },
+    {
+      number: '2',
+      title: 'Stored Encrypted',
+      description:
+        'Our server only sees scrambled data it cannot read. Even a complete database breach would reveal nothing.',
+    },
+    {
+      number: '3',
+      title: 'View Once, Then Destroyed',
+      description:
+        'The recipient decrypts the secret in their browser using the key in the link. After viewing, the encrypted data is permanently deleted.',
+    },
+  ];
+
+  for (const step of steps) {
+    const card = document.createElement('div');
+    card.className = 'text-center space-y-2';
+
+    const circle = document.createElement('div');
+    circle.className =
+      'w-10 h-10 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center mx-auto text-lg';
+    circle.textContent = step.number;
+    circle.setAttribute('aria-hidden', 'true');
+
+    const title = document.createElement('h3');
+    title.className = 'font-semibold text-gray-900';
+    title.textContent = step.title;
+
+    const description = document.createElement('p');
+    description.className = 'text-sm text-gray-600 leading-relaxed';
+    description.textContent = step.description;
+
+    card.appendChild(circle);
+    card.appendChild(title);
+    card.appendChild(description);
+    grid.appendChild(card);
+  }
+
+  section.appendChild(grid);
+  return section;
 }
