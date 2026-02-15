@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity -- the secret is encrypted in the browser, viewable only once, then permanently destroyed.
-**Current focus:** Phase 7 COMPLETE - Trust and Accessibility. All plans complete. All 7 phases done.
+**Current focus:** Phase 8 - Tech Debt Cleanup. Planned, ready to execute.
 
 ## Current Position
 
-Phase: 7 of 7 (Trust and Accessibility) -- ALL PHASES COMPLETE
-Plan: 2 of 2 in current phase -- COMPLETE
-Status: All 7 phases complete. How It Works trust section, vitest-axe accessibility tests, and WCAG 2.1 AA color contrast verified.
-Last activity: 2026-02-15 -- Completed 07-02-PLAN.md (Trust content and accessibility verification)
+Phase: 8 of 8 (Tech Debt Cleanup) -- IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Plan 08-01 complete (test flakiness fix). Plan 08-02 remaining.
+Last activity: 2026-02-15 -- Completed 08-01-PLAN.md
 
-Progress: [██████████] 100%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Average duration: 3min
-- Total execution time: 1.03 hours
+- Total execution time: 1.05 hours
 
 **By Phase:**
 
@@ -34,9 +34,10 @@ Progress: [██████████] 100%
 | 05-password-protection | 3 | 8min | 3min |
 | 06-expiration-worker | 2 | 10min | 5min |
 | 07-trust-and-accessibility | 2 | 8min | 4min |
+| 08-tech-debt-cleanup | 1 | 1min | 1min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 8min, 2min, 3min, 5min
+- Last 5 plans: 8min, 2min, 3min, 5min, 1min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -122,6 +123,12 @@ Recent decisions affecting current work:
 - [07-02]: Explicit @vitest-environment happy-dom comment directive for DOM-based test files (environmentMatchGlobs unreliable in vitest 4.x for nested paths)
 - [07-02]: Number circles decorative (aria-hidden=true) since h3 headings convey step meaning
 - [07-02]: vitest-axe matchers extended manually via expect.extend (extend-expect entry point empty in vitest-axe 0.1.0)
+- [08-01]: Projects-based vitest config over workspace split for single-file simplicity
+- [08-01]: fileParallelism: false for server project only (client retains parallel for speed)
+
+### Roadmap Evolution
+
+- Phase 8 added: Tech Debt Cleanup — fix flaky expiration worker test, bump character counter contrast to WCAG AA, add test isolation (beforeEach table truncation), migrate rate limiting to Redis-backed store
 
 ### Pending Todos
 
@@ -135,5 +142,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 07-02-PLAN.md (Trust content and accessibility verification) -- ALL PHASES COMPLETE
+Stopped at: Completed 08-01-PLAN.md (Test flakiness fix)
 Resume file: None
