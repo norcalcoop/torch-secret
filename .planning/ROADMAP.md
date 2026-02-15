@@ -129,10 +129,11 @@ Plans:
   1. The landing page includes a "How it works" section that explains zero-knowledge encryption in plain language without technical jargon
   2. All interactive elements are keyboard-navigable and screen-reader accessible
   3. Color contrast meets WCAG 2.1 AA minimum ratios (4.5:1 for normal text, 3:1 for large text)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md — SPA accessibility infrastructure: skip link, landmarks, route announcements, ARIA fixes, outline-hidden migration
+- [ ] 07-02-PLAN.md — "How It Works" trust section, vitest-axe accessibility tests, and color contrast verification
 
 ## Progress
 
@@ -148,4 +149,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Frontend Create and Reveal | 4/4 | ✓ Complete | 2026-02-14 |
 | 5. Password Protection | 3/3 | ✓ Complete | 2026-02-14 |
 | 6. Expiration Worker | 2/2 | ✓ Complete | 2026-02-14 |
-| 7. Trust and Accessibility | 0/TBD | Not started | - |
+| 7. Trust and Accessibility | 0/2 | Not started | - |
