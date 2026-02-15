@@ -1,354 +1,612 @@
-# Pitfalls Research
+# Domain Pitfalls: Dark Theme, SVG Icons, Animations, and SEO for a Security-Focused SPA
 
-**Domain:** Zero-knowledge, client-side encrypted, one-time secret sharing web application
-**Researched:** 2026-02-13
-**Confidence:** HIGH (multiple sources corroborate; real-world CVEs and documented bypass issues from PrivateBin, OneTimeSecret, and similar projects)
+**Domain:** UI redesign and SEO infrastructure for a zero-knowledge secret sharing application
+**Researched:** 2026-02-15
+**Confidence:** HIGH for CSP/accessibility integration pitfalls, MEDIUM for performance and SEO specifics
+**Scope:** Pitfalls specific to ADDING dark theme, animations, SVG icons, and SEO to an existing app with strict CSP nonce-based headers, WCAG 2.1 AA compliance, and zero-knowledge security requirements
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Self-Destruct Bypass via Ciphertext Interception
+Mistakes that cause security regressions, break existing compliance, or require rework of the approach.
+
+### Pitfall 1: SVG Inline `style` Attributes Blocked by CSP -- Silent Visual Breakage
 
 **What goes wrong:**
-The one-time "burn after reading" mechanism is defeated by an intermediary (man-in-the-middle, link-preview bot, or malicious proxy) that fetches the ciphertext before the intended recipient, stores it offline, then forwards the original link. The recipient opens the link, JavaScript triggers deletion, and both parties believe the secret was delivered securely. Meanwhile the interceptor already has the ciphertext AND the key (from the URL fragment in the shared message) and can decrypt at leisure.
+SVG elements exported from design tools (Figma, Illustrator, Inkscape) embed presentation styles as inline `style` attributes (e.g., `style="fill:#1a1a2e;stroke-width:2"`). SecureShare's CSP header sets `style-src 'self' 'nonce-...'` with no `'unsafe-inline'`. Inline `style` attributes on SVG elements are governed by `style-src-attr` (which falls back to `style-src`), and since there is no `'unsafe-inline'` in the policy, all inline style attributes are blocked.
+
+The failure mode is **silent**: browsers do not render the style but often do not log console errors for every blocked style attribute (Firefox bug 1262842 confirms silent blocking). SVGs appear as unstyled black shapes or invisible elements. The developer sees correct rendering in Vite dev mode (where CSP is not enforced) and the breakage only surfaces in production or when testing against the Express server.
 
 **Why it happens:**
-If the server delivers the ciphertext in the initial page payload (embedded in HTML), any HTTP client (curl, wget, link-preview bots in Slack/Teams/Skype) can retrieve it without triggering the JavaScript-based deletion. The decryption key lives in the URL fragment, which was already shared in the same channel as the link. This is PrivateBin's documented Issue #174 -- the fundamental flaw in client-side-only self-destruct.
+- Design tool exports use `style` attributes rather than SVG presentation attributes (`fill`, `stroke`, `stroke-width` as direct element attributes)
+- Developers add SVGs via `innerHTML` or by inlining SVG strings, not realizing that CSP treats `style` attributes differently from `<style>` elements
+- Vite dev server does not enforce the same CSP headers as the Express production server, so violations are invisible during development
 
-**How to avoid:**
-1. Never embed ciphertext in the initial HTML response. The first request should serve only the application shell.
-2. Require a separate, explicit API call (triggered by user action such as clicking "Reveal Secret") to fetch the ciphertext. Delete the secret server-side atomically as part of that same API call -- use a database transaction that SELECTs the row with `FOR UPDATE SKIP LOCKED` and DELETEs it in one operation, returning the ciphertext only if the delete succeeds.
-3. This two-step approach means bots and curl fetch only the app shell (no ciphertext), and the actual retrieval-plus-deletion is atomic.
-4. For password-protected secrets, require the password in the retrieval API call. Validate the password BEFORE returning ciphertext, but decrement the attempt counter regardless.
+**Consequences:**
+- SVG icons render as blank/invisible rectangles in production
+- Shield, lock, and other security-themed icons disappear, destroying the trust UI
+- If `'unsafe-inline'` is added to fix it, the entire CSP protection against inline style injection is defeated -- weakening XSS defenses that are critical to the zero-knowledge model
 
-**Warning signs:**
-- Ciphertext appears anywhere in the initial HTML or in a response that does not also delete the record
-- The deletion is triggered by a client-side callback after data has already been sent
-- Link previews in chat apps can trigger secret destruction (meaning bots are getting the ciphertext)
+**Prevention:**
+1. **Convert all SVG inline styles to presentation attributes.** Replace `style="fill:#1a1a2e"` with `fill="#1a1a2e"`. SVG presentation attributes (`fill`, `stroke`, `stroke-width`, `opacity`, `transform`) are NOT blocked by CSP -- they are XML attributes, not CSS.
+2. **Create SVGs programmatically using `document.createElementNS` with `setAttribute`**, which is already the pattern used in `confirmation.ts`. Never use `innerHTML` to inject SVG strings.
+3. **For any required CSS within SVGs** (gradients, complex selectors, `@keyframes`), place them in a `<style>` element inside the SVG and apply the CSP nonce to it. Example:
+   ```typescript
+   const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+   style.setAttribute('nonce', document.querySelector('meta[property="csp-nonce"]')?.getAttribute('nonce') ?? '');
+   style.textContent = '.icon-path { fill: var(--color-primary-500); }';
+   svg.appendChild(style);
+   ```
+4. **Prefer using `element.style.property` (JavaScript property assignment)** over `setAttribute('style', ...)`. Direct property assignment (`el.style.fill = '#fff'`) is NOT blocked by CSP style-src because it goes through the CSSOM, not the HTML parser. This is the safe escape hatch.
+5. **Test with CSP enforced during development.** Run the full Express server (not just Vite dev) to catch violations early.
 
-**Phase to address:**
-Phase 1 (Core API). This is the single most important architectural decision. Getting the retrieval-deletion flow wrong means the security guarantee of "one-time" is theater. Must be designed correctly from the first API endpoint.
+**Detection:**
+- Browser console shows `Refused to apply inline style` warnings (check in Chrome -- Firefox may suppress)
+- SVGs render without color, gradients, or expected styling
+- Open DevTools Elements panel: SVG attributes present but no computed styles applied
+
+**Confidence:** HIGH (MDN documentation, Firefox bug 1262842, Chrome bug 378500, Font Awesome CSP issue #16827)
 
 ---
 
-### Pitfall 2: XSS Destroys the Entire Zero-Knowledge Model
+### Pitfall 2: OG Meta Tags and Structured Data Leaking Secret Existence or URLs
 
 **What goes wrong:**
-A single XSS vulnerability in a zero-knowledge encrypted application is catastrophic -- far worse than XSS in a conventional app. Because the decryption key arrives in the URL fragment and decryption happens in the browser, any injected JavaScript can read `window.location.hash`, intercept the plaintext after decryption, or exfiltrate both to an attacker-controlled server. XSS effectively gives the attacker the same access as the legitimate user, completely bypassing all encryption.
+When adding SEO infrastructure, developers add Open Graph meta tags dynamically for social sharing previews. If the SPA catch-all route serves the same HTML for all paths (which SecureShare does via `app.get('{*path}', ...)`), the OG tags in the HTML template apply to ALL routes -- including `/secret/:id` URLs. This means:
+
+1. **Social media crawlers receive OG meta tags for secret URLs**, causing platforms like Slack, Teams, Discord, and Twitter to generate link previews for secret links. Even generic OG content like `og:title="SecureShare - View Secret"` confirms to observers that the URL is a valid secret link.
+2. **Structured data (JSON-LD) on public pages** could inadvertently reference URL patterns that reveal the secret path structure.
+3. **`og:url` set to the canonical URL** could cause social platforms to cache and display secret URLs, making them partially discoverable through platform search or cache.
 
 **Why it happens:**
-Developers treat XSS as a "moderate" issue from generic web security training. In a zero-knowledge context, it is an existential threat. Common vectors in secret-sharing apps:
-- Rendering user-supplied content (the decrypted secret) without sanitization
-- Attachment filenames containing HTML/JS (PrivateBin CVE in versions 1.2.0-1.2.2, 1.3.0-1.3.2)
-- Error messages that reflect user input
-- Third-party scripts (analytics, error tracking) that have DOM access
+- The SPA catch-all serves the same `index.html` for both public pages (`/`) and secret pages (`/secret/:id`)
+- OG meta tags are in the static HTML template, not dynamically generated per route
+- Social media crawlers do not execute JavaScript, so client-side meta tag updates are invisible to them
 
-**How to avoid:**
-1. Implement a strict Content Security Policy with nonce-based script loading. No `unsafe-inline`, no `unsafe-eval`, no external script sources. Every script tag must carry a server-generated nonce.
-2. Zero third-party JavaScript. No analytics, no tracking pixels, no CDN-hosted libraries in production. Bundle everything. If external resources are unavoidable, use Subresource Integrity (SRI) hashes.
-3. Display decrypted secrets in a non-HTML context: use `textContent` (never `innerHTML`), render in a `<pre>` or `<textarea readonly>` element, or use CSS `white-space: pre-wrap` on a div populated via textContent.
-4. Set `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy: no-referrer` on every response.
-5. Treat the decrypted plaintext as untrusted input even though it came from the user -- it could have been crafted by an attacker who created the secret link.
+**Consequences:**
+- Metadata leakage about secret existence (link previews in chat confirm a secret exists at that URL)
+- If `og:url` includes the secret path, the URL is cached by social platforms
+- Violates the zero-knowledge principle: the server should not acknowledge whether a secret ID is valid
 
-**Warning signs:**
-- Any use of `innerHTML`, `document.write`, or React's `dangerouslySetInnerHTML` to render secret content
-- CSP header is missing, in report-only mode in production, or includes `unsafe-inline`
-- Third-party scripts loaded from external domains
-- Error messages that include user-supplied data without encoding
+**Prevention:**
+1. **Serve different HTML responses for public routes vs. secret routes.** Modify the SPA catch-all in `app.ts` to detect `/secret/*` paths and serve HTML with `<meta name="robots" content="noindex, nofollow">` and minimal/generic OG tags:
+   ```typescript
+   app.get('{*path}', (req, res) => {
+     const isSecretRoute = req.path.startsWith('/secret/');
+     const template = isSecretRoute ? secretHtmlTemplate : publicHtmlTemplate;
+     const html = template.replaceAll('__CSP_NONCE__', res.locals.cspNonce);
+     res.setHeader('Content-Type', 'text/html');
+     if (isSecretRoute) {
+       res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+     }
+     res.send(html);
+   });
+   ```
+2. **OG meta tags on secret pages should be intentionally blank or generic.** Do NOT include `og:title="View Secret"` -- use something completely generic like `og:title="SecureShare"` with no indication that the page contains a secret.
+3. **Add `X-Robots-Tag: noindex, nofollow` HTTP header** for secret routes (more reliable than meta tags, since crawlers see it before parsing HTML).
+4. **Never include the secret ID in any meta tag value**, including `og:url`, `canonical`, or `og:image` URL parameters.
 
-**Phase to address:**
-Phase 1 (Core Frontend + API). CSP headers and output encoding must be in place from the very first page render. Not something to "add later" -- retrofitting CSP onto an existing app is painful and error-prone.
+**Detection:**
+- Use `curl -I https://example.com/secret/abc123` and inspect response headers for OG tags and robots directives
+- Test link previews in Slack/Discord by pasting a secret URL -- if a rich preview appears with any secret-specific content, it is leaking
+
+**Confidence:** HIGH (Google documentation on X-Robots-Tag, OG protocol specification, direct relevance to zero-knowledge model)
 
 ---
 
-### Pitfall 3: URL Fragment Key Leakage via Referrer, Extensions, and Crash Reporters
+### Pitfall 3: `robots.txt` Swallowed by SPA Catch-All -- All Pages Indexed Including Secret Paths
 
 **What goes wrong:**
-The encryption key in the URL fragment (`#key`) leaks through multiple browser-level side channels:
-1. **Referrer header**: If the page contains any outbound links (even in decrypted content) or loads external resources, the `Referer` header may include the full URL with fragment on some browsers/configurations.
-2. **Browser extensions**: Extensions have access to `window.location` including the hash. Password managers, ad blockers, Grammarly, and similar tools can read and transmit the fragment.
-3. **Crash/error reporters**: Sentry, Bugsnag, and similar tools capture `window.location.href` by default, which includes the fragment. PrivateBin developers documented this exact issue with Sentry.
-4. **Browser history**: The full URL including fragment is stored in browser history on the recipient's machine.
-5. **AI browser assistants**: The "HashJack" attack vector (documented 2025) shows that AI-powered browser features can be manipulated via URL fragment content.
+SecureShare's SPA catch-all route in `app.ts` matches ALL paths via `app.get('{*path}', ...)`. If `robots.txt` is placed in the `client/public/` directory for Vite to copy to `dist/`, it will be served by `express.static`. However, if the file is missing, misconfigured, or if the static middleware order is wrong, the catch-all serves `index.html` with a 200 status for `/robots.txt`. Search engine crawlers receive an HTML page instead of a robots directive, interpret it as "no restrictions," and proceed to crawl and index everything -- including `/secret/*` URL patterns they discover through referrer logs, sitemaps, or link analysis.
 
 **Why it happens:**
-Developers assume URL fragments are "never sent to the server" (true for the HTTP request itself) and therefore conclude they are private. But the fragment is fully accessible to client-side code, extensions, and browser features. The threat model is broader than just "the server."
+- Express static middleware is configured with `{ index: false }` which is correct, but the `robots.txt` file simply does not exist yet in the project
+- No explicit route for `/robots.txt` exists -- it falls through to the catch-all
+- Developers add robots.txt to `client/src/` instead of `client/public/` (Vite only copies `public/` contents to `dist/`)
 
-**How to avoid:**
-1. Set `Referrer-Policy: no-referrer` header on all responses (not just `same-origin` -- use `no-referrer`).
-2. Strip the fragment from the URL immediately after reading it in JavaScript. Use `history.replaceState(null, '', window.location.pathname)` as the first operation in the app.
-3. Store the extracted key only in a JavaScript closure or a non-exported module variable -- never in `localStorage`, `sessionStorage`, or a global variable.
-4. Configure error/crash reporters to scrub URLs. For Sentry: use `beforeSend` to strip fragments. Better yet: do not use client-side error reporters in production for a security-focused app.
-5. Do not load ANY external resources. No external fonts, no CDN scripts, no analytics pixels. Every outbound request is a potential fragment leak vector.
-6. Add `rel="noopener noreferrer"` to any links that could appear in the UI (though the decrypted content should not render as HTML with clickable links).
+**Consequences:**
+- Google, Bing, and other crawlers index `/secret/:id` URLs they discover
+- Even though the content is encrypted, the existence of indexed URLs reveals metadata
+- Secret URLs appearing in search results is a severe privacy violation
+- Once indexed, removing URLs from search engines takes days to weeks via removal tools
 
-**Warning signs:**
-- `window.location.hash` is read but never cleared from the URL bar
-- Any external resource loading (check Network tab in DevTools)
-- Sentry/Bugsnag/LogRocket initialized without URL scrubbing
-- CSP allows connections to external domains
+**Prevention:**
+1. **Create `client/public/robots.txt`** (Vite copies `public/` to `dist/` root) with explicit disallow rules:
+   ```
+   User-agent: *
+   Disallow: /secret/
+   Disallow: /api/
 
-**Phase to address:**
-Phase 1 (Core Frontend). Fragment handling is the first thing the client-side code does. Must be correct from day one. The `history.replaceState` call and Referrer-Policy header should be in the initial implementation.
+   Sitemap: https://secureshare.example.com/sitemap.xml
+   ```
+2. **Add an explicit Express route for `robots.txt` BEFORE the catch-all** as a safety net:
+   ```typescript
+   app.get('/robots.txt', (_req, res) => {
+     res.type('text/plain').send('User-agent: *\nDisallow: /secret/\nDisallow: /api/\n');
+   });
+   ```
+3. **Similarly create `client/public/sitemap.xml`** listing ONLY public pages (`/`), never secret URLs.
+4. **Verify the middleware order**: `express.static` must run BEFORE the SPA catch-all so that static files like `robots.txt`, `sitemap.xml`, `favicon.ico`, and `manifest.json` are served directly.
+5. **Test**: `curl https://example.com/robots.txt` must return `text/plain` content, NOT HTML.
+
+**Detection:**
+- `curl -v https://localhost:3000/robots.txt` returns `Content-Type: text/html` instead of `text/plain`
+- Google Search Console shows indexed `/secret/` URLs
+- `site:secureshare.example.com/secret/` in Google returns results
+
+**Confidence:** HIGH (Express.static ordering is a documented pattern, SPA catch-all behavior is well-understood)
 
 ---
 
-### Pitfall 4: Nonce Reuse in AES-256-GCM Catastrophically Breaks Encryption
+### Pitfall 4: Dark Theme Breaks 6 Existing Accessibility Tests
 
 **What goes wrong:**
-AES-GCM requires a unique nonce (IV) for every encryption operation under the same key. If a nonce is ever reused with the same key, an attacker can recover the authentication key (GHASH key), forge authentication tags at will, and potentially recover plaintext via XOR of ciphertext streams. This is not a theoretical weakness -- it is a complete, practical break of both confidentiality and integrity.
+SecureShare has 6 accessibility tests in `client/src/__tests__/accessibility.test.ts` using `vitest-axe` (axe-core). These tests currently disable color contrast checking (`rules: { 'color-contrast': { enabled: false } }`) because happy-dom cannot compute styles. When switching from a light theme (`bg-gray-50 text-gray-900`) to a dark theme, the class names throughout all pages change. If the dark theme is implemented by:
+- Changing the base HTML classes
+- Adding `dark:` variant classes to all elements
+- Modifying the Tailwind `@theme` color definitions
+
+...the existing tests will pass (since they do not check contrast), but the ACTUAL accessibility may be broken. More dangerously, if tests are updated to reference new element classes or structures, tests may break even though accessibility is fine, or pass even though it is not.
 
 **Why it happens:**
-1. Using `Math.random()` instead of `crypto.getRandomValues()` for nonce generation (Math.random is not cryptographically secure and can produce collisions).
-2. Using a 16-byte nonce with GCM when the spec requires 12 bytes (non-12-byte nonces trigger an internal hash that can degrade security properties).
-3. Generating nonces randomly when the key is reused across multiple secrets (birthday bound: with random 96-bit nonces, collision probability exceeds 50% at around 2^48 encryptions under the same key).
+- The existing tests check structural accessibility (ARIA roles, heading hierarchy, labeled sections) which ARE affected by DOM structure changes during a theme redesign
+- Color contrast is explicitly disabled in tests, so any dark-on-dark or light-on-light text combinations will not be caught
+- The theme change often involves restructuring the DOM (adding wrapper divs for glassmorphism effects, changing component structures), which can break ARIA associations
 
-For SecureShare, where each secret gets a unique random key, the nonce-reuse risk is low because each key encrypts exactly one message. But the implementation must still be correct.
+**Consequences:**
+- Heading hierarchy tests fail because redesigned pages use different heading levels
+- ARIA `labelledby` tests fail because section IDs change during redesign
+- `role="alert"` and `role="status"` elements are removed or relocated
+- Color contrast violations go completely undetected (already excluded from automated tests)
+- The app ships with WCAG AA failures that were previously passing
 
-**How to avoid:**
-1. Use the Web Crypto API (`crypto.subtle.encrypt` with `AES-GCM`) which handles nonce generation correctly when given proper parameters.
-2. Generate a 12-byte nonce using `crypto.getRandomValues(new Uint8Array(12))` for every encryption.
-3. Since SecureShare generates a fresh key per secret, nonce reuse across different keys is not dangerous. But always generate a fresh nonce anyway as defense in depth.
-4. Prepend the nonce to the ciphertext for transmission (it is not secret, just must be unique). The recipient reads the first 12 bytes as the nonce and the rest as ciphertext+tag.
-5. Never use `Math.random()` anywhere in the cryptographic path.
+**Prevention:**
+1. **Run existing tests BEFORE any theme changes** to establish a passing baseline. Track which tests pass and which assertions exist.
+2. **Make theme changes incrementally**: change colors/backgrounds first (non-breaking), then restructure DOM if needed (potentially breaking).
+3. **When restructuring DOM, update tests to match** -- but verify the NEW structure still meets WCAG requirements, not just that tests pass.
+4. **Add explicit contrast ratio verification** as a manual test step or as a separate test file using tools like `color-contrast` npm package against the actual Tailwind-computed color values:
+   - Dark background (`#0f0f23` or similar) against all text colors
+   - Verify 4.5:1 for body text, 3:1 for large text (18px+ or 14px+ bold)
+   - Verify 3:1 for UI components (borders, focus rings, icons)
+5. **Preserve semantic structure invariants**: ensure every page still has exactly one `h1`, proper heading hierarchy, and labeled sections regardless of visual changes.
+6. **Add a test that verifies `prefers-reduced-motion` is respected** (see Pitfall 7).
 
-**Warning signs:**
-- `Math.random()` appears anywhere in encryption-related code
-- Nonce/IV is hardcoded, derived from predictable data, or not generated fresh per encryption
-- Nonce length is not exactly 12 bytes for GCM
-- The Web Crypto API is not being used (custom AES implementation in JS)
+**Detection:**
+- `npm run test:run` fails with assertion errors in `accessibility.test.ts`
+- axe-core violations appear for elements that were previously clean
+- Manual WCAG audit reveals contrast failures on dark backgrounds
 
-**Phase to address:**
-Phase 1 (Encryption Module). This is the foundational crypto. Must be implemented correctly before any secret can be created. Should use Web Crypto API exclusively -- no custom crypto libraries.
+**Confidence:** HIGH (direct analysis of existing test file at `client/src/__tests__/accessibility.test.ts`)
 
 ---
 
-### Pitfall 5: Password-Protected Secrets with Race Condition in Attempt Counter
+### Pitfall 5: CSS Animations on SVG `fill`/`stroke` Blocked by CSP in Firefox
 
 **What goes wrong:**
-The 3-attempt auto-destroy for password-protected secrets has a race condition: multiple concurrent requests can each read the attempt count as (e.g.) 1, each increment it to 2, and each get a response -- effectively allowing 6+ attempts instead of 3. With enough parallel requests, an attacker can brute-force weak passwords before the auto-destroy triggers.
+SVG SMIL animations (`<animate>`, `<animateColor>`) that target `fill`, `stroke`, `stroke-width`, or `stroke-dasharray` attributes are blocked by Firefox's CSP implementation when `style-src` does not include `'unsafe-inline'`. This is Firefox bug 1459872 (open since 2018, still unresolved as of 2026). The same animations work fine in Chrome and Safari.
 
-Additionally, if the password is checked AFTER decrementing the counter, a legitimate user who types the wrong password once may find the secret destroyed by a concurrent attacker. If checked BEFORE decrementing, the timing difference between "wrong password" and "right password" can leak information.
+This means animated SVG icons (pulsing shields, loading lock animations, stroke-drawing effects) will silently fail in Firefox. The SVG element renders but the animation does not play. No console error is produced in many cases.
+
+CSS `@keyframes` animations targeting SVG properties via CSS classes also require the `<style>` element containing the `@keyframes` to have a valid CSP nonce. If the `@keyframes` are in the main Tailwind stylesheet (which Vite builds with a nonce), they work. But if `@keyframes` are injected dynamically or defined in inline `<style>` blocks without nonces, they are blocked.
 
 **Why it happens:**
-The attempt counter update is not atomic with the password verification. Typical implementation:
-1. Read current attempt count
-2. Check password
-3. Increment attempt count
-4. If count >= 3, delete
+- Firefox treats SVG attribute animations as equivalent to inline style changes, triggering CSP `style-src` checks
+- Chrome and Safari do not apply CSP to SVG SMIL animations the same way
+- Developers test primarily in Chrome, missing Firefox-specific CSP enforcement
+- The inconsistency is undocumented in CSP specifications
 
-Steps 1-4 are not in a single transaction, or the transaction isolation level is too low.
+**Consequences:**
+- Animated SVG icons (lock pulsing, shield animating, checkmark drawing) do not animate in Firefox
+- Developers may add `'unsafe-inline'` to `style-src` to fix Firefox, weakening the entire CSP posture
+- Users on Firefox see a broken or static experience while Chrome users see animations
 
-**How to avoid:**
-1. Use a single atomic database operation: `UPDATE secrets SET attempts = attempts + 1 WHERE id = $1 AND attempts < 3 RETURNING *`. If no row is returned, the secret is already destroyed.
-2. This approach increments FIRST, then returns the data for password checking. If the password is wrong, the attempt is consumed. If right, proceed with returning ciphertext.
-3. After the RETURNING clause, if `attempts >= 3`, delete the record in the same transaction regardless of whether the password was correct.
-4. Use `FOR UPDATE` row-level locking to prevent concurrent attempts from racing.
-5. The password comparison must use `crypto.timingSafeEqual()` (Node.js built-in) to prevent timing attacks. Pad both buffers to equal length before comparing.
-6. Apply server-side rate limiting (e.g., 1 request per 2 seconds per secret ID) as an additional layer on top of the atomic counter.
+**Prevention:**
+1. **Use CSS `@keyframes` in the main stylesheet instead of SVG SMIL animations.** Tailwind's `animate-*` utilities and custom keyframes defined in `styles.css` are safe because Vite injects the nonce on the built `<style>` tag.
+2. **Avoid `<animate>` and `<animateColor>` SVG elements entirely.** Use CSS transforms and opacity animations via class-based Tailwind utilities instead:
+   ```css
+   /* In styles.css -- safe because the stylesheet gets a CSP nonce */
+   @keyframes pulse-icon {
+     0%, 100% { opacity: 1; }
+     50% { opacity: 0.6; }
+   }
+   ```
+3. **For programmatically created SVGs**, use `element.style.property` assignment for one-off style changes (not blocked by CSP) and CSS class toggling for animations.
+4. **Do not add `'unsafe-inline'` to `style-src`.** This is the wrong fix and compromises the zero-knowledge security model.
+5. **Test all animations in Firefox** with the production Express server (CSP enforced), not just Vite dev mode.
 
-**Warning signs:**
-- Attempt counter check and password check are separate database queries
-- No `FOR UPDATE` or equivalent row locking in the retrieval query
-- Password comparison uses `===` or `==` instead of constant-time comparison
-- No rate limiting per secret ID endpoint
+**Detection:**
+- Open Firefox DevTools Console -- look for CSP violation warnings related to `style-src`
+- SVG animations play in Chrome but not in Firefox
+- Test with `style-src 'self' 'nonce-...'` (no `'unsafe-inline'`) across browsers
 
-**Phase to address:**
-Phase 2 (Password Protection feature). Must be implemented with atomic operations from the start. This is not a feature to add naively and then "fix the race condition later."
+**Confidence:** HIGH (Firefox bug 1459872, Mozilla Bugzilla, directly verified behavior)
 
 ---
 
-### Pitfall 6: Secret ID Enumeration Allowing Existence Discovery
+## Moderate Pitfalls
+
+Mistakes that cause visual or functional regressions without breaking security.
+
+### Pitfall 6: OKLCH Color Contrast Cannot Be Reliably Calculated for WCAG Compliance
 
 **What goes wrong:**
-If the API returns different responses for "secret exists but wrong password" vs. "secret does not exist" (e.g., 404 vs. 401), an attacker can enumerate which secret IDs are valid. Even with encrypted content they cannot read, knowing which IDs are active reveals metadata: how many secrets are in the system, when they were created (if IDs are sequential), and which ones are password-protected.
+SecureShare's `styles.css` already defines custom colors using OKLCH color space (e.g., `--color-primary-600: oklch(0.50 0.19 250)`). WCAG 2.1 AA contrast ratios are defined using relative luminance calculated from the sRGB color space. OKLCH colors exist in a different perceptual color space, and the formula to convert OKLCH to sRGB for contrast calculation can produce values outside the sRGB gamut (out-of-gamut colors). Standard WCAG contrast checkers (WebAIM, axe-core) may not correctly evaluate OKLCH values, producing inaccurate pass/fail results.
 
-**Why it happens:**
-Different HTTP status codes or response bodies for different error states. Sequential or predictable secret IDs. Timing differences between "ID not found" (fast DB miss) and "ID found, wrong password" (slow bcrypt comparison).
+When adding dark theme colors in OKLCH, developers may rely on perceptual lightness (`L` channel in OKLCH) to estimate contrast, but perceptual lightness does not map linearly to WCAG relative luminance. A color that "looks" high contrast in OKLCH may fail WCAG AA calculations.
 
-**How to avoid:**
-1. Return identical responses (same status code, same response body structure, same headers) for "not found" and "wrong password" and "already destroyed." Use a generic 404 with body `{"error": "Secret not found or already destroyed"}` for all three cases.
-2. Generate secret IDs using `crypto.randomBytes(32).toString('base64url')` -- 256 bits of entropy, yielding approximately 43 character URL-safe IDs that are computationally infeasible to enumerate.
-3. Normalize response timing: when a secret is not found, still perform a dummy bcrypt comparison against a stored dummy hash to equalize response times with the "found but wrong password" path.
-4. Apply aggressive rate limiting on the retrieval endpoint: token bucket per IP, max 10 requests per minute to `/api/secrets/:id`.
+**Prevention:**
+1. **Define dark theme colors in OKLCH but verify contrast using hex/sRGB equivalents.** Convert each OKLCH color to its nearest sRGB hex value and run the hex pair through WebAIM's contrast checker.
+2. **Use tools that support OKLCH**: OddContrast (oddcontrast.com) checks contrast in OKLCH, Oklab, and P3 color spaces.
+3. **Establish a minimum OKLCH lightness differential**: for dark backgrounds with `L` around 0.10-0.15, body text should have `L` of at least 0.85-0.90 to reliably meet 4.5:1. For large text, `L` of 0.75+ is usually sufficient.
+4. **Document the hex fallback values** alongside OKLCH values in the `@theme` block as comments for future contrast audits.
+5. **Common dark theme color pairs that pass WCAG AA** (verified):
+   - Background `oklch(0.13 0.02 260)` with text `oklch(0.93 0.01 260)` -- approximately 13:1 ratio
+   - Muted text at `oklch(0.65 0.02 260)` on the same background -- approximately 4.7:1 (passes AA)
+   - Primary accent `oklch(0.70 0.15 250)` on dark background -- approximately 6:1 (passes AA)
 
-**Warning signs:**
-- Secret IDs are sequential integers or short UUIDs
-- Different HTTP status codes for "not found" vs. "wrong password"
-- Response time differs noticeably between found/not-found paths
-- No rate limiting on the retrieval endpoint
+**Detection:**
+- axe-core color contrast checks (currently disabled in tests but should be verified manually)
+- WebAIM Contrast Checker with hex equivalents of OKLCH values
+- Chrome DevTools Accessibility panel shows contrast ratios for computed colors
 
-**Phase to address:**
-Phase 1 (Core API). Secret ID generation and response normalization must be designed into the initial API. Changing ID format after launch breaks all existing links.
+**Confidence:** MEDIUM (OKLCH contrast calculation tooling is improving but not standardized in WCAG; multiple sources confirm the sRGB conversion issue)
 
 ---
 
-### Pitfall 7: Incomplete Deletion -- PostgreSQL Data Remanence
+### Pitfall 7: `prefers-reduced-motion` Not Respected for JavaScript-Driven Animations
 
 **What goes wrong:**
-Deleting a row in PostgreSQL does not erase the data from disk. PostgreSQL's MVCC model marks deleted rows as "dead tuples" that persist until VACUUM reclaims the space -- and even then, the data may remain on disk until overwritten. WAL (Write-Ahead Log) files contain a full record of all changes including the original INSERT of the ciphertext. Database backups, replicas, and filesystem snapshots also retain copies.
+SecureShare already correctly uses `motion-reduce:animate-none` on the loading spinner (in `loading-spinner.ts`). But when adding new animations -- typing effects, fade-in transitions, sliding panels, SVG stroke-drawing -- developers often apply `prefers-reduced-motion` only to CSS animations via Tailwind's `motion-reduce:` variant while forgetting:
 
-For a secret-sharing app, this means "deleted" secrets may be recoverable through:
-- Dead tuples before VACUUM
-- WAL segments before archival/rotation
-- pg_dump backups
-- Filesystem-level forensics
-- Cloud provider snapshots
+1. **JavaScript-driven animations** (requestAnimationFrame loops, Web Animations API, manual DOM manipulation timers) are not affected by the CSS media query
+2. **CSS transitions** (Tailwind `transition-*` utilities on hover, focus states) are often overlooked
+3. **Auto-playing decorative animations** (blinking cursors, gradient shifts) that should be disabled entirely
 
-**Why it happens:**
-PostgreSQL is designed for data durability, not data destruction. The entire storage engine works against secure deletion. Developers assume `DELETE FROM secrets WHERE id = X` means the data is gone.
+WCAG 2.1 Success Criterion 2.3.3 (Animation from Interactions, AAA) and 2.3.1 (Three Flashes or Below Threshold, A) require that motion can be disabled. While AAA is not the target, vestibular disorders make this a real accessibility concern.
 
-**How to avoid:**
-1. Accept that you cannot guarantee cryptographic erasure in PostgreSQL. Design the threat model accordingly: the ciphertext on the server is always encrypted with a key the server never sees. Even if ciphertext is recovered forensically, it is useless without the key from the URL fragment.
-2. Overwrite before deleting: `UPDATE secrets SET ciphertext = repeat('0', length(ciphertext)) WHERE id = $1` followed by `DELETE`. This overwrites the ciphertext in place, and while MVCC still keeps the old tuple temporarily, aggressive VACUUM will clean it.
-3. Run `VACUUM` aggressively on the secrets table (consider `autovacuum_vacuum_scale_factor = 0` with a low `autovacuum_vacuum_threshold` for this table specifically).
-4. Configure WAL retention to be as short as operationally feasible.
-5. Do NOT store the encryption key or any key-derived material server-side. The server should only ever hold ciphertext + nonce + salt (for password-derived keys).
-6. Consider using Redis with `volatile-ttl` eviction as the primary store for short-lived secrets, with PostgreSQL only for metadata/audit. Redis `DEL` followed by key eviction is more favorable for secure deletion than PostgreSQL (though still not guaranteed at the OS level).
-7. Pad all ciphertext to fixed block sizes before storage so the stored length does not reveal the plaintext length.
+**Prevention:**
+1. **Check the media query in JavaScript** for any programmatic animations:
+   ```typescript
+   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   if (!prefersReducedMotion) {
+     startTypingAnimation();
+   }
+   ```
+2. **Use Tailwind's `motion-reduce:` variant on ALL animated elements**, not just the spinner. Check every `animate-*`, `transition-*`, and custom animation class.
+3. **Adopt a "no-motion-first" approach**: start with no animations, then add them inside `@media (prefers-reduced-motion: no-preference)`. This ensures animations are opt-in rather than opt-out:
+   ```css
+   .fade-in {
+     opacity: 1; /* Default: no animation */
+   }
+   @media (prefers-reduced-motion: no-preference) {
+     .fade-in {
+       animation: fadeIn 0.3s ease-in;
+     }
+   }
+   ```
+4. **For essential state transitions** (loading spinner communicating "something is happening"), replace motion with non-motion alternatives: pulsing opacity rather than spinning, or a static progress indicator.
+5. **Add an accessibility test** that verifies `motion-reduce:animate-none` is present on animated elements.
 
-**Warning signs:**
-- No `UPDATE ... SET ciphertext = zeros` before `DELETE`
-- Default autovacuum settings on the secrets table
-- WAL archiving enabled with long retention
-- Database backups include the secrets table
-- Ciphertext stored at its natural length (leaks approximate plaintext size)
+**Detection:**
+- Enable "Reduce motion" in OS settings (macOS: System Settings > Accessibility > Display > Reduce Motion)
+- Verify all animations stop or are replaced with non-motion equivalents
+- Check that page is still fully functional without any animations
 
-**Phase to address:**
-Phase 1 (Database Layer). The storage approach for ciphertext must be designed with remanence in mind from the initial schema. The overwrite-then-delete pattern and padding strategy should be in the first database migration.
+**Confidence:** HIGH (W3C WCAG technique C39, MDN documentation, web.dev guidance)
 
 ---
 
-## Technical Debt Patterns
+### Pitfall 8: Glassmorphism `backdrop-filter: blur()` Performance Collapse on Mobile
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Using `innerHTML` to render decrypted secrets | Quick implementation of formatting | XSS attack surface that defeats entire encryption model | Never -- use `textContent` always |
-| Storing secrets in PostgreSQL without Redis | Simpler architecture, one fewer service | Harder secure deletion, no native TTL, higher latency on expiration checks | MVP only, migrate to Redis-backed approach in Phase 2 |
-| Skip ciphertext padding | Simpler encryption code | Secret length leaked via ciphertext size (attacker can estimate password length, API key length, etc.) | Never for a security-focused product |
-| CSP in report-only mode | Easier development, fewer broken features | No actual XSS protection | Development only, enforce in staging and production |
-| Using `express-rate-limit` with in-memory store | Quick setup, no Redis dependency | Rate limits reset on server restart, not shared across instances | Single-instance MVP only |
-| Lazy VACUUM configuration | Default PostgreSQL behavior, no tuning needed | Dead tuples with ciphertext linger on disk for extended periods | Never for the secrets table |
+**What goes wrong:**
+Dark terminal-themed UIs often use glassmorphism effects (frosted glass cards, blurred backgrounds). CSS `backdrop-filter: blur(Npx)` forces the GPU to composite and blur everything behind the element on every frame. On low-end mobile devices (budget Android phones, older iPhones), this causes:
+- Frame rate drops below 30fps during scrolling
+- Device heating and battery drain
+- Janky animation when combined with other GPU-composited elements (transforms, opacity animations)
+- Complete non-rendering on some older browsers (Safari < 15.4 has partial support)
 
-## Integration Gotchas
+The effect is worse when multiple glassmorphism layers overlap (e.g., a blurred card over a blurred background over a gradient).
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Redis TTL for secret expiration | Relying solely on Redis TTL for guaranteed deletion (keys can persist up to 25% longer than TTL due to Redis's sampling-based expiration) | Use Redis TTL as the primary mechanism but also run a background job (e.g., every 60 seconds) to explicitly DELETE expired secrets. Belt and suspenders. |
-| PostgreSQL + Redis dual-store | Storing ciphertext in both PostgreSQL and Redis, creating two copies to clean up | Store ciphertext in Redis only (with TTL). Store metadata (creation time, expiry, attempt count, password hash) in PostgreSQL. Deletion requires clearing only Redis. |
-| Sentry / Error Tracking | Default configuration captures full URL including `#fragment` containing the encryption key | Either do not use client-side error tracking, or configure `beforeSend` to strip everything after `#` from all URLs in events, breadcrumbs, and stack traces |
-| Reverse Proxy (nginx) | Access logs capturing full request URLs | Fragments are not sent to the server (this is safe), but ensure no middleware logs request bodies or response bodies that contain ciphertext |
-| Docker / Cloud Deployment | Container logs capturing application output including ciphertext | Never log ciphertext or key material. Audit all logging calls. Use structured logging with explicit field allowlists. |
+**Prevention:**
+1. **Limit blur radius to 8px or less** for mobile. `blur(4px)` is significantly cheaper than `blur(20px)`.
+2. **Use `backdrop-filter` on at most 1-2 elements per viewport**, never on repeating list items or cards.
+3. **Provide a non-blur fallback** using `@supports`:
+   ```css
+   .glass-card {
+     background: rgba(15, 15, 35, 0.85); /* Fallback: solid semi-transparent */
+   }
+   @supports (backdrop-filter: blur(8px)) {
+     .glass-card {
+       background: rgba(15, 15, 35, 0.6);
+       backdrop-filter: blur(8px);
+     }
+   }
+   ```
+4. **Avoid animating elements that have `backdrop-filter`** -- the blur must be recomputed every frame.
+5. **Test on a real low-end device** or throttle GPU in Chrome DevTools (Performance tab > CPU throttling).
+6. **Consider precomputed blur**: use a blurred background image (generated at build time or as a static asset) instead of runtime `backdrop-filter` for the main background.
 
-## Performance Traps
+**Detection:**
+- Chrome DevTools Performance tab shows long "Composite Layers" tasks
+- Frame rate drops below 30fps during scroll on mobile
+- Device physically heats up during use
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| bcrypt password verification on every secret retrieval | High CPU usage, slow responses under load, request queuing | Only run bcrypt for password-protected secrets (obvious but ensure non-password secrets skip this path entirely). Use bcrypt cost factor 10-12 (not higher for a web endpoint). | Around 50 concurrent password-protected retrievals per CPU core |
-| Synchronous background expiration job scanning full table | Database table locks, slow queries during cleanup, API latency spikes | Use an index on `expires_at`, query only `WHERE expires_at < NOW()` with `LIMIT` batching. Run in a separate process/worker, not in the API event loop. | Around 100K active secrets |
-| No connection pooling for PostgreSQL | Connection exhaustion, "too many connections" errors, process spawning overhead | Use `pg-pool` or PgBouncer. Set pool size to 2-3x CPU cores. | Around 200 concurrent requests |
-| Generating secret IDs with UUID v4 (hex encoding) | 36-character URLs, B-tree index fragmentation in PostgreSQL | Use `crypto.randomBytes(32).toString('base64url')` for shorter, denser IDs. Use a BYTEA column with B-tree index, or store as TEXT. | Cosmetic at any scale, but index fragmentation at 1M+ rows |
-| Single Redis instance without persistence for ciphertext | Secrets lost on Redis restart or OOM eviction | Configure Redis with AOF persistence (`appendonly yes`), set `maxmemory-policy` to `noeviction` (fail writes rather than evict secrets). Monitor memory. | Any unexpected Redis restart |
+**Confidence:** MEDIUM (MDN documentation, CSS-Tricks guidance, performance is device-dependent)
 
-## Security Mistakes
+---
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Using `Math.random()` for any security-relevant value (IDs, nonces, keys) | Predictable output enables brute-force of secret IDs and nonce reuse attacks | Use `crypto.getRandomValues()` (browser) and `crypto.randomBytes()` (Node.js) exclusively |
-| Serving the application over HTTP (even in development) | MITM can inject scripts into the page, steal fragments, modify encryption code | HTTPS everywhere. Use HSTS header. Redirect HTTP to HTTPS. Use `Secure` flag on all cookies. |
-| Embedding ciphertext in server-rendered HTML | Bots, curl, and link previews fetch ciphertext without triggering deletion | Serve app shell only on initial load. Ciphertext delivered via separate authenticated API call. |
-| Allowing `unsafe-inline` in CSP for convenience | Attacker-injected inline scripts execute with full page access including fragment key | Nonce-based CSP. Generate random nonce per request. Only script tags with matching nonce execute. |
-| Password comparison with `===` operator | Timing attack leaks password correctness character-by-character | Use `crypto.timingSafeEqual()` with buffers padded to equal length |
-| Not setting `Referrer-Policy: no-referrer` | Clicking any link on the page (or in decrypted content rendered as HTML) sends the full URL including `#key` to the linked site | Set header on every response. Also set `<meta name="referrer" content="no-referrer">` as backup. |
-| CORS wildcard `Access-Control-Allow-Origin: *` | Any website can make API calls to your secret endpoints | Allow only your exact origin. Never use `*`. Do not reflect the `Origin` header blindly. |
-| Loading scripts from CDN without SRI | CDN compromise (like polyfill.io incident) injects malicious code that steals decryption keys | Bundle all JavaScript locally. If CDN is used, require `integrity` attribute with SHA-384/512 hash. |
-| Different error responses for "not found" vs. "wrong password" | Secret existence enumeration | Return identical 404 response for all retrieval failures |
-| OPTIONS preflight responses that differ based on secret existence | CORS preflight can probe which secret IDs are active | Return same CORS headers for all paths, including nonexistent ones |
+### Pitfall 9: Font Loading FOUT/FOIT Breaking First Impression on Secret Reveal
 
-## UX Pitfalls
+**What goes wrong:**
+If the dark theme introduces custom fonts (monospace terminal fonts like JetBrains Mono, Fira Code, or Inter for UI text), font loading causes visible layout shifts:
+- **FOIT (Flash of Invisible Text)**: Text is invisible for 0-3 seconds while the font downloads. On the reveal page, the decrypted secret is invisible during this window -- the user thinks the secret is empty.
+- **FOUT (Flash of Unstyled Text)**: System font renders first, then the page visually "jumps" when the custom font loads. Layout shift affects CLS (Cumulative Layout Shift) scores and is jarring.
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| No distinction between "secret was already viewed" and "secret never existed" | Recipient cannot tell if they were the one who viewed it or if the link was wrong | Show "This secret has already been viewed or does not exist" (ambiguous by design for security, but include a "This is expected if you already viewed it" help text) |
-| Secret destroyed by link-preview bots in Slack/Teams before recipient sees it | Recipient gets "secret not found" and is confused; sender has no idea what happened | Two-step retrieval (serve app shell first, require explicit user action to fetch ciphertext). Bots do not execute JavaScript or click buttons. |
-| No feedback after creating a secret (is the link copied? did it work?) | User unsure if secret was saved, may re-create or navigate away without copying | Show clear confirmation with auto-copy-to-clipboard, visual feedback ("Link copied!"), and a "Copy" button as fallback. Show the link text so user can manually copy. |
-| Password-protected secret deleted after 3 wrong attempts with no warning to sender | Sender shares link, recipient typos password 3 times, secret is gone forever | Show attempt counter ("2 of 3 attempts remaining") to the person entering the password. Consider allowing sender to see "secret was destroyed due to failed attempts" status. |
-| Link contains visible encryption key making it look suspicious | Non-technical users see a long, complex URL and think it is spam or phishing | Keep the key in the fragment (not visible in most sharing contexts), make the main URL clean and short. Add a branded landing page that explains what the user is about to see. |
-| No indication of expiry time to the recipient | Recipient opens link hours later and finds it expired, with no idea when it expired or why | Show "This secret expires in X hours" on the reveal page (before clicking "Reveal"). On expired page, show "This secret expired. Ask the sender for a new link." |
-| Mobile browser handling of long URLs with fragments | URL may be truncated by SMS or certain apps, breaking the decryption key | Test on all major platforms. Provide a "short link" option (redirect through your own domain, preserving fragment). Warn sender about link-sharing limitations. |
+For a security-focused app, FOIT on the reveal page is particularly damaging: the user clicks "Reveal Secret," sees blank space, and may think the decryption failed.
 
-## "Looks Done But Isn't" Checklist
+**Prevention:**
+1. **Use `font-display: swap` on all `@font-face` declarations** to ensure text is always visible (shows system font immediately, swaps when custom font loads).
+2. **Self-host fonts** (do not use Google Fonts CDN). External font requests violate the "no external resources" security principle AND introduce a CORS/CSP dependency. Download font files to `client/public/fonts/`.
+3. **Preload critical fonts** in the HTML `<head>`:
+   ```html
+   <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+   ```
+4. **Use system font stack as primary, custom font as enhancement.** The existing app uses Tailwind defaults (system fonts) which is fast. Only add custom fonts if they provide clear design value.
+5. **Subset fonts aggressively**: if only using Latin characters, subset the font to reduce file size from ~100KB to ~20KB.
+6. **Add CSP `font-src 'self'`** to allow self-hosted fonts (already present in the security middleware).
+7. **Consider using no custom fonts at all** for a dark terminal theme -- system monospace fonts (`ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace`) achieve the terminal aesthetic without any loading penalty.
 
-- [ ] **Encryption:** Implemented AES-256-GCM but nonce is not prepended to ciphertext -- recipient cannot decrypt without knowing which nonce was used
-- [ ] **One-time retrieval:** Secret is "deleted" after viewing but ciphertext exists in PostgreSQL dead tuples, WAL logs, and any backups
-- [ ] **CSP headers:** CSP header is set but includes `unsafe-inline` or `unsafe-eval`, negating XSS protection
-- [ ] **Rate limiting:** Rate limiter is per-IP but does not limit per-secret-ID, allowing distributed brute-force of password-protected secrets
-- [ ] **Secret expiration:** Redis TTL handles expiry but no background job catches secrets that survive TTL (Redis sampling misses up to 25%)
-- [ ] **Password protection:** bcrypt comparison works but is not constant-time at the application level (early return on wrong-length input before bcrypt runs)
-- [ ] **URL fragment cleanup:** Fragment is read on page load but not removed from the browser URL bar via `history.replaceState`
-- [ ] **Error handling:** Different HTTP status codes returned for "not found" vs "expired" vs "wrong password" enabling enumeration
-- [ ] **Referrer policy:** Header is set to `same-origin` instead of `no-referrer` -- fragment still leaks to same-origin pages
-- [ ] **CORS:** `Access-Control-Allow-Origin` reflects the request Origin header (wildcard by reflection), allowing any site to probe the API
-- [ ] **Ciphertext padding:** Secrets of different lengths produce different-length ciphertexts, leaking approximate content length
+**Detection:**
+- Lighthouse audit flags "Ensure text remains visible during webfont load"
+- Test on throttled 3G connection (DevTools Network tab) -- text should be visible immediately
+- Measure CLS in Chrome DevTools Performance tab
 
-## Recovery Strategies
+**Confidence:** HIGH (DebugBear documentation, web.dev guidance, CSS-Tricks font loading strategies)
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| XSS vulnerability discovered in production | HIGH | Rotate all active secrets (impossible -- you cannot contact anonymous users). Deploy fix immediately. Invalidate and delete all existing secrets as a precaution. Publish security advisory. Add CSP + output encoding + automated XSS scanning. |
-| Nonce reuse in encryption | HIGH | Cannot retroactively fix already-encrypted secrets. Fix the code, audit all encryption paths. Fortunately, if each secret has a unique key (as designed), nonce reuse under different keys is not catastrophic. |
-| Secret ID format change needed | HIGH | Cannot change IDs for existing links (they would break). Must support both old and new formats forever, or accept that old links break. Design the ID format correctly from day one. |
-| Referrer header leaked encryption keys | MEDIUM | Deploy `no-referrer` policy immediately. Cannot recall leaked keys. Affected secrets are compromised if a third party logged the referrer. |
-| Race condition in password attempt counter | MEDIUM | Fix with atomic DB operations. Existing password-protected secrets may have been brute-forced. Cannot determine which ones. Notify users if possible. |
-| PostgreSQL data remanence after deletion | LOW-MEDIUM | Run VACUUM FULL on secrets table (requires table lock, brief downtime). Overwrite free space at OS level. For cloud-hosted DB, this may not be feasible. Accept residual risk. |
-| Bot-triggered secret destruction | LOW | Implement two-step retrieval. Cannot recover already-destroyed secrets, but the bot never had the key (fragments are not sent to servers), so confidentiality was maintained -- only availability was impacted. |
+---
 
-## Pitfall-to-Phase Mapping
+### Pitfall 10: Favicon and Web App Manifest Not Served Due to SPA Catch-All
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Self-destruct bypass (ciphertext interception) | Phase 1: Core API | Verify: `curl` the secret URL and confirm NO ciphertext in response. Only the API reveal endpoint returns ciphertext, and it atomically deletes. |
-| XSS destroys zero-knowledge model | Phase 1: Core Frontend | Verify: Run automated XSS scanner. Confirm CSP header blocks inline scripts. Manually test that decrypted content renders as text, not HTML. |
-| URL fragment key leakage | Phase 1: Core Frontend | Verify: After page load, check browser URL bar shows no fragment. Check Network tab for zero external requests. Confirm `Referrer-Policy: no-referrer` in response headers. |
-| AES-GCM nonce misuse | Phase 1: Encryption Module | Verify: Unit test that each encryption produces a unique 12-byte nonce. Verify `crypto.subtle` is used, not a JS polyfill. Confirm nonce is prepended to ciphertext. |
-| Password attempt counter race condition | Phase 2: Password Protection | Verify: Fire 10 concurrent password attempts. Confirm exactly 3 are allowed total (not 10). Check DB shows atomic increment. |
-| Secret ID enumeration | Phase 1: Core API | Verify: Hit `/api/secrets/nonexistent` and `/api/secrets/real-but-wrong-password` -- confirm identical response code, body, and timing (within 50ms). |
-| PostgreSQL data remanence | Phase 1: Database Layer | Verify: Create and delete a secret. Run `SELECT * FROM pg_stat_user_tables WHERE relname = 'secrets'` and confirm dead tuples are vacuumed promptly. Confirm ciphertext is overwritten before deletion. |
-| Ciphertext padding / length leakage | Phase 1: Encryption Module | Verify: Encrypt secrets of length 1, 50, and 500 characters. Confirm stored ciphertext lengths are identical (padded to same block size). |
-| Bot-triggered destruction (link previews) | Phase 1: Core API | Verify: Fetch the secret page URL with curl (simulating a bot). Confirm the response contains no ciphertext. Secret is still retrievable via the reveal API. |
-| Referrer header leaks | Phase 1: Security Headers | Verify: Check all response headers include `Referrer-Policy: no-referrer`. Click an external link from the page and confirm no referrer is sent (check with request inspector). |
+**What goes wrong:**
+When adding `favicon.ico`, `apple-touch-icon.png`, and `manifest.json` (web app manifest) for the redesigned dark theme, these files must be served as static assets. If placed in wrong directory (`client/src/` instead of `client/public/`), Vite will not copy them to `dist/`. The Express SPA catch-all then serves `index.html` for `/favicon.ico`, which browsers interpret as "no favicon" (HTML is not a valid ICO file).
+
+Additionally, browsers aggressively cache favicons. After deploying a new dark-themed favicon, users see the old icon (or no icon) until the cache expires -- which can be weeks.
+
+**Prevention:**
+1. **Place all static assets in `client/public/`**: `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `manifest.json`.
+2. **Use SVG favicon for dark theme adaptation** -- SVG favicons support `@media (prefers-color-scheme: dark)` inside the SVG, allowing the icon to adapt to OS theme:
+   ```html
+   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+   <link rel="icon" href="/favicon.ico" sizes="32x32"> <!-- Fallback for older browsers -->
+   ```
+3. **For cache invalidation**, use a query parameter on the favicon link tag:
+   ```html
+   <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+   ```
+4. **Set Cache-Control headers** for static assets that need updating: `Cache-Control: public, max-age=86400` (1 day) for favicons, not the default long-term caching.
+5. **Add `manifest.json` to CSP `connect-src`** if it will be fetched dynamically (usually not needed as it is loaded via `<link>`).
+6. **Verify the manifest is served correctly**: `curl -I https://localhost:3000/manifest.json` should return `Content-Type: application/manifest+json`.
+
+**Detection:**
+- Browser tab shows no favicon or the default globe icon
+- `curl https://localhost:3000/favicon.ico` returns HTML content
+- `manifest.json` returns 200 with `Content-Type: text/html` (served by catch-all)
+
+**Confidence:** HIGH (Express.static behavior, Vite public directory documentation)
+
+---
+
+## Minor Pitfalls
+
+Issues that cause polish problems or minor regressions.
+
+### Pitfall 11: Dark Theme `color-scheme` Not Set -- Browser UI Elements Remain Light
+
+**What goes wrong:**
+Setting a dark background and light text via Tailwind classes changes the PAGE appearance but not the BROWSER CHROME. Without `color-scheme: dark` on the root element:
+- Scrollbars remain light-themed (bright white scrollbar on dark page)
+- Form autofill backgrounds are bright yellow/blue
+- `<select>` dropdown menus are light-themed
+- Text selection highlight uses light-theme colors
+- `<input>` and `<textarea>` border colors use light defaults
+
+**Prevention:**
+1. Add `color-scheme: dark` to the `<html>` element when dark theme is active:
+   ```typescript
+   document.documentElement.style.colorScheme = 'dark';
+   ```
+2. Or in CSS: `html.dark { color-scheme: dark; }`
+3. This tells the browser to use dark-themed UA (user agent) stylesheet defaults for form controls, scrollbars, and selection colors.
+
+**Confidence:** HIGH (MDN `color-scheme` documentation)
+
+---
+
+### Pitfall 12: Emoji Icons Rendered Inconsistently Across Platforms
+
+**What goes wrong:**
+SecureShare currently uses emoji characters for icons (shield `\u{1F6E1}`, lock `\u{1F512}`, key `\u{1F511}`, warning `\u{26A0}`, explosion `\u{1F4A5}`, magnifying glass `\u{1F50D}` in `error.ts` and `reveal.ts`). When switching to SVG icons, any remaining emoji must be considered:
+- Emoji rendering varies dramatically across Windows, macOS, Linux, iOS, and Android
+- On some platforms, emoji are colorful; on others, they are monochrome outlines
+- Emoji do not respect CSS `color` property (they are bitmap/vector images, not text)
+- Screen readers may announce emoji differently across platforms
+
+Replacing emoji with SVG icons fixes all these issues but requires ensuring the SVG replacements have proper `aria-hidden="true"` (already done on emoji icons) and that adjacent text provides the semantic meaning.
+
+**Prevention:**
+1. Replace ALL emoji icons with SVG icons during the redesign -- do not leave a mix.
+2. All decorative SVG icons should have `aria-hidden="true"` (matching the current emoji pattern).
+3. Ensure heading text adjacent to icons conveys the full meaning without the icon.
+
+**Confidence:** HIGH (direct analysis of existing codebase)
+
+---
+
+### Pitfall 13: Dark Theme Toggle State Lost on Navigation and Refresh
+
+**What goes wrong:**
+If dark theme preference is stored only in JavaScript memory (a module-scoped variable), it is lost on page refresh. If stored in `localStorage`, it must be read and applied BEFORE the first render to prevent a flash of light theme (FOLT -- Flash of Light Theme). In an SPA, the theme must also persist across client-side navigation.
+
+**Prevention:**
+1. **Read theme preference synchronously in the HTML `<head>`** before the body renders:
+   ```html
+   <script nonce="__CSP_NONCE__">
+     if (localStorage.theme === 'dark' ||
+         (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+       document.documentElement.classList.add('dark');
+     }
+   </script>
+   ```
+2. This script MUST have the CSP nonce (use the `__CSP_NONCE__` placeholder that Vite and the Express server already replace).
+3. If the app is dark-only (no toggle), simply set the class statically in the HTML template and skip localStorage entirely.
+4. For Tailwind CSS 4, add the custom variant in `styles.css`:
+   ```css
+   @import "tailwindcss";
+   @custom-variant dark (&:where(.dark, .dark *));
+   ```
+
+**Confidence:** HIGH (Tailwind CSS 4 documentation, standard SPA pattern)
+
+---
+
+### Pitfall 14: Hardcoded Light Theme Colors in Existing Components
+
+**What goes wrong:**
+Every existing page and component in SecureShare uses hardcoded light-theme Tailwind classes:
+- `text-gray-900`, `text-gray-700`, `text-gray-600`, `text-gray-500` (text colors)
+- `bg-gray-50`, `bg-white` (backgrounds)
+- `border-gray-200`, `border-gray-300` (borders)
+- `placeholder-gray-400` (form placeholders)
+- `bg-primary-100`, `text-primary-700` (accent colors)
+- `bg-danger-500/10`, `text-danger-500` (error states)
+
+These appear in `create.ts`, `reveal.ts`, `confirmation.ts`, `error.ts`, `loading-spinner.ts`, `copy-button.ts`, `expiration-select.ts`, AND the `index.html` template (`bg-gray-50 text-gray-900` on `<body>`). Every single one must be updated with `dark:` variants or the base theme colors must be redefined.
+
+If the redesign is dark-only (no light mode), the approach is simpler: replace all light colors with dark equivalents directly. If supporting both themes, every color class needs a `dark:` counterpart.
+
+**Prevention:**
+1. **Audit every Tailwind class in every `.ts` and `.html` file** before starting theme work. Create a comprehensive list.
+2. **If dark-only**: do a find-and-replace of all color classes. No `dark:` prefix needed.
+3. **If dual-theme**: add `dark:` variant for every color class. Consider extracting common patterns into CSS custom properties referenced in the Tailwind `@theme` block to avoid class proliferation:
+   ```css
+   @theme {
+     --color-surface: oklch(0.97 0.00 0);
+     --color-text: oklch(0.15 0.00 0);
+   }
+   /* Then override in dark mode */
+   .dark {
+     --color-surface: oklch(0.13 0.02 260);
+     --color-text: oklch(0.93 0.01 260);
+   }
+   ```
+4. **Search for inline color strings** in TypeScript (like `'text-gray-900'` in class assignments) -- these are easy to miss in a find-and-replace.
+
+**Detection:**
+- Light-colored text on dark background is invisible
+- Light-colored borders on dark backgrounds are invisible
+- Form inputs have white backgrounds inside dark containers
+
+**Confidence:** HIGH (direct codebase analysis -- every affected file and class identified)
+
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation | Risk Level |
+|-------------|---------------|------------|------------|
+| Dark theme colors | OKLCH contrast ratios not meeting WCAG AA (Pitfall 6) | Verify all color pairs with hex equivalents through WebAIM contrast checker before shipping | HIGH |
+| SVG icon system | Inline styles blocked by CSP (Pitfall 1) | Use SVG presentation attributes exclusively, never `style=""` on SVG elements | CRITICAL |
+| SVG animations | Firefox CSP blocks `<animate>` on fill/stroke (Pitfall 5) | Use CSS `@keyframes` in stylesheet only, never SMIL | HIGH |
+| SEO meta tags | OG tags on secret routes leak existence (Pitfall 2) | Serve different HTML for `/secret/*` routes with noindex + generic OG | CRITICAL |
+| robots.txt | Swallowed by SPA catch-all (Pitfall 3) | Add explicit route + static file in `client/public/` | CRITICAL |
+| Glassmorphism | Performance collapse on mobile (Pitfall 8) | Limit to 1-2 elements, max blur(8px), provide solid fallback | MEDIUM |
+| Font loading | FOIT hides revealed secret text (Pitfall 9) | Use system fonts or `font-display: swap` with preloading | MEDIUM |
+| Existing tests | Dark theme breaks accessibility tests (Pitfall 4) | Incremental changes, run tests after each color change | HIGH |
+| Animations | `prefers-reduced-motion` not checked in JS (Pitfall 7) | Check media query for all JS-driven animations | HIGH |
+| Favicon/manifest | Not served correctly (Pitfall 10) | Place in `client/public/`, verify with curl | LOW |
+| Theme persistence | Flash of light theme on refresh (Pitfall 13) | Synchronous theme script in `<head>` with CSP nonce | MEDIUM |
+| Color migration | Hardcoded light classes throughout codebase (Pitfall 14) | Full audit before starting, systematic replacement | MEDIUM |
+| Browser chrome | Scrollbars/selects remain light (Pitfall 11) | Set `color-scheme: dark` on root | LOW |
+| Emoji icons | Inconsistent rendering (Pitfall 12) | Replace all emoji with SVG during this redesign | LOW |
+
+---
+
+## Integration Risk Matrix
+
+Pitfalls that are dangerous specifically because of SecureShare's security architecture:
+
+| Feature Being Added | Security Constraint It Conflicts With | Risk | Resolution |
+|---------------------|---------------------------------------|------|------------|
+| OG meta tags | Zero-knowledge: server must not acknowledge secret existence | CRITICAL | Different HTML templates for public vs. secret routes |
+| robots.txt / sitemap | Secret URLs must never be indexed | CRITICAL | Explicit disallow rules + X-Robots-Tag header |
+| SVG inline styles | CSP `style-src` nonce-based (no `unsafe-inline`) | HIGH | SVG presentation attributes only, no `style=""` |
+| SVG SMIL animations | CSP `style-src` enforcement in Firefox | HIGH | CSS keyframes in nonce'd stylesheet only |
+| Custom fonts | No external resource loading (fragment leak prevention) | MEDIUM | Self-host fonts, never use CDN |
+| Analytics/tracking for SEO | No third-party scripts (XSS risk, fragment leak) | CRITICAL | Do not add any tracking scripts |
+| Structured data (JSON-LD) | Must not reference secret URL patterns | MEDIUM | Generic site-level structured data only |
+| `color-scheme: dark` meta | Must not conflict with `referrer` meta tag | LOW | Separate meta elements, no conflict |
+| Dark theme toggle script | CSP `script-src` nonce-based | MEDIUM | Must include nonce placeholder |
+
+---
+
+## "Looks Done But Isn't" Checklist for UI/SEO Redesign
+
+- [ ] **SVGs render in production**: Test with Express server (CSP enforced), not just Vite dev mode
+- [ ] **robots.txt returns plain text**: `curl localhost:3000/robots.txt` returns `text/plain`, not HTML
+- [ ] **Secret routes are noindexed**: `curl -I localhost:3000/secret/test123` includes `X-Robots-Tag: noindex`
+- [ ] **No OG tags reference secrets**: View source of `/secret/:id` response -- no `og:url` with secret path
+- [ ] **Contrast ratios verified**: Every text/background pair checked with hex values in WebAIM checker
+- [ ] **`prefers-reduced-motion` works**: Enable OS reduce motion, verify all animations stop
+- [ ] **Firefox animations work**: Test all SVG/CSS animations in Firefox with CSP enforced
+- [ ] **Existing 6 a11y tests pass**: `npm run test:run` -- accessibility.test.ts passes
+- [ ] **No `'unsafe-inline'` added to CSP**: Check `security.ts` -- `style-src` still nonce-only
+- [ ] **Fonts self-hosted**: No external font requests in Network tab
+- [ ] **favicon.ico returns ICO/SVG**: `curl -I localhost:3000/favicon.ico` returns image content type
+- [ ] **Theme persists on refresh**: Refresh the page -- no flash of light theme
+- [ ] **Mobile performance acceptable**: Test glassmorphism on throttled CPU in DevTools
+
+---
 
 ## Sources
 
-- [PrivateBin Issue #174: Self-destroying mechanism can be circumvented](https://github.com/PrivateBin/PrivateBin/issues/174) -- HIGH confidence, primary source for self-destruct bypass
-- [PrivateBin Issue #374: Burn after reading + password combination bug](https://github.com/PrivateBin/PrivateBin/issues/374) -- HIGH confidence, documents password + self-destruct interaction flaw
-- [PrivateBin CVE-2024-39899: Authentication bypass](https://security.snyk.io/vuln/SNYK-PHP-PRIVATEBINPRIVATEBIN-7438560) -- HIGH confidence, NVD-listed CVE
-- [MDN: Web Crypto API SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) -- HIGH confidence, official documentation
-- [MDN: Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) -- HIGH confidence, official documentation
-- [MDN: Referrer-Policy header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy) -- HIGH confidence, official documentation
-- [MDN: Referrer header privacy and security concerns](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Referer_header:_privacy_and_security_concerns) -- HIGH confidence, official documentation
-- [OWASP: Cross-Site Scripting Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html) -- HIGH confidence, industry standard
-- [OWASP: Content Security Policy Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html) -- HIGH confidence, industry standard
-- [OWASP: Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) -- HIGH confidence, industry standard
-- [Romain Clement: Scrubbing URL fragments from Sentry crash reports](https://romain-clement.net/articles/sentry-url-fragments/) -- MEDIUM confidence, practitioner report on real-world fragment leak
-- [Neil Madden: Can you safely include credentials in a URL?](https://neilmadden.blog/2019/01/16/can-you-ever-safely-include-credentials-in-a-url/) -- MEDIUM confidence, security researcher analysis
-- [Snyk: Timing attack in Node.js](https://snyk.io/blog/node-js-timing-attack-ccc-ctf/) -- MEDIUM confidence, documented Node.js timing attack
-- [Simon Willison: Constant-time comparison in Node.js](https://til.simonwillison.net/node/constant-time-compare-strings) -- MEDIUM confidence, practical implementation guide
-- [Andrew Lock: Avoiding CDN supply-chain attacks with SRI](https://andrewlock.net/avoiding-cdn-supply-chain-attacks-with-subresource-integrity/) -- MEDIUM confidence, SRI best practices
-- [CSO Online: AI browsers tricked via URL fragments (HashJack)](https://www.csoonline.com/article/4097087/ai-browsers-can-be-tricked-with-malicious-prompts-hidden-in-url-fragments.html) -- MEDIUM confidence, emerging threat vector
-- [SecLab BU: Referrer leakage in collaboration services (academic paper)](https://seclab.bu.edu/papers/referrers-dimva2019.pdf) -- HIGH confidence, academic paper with empirical findings
-- [PostgreSQL Docs: VACUUM](https://www.postgresql.org/docs/current/sql-vacuum.html) -- HIGH confidence, official documentation
-- [PostgreSQL Docs: Routine Vacuuming](https://www.postgresql.org/docs/current/routine-vacuuming.html) -- HIGH confidence, official documentation
-- [Redis Docs: Key Expiration (EXPIRE command)](https://redis.io/docs/latest/commands/expire/) -- HIGH confidence, official documentation
-- [Redis Docs: Key Eviction](https://redis.io/docs/latest/develop/reference/eviction/) -- HIGH confidence, official documentation
-- [Redis Docs: Persistence](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) -- HIGH confidence, official documentation
-- [Seald: Common encryption implementation mistakes](https://www.seald.io/blog/3-common-mistakes-when-implementing-encryption) -- MEDIUM confidence, encryption vendor blog
-- [Uniqkey: Is One-Time Secret safe?](https://blog.uniqkey.eu/one-time-secret/) -- MEDIUM confidence, security analysis
-- [Google Cloud: Deep dive into PostgreSQL VACUUM](https://cloud.google.com/blog/products/databases/deep-dive-into-postgresql-vacuum-garbage-collector) -- HIGH confidence, authoritative technical analysis
-- [web.dev: Strict CSP to mitigate XSS](https://web.dev/articles/strict-csp) -- HIGH confidence, Google security team guidance
-- [Liran Tal: Poor Express Authentication Patterns](https://lirantal.com/blog/poor-express-authentication-patterns-nodejs) -- MEDIUM confidence, Node.js security practitioner
+### CSP and SVG Integration
+- [MDN: Content-Security-Policy: style-src](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src) -- HIGH confidence, official documentation
+- [MDN: Content-Security-Policy: style-src-attr](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src-attr) -- HIGH confidence, official documentation
+- [Firefox Bug 1262842: CSP blocks style attributes inside SVG silently](https://bugzilla.mozilla.org/show_bug.cgi?id=1262842) -- HIGH confidence, confirmed browser bug
+- [Firefox Bug 1459872: CSP blocks SVG animate tag](https://bugzilla.mozilla.org/show_bug.cgi?id=1459872) -- HIGH confidence, confirmed browser bug (unresolved)
+- [Chrome Bug 378500: CSP style-src and img-src violations in SVG](https://bugs.chromium.org/p/chromium/issues/detail?id=378500) -- HIGH confidence, Chromium issue tracker
+- [Font Awesome Issue #16827: SVG Symbols violate strict CSP](https://github.com/FortAwesome/Font-Awesome/issues/16827) -- MEDIUM confidence, real-world library CSP conflict
+- [Vite CSP Nonce Documentation](https://vite.dev/guide/features) -- HIGH confidence, official docs
+- [CSP Allow Inline Styles](https://content-security-policy.com/examples/allow-inline-style/) -- MEDIUM confidence, reference site
+
+### Accessibility and Dark Theme
+- [WCAG 2.1 Understanding SC 1.4.3: Contrast Minimum](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html) -- HIGH confidence, W3C specification
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) -- HIGH confidence, industry standard tool
+- [OddContrast: OKLCH-aware contrast checker](https://www.oddcontrast.com/) -- MEDIUM confidence, specialized tool
+- [W3C WCAG Technique C39: prefers-reduced-motion](https://www.w3.org/WAI/WCAG21/Techniques/css/C39) -- HIGH confidence, W3C technique
+- [MDN: prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion) -- HIGH confidence, official documentation
+- [web.dev: prefers-reduced-motion](https://web.dev/articles/prefers-reduced-motion) -- HIGH confidence, Google guidance
+- [Color Contrast Accessibility WCAG 2025 Guide](https://www.allaccessible.org/blog/color-contrast-accessibility-wcag-guide-2025) -- MEDIUM confidence, comprehensive guide
+
+### SEO and Crawling
+- [Google: Block Search Indexing with noindex](https://developers.google.com/search/docs/crawling-indexing/block-indexing) -- HIGH confidence, Google official docs
+- [Google: Robots Meta Tag Specifications](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag) -- HIGH confidence, Google official docs
+- [Google: X-Robots-Tag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Robots-Tag) -- HIGH confidence, MDN documentation
+- [Open Graph Protocol](https://ogp.me/) -- HIGH confidence, protocol specification
+- [Robots.txt and SEO 2026](https://searchengineland.com/robots-txt-seo-453779) -- MEDIUM confidence, SEO industry source
+
+### Dark Theme and Tailwind CSS 4
+- [Tailwind CSS 4 Dark Mode](https://tailwindcss.com/docs/dark-mode) -- HIGH confidence, official documentation
+- [MDN: color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme) -- HIGH confidence, official documentation
+- [MDN: backdrop-filter](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/backdrop-filter) -- HIGH confidence, official documentation
+
+### Font Loading
+- [web.dev: Ensure text remains visible during webfont load](https://www.debugbear.com/blog/ensure-text-remains-visible-during-webfont-load) -- MEDIUM confidence, DebugBear
+- [CSS-Tricks: Font Loading Strategies](https://css-tricks.com/the-best-font-loading-strategies-and-how-to-execute-them/) -- MEDIUM confidence, industry reference
+- [DebugBear: Fixing Layout Shifts Caused by Web Fonts](https://www.debugbear.com/blog/web-font-layout-shift) -- MEDIUM confidence, performance analysis
 
 ---
-*Pitfalls research for: SecureShare -- Zero-knowledge secret sharing web application*
-*Researched: 2026-02-13*
+*Pitfalls research for: SecureShare UI Redesign (dark theme, SVG icons, animations, SEO)*
+*Researched: 2026-02-15*
+*Supersedes: N/A (complementary to existing PITFALLS.md covering security fundamentals)*
