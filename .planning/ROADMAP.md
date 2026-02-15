@@ -31,7 +31,7 @@ See [v1.0 Roadmap Archive](milestones/v1.0-ROADMAP.md) for full phase details.
 - Integer phases (9, 10, 11...): Planned milestone work
 - Decimal phases (9.1, 10.1): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 9: Design System Foundation** — Semantic color tokens, dark palette, typography, and icon utility module
+- [x] **Phase 9: Design System Foundation** — Semantic color tokens, dark palette, typography, and icon utility module ✓
 - [ ] **Phase 10: SEO Static Assets** — Favicon, robots.txt, sitemap, web manifest, and noscript fallback
 - [ ] **Phase 11: Layout Shell + Component Migration** — Persistent header/footer, dot-grid background, and emoji-to-Lucide icon swap
 - [ ] **Phase 12: Page-Level UI Enhancements** — Per-page feature upgrades: URL display, textarea indicator, trust section, code-block secrets
@@ -53,9 +53,9 @@ See [v1.0 Roadmap Archive](milestones/v1.0-ROADMAP.md) for full phase details.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Install packages, define OKLCH token system and typography in styles.css, update index.html
-- [ ] 09-02-PLAN.md — Migrate all page/component hardcoded classes to semantic tokens, clean up legacy tokens, visual verification
-- [ ] 09-03-PLAN.md — Create Lucide icon utility module with consistent defaults and unit tests
+- [x] 09-01-PLAN.md — Install packages, define OKLCH token system and typography in styles.css, update index.html
+- [x] 09-02-PLAN.md — Migrate all page/component hardcoded classes to semantic tokens, clean up legacy tokens, visual verification
+- [x] 09-03-PLAN.md — Create Lucide icon utility module with consistent defaults and unit tests
 
 ### Phase 10: SEO Static Assets
 **Goal**: Search engines and social platforms can discover, index, and display SecureShare correctly — all static SEO infrastructure is in place before any UI refactoring begins
@@ -150,7 +150,7 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 6. Expiration Worker | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 7. Trust and Accessibility | v1.0 | 2/2 | Complete | 2026-02-15 |
 | 8. Tech Debt Cleanup | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 9. Design System Foundation | v2.0 | 0/3 | Planned | - |
+| 9. Design System Foundation | v2.0 | 3/3 | Complete | 2026-02-15 |
 | 10. SEO Static Assets | v2.0 | 0/? | Not started | - |
 | 11. Layout Shell + Component Migration | v2.0 | 0/? | Not started | - |
 | 12. Page-Level UI Enhancements | v2.0 | 0/? | Not started | - |
