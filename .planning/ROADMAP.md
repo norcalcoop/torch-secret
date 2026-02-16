@@ -36,7 +36,7 @@ See [v1.0 Roadmap Archive](milestones/v1.0-ROADMAP.md) for full phase details.
 - [x] **Phase 11: Layout Shell + Component Migration** — Persistent header/footer, dot-grid background, and emoji-to-Lucide icon swap (completed 2026-02-16)
 - [x] **Phase 12: Page-Level UI Enhancements** — Per-page feature upgrades: URL display, textarea indicator, trust section, code-block secrets (completed 2026-02-16)
 - [x] **Phase 13: Theme Toggle + Visual Polish** — Dark/light/system toggle, glassmorphism, and micro-interaction animations (completed 2026-02-16)
-- [ ] **Phase 14: SEO Router Integration** — Dynamic meta tags, noindex on secret routes, JSON-LD structured data
+- [x] **Phase 14: SEO Router Integration** — Dynamic meta tags, noindex on secret routes, JSON-LD structured data (completed 2026-02-16)
 
 ## Phase Details
 
@@ -158,4 +158,4 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 11. Layout Shell + Component Migration | v2.0 | Complete    | 2026-02-16 | - |
 | 12. Page-Level UI Enhancements | v2.0 | Complete    | 2026-02-16 | - |
 | 13. Theme Toggle + Visual Polish | v2.0 | Complete    | 2026-02-16 | - |
-| 14. SEO Router Integration | v2.0 | 0/2 | Not started | - |
+| 14. SEO Router Integration | v2.0 | Complete    | 2026-02-16 | - |
