@@ -36,7 +36,19 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ### Active
 
-(No active milestone — planning next)
+**Milestone v3.0: Production-Ready Delivery**
+
+- [ ] E2E browser tests covering full create-share-reveal user journeys
+- [ ] Unit test gap coverage for untested code paths
+- [ ] ESLint + Prettier configuration with pre-commit hooks
+- [ ] TypeScript strict-mode error resolution
+- [ ] Dockerfile + docker-compose for local development
+- [ ] Render.com deployment configuration for one-click production deploy
+- [ ] GitHub Actions CI/CD pipeline (lint → test → build → deploy)
+- [ ] GitHub repo polish (issue templates, PR templates, contributing guide, badges)
+- [ ] Enhanced app homepage with hero, features, trust signals, and create form
+- [ ] Polished README with screenshots, architecture diagram, and install instructions
+- [ ] Product Hunt + social media launch preparation
 
 ### Out of Scope
 
@@ -99,5 +111,9 @@ SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret rou
 | X-Robots-Tag + meta noindex defense-in-depth | Belt-and-suspenders: server header + client meta for secret routes | ✓ Good |
 | Toast replace strategy (no stacking) | Simpler UX; only latest feedback visible | ✓ Good |
 
+| Render.com for deployment | Free tier, easy Docker deploy, built-in PostgreSQL + Redis | — Pending |
+| Playwright for E2E tests | Modern, fast, built-in multi-browser, great CI support | — Pending |
+| ESLint + Prettier for code quality | Industry standard, wide ecosystem, pre-commit hook support | — Pending |
+
 ---
-*Last updated: 2026-02-16 after v2.0 milestone*
+*Last updated: 2026-02-16 after v3.0 milestone start*
