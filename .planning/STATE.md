@@ -7,9 +7,9 @@ See: .planning/PROJECT.md
 ## Position
 
 **Milestone:** v2.0 Developer-Grade UI & SEO
-**Current phase:** Phase 13 — Theme Toggle & Visual Polish
-**Current Plan:** Not started
-**Status:** Milestone complete
+**Current phase:** Phase 14 — SEO Router Integration
+**Current Plan:** Plan 02 of 02 complete
+**Status:** Phase complete
 
 ## Decisions
 
@@ -30,6 +30,8 @@ See: .planning/PROJECT.md
 - JS-driven icon swap uses matchMedia check for reduced-motion instead of CSS-only approach
 - Glassmorphism standard: bg-surface/80 backdrop-blur-md shadow-lg on content cards
 - Terminal block and error pages excluded from glassmorphism (distinct visual identity)
+- X-Robots-Tag set via req.path (not req.url) to avoid query string matching issues
+- Test suite creates temp client/dist/index.html in beforeAll for CI portability
 
 ## Performance Metrics
 
@@ -40,6 +42,7 @@ See: .planning/PROJECT.md
 | 12    | 03   | 3min     | 2     | 3     |
 | 13    | 01   | 4min     | 3     | 6     |
 | 13    | 02   | 3min     | 3     | 5     |
+| 14    | 02   | 2min     | 2     | 2     |
 
 ## Session Log
 
@@ -50,3 +53,4 @@ See: .planning/PROJECT.md
 - 2026-02-16: Plan 12-03 complete — confirmation/reveal/error page enhancements (URL card, terminal block, destruction badge, already_viewed error)
 - 2026-02-16: Plan 13-01 complete — dual theme CSS tokens, FOWT prevention, theme manager, three-way toggle component
 - 2026-02-16: Plan 13-02 complete — glassmorphism surfaces, page animations, button micro-interactions, copy-button icon swap, motion-safe compliance
+- 2026-02-16: Plan 14-02 complete — X-Robots-Tag: noindex, nofollow header for /secret/* routes, integration tests
