@@ -76,6 +76,14 @@ export function buildApp() {
         res.locals.cspNonce,
       );
       res.setHeader('Content-Type', 'text/html');
+
+      // Defense-in-depth: HTTP-level noindex for secret routes.
+      // Crawlers see this header before parsing HTML, preventing indexing
+      // even if the client-side meta tag fails to render.
+      if (req.path.startsWith('/secret/')) {
+        res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      }
+
       res.send(html);
     });
   }
