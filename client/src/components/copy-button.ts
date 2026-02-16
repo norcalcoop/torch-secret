@@ -1,8 +1,12 @@
 /**
- * Reusable copy-to-clipboard button with visual feedback.
+ * Reusable copy-to-clipboard button with toast feedback.
  *
  * Uses the Clipboard API with a textarea fallback for older browsers.
+ * Success/failure feedback is shown via the shared toast notification
+ * system instead of inline button text changes.
  */
+
+import { showToast } from './toast.js';
 
 /**
  * Create a copy button that copies text to the clipboard on click.
@@ -27,38 +31,19 @@ export function createCopyButton(
 
     try {
       await navigator.clipboard.writeText(text);
-      showSuccess(button, defaultLabel);
+      showToast('Copied to clipboard');
     } catch {
       // Fallback for older browsers or insecure contexts
       try {
         fallbackCopy(text);
-        showSuccess(button, defaultLabel);
+        showToast('Copied to clipboard');
       } catch {
-        button.setAttribute('aria-live', 'polite');
-        button.textContent = 'Failed to copy';
-        setTimeout(() => {
-          button.textContent = defaultLabel;
-          button.removeAttribute('aria-live');
-        }, 2000);
+        showToast('Failed to copy');
       }
     }
   });
 
   return button;
-}
-
-/**
- * Show "Copied!" feedback on the button, then restore after 2 seconds.
- */
-function showSuccess(button: HTMLButtonElement, defaultLabel: string): void {
-  button.setAttribute('aria-live', 'polite');
-  button.textContent = 'Copied!';
-  button.classList.add('text-success');
-  setTimeout(() => {
-    button.textContent = defaultLabel;
-    button.classList.remove('text-success');
-    button.removeAttribute('aria-live');
-  }, 2000);
 }
 
 /**
