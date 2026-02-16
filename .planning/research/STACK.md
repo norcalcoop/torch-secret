@@ -1,412 +1,530 @@
-# Stack Research: Dark Theme UI Redesign + SEO Infrastructure
+# Technology Stack: DevOps, Testing, and Code Quality Milestone
 
-**Domain:** Dark developer-themed UI redesign and SEO infrastructure for existing vanilla TS web app
-**Researched:** 2026-02-15
+**Project:** SecureShare
+**Researched:** 2026-02-16
 **Confidence:** HIGH
 
 ## Scope
 
-This document covers ONLY the new stack additions needed for the v2.0 milestone. The existing validated stack (Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Vitest 4, vanilla TypeScript) is unchanged and not re-researched.
+This document covers ONLY the new stack additions needed for the v3.0 milestone: Docker deployment to Render.com, GitHub Actions CI/CD, Playwright E2E tests, ESLint + Prettier, TypeScript strict mode enforcement, and enhanced marketing homepage. The existing validated stack (Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Redis, Vitest 4, vanilla TypeScript, lucide, JetBrains Mono, etc.) is unchanged and not re-researched.
+
+---
 
 ## Recommended Stack Additions
 
-### Icons: Lucide (vanilla JS package)
+### 1. E2E Testing: Playwright
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| lucide | ^0.564.0 | SVG icon library for vanilla JS | Tree-shakable ES modules. Each icon is ~200-300 bytes gzipped. The `createElement()` API returns DOM SVG elements directly -- perfect match for the project's existing `document.createElement` / `createElementNS` pattern. No framework dependency. 1,500+ icons. |
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| @playwright/test | ^1.50.0 | End-to-end browser testing | The standard E2E framework for 2026. Supports Node.js 24 natively. Multi-browser (Chromium, Firefox, WebKit). Built-in `webServer` config launches both Express backend and Vite frontend before tests. Auto-waits for elements, reducing flake. HTML report with traces for debugging CI failures. |
 
-**Integration approach:** Use `createElement` from lucide, not `createIcons`.
+**Why NOT Cypress:** Cypress does not support WebKit (Safari), limiting cross-browser coverage. Playwright's `webServer` array natively handles the dual-server setup (Express + Vite) without `concurrently` or wrapper scripts. Playwright is also faster in CI due to parallel browser contexts sharing a single browser instance.
 
-The project already creates SVGs manually via `createElementNS` (see `confirmation.ts` lines 48-74). Lucide's `createElement(IconName, { class: '...', 'stroke-width': 2 })` replaces 15-20 lines of manual SVG construction with a single function call, while outputting identical SVG DOM nodes.
+**Why NOT Selenium/WebdriverIO:** Legacy architecture. Playwright's auto-wait and trace viewer are a generation ahead for developer experience.
 
-```typescript
-import { createElement, ShieldCheck } from 'lucide';
+**Why pin to ^1.50.0 (not ^1.58.0):** Playwright ships breaking browser changes with every minor version. Pinning to `^1.50.0` allows patch updates within the 1.50.x series without surprise failures from browser engine upgrades. When ready, intentionally bump to `^1.51.0`, `^1.52.0`, etc. The latest available version is 1.58.2 (released 2026-02-06). Start at 1.50 minimum to ensure Node.js 24 support and stable API surface, then upgrade incrementally.
 
-// Before: 20 lines of createElementNS, setAttribute, appendChild
-// After:
-const icon = createElement(ShieldCheck, {
-  class: 'w-8 h-8 text-success-500',
-  'stroke-width': 2,
-});
-container.appendChild(icon);
-```
+**IMPORTANT: Pin strategy.** Unlike most npm packages, Playwright bundles specific browser versions per release. A `^1.50.0` range means npm will install 1.50.x patches only. When you want to upgrade browsers, explicitly bump: `npm install @playwright/test@1.52 && npx playwright install`.
 
-**Why NOT `createIcons`:** The `createIcons` approach scans the DOM for `data-lucide` attributes, which requires HTML templates to exist first. The project renders pages programmatically via TypeScript -- `createElement` fits this pattern. `createIcons` would fight the architecture.
+**Integration with existing Vitest:**
 
-**Why NOT inline SVG path data (current approach):** The project already has manual SVG paths in `confirmation.ts`. For 3-4 icons this was fine. The redesign will need 15-20+ icons across all pages and components (shield, lock, key, copy, check, alert, clock, eye, eye-off, terminal, external-link, etc.). Maintaining raw SVG path data for 20 icons is error-prone and harder to update. Lucide's tree-shaking means only imported icons ship.
+Playwright E2E tests live in a separate directory (`e2e/`) with their own config (`playwright.config.ts`). They do NOT run through Vitest. The two test systems are independent:
+- Vitest: Unit + integration tests (163 existing tests, fast, no browser)
+- Playwright: E2E tests (real browsers, full user flows)
 
-**Vite dev mode caveat:** Vite does not tree-shake in dev mode. With lucide's 1,500+ icons, importing from the barrel export can cause slow HMR during development. Mitigate by importing from the package directly (Vite 7 handles this well with optimizeDeps), or if needed, add an alias in vite.config.ts:
+**webServer configuration for dual Express + Vite:**
 
 ```typescript
-resolve: {
-  alias: {
-    'lucide/icons': fileURLToPath(
-      new URL('./node_modules/lucide/dist/esm/icons', import.meta.url)
-    ),
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI ? 'html' : 'list',
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry',
   },
-},
+  webServer: [
+    {
+      command: 'npm run dev:server',
+      url: 'http://localhost:3000/api/health',
+      name: 'Express API',
+      timeout: 30_000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'npm run dev:client',
+      url: 'http://localhost:5173',
+      name: 'Vite Frontend',
+      timeout: 30_000,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    // Add firefox/webkit later when stable
+  ],
+});
 ```
 
-### Font: JetBrains Mono Variable via Fontsource
+**Key detail:** Playwright's `webServer` array launches both servers sequentially, waits for each URL to respond 2xx/3xx, then runs tests. This eliminates the need for `concurrently`, `wait-on`, or any process management library.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| @fontsource-variable/jetbrains-mono | ^5.2.8 | Self-hosted monospace font for headings and code | Self-hosted fonts are 200-300ms faster than Google Fonts. Variable font covers weights 100-800 in a single file (~100kb woff2), eliminating multiple font file requests. No external requests = better privacy (critical for a security-focused app) and no GDPR concerns with Google Fonts tracking. |
+**Health check endpoint required:** The Express server needs a `GET /api/health` endpoint returning 200. This is also needed for Render.com deployment. Add it once, use it everywhere.
 
-**Why variable font over static:** The redesign needs multiple weights (bold headings, regular body text within monospace sections). A variable font serves all weights from one file. Static @fontsource/jetbrains-mono would require separate files per weight.
+---
 
-**Why self-hosted over Google Fonts:**
-1. Privacy: Google Fonts sends user IP and browser info to Google servers. For a zero-knowledge secret sharing app, making requests to Google undermines the trust model.
-2. Performance: Self-hosted fonts avoid the extra DNS lookup + connection to fonts.googleapis.com + fonts.gstatic.com (two additional origins).
-3. Reliability: No dependency on external CDN availability.
+### 2. Linting: ESLint 10 + typescript-eslint
 
-**CSS import strategy:** Do NOT use `import '@fontsource-variable/jetbrains-mono'` in TypeScript. This creates a separate CSS request that delays font discovery. Instead, copy the `@font-face` declaration into `styles.css` directly so it bundles with the main CSS file and the browser discovers the font on first paint.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| eslint | ^10.0.0 | JavaScript/TypeScript linting | ESLint 10 released 2026-02-06. Flat config is now the ONLY config system (eslintrc removed entirely). Smaller install (9.4MB vs 11MB). JSX reference tracking eliminates false positives. Node.js >=24 supported. |
+| @eslint/js | ^10.0.0 | ESLint recommended rule set | Companion package for ESLint 10 recommended rules. |
+| typescript-eslint | ^8.56.0 | TypeScript-specific linting rules | Supports ESLint `^8.57.0 \|\| ^9.0.0 \|\| ^10.0.0` and TypeScript `>=4.8.4 <6.0.0`. Provides `tseslint.configs.recommended`, `.strict`, and `.stylistic` presets. |
 
-```css
-/* In styles.css, alongside @import "tailwindcss" */
-@font-face {
-  font-family: 'JetBrains Mono Variable';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 100 800;
-  src: url(@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2) format('woff2-variations');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-```
+**Why ESLint 10 over ESLint 9:** ESLint 10 was released 10 days ago (2026-02-06). Since the project has NO existing ESLint configuration, there is zero migration cost. ESLint 9 is already in maintenance mode. Starting fresh on 10 avoids a near-future migration. typescript-eslint 8.56.0 already supports ESLint 10 (confirmed: peer dependency `^8.57.0 || ^9.0.0 || ^10.0.0`).
 
-Then register in Tailwind via @theme:
+**Risk assessment:** ESLint 10 is brand new. Some ecosystem plugins may not yet support it. However, SecureShare's linting needs are simple (TypeScript + Prettier integration) and do not require exotic plugins. The core typescript-eslint and eslint-config-prettier packages already support ESLint 10. If any compatibility issue surfaces, falling back to ESLint 9 (`^9.0.0`) is trivial since both use flat config.
 
-```css
-@theme {
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
-}
-```
+**FALLBACK: If ESLint 10 causes issues with any dependency, drop to `eslint@^9.0.0` and `@eslint/js@^9.0.0`. The config file format is identical.**
 
-### Dark Theme: Tailwind CSS 4 @theme + @custom-variant (no new packages)
+**Configuration (eslint.config.ts -- TypeScript config file):**
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Tailwind CSS 4 (existing) | ^4.1.18 | Dark mode via semantic color tokens | Already installed. Tailwind v4's `@theme` directive and `@custom-variant` provide everything needed for a dark theme. Zero additional dependencies. |
-
-**Dark mode architecture -- semantic tokens, not scattered `dark:` prefixes:**
-
-The project currently uses hardcoded colors like `text-gray-900`, `bg-gray-50`, `border-gray-200` throughout 7+ TypeScript files. A dark theme with `dark:` variants on every element would double the class strings and make maintenance painful.
-
-Instead, define semantic color tokens in `styles.css` that switch values based on theme:
-
-```css
-@import "tailwindcss";
-
-/* Class-based dark mode toggle (not media query) */
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* Light theme values (default) */
-:root {
-  --color-surface: oklch(0.985 0.002 250);
-  --color-surface-raised: oklch(1 0 0);
-  --color-text-primary: oklch(0.15 0.01 250);
-  --color-text-secondary: oklch(0.45 0.02 250);
-  --color-border: oklch(0.88 0.01 250);
-}
-
-/* Dark theme values */
-.dark {
-  --color-surface: oklch(0.13 0.02 260);
-  --color-surface-raised: oklch(0.18 0.02 260);
-  --color-text-primary: oklch(0.93 0.01 250);
-  --color-text-secondary: oklch(0.65 0.02 250);
-  --color-border: oklch(0.30 0.02 260);
-}
-
-@theme {
-  --color-surface: var(--color-surface);
-  --color-surface-raised: var(--color-surface-raised);
-  --color-text-primary: var(--color-text-primary);
-  --color-text-secondary: var(--color-text-secondary);
-  --color-border: var(--color-border);
-}
-```
-
-Then use `bg-surface`, `text-text-primary`, `border-border` in components -- no `dark:` prefix needed. Theme switches by toggling `.dark` class on `<html>`.
-
-**Theme toggle persistence:**
+Since the project has `"type": "module"` and uses TypeScript 5.9, ESLint 10 supports `eslint.config.ts` natively with Node.js >= 22.13.0 (no jiti needed for Node.js 24).
 
 ```typescript
-// On page load
-document.documentElement.classList.toggle(
-  'dark',
-  localStorage.theme === 'dark' ||
-    (!('theme' in localStorage) &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches)
+// eslint.config.ts
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
+
+export default tseslint.config(
+  // Global ignores
+  { ignores: ['dist/', 'client/dist/', 'drizzle/', 'node_modules/'] },
+
+  // Base recommended rules
+  eslint.configs.recommended,
+
+  // TypeScript rules (recommended + strict)
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
+  // Prettier must be LAST to override formatting rules
+  eslintConfigPrettier,
 );
 ```
 
-No external library needed. Store preference in `localStorage`, default to system preference.
+**Why `recommendedTypeChecked` over `recommended`:** The project already has `strict: true` in tsconfig.json. Type-checked linting catches bugs that syntax-only rules miss (e.g., `no-floating-promises`, `no-unsafe-assignment`). Since the TypeScript compiler is already running, the incremental cost is minimal.
 
-### Animations: Tailwind CSS 4 @theme keyframes (no new packages)
+**Why NOT `strictTypeChecked`:** Too aggressive for initial adoption. Start with `recommendedTypeChecked`, assess the findings, then optionally upgrade to `strictTypeChecked` in a future phase.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Tailwind CSS 4 (existing) | ^4.1.18 | Custom animations via @theme @keyframes | Tailwind v4 supports defining `@keyframes` directly inside `@theme` blocks, generating `animate-*` utility classes. No animation library needed. |
-| CSS `@starting-style` | Native CSS | Enter/exit transitions from display:none | Baseline available since Firefox 129 (mid-2025). Enables transitions when elements appear in the DOM without JavaScript animation orchestration. |
+---
 
-**Why NOT Framer Motion / GSAP / anime.js:** The project is vanilla TypeScript with no framework. Framer Motion requires React. GSAP and anime.js add 10-30kb for effects achievable with CSS. The redesign needs simple micro-interactions: fade-in on page load, slide-up on card reveal, pulse on copy feedback, glow on hover. All achievable with CSS transitions and @keyframes.
+### 3. Code Formatting: Prettier
 
-**Custom animation definitions in styles.css:**
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| prettier | ^3.8.0 | Opinionated code formatter | Latest stable: 3.8.1 (released 2026-01-14). TypeScript config file support (3.5+). No configuration debates -- enforces consistency. |
+| eslint-config-prettier | ^10.1.0 | Disables ESLint rules that conflict with Prettier | Essential when using ESLint + Prettier together. Turns off all formatting-related ESLint rules so Prettier owns formatting and ESLint owns logic. |
 
-```css
-@theme {
-  --animate-fade-in: fade-in 0.3s ease-out;
-  --animate-slide-up: slide-up 0.4s ease-out;
-  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
+**Why NOT eslint-plugin-prettier:** Running Prettier as an ESLint rule (via eslint-plugin-prettier) is slower than running Prettier separately. The recommended approach is eslint-config-prettier (disable conflicts) + run Prettier as a separate step. This is the official Prettier team recommendation.
 
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 4px oklch(0.58 0.19 250 / 0.3); }
-    50% { box-shadow: 0 0 16px oklch(0.58 0.19 250 / 0.6); }
-  }
-}
-```
-
-Usage: `class="animate-fade-in"`, `class="animate-slide-up"`. Respect `motion-reduce:` for accessibility (already used in the loading spinner).
-
-### Glassmorphism: CSS backdrop-filter (no new packages)
-
-Native CSS. No libraries needed. Tailwind provides `backdrop-blur-*` utilities out of the box.
-
-```html
-<div class="bg-surface-raised/80 backdrop-blur-md border border-border rounded-xl">
-```
-
-Key considerations:
-- `backdrop-filter: blur()` is Baseline widely available (all modern browsers).
-- On dark backgrounds, use lower opacity (`/60` to `/80`) for the frosted effect.
-- Always provide a solid fallback for `@supports not (backdrop-filter: blur(1px))`.
-
-### Favicon: Manual creation (no build-time package)
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| RealFaviconGenerator (web tool) | N/A | One-time favicon generation | Generates all 3 required files from a single SVG source. No build dependency. Run once, commit output. |
-
-**The minimal favicon set (2026 consensus):**
-
-1. `favicon.ico` -- 32x32 ICO, for legacy browsers and bots that request `/favicon.ico` directly
-2. `favicon.svg` -- Scalable SVG with `prefers-color-scheme` media query for light/dark adaptation
-3. `apple-touch-icon.png` -- 180x180 PNG for iOS home screen bookmarks
-
-**HTML tags:**
-
-```html
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-```
-
-**Why NOT vite-plugin-favicon or @vite-pwa/assets-generator:** These add build-time dependencies for what is fundamentally a one-time operation. Generate favicons once from the brand SVG, commit the files, done. Adding a Vite plugin for this adds complexity to every build for zero ongoing benefit.
-
-### Web Manifest: Manual JSON file (no package)
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| site.webmanifest (hand-written) | N/A | PWA metadata, app name, theme color | A 15-line JSON file. No generator needed. |
+**Prettier configuration (.prettierrc):**
 
 ```json
 {
-  "name": "SecureShare",
-  "short_name": "SecureShare",
-  "description": "Zero-knowledge, one-time secret sharing",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 80,
+  "tabWidth": 2,
+  "arrowParens": "always"
 }
 ```
 
-Link in HTML: `<link rel="manifest" href="/site.webmanifest">`
+**Integration with existing code:** The project has 6,296 LOC with no formatter. The initial `npx prettier --write .` will reformat everything. This should be a dedicated commit before any other changes to keep git blame clean.
 
-### OG Image: Static file, not generated (no package)
+---
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Static og-image.png (hand-crafted) | N/A | Open Graph social sharing preview | SecureShare has exactly ONE page that gets shared publicly (the homepage). A single static 1200x630 PNG is simpler and more reliable than Satori/resvg runtime generation. |
+### 4. Docker: Multi-Stage Build
 
-**Why NOT Satori (`satori` ^0.19.2):** Satori converts JSX to SVG, then needs `@resvg/resvg-js` to convert SVG to PNG. This adds two dependencies (~5MB native binary for resvg), a build step, and JSX syntax to a project that deliberately avoids JSX. For a single static OG image, this is massive over-engineering.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| node:24-slim (Debian Bookworm) | 24.x LTS | Docker base image | Official Node.js LTS image. Debian Bookworm-slim is ~200MB (vs ~1GB for full image, ~180MB for Alpine). Slim chosen over Alpine because `argon2` native module uses prebuilt binaries compiled for glibc (Ubuntu/Debian). Alpine uses musl libc, which would require compiling argon2 from source with build tools. |
 
-**Why NOT `@vercel/og`:** Requires Vercel's edge runtime or Next.js. Not applicable.
+**Why NOT node:24-alpine:** The project depends on `argon2@0.44.0`, a native N-API module with prebuilt binaries for glibc-based Linux (Ubuntu/Debian). Alpine Linux uses musl libc, which is incompatible with these prebuilts. Using Alpine would require installing `python3`, `make`, `g++`, and compiling argon2 from source during Docker build -- adding 2-3 minutes to build time and ~300MB to intermediate layers. Bookworm-slim avoids this entirely.
 
-**OG image approach:** Design the 1200x630 image once (matching the dark terminal aesthetic), export as PNG, place in `client/public/og-image.png`. Add meta tags:
+**Why multi-stage build:** The project has both a Vite client build step and a server build step. Multi-stage builds separate build dependencies (TypeScript compiler, Vite, dev packages) from the runtime image, resulting in ~80% smaller production images.
 
-```html
-<meta property="og:image" content="https://secureshare.example/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SecureShare - Zero-knowledge one-time secret sharing">
+**Dockerfile structure:**
+
+```dockerfile
+# Stage 1: Install ALL dependencies (build + runtime)
+FROM node:24-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Stage 2: Build client (Vite) and compile server (TypeScript)
+FROM deps AS build
+COPY . .
+RUN npm run build:client
+# Server runs via tsx in production OR compile to JS:
+# RUN npx tsc --project tsconfig.server.json
+
+# Stage 3: Production runtime
+FROM node:24-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copy only production dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy built client assets
+COPY --from=build /app/client/dist ./client/dist
+
+# Copy server source (runs via tsx) or compiled JS
+COPY --from=build /app/server ./server
+COPY --from=build /app/shared ./shared
+COPY --from=build /app/drizzle ./drizzle
+
+# Non-root user for security
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
+
+EXPOSE 10000
+CMD ["npx", "tsx", "server/src/server.ts"]
 ```
 
-### JSON-LD Structured Data: Inline script tag (no package)
+**Production server execution choice:** The project currently uses `tsx watch` for development. For production Docker, there are two approaches:
+1. **tsx (simpler):** Include `tsx` in production dependencies. Adds ~5MB but avoids a separate server compilation step. Good for getting started.
+2. **Compiled JS (smaller):** Add a `tsconfig.server.json` for server-only compilation, compile to `dist/server/`, run with `node dist/server/server.js`. Eliminates tsx dependency in production. Better for final optimization.
 
-No package needed. JSON-LD is a `<script type="application/ld+json">` block in `index.html`. Google recommends this format. It does not interact with visible page content.
+Recommend starting with tsx for simplicity, then optimize to compiled JS in a future iteration.
 
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "SecureShare",
-  "url": "https://secureshare.example",
-  "description": "Zero-knowledge, one-time secret sharing. End-to-end encrypted in your browser.",
-  "applicationCategory": "SecurityApplication",
-  "operatingSystem": "All",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  }
-}
-</script>
+**Critical: .dockerignore**
+
+```
+node_modules
+dist
+client/dist
+.git
+.env
+.env.*
+.planning
+*.md
+e2e
+playwright-report
+test-results
 ```
 
-**Why `WebApplication` over `WebSite`:** SecureShare is an interactive tool, not a content site. `WebApplication` with `applicationCategory: SecurityApplication` gives search engines the most accurate classification.
+---
 
-### SEO Meta Tags: Hand-written in index.html (no package)
+### 5. Render.com Deployment: Blueprint YAML
 
-No package needed. Add standard meta tags to `index.html`:
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| render.yaml (Blueprint) | N/A | Infrastructure-as-code for Render.com | Declarative service definition. Defines web service, PostgreSQL, and Redis together. Git-committed, reproducible. Auto-deploys on push to main. |
 
-```html
-<meta name="description" content="Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser.">
-<meta property="og:title" content="SecureShare - Zero-Knowledge Secret Sharing">
-<meta property="og:description" content="End-to-end encrypted. One-time view. No accounts.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://secureshare.example">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SecureShare - Zero-Knowledge Secret Sharing">
-<meta name="twitter:description" content="End-to-end encrypted. One-time view. No accounts.">
-<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+**render.yaml structure:**
+
+```yaml
+services:
+  - type: web
+    runtime: docker
+    name: secureshare
+    repo: https://github.com/OWNER/secureshare
+    region: oregon
+    plan: starter
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    healthCheckPath: /api/health
+    numInstances: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secureshare-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: secureshare-redis
+          type: keyvalue
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+
+  - type: keyvalue
+    name: secureshare-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: allow-all
+
+databases:
+  - name: secureshare-db
+    plan: free
+    region: oregon
+    databaseName: secureshare
+    postgresMajorVersion: "17"
 ```
 
-The SPA router already updates `document.title` per page. For SEO, the critical content is in `index.html` since search engines may not execute JS.
+**Key Render.com details:**
+- Default PORT is 10000 (not 3000). The app must read `process.env.PORT`. The existing `env.ts` already does this with `.default(3000)`. For Render, set PORT=10000 in the blueprint.
+- Health checks: Render sends GET requests to `healthCheckPath`. The Express app needs `GET /api/health` returning 200.
+- PostgreSQL free tier: 1GB storage, never expires (but was previously 30-day expiry -- verify current terms).
+- Redis free tier: 25MB ephemeral storage. Data lost on restart. Fine for rate limiting (MemoryStore fallback exists).
+- Docker builds use BuildKit with layer caching. Multi-stage builds are parallelized.
+- `ipAllowList` is REQUIRED for Key Value (Redis) instances, even if allowing all.
+
+**Render.com PORT gotcha:** The existing `env.ts` defaults PORT to 3000. Render defaults to 10000. The render.yaml above explicitly sets PORT=10000, but the app should also work if PORT is not set (falls back to 3000 for local dev). This is already handled by the Zod schema: `PORT: z.coerce.number().default(3000)`.
+
+---
+
+### 6. CI/CD: GitHub Actions
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| actions/checkout | @v6 | Clone repository | Latest major (released 2024-10-14). Stores credentials under $RUNNER_TEMP for better security. |
+| actions/setup-node | @v6 | Install Node.js 24 | Latest major (v6.2.0, released 2025-01-15). Auto-caches npm dependencies when package-lock.json exists. |
+| actions/upload-artifact | @v4 | Upload Playwright reports | Latest major. Stores HTML reports and traces for debugging failed E2E tests. |
+
+**GitHub Actions workflow structure (3 jobs):**
+
+```yaml
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx eslint .
+      - run: npx prettier --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: secureshare_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/secureshare_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run test:run
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [test]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: secureshare_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/secureshare_e2e
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+```
+
+**Key design decisions:**
+- **3 separate jobs** (lint, test, e2e): Lint and test run in parallel. E2E depends on test passing (no point running expensive browser tests if unit tests fail).
+- **PostgreSQL service container:** Real PostgreSQL 17, matching production. Uses GitHub Actions service containers (not Docker Compose). The existing integration tests already require a real database.
+- **No Redis service container:** Rate limiting has a MemoryStore fallback. Redis is optional. Adding a Redis service container is easy later if needed.
+- **`--with-deps chromium`:** Install only Chromium (not all 3 browsers) in CI to save ~2 minutes of download time. Add Firefox/WebKit when cross-browser testing matters.
+- **`needs: [test]`:** E2E only runs after unit/integration tests pass. This saves CI minutes on PRs with test failures.
+
+---
+
+### 7. npm Scripts Additions
+
+| Script | Command | Purpose |
+|--------|---------|---------|
+| `lint` | `eslint .` | Run ESLint |
+| `lint:fix` | `eslint . --fix` | Auto-fix ESLint issues |
+| `format` | `prettier --write .` | Format all files |
+| `format:check` | `prettier --check .` | Check formatting (CI) |
+| `test:e2e` | `playwright test` | Run E2E tests |
+| `test:e2e:ui` | `playwright test --ui` | Open Playwright UI for debugging |
+| `test:e2e:headed` | `playwright test --headed` | Run tests in visible browser |
+
+---
 
 ## Installation
 
 ```bash
-# New production dependencies (2 packages)
-npm install lucide @fontsource-variable/jetbrains-mono
+# E2E testing
+npm install -D @playwright/test
+npx playwright install chromium
 
-# No new dev dependencies needed
+# Linting
+npm install -D eslint @eslint/js typescript-eslint eslint-config-prettier
+
+# Formatting
+npm install -D prettier
+
+# No new production dependencies needed
 ```
 
-Total new dependency footprint:
-- `lucide`: Tree-shaken to only imported icons (~3-5kb gzipped for ~20 icons)
-- `@fontsource-variable/jetbrains-mono`: One woff2 file (~100kb, cached after first load)
+Total new dev dependencies: 6 packages
+Total new production dependencies: 0 packages
 
-Everything else (dark theme, animations, glassmorphism, favicon, manifest, OG image, JSON-LD, meta tags) uses existing Tailwind CSS 4 features, native CSS, or static files.
+---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| `lucide` (npm createElement) | Manual SVG path data (current approach) | Only if using 3-4 icons total. At 15-20+ icons, Lucide's tree-shaking and single-line API beats maintaining raw SVG paths. |
-| `lucide` (npm createElement) | `lucide-static` (raw SVG files) | If you need SVGs as standalone .svg files for server-side rendering. Not relevant for client-side DOM creation. |
-| `lucide` (npm createElement) | Heroicons / Phosphor / Tabler | If you prefer a different icon aesthetic. Lucide has the largest set (1,500+), excellent tree-shaking, and a vanilla JS package. Heroicons lacks a vanilla JS package (React/Vue only). |
-| `@fontsource-variable/jetbrains-mono` | Google Fonts CDN | If you do not care about privacy or have no GDPR concerns. For a zero-knowledge security app, self-hosting is non-negotiable. |
-| `@fontsource-variable/jetbrains-mono` | Self-hosting from JetBrains GitHub release | If you want to manually download woff2 files. Fontsource wraps this in an npm package with proper CSS, reducing manual work. |
-| Semantic CSS tokens (`:root` + `.dark`) | Scattered `dark:` Tailwind prefixes | If you have very few elements (under 10) to theme. Once you have 50+ elements across 7+ files, semantic tokens save massive duplication. |
-| CSS @keyframes in @theme | Framer Motion | Only if using React. Not applicable here. |
-| CSS @keyframes in @theme | GSAP / anime.js | Only if you need complex sequenced animations (timeline, physics). Simple fade/slide/glow does not justify 10-30kb of animation library. |
-| Static OG image | Satori + resvg | Only if you have many unique pages that each need distinct OG images. SecureShare has one shareable page. |
-| RealFaviconGenerator (web tool) | vite-plugin-favicon | Only if favicon source changes frequently (e.g., white-label product with per-tenant branding). For a single brand, generate once and commit. |
-| Manual site.webmanifest | vite-plugin-pwa | Only if building a full PWA with service worker, offline support, and installability. SecureShare is a web app, not a PWA. Secrets require network to fetch. |
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| E2E testing | @playwright/test | Cypress | No WebKit support. Single-tab architecture limits complex flow testing. No native multi-server webServer config. |
+| E2E testing | @playwright/test | WebdriverIO | Legacy Selenium-based architecture. Slower, more flaky, worse DX. |
+| Linting | ESLint 10 | ESLint 9 | ESLint 9 is in maintenance. No existing config to migrate. Starting fresh on 10 is free. |
+| Linting | ESLint 10 | Biome | Biome is fast but TypeScript type-checked linting is limited. typescript-eslint's `recommendedTypeChecked` ruleset catches more bugs. Biome cannot replace ESLint for type-aware rules like `no-floating-promises`. |
+| Formatting | Prettier | Biome formatter | Would require Biome for linting too (or awkward dual-tool setup). Prettier has wider ecosystem support and editor integration. |
+| Formatting | Prettier (separate) | eslint-plugin-prettier | Running Prettier as ESLint rule is slower. Official Prettier team recommends against it. |
+| Docker base | node:24-slim | node:24-alpine | argon2 native module has prebuilt binaries for glibc (Debian). Alpine uses musl, requiring source compilation. |
+| Docker base | node:24-slim | node:24 (full) | Full image is ~1GB vs ~200MB for slim. No need for gcc/python in runtime image. |
+| Deployment | Render.com | Railway | Render has native PostgreSQL + Redis managed services with infrastructure-as-code (render.yaml). Railway requires manual service setup. |
+| Deployment | Render.com | Fly.io | Fly.io requires more DevOps knowledge (Machines API, volumes). Render is simpler for a single-instance app. |
+| CI/CD | GitHub Actions | CircleCI / GitLab CI | Repo is on GitHub. Actions is native, free for public repos, tightest integration. |
 
-## What NOT to Use
+---
+
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `@iconify/iconify` or `unplugin-icons` | Massive icon meta-library (150+ icon sets). Adds runtime for icon loading. Overkill for one icon set. | `lucide` (single package, tree-shaken) |
-| `tailwindcss-animate` plugin | Third-party Tailwind plugin for animations. Tailwind v4's native `@theme` @keyframes makes this unnecessary. Adds a dependency for zero benefit. | `@theme { @keyframes ... }` in styles.css |
-| Google Fonts API | External request to Google servers. Privacy violation for a zero-knowledge app. Adds latency (DNS + connection to two Google domains). | Self-hosted via @fontsource-variable |
-| `next-seo` / `react-helmet` | React-specific SEO packages. Not applicable to vanilla TS. | Hand-written meta tags in index.html |
-| `schema-dts` (TypeScript types for Schema.org) | Adds a dependency for type-checking a 15-line JSON-LD block. Overkill. | Hand-written JSON-LD in index.html |
-| `css-loader` / `style-loader` | Webpack-era CSS tooling. Vite + Tailwind CSS 4 handles all CSS processing natively. | Vite + @tailwindcss/vite plugin (already installed) |
-| `@tailwindcss/typography` plugin | Prose styling for long-form content. SecureShare has no articles or blog posts. | Custom Tailwind classes |
-| `sharp` (for favicon/OG generation) | 50MB+ native dependency. Use a web tool (RealFaviconGenerator) for one-time generation instead of a build-time dependency. | RealFaviconGenerator (web tool) |
+| `concurrently` / `npm-run-all` | Playwright's `webServer` array handles multi-server startup natively. No need for process management libraries for E2E tests. | Playwright `webServer: [...]` |
+| `wait-on` | Playwright's webServer already polls the URL and waits for response. Redundant. | Playwright `webServer.url` + `timeout` |
+| `husky` + `lint-staged` (for now) | Add AFTER linting is stable and the team has resolved all existing lint errors. Adding pre-commit hooks before cleanup creates friction. Phase later. | Run lint/format in CI first |
+| `eslint-plugin-prettier` | Slower than running Prettier separately. Mixes formatting errors into lint output. | `eslint-config-prettier` + separate `prettier` command |
+| `docker-compose.yml` for production | Render.com manages service orchestration via render.yaml. Docker Compose is for local dev only (and even that is optional since PostgreSQL/Redis can run natively or via standalone containers). | render.yaml for production, optional docker-compose.yml for local dev convenience |
+| `ts-node` | tsx is already in use and is faster (esbuild-based vs TypeScript compiler). | tsx (already a dependency) |
+| `nodemon` | tsx watch already provides file watching for development. | `tsx watch` (already in dev:server script) |
 
-## Version Compatibility
+---
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| lucide ^0.564.0 | Vite 7.x | ES modules, tree-shakable. May need `optimizeDeps.include: ['lucide']` in Vite config if dev HMR is slow. |
-| lucide ^0.564.0 | TypeScript 5.9.x | Full type definitions included. Icons are typed, createElement returns SVGSVGElement. |
-| @fontsource-variable/jetbrains-mono ^5.2.8 | Vite 7.x | Vite resolves the woff2 file from node_modules. Use CSS @font-face import, not JS import, for optimal loading. |
-| @fontsource-variable/jetbrains-mono ^5.2.8 | Tailwind CSS 4.x | Register in @theme as `--font-mono`. Tailwind generates `font-mono` utility. |
-| Tailwind CSS 4.x @custom-variant | All modern browsers | `@custom-variant dark` is processed at build time by Tailwind. Output CSS uses standard selectors. No browser compatibility concern. |
-| CSS @starting-style | Chrome 117+, Safari 17.5+, Firefox 129+ | Baseline Newly available mid-2025. Provide fallback for older browsers (elements appear without animation). |
-| CSS backdrop-filter: blur() | Chrome 76+, Safari 9+, Firefox 103+ | Baseline widely available. Use `@supports` for graceful degradation. |
+## Version Compatibility Matrix
 
-## Vite Configuration Changes
+| New Package | Node.js 24 | TypeScript 5.9 | Vite 7 | Express 5 | Vitest 4 |
+|-------------|------------|----------------|--------|-----------|----------|
+| @playwright/test ^1.50.0 | YES (tested) | YES | N/A (separate) | N/A | Independent |
+| eslint ^10.0.0 | YES (requires >=24) | N/A | N/A | N/A | N/A |
+| typescript-eslint ^8.56.0 | YES | YES (<6.0.0) | N/A | N/A | N/A |
+| prettier ^3.8.0 | YES | YES | N/A | N/A | N/A |
+| eslint-config-prettier ^10.1.0 | YES | N/A | N/A | N/A | N/A |
 
-The only vite.config.ts change potentially needed:
+All new packages are dev dependencies only. They do not affect the production bundle or runtime behavior.
 
-```typescript
-import { defineConfig } from 'vite';
-import tailwindcss from '@tailwindcss/vite';
+---
 
-export default defineConfig({
-  plugins: [tailwindcss()],
-  root: 'client',
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-  },
-  html: {
-    cspNonce: '__CSP_NONCE__',
-  },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
-  },
-  // Add only if Lucide dev HMR is slow:
-  // optimizeDeps: {
-  //   include: ['lucide'],
-  // },
-});
-```
+## Configuration Files to Create
+
+| File | Purpose | Notes |
+|------|---------|-------|
+| `eslint.config.ts` | ESLint 10 flat config | TypeScript config (native Node.js 24 support, no jiti needed) |
+| `.prettierrc` | Prettier options | JSON format, minimal options |
+| `.prettierignore` | Files Prettier should skip | dist/, drizzle/, package-lock.json |
+| `playwright.config.ts` | Playwright E2E config | webServer array, browser projects, CI settings |
+| `Dockerfile` | Multi-stage Docker build | node:24-slim, 3 stages (deps, build, runtime) |
+| `.dockerignore` | Files excluded from Docker context | node_modules, .git, .env, e2e, .planning |
+| `render.yaml` | Render.com Blueprint | Web service + PostgreSQL + Redis |
+| `.github/workflows/ci.yml` | GitHub Actions CI pipeline | lint + test + e2e jobs |
+
+---
 
 ## Sources
 
-- [Lucide vanilla JS docs](https://lucide.dev/guide/packages/lucide) -- createElement API, tree-shaking architecture, HIGH confidence
-- [Lucide npm](https://www.npmjs.com/package/lucide) -- v0.564.0, last published February 2026, HIGH confidence
-- [Tailwind CSS dark mode docs](https://tailwindcss.com/docs/dark-mode) -- @custom-variant syntax for class-based toggle, HIGH confidence
-- [Tailwind CSS theme docs](https://tailwindcss.com/docs/theme) -- @theme directive for CSS variables and utility generation, HIGH confidence
-- [Tailwind CSS animation docs](https://tailwindcss.com/docs/animation) -- @keyframes inside @theme blocks, HIGH confidence
-- [Fontsource JetBrains Mono install](https://fontsource.org/fonts/jetbrains-mono/install) -- v5.2.8, variable font, latin subset, HIGH confidence
-- [Fontsource performance with Vite](https://aaronjbecker.com/posts/fontsource-fontaine-tailwind-vite/) -- CSS import vs JS import performance, MEDIUM confidence
-- [Evil Martians favicon guide (2026 update)](https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs) -- Three-file minimal favicon set, HIGH confidence
-- [Tailwind CSS v4 theming patterns](https://medium.com/@sir.raminyavari/theming-in-tailwind-css-v4-support-multiple-color-schemes-and-dark-mode-ba97aead5c14) -- Semantic token approach with CSS variables, MEDIUM confidence
-- [Vite Lucide tree-shaking optimization](https://christopher.engineering/en/blog/lucide-icons-with-vite-dev-server) -- Alias pattern for dev performance, MEDIUM confidence
-- [Google structured data docs](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript) -- JSON-LD with JavaScript, HIGH confidence
-- [MDN @starting-style](https://developer.mozilla.org/en-US/docs/Web/CSS/@starting-style) -- Browser support baseline, HIGH confidence
-- [web.dev entry animations](https://web.dev/blog/baseline-entry-animations) -- @starting-style + transition-behavior baseline status, HIGH confidence
+### HIGH Confidence (verified with official docs)
+- [Playwright installation docs](https://playwright.dev/docs/intro) -- Node.js 24 support confirmed, npm package name
+- [Playwright release notes](https://playwright.dev/docs/release-notes) -- v1.58 latest, version history
+- [Playwright webServer docs](https://playwright.dev/docs/test-webserver) -- Multiple webServer array config, all options documented
+- [Playwright CI setup](https://playwright.dev/docs/ci-intro) -- GitHub Actions workflow template, action versions
+- [ESLint 10 release blog](https://eslint.org/blog/2026/02/eslint-v10.0.0-released/) -- Breaking changes, Node.js requirements, eslintrc removal
+- [typescript-eslint getting started](https://typescript-eslint.io/getting-started/) -- Flat config setup, package names
+- [typescript-eslint dependency versions](https://typescript-eslint.io/users/dependency-versions/) -- ESLint `^8.57.0 || ^9.0.0 || ^10.0.0` confirmed, TypeScript `>=4.8.4 <6.0.0`
+- [Render.com Blueprint spec](https://render.com/docs/blueprint-spec) -- render.yaml structure, all field definitions
+- [Render.com Docker docs](https://render.com/docs/docker) -- Multi-stage builds, layer caching, BuildKit
+- [Render.com health checks](https://render.com/docs/health-checks) -- GET requests, 2xx/3xx expected
+- [actions/checkout releases](https://github.com/actions/checkout/releases) -- v6 latest
+- [actions/setup-node releases](https://github.com/actions/setup-node/releases) -- v6.2.0 latest
+- [Docker Hub node:24-slim](https://hub.docker.com/_/node) -- Debian Bookworm-slim, LTS tags
+
+### MEDIUM Confidence (verified with multiple sources)
+- [Prettier 3.8 release](https://prettier.io/blog/) -- v3.8.1 latest, TS config support from 3.5+
+- [eslint-config-prettier npm](https://www.npmjs.com/package/eslint-config-prettier) -- v10.1.8 latest, flat config support
+- [argon2 npm](https://www.npmjs.com/package/argon2) -- Prebuilt binaries for glibc (Ubuntu/Debian), v0.44.0
+- [Render.com pricing](https://render.com/pricing) -- Free tier PostgreSQL and Redis availability, ephemeral Redis
+
+### LOW Confidence (needs validation during implementation)
+- ESLint 10 ecosystem compatibility: While typescript-eslint and eslint-config-prettier support ESLint 10, other plugins may not yet. Test during setup and fall back to ESLint 9 if blocked.
+- Render.com free tier PostgreSQL expiry: Conflicting reports on whether free tier databases expire after 30 days. Verify current terms during deployment setup.
+- tsx in production Docker: Running tsx (esbuild JIT) in production works but adds ~5MB. Consider compiling to JS for production in a later optimization pass.
 
 ---
-*Stack research for: SecureShare v2.0 -- Dark Theme UI Redesign + SEO Infrastructure*
-*Researched: 2026-02-15*
+*Stack research for: SecureShare v3.0 -- DevOps, Testing, and Code Quality*
+*Researched: 2026-02-16*

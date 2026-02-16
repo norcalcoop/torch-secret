@@ -1,727 +1,919 @@
-# Architecture Patterns: Dark Theme UI Redesign + SEO Infrastructure
+# Architecture Patterns: Production-Ready Delivery Infrastructure
 
-**Domain:** Dark terminal-inspired UI theme, icon system, layout components, animations, and SEO for existing vanilla TypeScript SPA
-**Researched:** 2026-02-15
+**Domain:** Docker deployment, CI/CD, E2E testing, linting, and enhanced homepage for existing Express+Vite monorepo
+**Researched:** 2026-02-16
 **Overall Confidence:** HIGH
 
 ---
 
 ## Recommended Architecture
 
-The redesign adds five distinct layers to the existing vanilla TS SPA architecture. Each integrates at a specific point in the existing code without requiring structural rewrites.
+The v3.0 milestone adds five infrastructure layers around the existing application code. Each layer has clear integration points with the existing monorepo. No existing application logic changes are required -- this is purely additive infrastructure wrapping the existing Express 5 + Vite 7 + vanilla TS architecture.
 
 ```
-index.html                    <-- Add <header>, <footer>, dark body classes, SEO meta
+secureshare/
   |
-  +-- styles.css              <-- Extend @theme with dark palette, glassmorphism, animations
+  +-- Dockerfile                  <-- NEW: Multi-stage build (deps -> client build -> server build -> production)
+  +-- docker-compose.yml          <-- NEW: Dev environment (app + PostgreSQL + Redis)
+  +-- docker-compose.prod.yml     <-- NEW: Production compose (optional, for self-hosting)
+  +-- render.yaml                 <-- NEW: Render.com IaC blueprint
+  +-- .dockerignore               <-- NEW: Exclude node_modules, .git, .planning, etc.
   |
-  +-- app.ts                  <-- Initialize theme, render header/footer (one-time)
-  |     |
-  |     +-- router.ts         <-- Extend updatePageMeta() for SEO meta tags
-  |     |
-  |     +-- components/
-  |     |     +-- header.ts   <-- NEW: persistent site header with nav + branding
-  |     |     +-- footer.ts   <-- NEW: persistent site footer with links
-  |     |     +-- icons.ts    <-- NEW: icon utility wrapping Lucide createElement
-  |     |
-  |     +-- pages/*.ts        <-- Update class names for dark theme tokens
+  +-- .github/
+  |     +-- workflows/
+  |     |     +-- ci.yml          <-- NEW: Lint -> Unit Test -> Build -> E2E -> Deploy
+  |     +-- ISSUE_TEMPLATE/       <-- NEW: Bug report + feature request templates
+  |     +-- PULL_REQUEST_TEMPLATE.md <-- NEW: PR checklist
   |
-  +-- public/
-  |     +-- robots.txt        <-- NEW: crawl directives
-  |     +-- sitemap.xml       <-- NEW: indexable URL map
+  +-- e2e/                        <-- NEW: Playwright test suite (sibling to client/ and server/)
+  |     +-- playwright.config.ts  <-- webServer array: Express backend + Vite frontend
+  |     +-- pages/                <-- Page Object Models
+  |     |     +-- create.page.ts
+  |     |     +-- reveal.page.ts
+  |     |     +-- confirmation.page.ts
+  |     +-- tests/
+  |     |     +-- create-secret.spec.ts
+  |     |     +-- reveal-secret.spec.ts
+  |     |     +-- password-protection.spec.ts
+  |     |     +-- expiration.spec.ts
+  |     |     +-- error-states.spec.ts
+  |     +-- fixtures/
+  |           +-- test-fixtures.ts  <-- Custom fixtures extending base test
   |
-  +-- server/src/app.ts       <-- NO CHANGES: express.static already serves before catch-all
+  +-- eslint.config.ts            <-- NEW: Flat config with typescript-eslint + Prettier
+  +-- .prettierrc                 <-- NEW: Prettier config
+  +-- .prettierignore             <-- NEW: Exclude dist, coverage, etc.
+  |
+  +-- client/                     <-- EXISTING (pages/create.ts MODIFIED for enhanced homepage)
+  +-- server/                     <-- EXISTING (server.ts MODIFIED: add /healthz endpoint)
+  +-- shared/                     <-- EXISTING (no changes)
+  +-- package.json                <-- MODIFIED: Add lint/format/e2e scripts, husky prepare
 ```
 
 ### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| `styles.css` (@theme) | Dark palette, glassmorphism utilities, animation keyframes | All components via Tailwind classes |
-| `components/icons.ts` | Lucide icon creation utility, tree-shakable icon exports | All pages and components |
-| `components/header.ts` | Persistent branding, navigation, theme identity | `router.ts` (navigate), `icons.ts` |
-| `components/footer.ts` | Site links, trust signals, copyright | `icons.ts` |
-| `router.ts` (extended) | SEO meta tag management on route change | `index.html` meta elements |
-| `public/robots.txt` | Search engine crawl directives | Served by express.static |
-| `public/sitemap.xml` | Indexable URL map for search engines | Referenced by robots.txt |
+| `Dockerfile` | Multi-stage build: deps, client build, server compile, production image | `package.json`, `client/`, `server/`, `shared/` |
+| `docker-compose.yml` | Local dev: PostgreSQL 17 + Redis 7 + app with hot reload | `Dockerfile`, `.env.example` |
+| `render.yaml` | Render.com IaC: web service + PostgreSQL + Redis | `Dockerfile`, Render platform |
+| `.github/workflows/ci.yml` | CI pipeline: lint, test, build, E2E, deploy | All of the above |
+| `e2e/` | Playwright E2E browser tests | Running app (client + server), PostgreSQL |
+| `eslint.config.ts` | ESLint flat config for TS monorepo | `tsconfig.json`, `client/`, `server/`, `shared/` |
+| `server/src/app.ts` | Health check endpoint for Docker/Render | Existing middleware chain |
+| `client/src/pages/create.ts` | Enhanced homepage with hero section | Existing component system |
 
 ### Data Flow
 
-**Theme application:** `styles.css` defines CSS custom properties via `@theme` with dark surface color tokens using OKLCH. The body element uses these tokens directly (`bg-surface-900 text-gray-100`). This is a dark-only design -- no light/dark toggle, no `@custom-variant dark` needed. The color tokens defined in `@theme` are inherently dark values.
+**Docker Build Flow:**
+```
+Stage 1 (deps):     node:24-slim + npm ci --omit=dev + npm ci (all deps for build)
+Stage 2 (client):   Copy source -> vite build -> client/dist/
+Stage 3 (server):   Copy source -> tsc -> dist/server/
+Stage 4 (prod):     node:24-slim + production node_modules + client/dist + server dist
+                    -> CMD ["node", "dist/server/server/src/server.js"]
+```
 
-**Icon flow:** Page/component code imports named icons from `icons.ts` utility. The utility calls Lucide's `createElement()` which returns an `SVGSVGElement`. The caller appends it to the DOM. Tree-shaking ensures only used icons ship in the bundle.
+**CI Pipeline Flow:**
+```
+Push/PR -> Checkout -> Setup Node 24 -> npm ci
+  |
+  +-> [parallel] ESLint + Prettier check
+  +-> [parallel] Vitest (client + server, needs PostgreSQL service)
+  |
+  +-> Vite build + tsc compile
+  |
+  +-> Playwright E2E (needs app running + PostgreSQL + built client)
+  |
+  +-> [on main only] Deploy to Render via deploy hook
+```
 
-**SEO meta flow:** On each route change, `router.ts` calls `updatePageMeta()` which sets `document.title`, updates `<meta name="description">`, and updates `<link rel="canonical">` in the document head. Static robots.txt and sitemap.xml are served from Vite's `client/public/` directory, which Express serves via `express.static()` before the SPA catch-all.
+**E2E Test Flow:**
+```
+playwright.config.ts webServer array:
+  1. npm run dev:server  (Express on :3000)
+  2. npm run dev:client  (Vite on :5173, proxy /api -> :3000)
 
-**Header/footer lifecycle:** `app.ts` renders the header and footer once at startup, outside the `#app` container. The router swaps only the `#app` content on navigation. Header and footer persist across route changes.
+Playwright browsers -> http://localhost:5173
+  -> Vite serves client SPA
+  -> /api/* proxied to Express :3000
+  -> Express uses test PostgreSQL
+```
+
+**Lint Flow:**
+```
+Developer edits file -> git add -> git commit
+  -> husky pre-commit hook -> lint-staged
+    -> ESLint --fix on staged .ts files
+    -> Prettier --write on staged .ts/.css/.json files
+  -> Commit proceeds (or blocks on errors)
+```
 
 ---
 
 ## Integration Points: Detailed Analysis
 
-### 1. Icon Module: Utility, Not Component
+### 1. Docker Multi-Stage Build for Monorepo
 
-**Decision:** Create `client/src/components/icons.ts` as a utility module that re-exports Lucide's `createElement` with project defaults.
+**Decision:** Use a 4-stage Dockerfile with `node:24-slim` (Debian bookworm-slim) as base. Do NOT use Alpine due to argon2 native addon compilation issues.
 
-**Rationale:** The existing codebase has an inline SVG pattern in `confirmation.ts` (lines 48-74) using `document.createElementNS`. This works but is verbose (26 lines for one icon). Lucide's `createElement` produces the same output (an `SVGSVGElement` with `aria-hidden="true"`) in 1-2 lines.
+**Why node:24-slim over Alpine:** The project depends on `argon2` (v0.44.0), which has native Node.js addons compiled via node-gyp. Alpine uses musl libc, and argon2's prebuilt binaries target glibc (Ubuntu). Building from source on Alpine requires installing `make`, `gcc`, `g++`, `python3` -- adding ~200MB and 2-3 minutes to build time. `node:24-slim` (Debian bookworm-slim) is ~50MB larger than Alpine but includes glibc, so argon2's prebuilt binaries work out of the box. Net build time is faster.
 
-**Why utility, not component:** A "component" in this codebase means a function returning an `HTMLElement` (like `createCopyButton`, `createExpirationSelect`). Icons are sub-element building blocks, not standalone components. They get appended inside other components. An icon utility that returns SVG elements fits the existing pattern better.
+**Confidence:** HIGH -- argon2 prebuilt binary compatibility with glibc is documented in the [argon2 npm package](https://www.npmjs.com/package/argon2), and node:24-slim images are available on [Docker Hub](https://hub.docker.com/_/node/tags).
 
-**Implementation pattern:**
+**Multi-stage strategy:**
+
+```dockerfile
+# Stage 1: Install ALL dependencies (dev + prod) for building
+FROM node:24-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Stage 2: Build client (Vite)
+FROM deps AS client-build
+COPY client/ client/
+COPY shared/ shared/
+COPY vite.config.ts tsconfig.json ./
+RUN npm run build:client
+
+# Stage 3: Build server (TypeScript -> JS)
+FROM deps AS server-build
+COPY server/ server/
+COPY shared/ shared/
+COPY tsconfig.json ./
+RUN npx tsc -p server/tsconfig.json
+
+# Stage 4: Production image
+FROM node:24-slim AS production
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=client-build /app/client/dist ./client/dist
+COPY --from=server-build /app/dist ./dist
+COPY shared/ shared/
+COPY drizzle/ drizzle/
+EXPOSE 3000
+CMD ["node", "dist/server/server/src/server.js"]
+```
+
+**Key integration details:**
+
+- The server's `app.ts` (line 60) resolves `client/dist` relative to `import.meta.dirname`: `resolve(import.meta.dirname, '../../client/dist')`. In the Docker image, the compiled server JS is at `dist/server/server/src/app.js`, so `../../client/dist` resolves to `dist/server/client/dist` -- WRONG. The `COPY --from=client-build` must place `client/dist` at the path the server expects. Solution: copy to `/app/client/dist` and ensure the server's runtime path resolution works. The existing code uses `import.meta.dirname` which resolves at runtime. In the Docker container, `dist/server/server/src/app.js` -> dirname is `/app/dist/server/server/src/` -> `../../client/dist` -> `/app/dist/server/client/dist`. This is incorrect. **Fix needed:** Either (a) adjust the server path resolution to use an env var like `CLIENT_DIST_PATH`, or (b) place `client/dist` at the relative path the compiled server expects. Option (b) is cleaner: `COPY --from=client-build /app/client/dist /app/dist/server/client/dist`. This preserves the existing relative path resolution without code changes.
+
+- The `drizzle/` migrations folder must be present for `db:migrate`. Copy it to the production image.
+
+- The `shared/` directory is needed at runtime because server imports reference `../../../shared/types/api.js` via compiled JS paths.
+
+**Health check endpoint:** Add `GET /healthz` to `server/src/app.ts` that returns `200 OK` with a JSON body. This is used by Docker's `HEALTHCHECK`, Render's health checks, and CI readiness probes. Place it before the static/SPA middleware so it responds even if `client/dist` is missing.
 
 ```typescript
-// client/src/components/icons.ts
-import { createElement, Shield, Lock, Copy, Clock, Eye,
-         EyeOff, AlertTriangle, Check, ExternalLink, Github } from 'lucide';
-
-// Project defaults: match existing SVG style from confirmation.ts
-const DEFAULTS = {
-  'stroke-width': 2,
-  'aria-hidden': 'true',
-} as const;
-
-/**
- * Create a Lucide SVG icon element with project defaults.
- * Returns an SVGSVGElement ready to append to the DOM.
- */
-export function icon(
-  IconNode: Parameters<typeof createElement>[0],
-  attrs?: Record<string, string | number>,
-): SVGSVGElement {
-  return createElement(IconNode, { ...DEFAULTS, ...attrs }) as SVGSVGElement;
-}
-
-// Re-export named icons for tree-shaking
-export { Shield, Lock, Copy, Clock, Eye, EyeOff,
-         AlertTriangle, Check, ExternalLink, Github };
-```
-
-**Usage in pages:**
-
-```typescript
-import { icon, Shield } from '../components/icons.js';
-
-const shieldIcon = icon(Shield, { class: 'w-8 h-8 text-success-500' });
-wrapper.appendChild(shieldIcon);
-```
-
-**CSP implication:** NONE. Lucide's `createElement` uses `document.createElementNS('http://www.w3.org/2000/svg', 'svg')` -- identical to the existing pattern in `confirmation.ts`. No inline styles, no data URIs, no external requests. The current CSP (`img-src 'self'`) is unaffected because inline SVG elements are DOM nodes, not image resources.
-
-**Confidence:** HIGH -- verified Lucide's vanilla JS API via official docs at lucide.dev/guide/packages/lucide. The `createElement` function returns standard DOM elements.
-
-### 2. Header/Footer Integration with router.ts
-
-**Decision:** Render header and footer in `app.ts` at startup, outside the `#app` div. The router continues to swap only `#app` content.
-
-**Current index.html structure:**
-
-```html
-<body class="min-h-screen bg-gray-50 text-gray-900">
-  <a href="#main-content" class="sr-only ...">Skip to main content</a>
-  <div id="route-announcer" ...></div>
-  <main id="main-content">
-    <div id="app" class="max-w-2xl mx-auto px-4 py-8"></div>
-  </main>
-  <script type="module" src="/src/app.ts"></script>
-</body>
-```
-
-**Proposed structure:**
-
-```html
-<body class="min-h-screen bg-surface-900 text-gray-100 flex flex-col font-mono">
-  <a href="#main-content" class="sr-only ...">Skip to main content</a>
-  <div id="route-announcer" ...></div>
-  <header id="site-header"></header>
-  <main id="main-content" class="flex-1">
-    <div id="app" class="max-w-2xl mx-auto px-4 py-8"></div>
-  </main>
-  <footer id="site-footer"></footer>
-  <script type="module" src="/src/app.ts"></script>
-</body>
-```
-
-**Why render in app.ts, not hardcode in HTML:** The header and footer use Lucide icons (via the icon utility) and SPA navigation links (via `navigate()`). These require JavaScript. Hardcoding HTML would mean either duplicating icon SVGs or loading them differently. Rendering in `app.ts` keeps the pattern consistent: JavaScript creates DOM, Tailwind styles it.
-
-**app.ts changes:**
-
-```typescript
-import './styles.css';
-import { initRouter } from './router.js';
-import { renderHeader } from './components/header.js';
-import { renderFooter } from './components/footer.js';
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Render persistent layout elements (once, not per route)
-  renderHeader(document.getElementById('site-header')!);
-  renderFooter(document.getElementById('site-footer')!);
-
-  // Initialize SPA router (swaps #app content per route)
-  initRouter();
+// In buildApp(), after JSON parser, before routes:
+app.get('/healthz', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 ```
 
-**Router remains unchanged for layout.** The `handleRoute()` function targets `document.getElementById('app')` and clears/fills only that container. Header and footer live outside it. No router modifications needed for layout persistence.
+### 2. Docker Compose for Local Development
 
-**Skip link remains correct.** The existing `<a href="#main-content">` skip link points to the `<main>` element, which wraps `#app`. The header renders before `<main>`, so the skip link correctly jumps past it.
+**Decision:** Provide `docker-compose.yml` for PostgreSQL 17 + Redis 7. The Node.js app runs on the host (not in Docker) for hot-reload speed. An optional `docker-compose.prod.yml` includes the app container for production simulation.
 
-**Confidence:** HIGH -- this is a standard SPA layout pattern. The existing architecture already separates the router target (`#app`) from the page structure.
+**Why host-mode app, not containerized for dev:** The existing dev workflow (`npm run dev:server` via tsx watch + `npm run dev:client` via Vite dev server) provides sub-second hot reload. Running in Docker adds a file-sync layer that degrades HMR by 2-5x. Developers get the best DX running the app natively while Docker provides only the infrastructure dependencies.
 
-### 3. Tailwind CSS 4 @theme Extension for Dark Palette
+```yaml
+# docker-compose.yml (dev infrastructure only)
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: secureshare
+      POSTGRES_PASSWORD: secureshare
+      POSTGRES_DB: secureshare
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secureshare"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-**Decision:** Extend the existing `styles.css` `@theme` block with dark surface colors, glassmorphism tokens, monospace font, and animation keyframes. This is a dark-by-design app, not a toggled theme.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-**Current styles.css:**
-
-```css
-@import "tailwindcss";
-
-@theme {
-  --color-primary-50: oklch(0.97 0.02 250);
-  /* ... primary and status colors ... */
-}
+volumes:
+  pgdata:
 ```
 
-**Extended styles.css pattern:**
+**Integration with existing .env.example:** The compose service names match the existing `.env.example` defaults:
+- `DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare`
+- `REDIS_URL=redis://localhost:6379`
 
-```css
-@import "tailwindcss";
+No `.env.example` changes needed. Developers run `docker compose up -d` then `npm run dev:server` and `npm run dev:client`.
 
-@theme {
-  /* Existing primary palette (keep as-is) */
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.87 0.08 250);
-  --color-primary-300: oklch(0.78 0.12 250);
-  --color-primary-400: oklch(0.68 0.16 250);
-  --color-primary-500: oklch(0.58 0.19 250);
-  --color-primary-600: oklch(0.50 0.19 250);
-  --color-primary-700: oklch(0.42 0.17 250);
+**Confidence:** HIGH -- standard Docker Compose pattern for Node.js development.
 
-  /* Status colors (keep as-is) */
-  --color-danger-500: oklch(0.60 0.18 25);
-  --color-success-500: oklch(0.65 0.15 145);
-  --color-warning-500: oklch(0.75 0.15 85);
+### 3. Render.com Deployment Blueprint
 
-  /* NEW: Dark surface palette -- terminal-inspired */
-  --color-surface-950: oklch(0.13 0.01 250);  /* deepest background */
-  --color-surface-900: oklch(0.16 0.01 250);  /* body background */
-  --color-surface-800: oklch(0.20 0.02 250);  /* card background */
-  --color-surface-700: oklch(0.25 0.02 250);  /* elevated elements */
-  --color-surface-600: oklch(0.30 0.02 250);  /* borders, dividers */
+**Decision:** Use `render.yaml` IaC blueprint with Docker runtime for the web service, managed PostgreSQL, and managed Redis (Key Value).
 
-  /* NEW: Glass effect colors */
-  --color-glass-bg: oklch(0.20 0.02 250 / 0.6);    /* glass panel fill */
-  --color-glass-border: oklch(0.40 0.02 250 / 0.3); /* glass border */
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: secureshare
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secureshare-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: secureshare-cache
+          type: keyvalue
+          property: connectionString
+      - key: PORT
+        value: "3000"
+      - key: LOG_LEVEL
+        value: info
 
-  /* NEW: Monospace font stack for terminal aesthetic */
-  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro',
-               Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  - type: keyvalue
+    name: secureshare-cache
+    plan: starter
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all (Render internal network)
+    maxmemoryPolicy: allkeys-lru
 
-  /* NEW: Animation keyframes */
-  --animate-fade-in: fade-in 0.3s ease-out;
-  --animate-slide-up: slide-up 0.3s ease-out;
-  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite;
-
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 20px oklch(0.58 0.19 250 / 0.1); }
-    50% { box-shadow: 0 0 30px oklch(0.58 0.19 250 / 0.2); }
-  }
-}
+databases:
+  - name: secureshare-db
+    plan: starter
+    databaseName: secureshare
+    postgresMajorVersion: "17"
 ```
 
-**Why dark-only, not light/dark toggle:** SecureShare is a security tool. The dark terminal aesthetic communicates "developer tool" and "security." Adding a light/dark toggle doubles the CSS surface area and testing matrix for no user benefit. The PRD does not mention theme switching. Ship dark-only.
+**Integration with existing architecture:**
 
-**Why OKLCH for surface colors:** The existing palette already uses OKLCH. Maintaining the same color space ensures perceptual consistency. The surface grays use the same hue angle (250) as the primary palette for a cohesive monochromatic feel.
+- The Dockerfile builds the production image. Render pulls, builds, and deploys.
+- `DATABASE_URL` and `REDIS_URL` are injected via `fromDatabase` / `fromService` references -- the same env vars the existing `server/src/config/env.ts` Zod schema already validates.
+- The `healthCheckPath: /healthz` endpoint enables zero-downtime deploys.
+- The existing `httpsRedirect` middleware in `security.ts` handles HTTP->HTTPS redirect in production. Render terminates TLS at the load balancer and forwards `X-Forwarded-Proto`, which works with the existing `trust proxy` setting.
 
-**Body class change in index.html:** Replace `bg-gray-50 text-gray-900` with `bg-surface-900 text-gray-100`. All existing page modules hardcode `text-gray-900`, `text-gray-500`, etc., which need updating to dark-appropriate values (`text-gray-100`, `text-gray-400`).
+**Database migrations:** Render does not run migrations automatically. Add a `preDeployCommand` or a build step that runs `npm run db:migrate` before the server starts. The cleanest approach is a startup script:
 
-**Confidence:** HIGH -- verified Tailwind CSS 4 `@theme` with `@keyframes` via official docs at tailwindcss.com/docs/animation.
-
-### 4. Glassmorphism Card Pattern
-
-**Decision:** Use a Tailwind `@layer components` utility class for glassmorphism cards. Compose from Tailwind utilities plus the custom glass tokens.
-
-**Pattern:**
-
-```css
-/* In styles.css, after @theme */
-@layer components {
-  .glass-card {
-    @apply bg-glass-bg backdrop-blur-md border border-glass-border
-           rounded-xl shadow-lg;
-  }
-}
+```bash
+#!/bin/sh
+# scripts/start.sh
+node dist/server/server/src/db/migrate.js && node dist/server/server/src/server.js
 ```
 
-**Usage in pages:**
+Update the Dockerfile CMD to use this script. The existing `db/migrate.ts` already handles migration and exits.
+
+**Confidence:** HIGH -- verified render.yaml syntax against [Render Blueprint Spec](https://render.com/docs/blueprint-spec).
+
+### 4. GitHub Actions CI/CD Pipeline
+
+**Decision:** Single workflow file `.github/workflows/ci.yml` with 4 sequential stages: lint, unit test, build, E2E test. Deploy step triggers on `main` branch only.
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: secureshare
+          POSTGRES_PASSWORD: secureshare
+          POSTGRES_DB: secureshare
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U secureshare"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run test:run
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:client
+      - run: npx tsc -p server/tsconfig.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-dist
+          path: client/dist/
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: secureshare
+          POSTGRES_PASSWORD: secureshare
+          POSTGRES_DB: secureshare
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U secureshare"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+```
+
+**Why sequential, not fully parallel:** The stages have logical dependencies: lint must pass before running expensive tests, tests validate correctness before building, build produces artifacts needed for E2E. Running lint + test in parallel would waste CI minutes on test runs that fail lint. The `needs` chain enforces this.
+
+**Why chromium-only for E2E:** SecureShare's target audience is developers sharing secrets. Chromium covers 80%+ of developer browser usage. Adding Firefox and WebKit triples E2E time for marginal coverage. Add multi-browser testing later if needed.
+
+**Deploy integration:** Render auto-deploys on push to `main` when connected to GitHub. No separate deploy step needed in CI. Alternatively, use a Render deploy hook URL as a GitHub Actions secret and trigger it after E2E passes. The auto-deploy approach is simpler and recommended for v3.0.
+
+**Confidence:** HIGH -- verified GitHub Actions PostgreSQL service syntax against [Playwright CI docs](https://playwright.dev/docs/ci-intro) and [GitHub Actions Node.js CI guide](https://oneuptime.com/blog/post/2025-12-20-github-actions-nodejs-ci/view).
+
+### 5. Playwright E2E Test Architecture
+
+**Decision:** Create `e2e/` directory at the repo root (sibling to `client/` and `server/`). Use Playwright's `webServer` array to start both Express and Vite dev servers for tests.
+
+**Why sibling directory, not inside client/ or server/:** E2E tests exercise the full stack (browser + API + database). They belong to neither client nor server. A top-level `e2e/` directory signals this clearly and avoids polluting the Vitest project configuration.
+
+**Why separate from Vitest:** Playwright and Vitest serve different purposes. Vitest runs unit/integration tests in Node.js (happy-dom for client, node for server). Playwright runs real browsers against a running app. Mixing them in one config adds complexity. Keep `vitest.config.ts` for unit tests and `e2e/playwright.config.ts` for E2E.
+
+**playwright.config.ts:**
 
 ```typescript
-const card = document.createElement('div');
-card.className = 'glass-card p-6';
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  outputDir: './test-results',
+  reporter: [['html', { outputFolder: './playwright-report' }]],
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: [
+    {
+      command: 'npm run dev:server',
+      url: 'http://localhost:3000/healthz',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      command: 'npm run dev:client',
+      url: 'http://localhost:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  ],
+});
 ```
 
-**CSP implication:** NONE. `backdrop-filter` is a CSS property, not a script. The existing CSP allows `'self'` for `style-src` (via nonce). Tailwind's generated CSS is loaded as a stylesheet file from `'self'`, so `backdrop-filter` works without CSP changes.
+**Key integration details:**
 
-**Performance consideration:** Limit to 2-3 glassmorphism elements per viewport. `backdrop-filter: blur()` triggers compositing layers. The main card container and the how-it-works section are the two candidates. Do not apply to every list item or small element.
+- `baseURL: 'http://localhost:5173'` -- Vite dev server serves the SPA. The existing `vite.config.ts` proxy (`/api -> localhost:3000`) routes API calls to Express.
+- `webServer[0]` starts Express via `npm run dev:server` (tsx watch). The `/healthz` endpoint confirms readiness.
+- `webServer[1]` starts Vite dev server. Playwright waits for both servers before running tests.
+- `reuseExistingServer: !process.env.CI` -- locally, reuse running dev servers; in CI, start fresh.
+- `workers: process.env.CI ? 1 : undefined` -- single worker in CI to avoid PostgreSQL race conditions on shared test database.
 
-**Accessibility:** Glass backgrounds reduce text contrast. Use `text-gray-100` (not `text-gray-400`) on glass cards. Test with WCAG contrast checker against the effective blurred background. Add a subtle `text-shadow` if contrast is borderline.
-
-**Browser support:** `backdrop-filter` has approximately 95% global browser support as of 2025. Provide a solid fallback via `bg-surface-800` for older browsers -- this is automatic since `bg-glass-bg` includes a solid alpha channel.
-
-**Confidence:** HIGH -- glassmorphism is pure CSS, well-supported.
-
-### 5. Animation Approach Without a Framework
-
-**Decision:** CSS-only animations via Tailwind's `@keyframes` in `@theme`, with `motion-safe:` / `motion-reduce:` variants for accessibility. No JavaScript animation libraries.
-
-**Three animation categories:**
-
-| Category | Technique | Example |
-|----------|-----------|---------|
-| Page transitions | CSS `animate-fade-in` on route render | Page wrapper fades in on mount |
-| Micro-interactions | CSS `transition-*` utilities | Button hover, focus ring, copy feedback |
-| Ambient effects | CSS `animate-glow-pulse` | Subtle glow on primary card |
-
-**Page transition pattern:**
+**Page Object Model structure:**
 
 ```typescript
-// In page render functions, add animation class to wrapper
-const wrapper = document.createElement('div');
-wrapper.className = 'space-y-6 motion-safe:animate-fade-in';
-```
+// e2e/pages/create.page.ts
+import { type Page, type Locator } from '@playwright/test';
 
-**Micro-interaction pattern (existing):** The codebase already uses `transition-colors` on buttons (e.g., `create.ts` line 146). Extend with `transition-all` for subtle scale effects:
+export class CreatePage {
+  readonly secretTextarea: Locator;
+  readonly expirationSelect: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+  readonly errorArea: Locator;
 
-```typescript
-button.className = '... transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]';
-```
-
-**Reduced motion:** Tailwind's `motion-safe:` and `motion-reduce:` variants handle `prefers-reduced-motion` automatically. Prefix all animations with `motion-safe:` so they are disabled for users who prefer reduced motion. The existing `loading-spinner.ts` already uses `motion-reduce:animate-none` (line 23) -- follow this established pattern.
-
-**Why no JS animation library:** The animations are simple (fade, slide, glow). CSS handles these with better performance (GPU-composited). Adding a library like GSAP or Framer Motion would increase bundle size for no benefit. The NFR-2 performance target is <1s load on 3G -- every KB counts.
-
-**CSP implication:** NONE. CSS animations and transitions are pure CSS. No inline styles, no `style` attribute manipulation. The nonce-based CSP is unaffected.
-
-**Confidence:** HIGH -- CSS animations are the standard approach for simple transitions. Tailwind 4 `@keyframes` in `@theme` is documented.
-
-### 6. SEO Meta Tag Management in SPA Routing
-
-**Decision:** Extend the existing `updatePageMeta()` function in `router.ts` to manage `<meta name="description">`, `<link rel="canonical">`, and robots directives per route.
-
-**Current `updatePageMeta()` signature:**
-
-```typescript
-export function updatePageMeta(title: string): void {
-  document.title = `${title} - SecureShare`;
-  // ... aria-live announcer
-}
-```
-
-**Extended signature:**
-
-```typescript
-interface PageMeta {
-  title: string;
-  description: string;
-  canonical?: string;  // defaults to current path
-  noindex?: boolean;   // for error/reveal pages
-}
-
-export function updatePageMeta(meta: PageMeta): void {
-  document.title = `${meta.title} - SecureShare`;
-
-  // Update or create <meta name="description">
-  let descEl = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-  if (!descEl) {
-    descEl = document.createElement('meta');
-    descEl.name = 'description';
-    document.head.appendChild(descEl);
+  constructor(private page: Page) {
+    this.secretTextarea = page.getByLabel('Your secret');
+    this.expirationSelect = page.getByLabel('Expires after');
+    this.passwordInput = page.getByLabel('Password protection');
+    this.submitButton = page.getByRole('button', { name: 'Create Secure Link' });
+    this.errorArea = page.getByRole('alert');
   }
-  descEl.content = meta.description;
 
-  // Update or create <link rel="canonical">
-  let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!canonicalEl) {
-    canonicalEl = document.createElement('link');
-    canonicalEl.rel = 'canonical';
-    document.head.appendChild(canonicalEl);
+  async goto() {
+    await this.page.goto('/');
   }
-  canonicalEl.href = meta.canonical
-    ?? `${window.location.origin}${window.location.pathname}`;
 
-  // Robots noindex for non-indexable pages
-  let robotsEl = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
-  if (meta.noindex) {
-    if (!robotsEl) {
-      robotsEl = document.createElement('meta');
-      robotsEl.name = 'robots';
-      document.head.appendChild(robotsEl);
+  async createSecret(text: string, options?: { password?: string; expiration?: string }) {
+    await this.secretTextarea.fill(text);
+    if (options?.expiration) {
+      await this.expirationSelect.selectOption(options.expiration);
     }
-    robotsEl.content = 'noindex, nofollow';
-  } else if (robotsEl) {
-    robotsEl.remove();
-  }
-
-  // Aria-live announcer (existing behavior, preserved)
-  const announcer = document.getElementById('route-announcer');
-  if (announcer) {
-    announcer.textContent = '';
-    requestAnimationFrame(() => {
-      announcer.textContent = meta.title;
-    });
+    if (options?.password) {
+      await this.page.getByText('Advanced options').click();
+      await this.passwordInput.fill(options.password);
+    }
+    await this.submitButton.click();
   }
 }
 ```
 
-**Route-specific meta values:**
+**Locator strategy:** Use `getByLabel()` and `getByRole()` per Playwright best practices. The existing HTML uses proper `<label>` elements with `htmlFor` attributes (e.g., `create.ts` lines 67-69), making label-based locators reliable. No `data-testid` attributes needed for v3.0.
 
-| Route | Title | Description | noindex |
-|-------|-------|-------------|---------|
-| `/` | Share a Secret | Share passwords and sensitive text securely. End-to-end encrypted, one-time view, no accounts required. | No |
-| `/secret/:id` | You've Received a Secret | View your encrypted secret. This link works once and self-destructs after viewing. | Yes |
-| 404 / errors | Page Not Found | (generic) | Yes |
+**Test database management:** E2E tests use the same PostgreSQL instance as dev. Each test should clean up after itself. The simplest approach: the test creates a secret, reveals it (which destroys it), and asserts. No cleanup needed because the app's one-time-view model is self-cleaning. For tests that do not complete the reveal flow, add a `afterEach` that cleans up via direct DB access or a test-only cleanup endpoint.
 
-**Why noindex on `/secret/:id`:** These are ephemeral one-time URLs. They should never appear in search results. Each secret page is unique and immediately destroyed. Indexing them would produce dead links and waste crawl budget.
+**Confidence:** HIGH -- verified Playwright webServer array syntax against [Playwright docs](https://playwright.dev/docs/test-webserver) and POM pattern against [Playwright POM docs](https://playwright.dev/docs/pom).
 
-**Open Graph tags in index.html (static):** Add OG tags to the HTML template for social sharing previews. These are static because the homepage is the only page worth sharing on social media:
+### 6. ESLint Flat Config + Prettier Integration
 
-```html
-<meta property="og:title" content="SecureShare - Share Secrets Securely">
-<meta property="og:description" content="End-to-end encrypted, one-time secret sharing. No accounts required.">
-<meta property="og:type" content="website">
-```
+**Decision:** Single `eslint.config.ts` at the repo root using ESLint 9 flat config with `typescript-eslint` v8+ and `eslint-config-prettier`. Prettier runs separately (not as an ESLint plugin).
 
-**Breaking change note:** `updatePageMeta()` currently accepts a `string`. Changing to a `PageMeta` object breaks all 7+ call sites across pages. This is a mechanical refactor -- update each `updatePageMeta('Title')` call to `updatePageMeta({ title: 'Title', description: '...' })`.
+**Why eslint.config.ts, not .js:** The project uses TypeScript everywhere. A `.ts` config file gets type checking on the config itself. ESLint 9.18.0+ supports `eslint.config.ts` natively. Node.js 24 supports TypeScript config loading via `--experimental-strip-types`.
 
-**Confidence:** HIGH -- standard SPA SEO patterns. Google renders JavaScript SPAs and reads dynamically set meta tags.
+**Why Prettier as separate tool, not ESLint plugin:** `eslint-plugin-prettier` runs Prettier inside ESLint, which is slower (ESLint parses -> Prettier parses again) and produces confusing error messages. The modern recommended approach is: ESLint for logic errors, Prettier for formatting. `eslint-config-prettier` disables ESLint formatting rules that conflict with Prettier. lint-staged runs both tools separately on commit.
 
-### 7. robots.txt and sitemap.xml: Vite Public Directory
-
-**Decision:** Serve robots.txt and sitemap.xml as static files from `client/public/`. Vite copies them to `client/dist/` at build time. Express's `express.static(clientDistPath)` serves them before the SPA catch-all.
-
-**Why Vite public, not Express routes:** The existing `server/src/app.ts` (lines 63-81) already has `express.static(clientDistPath, { index: false })` before the catch-all `app.get('{*path}', ...)`. Static files in `client/dist/` are served automatically. No Express code changes needed. Adding dedicated routes for robots.txt/sitemap.xml is unnecessary complexity.
-
-**File: `client/public/robots.txt`:**
-
-```
-User-agent: *
-Allow: /
-Disallow: /secret/
-
-Sitemap: https://secureshare.app/sitemap.xml
-```
-
-**Rationale for `Disallow: /secret/`:** Secret URLs are ephemeral one-time links. Crawling them would either consume the secret (destroying it for the intended recipient) or hit 404s. Block the entire `/secret/` path prefix.
-
-**File: `client/public/sitemap.xml`:**
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://secureshare.app/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>
-```
-
-**Why only one URL in sitemap:** SecureShare has one indexable page: the homepage. Secret URLs are ephemeral and blocked in robots.txt. There is no blog, no about page, no docs page in the MVP. The sitemap exists for completeness and to signal to search engines that the homepage is the canonical entry point.
-
-**Express middleware order verification:** The current `server/src/app.ts` (lines 63-81) already serves static before catch-all:
+**Configuration:**
 
 ```typescript
-app.use(express.static(clientDistPath, { index: false })); // serves robots.txt
-app.get('{*path}', (req, res) => { /* SPA catch-all */ }); // after static
+// eslint.config.ts
+import { defineConfig } from 'eslint/config';
+import tseslint from 'typescript-eslint';
+import prettierConfig from 'eslint-config-prettier/flat';
+
+export default defineConfig([
+  // Global ignores
+  {
+    ignores: ['dist/', 'client/dist/', 'node_modules/', 'drizzle/', '*.js', '*.mjs'],
+  },
+
+  // TypeScript files (client + server + shared)
+  ...tseslint.configs.recommended,
+
+  // Override for server files (Node.js specific)
+  {
+    files: ['server/src/**/*.ts'],
+    rules: {
+      // Server-specific rules if needed
+    },
+  },
+
+  // Override for test files (relaxed rules)
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts', 'e2e/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+
+  // Disable formatting rules that conflict with Prettier (MUST be last)
+  prettierConfig,
+]);
 ```
 
-A request for `/robots.txt` hits `express.static` first, finds the file, and returns it. The catch-all never fires. No code changes needed on the server.
+**Prettier config:**
 
-**Confidence:** HIGH -- verified against existing Express middleware order in `server/src/app.ts` and Vite's public directory documentation.
+```json
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "semi": true
+}
+```
 
-### 8. CSP Implications Summary
+**Pre-commit hooks with Husky + lint-staged:**
 
-| Feature | CSP Directive | Impact | Action Required |
-|---------|--------------|--------|-----------------|
-| Inline SVGs (Lucide createElement) | None | DOM createElement, not img-src | None |
-| CSS animations (@keyframes) | style-src | Compiled into stylesheet (self) | None |
-| backdrop-filter (glassmorphism) | style-src | CSS property, not inline style | None |
-| Monospace system fonts | font-src | System fonts, no external loading | None |
-| Open Graph meta tags | None | Meta tags, not resources | None |
-| robots.txt / sitemap.xml | None | Static text/XML files | None |
-| Button scale transitions | style-src | CSS transitions in stylesheet | None |
+```json
+// package.json additions
+{
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "e2e": "playwright test --config=e2e/playwright.config.ts"
+  },
+  "lint-staged": {
+    "*.ts": ["eslint --fix", "prettier --write"],
+    "*.{css,json,md,yml,yaml}": ["prettier --write"]
+  }
+}
+```
 
-**Summary:** No CSP changes required. All new features use DOM APIs (`createElement` / `createElementNS`), compiled CSS (Tailwind output), and static files. The existing nonce-based CSP with `'self'` for all resource types covers everything.
+**Integration with existing code:**
 
-**One caveat:** If a future phase adds an external font (e.g., Google Fonts for a custom monospace), `font-src` and `style-src` would need allowlisting of external domains. The current recommendation (system monospace stack) avoids this entirely.
+- The existing codebase has no ESLint or Prettier config. Adding these will flag existing code issues. Plan for a "lint fix" phase that resolves initial violations.
+- Known TypeScript strict-mode errors exist in crypto/icons/accessibility files (documented in PROJECT.md). The ESLint config should use `recommended` (not `strict`) initially to avoid blocking on pre-existing issues.
+- The `eslint-config-prettier/flat` import disables all ESLint rules that would conflict with Prettier formatting, preventing lint-on-commit conflicts.
+
+**Package additions:**
+```bash
+npm install -D eslint @eslint/js typescript-eslint eslint-config-prettier prettier husky lint-staged @playwright/test
+```
+
+**Confidence:** HIGH -- verified ESLint flat config TypeScript support against [ESLint docs](https://eslint.org/docs/latest/use/configure/configuration-files), typescript-eslint integration against [typescript-eslint getting started](https://typescript-eslint.io/getting-started/), and Prettier integration against [Prettier integrating with linters](https://prettier.io/docs/integrating-with-linters).
+
+### 7. Enhanced Homepage Architecture
+
+**Decision:** Extend the existing `client/src/pages/create.ts` with a hero section above the form. The page becomes: Hero -> Create Form -> How It Works -> Why Trust Us. No new page modules or routes needed.
+
+**Why modify create.ts, not a separate landing page:** The existing `create.ts` already has "How It Works" and "Why Trust Us" sections (lines 257-402). The homepage IS the create page. Adding a separate landing page would require a new route and split the user journey (land -> click through -> create). The v1.0/v2.0 design decision was deliberate: minimize clicks to value. Keep the form on the homepage.
+
+**What the hero section adds:**
+
+```
++------------------------------------------+
+|  [Shield icon]                           |
+|  Share Secrets Securely                  |  <-- Hero heading (larger than current h1)
+|  Zero-knowledge encryption.              |
+|  One-time view. No accounts.            |  <-- Hero subtext (expanded)
+|                                          |
+|  [Feature pills: E2E Encrypted | One-Time |
+|   View | Password Protection | Auto-Expire]|
++------------------------------------------+
+|                                          |
+|  [Create form - existing]                |
+|                                          |
++------------------------------------------+
+|  How It Works - existing                 |
++------------------------------------------+
+|  Why Trust Us - existing                 |
++------------------------------------------+
+```
+
+**Integration with existing code:**
+
+- The current `renderCreatePage()` creates a header (`<h1>Share a Secret</h1>` + subtext) at lines 41-55. The hero replaces this with a more prominent section.
+- The form, "How It Works", and "Why Trust Us" sections remain unchanged.
+- The enhanced hero uses the existing icon utility (`createIcon()` from `components/icons.ts`) and semantic color tokens from `styles.css`.
+- The router's `updatePageMeta()` call for `/` remains unchanged (lines 200-204 in `router.ts`).
+
+**No router changes needed.** The homepage route is `/` and already renders `create.ts`. The hero is internal to the page component.
+
+**Confidence:** HIGH -- this is a content addition to an existing page, following established patterns.
 
 ---
 
 ## Patterns to Follow
 
-### Pattern 1: Component Factory Functions
+### Pattern 1: Infrastructure as Code
 
-**What:** Every UI element is a function that returns an `HTMLElement`. No classes, no JSX, no template strings.
+**What:** All deployment configuration is in version-controlled files (`Dockerfile`, `docker-compose.yml`, `render.yaml`, `.github/workflows/ci.yml`). No manual configuration in dashboards.
 
-**When:** Always. This is the established codebase pattern.
-
-**Example (existing, from copy-button.ts):**
-
-```typescript
-export function createCopyButton(
-  getText: () => string,
-  label?: string,
-): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.className = '...tailwind classes...';
-  // ... event listeners, children ...
-  return button;
-}
-```
-
-**Apply to:** `renderHeader()`, `renderFooter()`, `icon()` utility. All new UI code follows this pattern.
-
-### Pattern 2: Semantic Color Tokens Over Raw Colors
-
-**What:** Use semantic token names (`surface-900`, `glass-bg`) not raw values (`oklch(0.16 0.01 250)`) or default Tailwind grays. Define once in `@theme`, reference everywhere via Tailwind classes.
-
-**When:** Any color usage in dark-themed elements.
-
-**Why:** Changing the palette means updating `@theme` only. Pages never hardcode color values.
+**When:** Always. Every infrastructure change goes through code review.
 
 **Example:**
-
-```typescript
-// Good: semantic token
-card.className = 'bg-surface-800 border-surface-600';
-
-// Bad: hardcoded or Tailwind default gray
-card.className = 'bg-gray-900 border-gray-700';
+```yaml
+# render.yaml - declarative, reviewable
+services:
+  - type: web
+    name: secureshare
+    runtime: docker
+    healthCheckPath: /healthz
 ```
 
-### Pattern 3: Motion-Safe Animation Guard
+### Pattern 2: webServer Array for Full-Stack E2E
 
-**What:** Prefix all animations with `motion-safe:` so they respect `prefers-reduced-motion`.
+**What:** Playwright's `webServer` config starts both backend and frontend servers before tests run. Tests interact with the real application, not mocked services.
 
-**When:** Every `animate-*` class usage.
+**When:** All E2E tests. Never mock the API in E2E tests -- that defeats the purpose.
 
 **Example:**
-
 ```typescript
-wrapper.className = 'motion-safe:animate-fade-in';
-// NOT: wrapper.className = 'animate-fade-in';
+webServer: [
+  { command: 'npm run dev:server', url: 'http://localhost:3000/healthz' },
+  { command: 'npm run dev:client', url: 'http://localhost:5173' },
+],
 ```
 
-**Existing precedent:** `loading-spinner.ts` line 23: `motion-reduce:animate-none`.
+### Pattern 3: Page Object Model for E2E
 
-### Pattern 4: Icon Utility for Consistency
+**What:** Encapsulate page interactions in POM classes. Tests read as user stories, not DOM queries.
 
-**What:** Always use the `icon()` utility function, never raw `document.createElementNS` for icons.
+**When:** Any E2E test that interacts with page elements.
 
-**When:** Any icon usage, including replacing existing inline SVGs (confirmation.ts shield icon) and emoji icons (error.ts, reveal.ts).
+**Example:**
+```typescript
+// Test reads like a user story:
+const createPage = new CreatePage(page);
+await createPage.goto();
+await createPage.createSecret('my-api-key', { expiration: '1h' });
+// Assert: confirmation page appears with share URL
+```
 
-**Why:** Consistent attributes (`aria-hidden`, `stroke-width`), tree-shakable imports, significantly less code per icon (2 lines vs 26 lines).
+### Pattern 4: Separate Lint from Format
+
+**What:** ESLint handles code quality rules (unused vars, type errors). Prettier handles formatting (indentation, semicolons, quotes). They never overlap because `eslint-config-prettier` disables ESLint formatting rules.
+
+**When:** Always. Do not use `eslint-plugin-prettier`. Run both tools separately.
+
+### Pattern 5: Health Check Endpoint
+
+**What:** `GET /healthz` returns `200 { status: 'ok' }`. Used by Docker HEALTHCHECK, Render health checks, and Playwright's webServer readiness probe.
+
+**When:** Every deployment target needs a health check. Place it in `app.ts` before static middleware.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Theme Toggle State Management
+### Anti-Pattern 1: App in Docker for Development
 
-**What:** Adding localStorage-based light/dark toggle with JavaScript state management.
+**What:** Running the Node.js app inside Docker during development with volume mounts for hot reload.
 
-**Why bad:** Doubles CSS testing surface, introduces flash-of-wrong-theme (FOWT) on page load, adds complexity for a feature nobody requested. SecureShare is dark-by-design.
+**Why bad:** Volume mounting on macOS adds 5-50ms latency per file read. Vite HMR degrades from ~50ms to 300-1000ms. tsx watch file detection becomes unreliable. Docker Desktop's file sharing overhead is well-documented.
 
-**Instead:** Hard-code the dark surface palette. Use the surface tokens everywhere. If a toggle is ever needed later, the token architecture supports it without refactoring pages.
+**Instead:** Use Docker Compose for infrastructure only (PostgreSQL, Redis). Run the app natively on the host. This matches the existing dev workflow.
 
-### Anti-Pattern 2: Inline Style Attributes for Animation
+### Anti-Pattern 2: Running ESLint as a Prettier Plugin
 
-**What:** Using `element.style.transform = ...` or `element.style.opacity = ...` for animations.
+**What:** Using `eslint-plugin-prettier` to run Prettier inside ESLint.
 
-**Why bad:** May conflict with CSP if `style-src` enforcement becomes stricter (some browsers treat `element.style.*` assignments as inline styles under certain CSP configurations). More importantly, it bypasses Tailwind's design system and the `prefers-reduced-motion` guards.
+**Why bad:** Double-parsing (ESLint AST + Prettier). Slower. Confusing error messages that mix linting and formatting. The Prettier team themselves [recommend against it](https://prettier.io/docs/integrating-with-linters).
 
-**Instead:** Use Tailwind animation classes (`motion-safe:animate-fade-in`) or CSS transition utilities (`transition-all duration-200`). Add custom keyframes to `@theme`.
+**Instead:** Run ESLint and Prettier as separate tools. Use `eslint-config-prettier` to disable conflicting rules. lint-staged runs both sequentially on commit.
 
-**Exception:** The existing `fallbackCopy()` in `copy-button.ts` uses `textarea.style.position = 'fixed'` for the clipboard fallback. This is acceptable because it is a hidden utility element, not a visual animation, and the textarea is immediately removed from the DOM.
+### Anti-Pattern 3: Multi-Browser E2E in CI by Default
 
-### Anti-Pattern 3: Heavy Icon Bundles
+**What:** Running Playwright tests against Chromium + Firefox + WebKit in every CI run.
 
-**What:** Importing all Lucide icons or using the `data-lucide` attribute scan pattern (`createIcons()` with no icon whitelist).
+**Why bad:** Triples CI time and cost. WebKit browser install is slow. For a developer tool like SecureShare, cross-browser bugs are rare (vanilla JS, no browser-specific APIs beyond Web Crypto which is standard).
 
-**Why bad:** Bundles 1600+ icons (~200KB+). The `createIcons()` function without explicit icon set pulls everything in. Vite does NOT tree-shake in dev mode for Lucide, causing slow dev startup.
+**Instead:** Default to Chromium only. Add Firefox/WebKit as a scheduled nightly job if cross-browser coverage is needed later.
 
-**Instead:** Import only named icons: `import { Shield, Lock } from 'lucide'`. Pass them to `createElement()` directly. This tree-shakes to only the used icons in production builds.
+### Anti-Pattern 4: Mocking the API in E2E Tests
 
-### Anti-Pattern 4: SEO Meta Tags Only in index.html
+**What:** Using MSW or similar to mock API responses in Playwright E2E tests.
 
-**What:** Setting meta description and canonical in the static HTML template and never updating them dynamically.
+**Why bad:** E2E tests exist to validate the full stack. Mocking the API means you are testing the frontend in isolation -- that is what Vitest + happy-dom is for. E2E with mocks provides false confidence.
 
-**Why bad:** All routes serve the same meta description. Google sees duplicate content signals. The canonical URL never changes from `/`, making secret pages canonicalize to the homepage unnecessarily.
+**Instead:** E2E tests use real Express server, real PostgreSQL, real Vite. The self-cleaning nature of SecureShare's one-time-view model makes test isolation natural.
 
-**Instead:** Dynamically update meta tags on each route change via the extended `updatePageMeta()`. Set `noindex` on ephemeral pages (secrets, errors).
+### Anti-Pattern 5: Alpine Docker Base with Native Addons
 
-### Anti-Pattern 5: Glassmorphism on Everything
+**What:** Using `node:24-alpine` when the project has native Node.js addons (argon2).
 
-**What:** Applying `backdrop-filter: blur()` to every card, button, and container.
+**Why bad:** Alpine uses musl libc. argon2's prebuilt binaries target glibc. Building from source on Alpine requires installing a C/C++ toolchain, adding build time and image layers. The "smaller base image" benefit is negated by the toolchain additions.
 
-**Why bad:** Each blur element creates a GPU compositing layer. More than 3-4 per viewport causes jank on mobile, especially older devices. Defeats the <1s 3G performance target from NFR-2.
+**Instead:** Use `node:24-slim` (Debian bookworm-slim). Prebuilt binaries work out of the box. Cleaner, faster builds.
 
-**Instead:** Apply glassmorphism to 1-2 hero elements per page (the main form card, the how-it-works section). Use solid `bg-surface-800` for secondary elements.
+---
+
+## New vs Modified Components
+
+### New Files
+
+| File | Type | Purpose |
+|------|------|---------|
+| `Dockerfile` | Infrastructure | Multi-stage production build |
+| `.dockerignore` | Infrastructure | Exclude unnecessary files from Docker context |
+| `docker-compose.yml` | Infrastructure | Dev environment: PostgreSQL + Redis |
+| `docker-compose.prod.yml` | Infrastructure | Production simulation (optional) |
+| `render.yaml` | Infrastructure | Render.com deployment blueprint |
+| `.github/workflows/ci.yml` | CI/CD | Lint -> Test -> Build -> E2E pipeline |
+| `.github/ISSUE_TEMPLATE/bug_report.md` | GitHub | Bug report template |
+| `.github/ISSUE_TEMPLATE/feature_request.md` | GitHub | Feature request template |
+| `.github/PULL_REQUEST_TEMPLATE.md` | GitHub | PR description template |
+| `e2e/playwright.config.ts` | Testing | Playwright configuration |
+| `e2e/pages/create.page.ts` | Testing | Create page POM |
+| `e2e/pages/reveal.page.ts` | Testing | Reveal page POM |
+| `e2e/pages/confirmation.page.ts` | Testing | Confirmation page POM |
+| `e2e/fixtures/test-fixtures.ts` | Testing | Custom Playwright fixtures |
+| `e2e/tests/create-secret.spec.ts` | Testing | Create flow E2E tests |
+| `e2e/tests/reveal-secret.spec.ts` | Testing | Reveal flow E2E tests |
+| `e2e/tests/password-protection.spec.ts` | Testing | Password flow E2E tests |
+| `e2e/tests/error-states.spec.ts` | Testing | Error handling E2E tests |
+| `eslint.config.ts` | Linting | ESLint flat config |
+| `.prettierrc` | Formatting | Prettier configuration |
+| `.prettierignore` | Formatting | Prettier ignore patterns |
+| `scripts/start.sh` | Infrastructure | Production startup (migrate + serve) |
+
+### Modified Files
+
+| File | Changes | Reason |
+|------|---------|--------|
+| `package.json` | Add lint/format/e2e/prepare scripts, devDependencies, lint-staged config | New tooling integration |
+| `.gitignore` | Add playwright-report/, test-results/, playwright/.cache/ | E2E artifacts |
+| `server/src/app.ts` | Add `GET /healthz` endpoint before routes | Docker/Render health checks, Playwright readiness |
+| `client/src/pages/create.ts` | Replace header section with hero section, add feature pills | Enhanced homepage |
+| `.env.example` | No changes needed | Docker compose matches existing defaults |
+
+### Unchanged Files
+
+| File | Why |
+|------|-----|
+| `server/src/middleware/security.ts` | CSP, HSTS, CORS are application concerns, not infrastructure |
+| `server/src/routes/secrets.ts` | API endpoints unchanged |
+| `server/src/services/*` | Business logic unchanged |
+| `server/src/config/env.ts` | Env schema already validates DATABASE_URL, REDIS_URL, PORT |
+| `client/src/crypto/*` | Encryption module unchanged |
+| `client/src/router.ts` | Routing unchanged (homepage is still `/`) |
+| `client/src/components/*` | Existing components unchanged |
+| `vite.config.ts` | Vite config unchanged (proxy, build settings remain) |
+| `vitest.config.ts` | Unit test config unchanged (Playwright is separate) |
+| `tsconfig.json` | TypeScript config unchanged |
+| `drizzle.config.ts` | Database config unchanged |
 
 ---
 
 ## Build Order: What Depends on What
 
-The dependency graph determines implementation sequence. Each step must complete before dependent steps begin.
-
 ```
-Phase 1: Foundation (no dependencies, can be parallel)
+Phase 1: Code Quality Foundation (no dependencies)
   |
-  +-- 1a. @theme dark palette extension (styles.css)
-  |       All subsequent UI work depends on having the color tokens.
+  +-- 1a. ESLint flat config + Prettier config
+  |       Must exist before lint-staged can run.
   |
-  +-- 1b. Icon utility module (icons.ts) + npm install lucide
-  |       Header, footer, and page updates depend on the icon system.
+  +-- 1b. Husky + lint-staged pre-commit hooks
+  |       Depends on 1a (needs lint/format commands to exist).
   |
-  +-- 1c. SEO static files (robots.txt, sitemap.xml in client/public/)
-  |       No code dependencies. Can ship independently.
+  +-- 1c. Fix existing lint/format violations
+  |       Run eslint --fix and prettier --write on entire codebase.
+  |       Commit as a single "chore: format codebase" commit.
 
-Phase 2: Layout Shell (depends on 1a + 1b)
+Phase 2: Docker + Local Dev (no dependency on Phase 1)
   |
-  +-- 2a. Header component (header.ts)
-  |       Uses icon utility + dark palette tokens.
+  +-- 2a. Dockerfile (multi-stage build)
+  |       Needs: health check endpoint in app.ts.
   |
-  +-- 2b. Footer component (footer.ts)
-  |       Uses icon utility + dark palette tokens.
+  +-- 2b. Health check endpoint in server/src/app.ts
+  |       Tiny change, no dependencies.
   |
-  +-- 2c. index.html structure update
-  |       Add <header id="site-header"> and <footer id="site-footer">
-  |       containers, update body classes, add OG meta tags.
+  +-- 2c. docker-compose.yml (dev infrastructure)
+  |       No code dependencies. Just infrastructure.
   |
-  +-- 2d. app.ts initialization update
-  |       Import and render header/footer at startup.
+  +-- 2d. .dockerignore
+  |       Created alongside Dockerfile.
+  |
+  +-- 2e. Validate: docker compose up + docker build + docker run
+  |       Integration test of 2a-2d.
 
-Phase 3: Theme Migration (depends on 1a, can parallel with Phase 2)
+Phase 3: E2E Testing (depends on 2b for health check)
   |
-  +-- 3a. Page class updates (create.ts, confirmation.ts, reveal.ts, error.ts)
-  |       Replace text-gray-900/bg-gray-50 with surface-*/text-gray-100 tokens.
-  |       Replace emoji icons with Lucide icons via icon utility (depends on 1b).
+  +-- 3a. Install Playwright + create e2e/ directory structure
+  |       npm install -D @playwright/test, npx playwright install chromium
   |
-  +-- 3b. Component class updates (copy-button.ts, expiration-select.ts,
-  |       loading-spinner.ts)
-  |       Update to dark palette tokens.
+  +-- 3b. playwright.config.ts with webServer array
+  |       Uses health check (2b) as readiness probe.
   |
-  +-- 3c. Glassmorphism card styling
-  |       Apply glass-card class to main form containers.
+  +-- 3c. Page Object Models (create, reveal, confirmation)
+  |       Maps existing page structure to POM classes.
+  |
+  +-- 3d. E2E test specs
+  |       Uses POMs from 3c. Tests full create-share-reveal flow.
+  |
+  +-- 3e. Update package.json scripts (e2e command)
 
-Phase 4: Animations (depends on 1a + 3a)
+Phase 4: CI/CD Pipeline (depends on Phase 1 + 2 + 3)
   |
-  +-- 4a. Page transition animations
-  |       Add motion-safe:animate-fade-in to page wrappers.
+  +-- 4a. .github/workflows/ci.yml
+  |       Uses lint (Phase 1), test (existing), build, e2e (Phase 3).
   |
-  +-- 4b. Micro-interactions
-  |       Button hover/active scale, enhanced focus ring transitions.
+  +-- 4b. render.yaml deployment blueprint
+  |       Uses Dockerfile (Phase 2).
   |
-  +-- 4c. Ambient glow effects
-  |       Subtle glow-pulse on primary CTA card.
+  +-- 4c. Validate: push to branch, verify CI passes
 
-Phase 5: SEO Router (can start after Phase 2c)
+Phase 5: GitHub Polish + Enhanced Homepage (depends on Phase 1 for linting)
   |
-  +-- 5a. updatePageMeta() signature refactor
-  |       Change from string param to PageMeta object.
+  +-- 5a. Issue templates + PR template
+  |       No code dependencies.
   |
-  +-- 5b. Update all call sites across pages
-  |       Each page passes title, description, and noindex flag.
+  +-- 5b. Enhanced homepage hero section in create.ts
+  |       Uses existing component patterns. Run through lint (Phase 1).
   |
-  +-- 5c. Static OG tags in index.html
-  |       Add Open Graph meta tags to HTML template.
+  +-- 5c. README with screenshots, architecture, install instructions
+  |       Written after all infrastructure is in place.
 ```
 
 **Why this order:**
 
-1. **Palette first** because every other change references the color tokens. Without `surface-800`, `glass-bg`, etc., nothing can be styled correctly.
+1. **Lint first** because every subsequent commit should be clean. The initial format pass is a one-time cost that makes all future diffs cleaner.
 
-2. **Icons in parallel with palette** because header/footer and page updates both need icons. Building icons after layout would require placeholder SVGs that get replaced later.
+2. **Docker before E2E** because the health check endpoint (needed for Docker) is also used by Playwright's webServer readiness probe. Building Docker also validates that the production build works, which catches TypeScript compilation issues early.
 
-3. **Layout shell before page theme migration** because the header/footer establish the visual frame. Migrating page styles without the surrounding frame makes it impossible to judge overall visual coherence during development.
+3. **E2E after Docker** because E2E tests need a reliable way to know when the server is ready (the `/healthz` endpoint). They also validate the complete user flow, which is the best test of production readiness.
 
-4. **Animations last** because they are enhancement, not structure. The app must look correct with the dark theme before adding motion. Animations also need the final color tokens (e.g., glow colors matching `primary-500`).
+4. **CI/CD after all tools exist** because the CI pipeline orchestrates lint + test + build + E2E. All four must work locally before automating in CI.
 
-5. **SEO router after layout update** because the `updatePageMeta()` signature refactor touches every page file. Doing it during the theme migration (Phase 3) risks merge conflicts and makes diffs harder to review. Separating it keeps each phase focused.
-
----
-
-## New Files to Create
-
-| File | Type | Purpose |
-|------|------|---------|
-| `client/src/components/icons.ts` | Utility | Lucide icon creation with project defaults |
-| `client/src/components/header.ts` | Component | Persistent site header with branding + nav |
-| `client/src/components/footer.ts` | Component | Persistent site footer with links |
-| `client/public/robots.txt` | Static | Search engine crawl directives |
-| `client/public/sitemap.xml` | Static | Sitemap for search engine indexing |
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `client/src/styles.css` | Extend @theme with surface palette, glass tokens, font-mono, animations, glass-card component class |
-| `client/index.html` | Add header/footer containers, update body classes to dark theme, add OG meta tags, add initial meta description |
-| `client/src/app.ts` | Import and render header/footer at startup |
-| `client/src/router.ts` | Extend `updatePageMeta()` to `PageMeta` object with description, canonical, noindex |
-| `client/src/pages/create.ts` | Dark theme classes, Lucide icons, glass card wrapper |
-| `client/src/pages/confirmation.ts` | Dark theme classes, replace 26-line inline SVG with icon utility |
-| `client/src/pages/reveal.ts` | Dark theme classes, replace emoji icons with Lucide SVGs |
-| `client/src/pages/error.ts` | Dark theme classes, replace emoji icons with Lucide SVGs |
-| `client/src/components/copy-button.ts` | Dark theme classes (button colors, focus ring) |
-| `client/src/components/expiration-select.ts` | Dark theme classes (select background, border, text) |
-| `client/src/components/loading-spinner.ts` | Dark theme classes (spinner border colors) |
-
-## Files NOT Modified
-
-| File | Why |
-|------|-----|
-| `server/src/app.ts` | express.static already serves from client/dist before SPA catch-all |
-| `server/src/middleware/security.ts` | CSP is unchanged -- no new resource types introduced |
-| `vite.config.ts` | Public directory is the Vite default (`client/public`), no config needed |
-| `client/src/crypto/*` | Crypto module is pure logic, no UI concerns |
-| `client/src/api/*` | API client is pure logic, no UI concerns |
-| `server/src/routes/*` | API routes are unaffected by UI changes |
-| `server/src/services/*` | Business logic is unaffected |
+5. **Homepage and README last** because they are content, not infrastructure. They should be written after the architecture is stable and screenshots can be captured from the final state.
 
 ---
 
 ## Scalability Considerations
 
-| Concern | Current (MVP) | At Scale |
-|---------|--------------|----------|
-| Icon bundle size | ~5-10 icons, ~2-3KB gzipped | If 50+ icons needed, consider icon sprites or lazy SVG loading |
-| Glassmorphism performance | 2-3 elements, fine on mobile | Audit with Chrome Performance panel. Consider dropping blur on low-end devices via `@supports` fallback |
-| SEO meta updates | 3-4 routes, manual per-page | If routes grow, create a route config map for meta data |
-| Animation count | 3 keyframes, lightweight | Keep under 5 active animations per viewport. Profile paint/composite costs |
-| Font loading | System monospace, zero network requests | If custom font added later, use `font-display: swap` and update CSP font-src |
+| Concern | At Launch | At 10K users/day | At 100K users/day |
+|---------|-----------|-------------------|---------------------|
+| Docker image size | ~250MB (node:24-slim + deps) | Same | Consider distroless base if security audit requires |
+| CI pipeline time | ~5-8 min (lint+test+build+e2e) | Same | Parallelize lint+test, cache Playwright browsers |
+| E2E test count | 15-20 specs | 30-50 specs | Shard across CI workers, add Firefox project |
+| Health checks | Simple `/healthz` returning 200 | Add DB connectivity check | Add Redis check, response time metrics |
+| Render scaling | Single instance, starter plan | Standard plan, 2+ instances | Auto-scaling, dedicated Redis, DB read replicas |
 
 ---
 
 ## Sources
 
-- [Tailwind CSS 4 Dark Mode Documentation](https://tailwindcss.com/docs/dark-mode) -- @custom-variant dark, class-based dark mode, prefers-color-scheme default
-- [Tailwind CSS 4 Animation Documentation](https://tailwindcss.com/docs/animation) -- @keyframes in @theme, motion-safe/motion-reduce variants, custom animate-* utilities
-- [Tailwind CSS v4 Dark Mode CSS Variables Discussion](https://github.com/tailwindlabs/tailwindcss/discussions/15083) -- @variant dark pattern with @layer theme, light-dark() CSS function
-- [Lucide Vanilla JS Package Documentation](https://lucide.dev/guide/packages/lucide) -- createElement API, tree-shaking imports, custom attributes
-- [Vite Static Asset Handling](https://vite.dev/guide/assets) -- public directory behavior, robots.txt serving pattern
-- [Glassmorphism Implementation Guide 2025](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide) -- backdrop-filter patterns, performance limits, accessibility
-- [Modern Monospace Font Stacks](https://modernfontstacks.com/) -- system monospace font-family recommendations
-- [SPA SEO Best Practices](https://www.mindk.com/blog/optimizing-single-page-applications/) -- meta tag management, robots.txt, sitemap for SPAs
-- [CSP and Inline SVG](https://grayduck.mn/2016/04/09/black-icons-with-svg-and-csp/) -- createElement SVGs are DOM nodes, not img-src resources
+- [Docker Multi-Stage Build Documentation](https://docs.docker.com/build/building/multi-stage/) -- official multi-stage patterns
+- [Node.js 24 Docker Images](https://hub.docker.com/_/node/tags) -- available tags: 24-slim, 24-alpine, 24-bookworm
+- [argon2 npm package](https://www.npmjs.com/package/argon2) -- prebuilt binary compatibility notes (glibc, not musl)
+- [Playwright webServer Configuration](https://playwright.dev/docs/test-webserver) -- array syntax for multiple servers
+- [Playwright CI Setup](https://playwright.dev/docs/ci-intro) -- GitHub Actions workflow template
+- [Playwright Page Object Models](https://playwright.dev/docs/pom) -- official POM pattern documentation
+- [ESLint Configuration Files](https://eslint.org/docs/latest/use/configure/configuration-files) -- flat config, eslint.config.ts support
+- [ESLint defineConfig and extends](https://eslint.org/blog/2025/03/flat-config-extends-define-config-global-ignores/) -- modern flat config features
+- [typescript-eslint Getting Started](https://typescript-eslint.io/getting-started/) -- flat config integration
+- [Prettier Integrating with Linters](https://prettier.io/docs/integrating-with-linters) -- eslint-config-prettier recommended approach
+- [Render Blueprint Spec](https://render.com/docs/blueprint-spec) -- render.yaml syntax reference
+- [Render Deploy Node Express](https://render.com/docs/deploy-node-express-app) -- Node.js deployment guide
+- [Render Multi-Service Architecture](https://render.com/docs/multi-service-architecture) -- web + database + Redis pattern
