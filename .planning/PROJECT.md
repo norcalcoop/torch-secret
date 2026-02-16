@@ -2,7 +2,7 @@
 
 ## What This Is
 
-SecureShare is a zero-friction web application for sharing passwords, API keys, and sensitive text securely via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. No accounts, no signup — just paste, encrypt, share, and destroy.
+SecureShare is a polished, developer-grade web application for sharing passwords, API keys, and sensitive text securely via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Dark terminal-inspired UI with glassmorphism surfaces, complete SEO infrastructure, and professional presentation. No accounts, no signup — just paste, encrypt, share, and destroy.
 
 ## Core Value
 
@@ -24,20 +24,19 @@ Users can share sensitive information once, securely, without accounts or comple
 - ✓ Trust-building content (How it works section) — v1.0
 - ✓ Clear error states (already viewed, expired, invalid password, rate limited) — v1.0
 - ✓ WCAG 2.1 AA accessibility (keyboard nav, screen reader, contrast) — v1.0
+- ✓ Dark terminal-inspired design system with OKLCH semantic tokens — v2.0
+- ✓ Three-way theme toggle (dark/light/system) with localStorage persistence — v2.0
+- ✓ JetBrains Mono typography, Lucide SVG icons replacing all emoji — v2.0
+- ✓ Persistent header/footer layout shell across SPA routes — v2.0
+- ✓ Glassmorphism surfaces, page animations, button micro-interactions — v2.0
+- ✓ Terminal code-block styling for revealed secrets — v2.0
+- ✓ Complete SEO infrastructure (meta tags, OG/Twitter, favicons, robots.txt, sitemap, JSON-LD) — v2.0
+- ✓ Dynamic per-route meta tags with noindex protection for secret URLs — v2.0
+- ✓ prefers-reduced-motion compliance for all animations — v2.0
 
 ### Active
 
-**Current Milestone: v2.0 Developer-Grade UI & SEO**
-
-**Goal:** Transform SecureShare's visual identity into a polished, dark-themed developer tool with full SEO infrastructure — same zero-knowledge functionality, professional presentation.
-
-**Target features:**
-- Dark terminal-inspired theme with glassmorphism cards and dot-grid background
-- Monospace typography for headings, Lucide SVG icons replacing emoji
-- Persistent brand header + trust footer across all pages
-- Code-block styling for revealed secrets, micro-interactions
-- Complete SEO infrastructure (meta tags, OG/Twitter cards, favicons, robots.txt, sitemap, JSON-LD, web manifest)
-- Enhanced UI: textarea security indicator, "Why Trust Us?" section, destruction confirmation badge
+(No active milestone — planning next)
 
 ### Out of Scope
 
@@ -54,11 +53,18 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ## Context
 
-Shipped v1.0 with 5,066 LOC TypeScript across 8 phases.
+Shipped v2.0 with ~6,296 LOC (6,089 TS + 207 CSS) across 14 phases (8 in v1.0 + 6 in v2.0).
 Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17.
 Crypto: Web Crypto API (AES-256-GCM), PADME padding, Argon2id password hashing.
-152 tests (87 crypto, 32 API integration, 14 security, 13 expiration, 6 accessibility).
+163 tests (87 crypto, 32 API integration, 14 security, 13 expiration, 6 accessibility, 4 SEO, 7 UI).
 Redis-backed rate limiting with MemoryStore fallback for single-instance deployments.
+Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphism surfaces.
+SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret routes.
+
+**Known tech debt:**
+- Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
+- Pre-existing TypeScript strict-mode errors in crypto/icons/accessibility files
+- Lucide ESM workaround via Vite resolve.alias (upstream bug)
 
 ## Constraints
 
@@ -84,6 +90,14 @@ Redis-backed rate limiting with MemoryStore fallback for single-instance deploym
 | Ciphertext as text, not bytea | Crypto module outputs base64; simpler than binary column | ✓ Good |
 | Redis-backed rate limiting | Production multi-instance support with MemoryStore fallback | ✓ Good |
 | Projects-based vitest config | Single-file config with sequential server tests; eliminated flaky tests | ✓ Good |
+| OKLCH color tokens over hex/HSL | Perceptually uniform, wide gamut, future-proof for P3 displays | ✓ Good |
+| Light theme default, dark via .dark class | Follows Tailwind convention; FOWT script prevents flash | ✓ Good |
+| Three-way theme toggle (light/dark/system) | System mode removes localStorage key, falls through to OS preference | ✓ Good |
+| Self-hosted JetBrains Mono over Google Fonts | Zero-knowledge app must not make external CDN requests | ✓ Good |
+| Lucide SVGs over emoji icons | CSP-safe, consistent sizing, tree-shakable, accessible | ✓ Good |
+| Static OG tags in HTML (not JS-rendered) | Social crawlers don't execute JS; static tags always available | ✓ Good |
+| X-Robots-Tag + meta noindex defense-in-depth | Belt-and-suspenders: server header + client meta for secret routes | ✓ Good |
+| Toast replace strategy (no stacking) | Simpler UX; only latest feedback visible | ✓ Good |
 
 ---
-*Last updated: 2026-02-14 after v2.0 milestone started*
+*Last updated: 2026-02-16 after v2.0 milestone*

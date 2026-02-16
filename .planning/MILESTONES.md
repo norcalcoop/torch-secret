@@ -26,3 +26,28 @@
 
 ---
 
+
+## v2.0 Developer-Grade UI & SEO (Shipped: 2026-02-16)
+
+**Phases completed:** 6 phases, 14 plans, 33 tasks
+**Timeline:** 3 days (2026-02-13 - 2026-02-16)
+**Codebase:** 6,296 LOC (6,089 TS + 207 CSS), 163 tests
+**Git range:** feat(09-01) - feat(14-02), 135 files changed (+9,258/-315)
+
+**Key accomplishments:**
+- Dark terminal-inspired design system with OKLCH semantic tokens and JetBrains Mono typography
+- Complete SEO infrastructure — favicons, robots.txt, sitemap, web manifest, OG/Twitter meta, JSON-LD structured data
+- Persistent header/footer layout shell with full Lucide SVG icon migration (all emoji replaced)
+- Page-level UI enhancements — toast notifications, terminal code blocks, encryption indicators, trust sections
+- Three-way theme toggle (dark/light/system) with glassmorphism surfaces and micro-interactions
+- Dynamic per-route meta tags with noindex/X-Robots-Tag protection for secret URLs
+
+**Delivered:** A polished, dark-themed developer tool with professional presentation, complete SEO infrastructure, and full design system — same zero-knowledge functionality, now with production-grade UI.
+
+**Archives:**
+- [Roadmap](milestones/v2.0-ROADMAP.md)
+- [Requirements](milestones/v2.0-REQUIREMENTS.md)
+- [Audit](milestones/v2.0-MILESTONE-AUDIT.md)
+
+---
+
