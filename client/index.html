@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        var t = localStorage.getItem('theme');
+        var d = t === 'dark' || (!t && matchMedia('(prefers-color-scheme:dark)').matches);
+        document.documentElement.classList.toggle('dark', d);
+        document.documentElement.style.colorScheme = d ? 'dark' : 'light';
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
