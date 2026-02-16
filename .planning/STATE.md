@@ -7,9 +7,9 @@ See: .planning/PROJECT.md
 ## Position
 
 **Milestone:** v2.0 Developer-Grade UI & SEO
-**Current phase:** Phase 12 — Page-Level UI Enhancements
-**Current Plan:** Not started
-**Status:** Milestone complete
+**Current phase:** Phase 13 — Theme Toggle & Visual Polish
+**Current Plan:** Plan 01 complete, Plan 02 next
+**Status:** In progress
 
 ## Decisions
 
@@ -22,6 +22,10 @@ See: .planning/PROJECT.md
 - URL displayed in monospace code block with break-all (no truncation) for full crypto key visibility
 - Destruction badge placed ABOVE terminal block (first thing user sees)
 - already_viewed error uses CircleCheck in muted color (informational, not alarming)
+- Light theme as default (:root), dark via .dark class -- follows Tailwind convention
+- FOWT script placed before meta charset to execute before any CSS loads
+- System mode removes localStorage key so FOWT script falls through to OS preference
+- Theme toggle cycles light->dark->system (three states, not two)
 
 ## Performance Metrics
 
@@ -30,6 +34,7 @@ See: .planning/PROJECT.md
 | 12    | 01   | 3min     | 2     | 5     |
 | 12    | 02   | 2min     | 2     | 2     |
 | 12    | 03   | 3min     | 2     | 3     |
+| 13    | 01   | 4min     | 3     | 6     |
 
 ## Session Log
 
@@ -38,3 +43,4 @@ See: .planning/PROJECT.md
 - 2026-02-16: Plan 12-01 complete — shared UI components (toast, terminal-block, share-button, copy-button refactor)
 - 2026-02-16: Plan 12-02 complete — create page enhancements (textarea indicator, 4-step How It Works, Why Trust Us grid)
 - 2026-02-16: Plan 12-03 complete — confirmation/reveal/error page enhancements (URL card, terminal block, destruction badge, already_viewed error)
+- 2026-02-16: Plan 13-01 complete — dual theme CSS tokens, FOWT prevention, theme manager, three-way toggle component
