@@ -8,8 +8,8 @@ See: .planning/PROJECT.md
 
 **Milestone:** v2.0 Developer-Grade UI & SEO
 **Current phase:** Phase 12 — Page-Level UI Enhancements
-**Current Plan:** 3 of 3
-**Status:** Plan 02 complete, ready for Plan 03
+**Current Plan:** 3 of 3 (COMPLETE)
+**Status:** Phase 12 complete -- all 3 plans executed
 
 ## Decisions
 
@@ -19,6 +19,9 @@ See: .planning/PROJECT.md
 - Copy button label stays stable; feedback moved to toast notifications
 - How It Works uses 4 icon steps instead of 3 numbered steps for clearer flow
 - Encryption indicator uses text-success color for the lock icon to signal safety
+- URL displayed in monospace code block with break-all (no truncation) for full crypto key visibility
+- Destruction badge placed ABOVE terminal block (first thing user sees)
+- already_viewed error uses CircleCheck in muted color (informational, not alarming)
 
 ## Performance Metrics
 
@@ -26,6 +29,7 @@ See: .planning/PROJECT.md
 |-------|------|----------|-------|-------|
 | 12    | 01   | 3min     | 2     | 5     |
 | 12    | 02   | 2min     | 2     | 2     |
+| 12    | 03   | 3min     | 2     | 3     |
 
 ## Session Log
 
@@ -33,3 +37,4 @@ See: .planning/PROJECT.md
 - 2026-02-16: Phase 12 context gathered → .planning/phases/12-page-level-ui-enhancements/12-CONTEXT.md
 - 2026-02-16: Plan 12-01 complete — shared UI components (toast, terminal-block, share-button, copy-button refactor)
 - 2026-02-16: Plan 12-02 complete — create page enhancements (textarea indicator, 4-step How It Works, Why Trust Us grid)
+- 2026-02-16: Plan 12-03 complete — confirmation/reveal/error page enhancements (URL card, terminal block, destruction badge, already_viewed error)
