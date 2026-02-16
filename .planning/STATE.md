@@ -8,8 +8,8 @@ See: .planning/PROJECT.md
 
 **Milestone:** v2.0 Developer-Grade UI & SEO
 **Current phase:** Phase 13 — Theme Toggle & Visual Polish
-**Current Plan:** Plan 02 complete (phase complete)
-**Status:** Phase 13 complete
+**Current Plan:** Not started
+**Status:** Milestone complete
 
 ## Decisions
 
