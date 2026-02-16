@@ -65,7 +65,7 @@ export function renderConfirmationPage(
 
   // -- Share URL card (primary visual element) --
   const urlCard = document.createElement('div');
-  urlCard.className = 'p-6 rounded-lg border border-border bg-surface space-y-4 text-left';
+  urlCard.className = 'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-4 text-left';
 
   // URL label
   const urlLabel = document.createElement('span');
@@ -88,6 +88,8 @@ export function renderConfirmationPage(
   buttonRow.className = 'flex items-center gap-3 mt-3';
 
   const copyButton = createCopyButton(() => shareUrl, 'Copy Link');
+  copyButton.classList.remove('transition-colors');
+  copyButton.classList.add('transition-all', 'motion-safe:hover:scale-[1.02]', 'motion-safe:active:scale-[0.98]');
   buttonRow.appendChild(copyButton);
 
   const shareBtn = createShareButton(shareUrl, 'SecureShare - Your secure link');
@@ -108,7 +110,7 @@ export function renderConfirmationPage(
   // -- Warning text --
   const warning = document.createElement('div');
   warning.className =
-    'px-4 py-3 rounded-lg bg-accent/10 text-accent text-sm';
+    'px-4 py-3 rounded-lg bg-accent/10 backdrop-blur-sm text-accent text-sm';
   warning.textContent =
     'This link can only be viewed once. Once opened, the secret is permanently destroyed.';
   wrapper.appendChild(warning);
@@ -117,7 +119,7 @@ export function renderConfirmationPage(
   const createAnotherButton = document.createElement('button');
   createAnotherButton.type = 'button';
   createAnotherButton.className =
-    'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden rounded font-medium transition-colors cursor-pointer';
+    'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden rounded font-medium transition-all cursor-pointer motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]';
   createAnotherButton.textContent = 'Create Another Secret';
   createAnotherButton.addEventListener('click', () => {
     navigate('/');

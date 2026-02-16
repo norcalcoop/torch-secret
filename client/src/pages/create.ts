@@ -124,7 +124,7 @@ export async function renderCreatePage(
 
   // -- Advanced options (password protection) --
   const details = document.createElement('details');
-  details.className = 'border border-border rounded-lg';
+  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
 
   const summary = document.createElement('summary');
   summary.className =
@@ -165,7 +165,7 @@ export async function renderCreatePage(
   const submitButton = document.createElement('button');
   submitButton.type = 'submit';
   submitButton.className =
-    'w-full min-h-[44px] py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full min-h-[44px] py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]';
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 
@@ -322,7 +322,10 @@ function createHowItWorksSection(): HTMLElement {
     grid.appendChild(card);
   }
 
-  section.appendChild(grid);
+  const glassContainer = document.createElement('div');
+  glassContainer.className = 'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg';
+  glassContainer.appendChild(grid);
+  section.appendChild(glassContainer);
   return section;
 }
 
@@ -376,7 +379,7 @@ function createWhyTrustUsSection(): HTMLElement {
 
   for (const card of cards) {
     const cardEl = document.createElement('div');
-    cardEl.className = 'p-4 rounded-lg border border-border bg-surface space-y-2';
+    cardEl.className = 'p-4 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-2';
 
     const iconEl = createIcon(card.icon, { size: 'md', class: 'text-accent' });
 
