@@ -49,9 +49,12 @@ describe('Create page accessibility', () => {
     expect(h2).not.toBeNull();
     expect(h2!.textContent).toBe('How It Works');
 
-    // Three h3 step headings
-    const h3s = container.querySelectorAll('h3');
-    expect(h3s.length).toBe(3);
+    // Four h3 step headings (was 3, now 4: Paste, Encrypt, Share, Destroy)
+    const section = container.querySelector(
+      'section[aria-labelledby="how-it-works-heading"]',
+    );
+    const h3s = section!.querySelectorAll('h3');
+    expect(h3s.length).toBe(4);
   });
 
   it('"How It Works" section is labeled by its heading', async () => {
@@ -62,6 +65,26 @@ describe('Create page accessibility', () => {
       'section[aria-labelledby="how-it-works-heading"]',
     );
     expect(section).not.toBeNull();
+  });
+
+  it('"Why Trust Us?" section has proper heading hierarchy', async () => {
+    const { renderCreatePage } = await import('../pages/create.js');
+    await renderCreatePage(container);
+
+    // h2 for "Why Trust Us?"
+    const h2 = container.querySelector('h2#why-trust-us-heading');
+    expect(h2).not.toBeNull();
+    expect(h2!.textContent).toBe('Why Trust Us?');
+
+    // Section labeled by its heading
+    const section = container.querySelector(
+      'section[aria-labelledby="why-trust-us-heading"]',
+    );
+    expect(section).not.toBeNull();
+
+    // 4 trust cards with h3 headings
+    const trustH3s = section!.querySelectorAll('h3');
+    expect(trustH3s.length).toBe(4);
   });
 });
 
