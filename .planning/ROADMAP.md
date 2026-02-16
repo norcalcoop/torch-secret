@@ -117,11 +117,11 @@ Plans:
   3. Primary content areas (cards, panels) use glassmorphism surfaces (backdrop-blur, translucent backgrounds) that look correct in both dark and light themes
   4. Pages animate in with a fade-in-up transition (200ms ease-out); buttons have hover/active micro-interactions (scale, color shift); copy buttons show icon swap animation on success
   5. All animations respect prefers-reduced-motion — users who prefer reduced motion see no transitions, transforms, or animated icon swaps
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md — Theme infrastructure: CSS dual-theme tokens, FOWT prevention script, theme manager module, three-way toggle component in header
+- [ ] 13-02-PLAN.md — Visual polish: glassmorphism card surfaces, page-enter animations, button micro-interactions, copy-button icon swap, motion-safe accessibility
 
 ### Phase 14: SEO Router Integration
 **Goal**: Every page serves correct, route-specific meta tags for search engines and social sharing — the homepage is fully discoverable while secret routes are invisible to search engines and leak no metadata
@@ -156,5 +156,5 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 10. SEO Static Assets | v2.0 | 2/2 | Complete | 2026-02-15 |
 | 11. Layout Shell + Component Migration | v2.0 | Complete    | 2026-02-16 | - |
 | 12. Page-Level UI Enhancements | v2.0 | Complete    | 2026-02-16 | - |
-| 13. Theme Toggle + Visual Polish | v2.0 | 0/? | Not started | - |
+| 13. Theme Toggle + Visual Polish | v2.0 | 0/2 | Not started | - |
 | 14. SEO Router Integration | v2.0 | 0/? | Not started | - |
