@@ -32,6 +32,10 @@ See: .planning/PROJECT.md
 - Terminal block and error pages excluded from glassmorphism (distinct visual identity)
 - X-Robots-Tag set via req.path (not req.url) to avoid query string matching issues
 - Test suite creates temp client/dist/index.html in beforeAll for CI portability
+- Static OG tags in index.html because social crawlers do not execute JS
+- Noindex pages remove canonical link per SEO best practice (Pitfall 4)
+- Confirmation page preserves homepage description since URL stays /
+- OG tags replaced not removed on noindex routes to avoid empty metadata
 
 ## Performance Metrics
 
@@ -42,6 +46,7 @@ See: .planning/PROJECT.md
 | 12    | 03   | 3min     | 2     | 3     |
 | 13    | 01   | 4min     | 3     | 6     |
 | 13    | 02   | 3min     | 3     | 5     |
+| 14    | 01   | 3min     | 2     | 4     |
 | 14    | 02   | 2min     | 2     | 2     |
 
 ## Session Log
@@ -53,4 +58,5 @@ See: .planning/PROJECT.md
 - 2026-02-16: Plan 12-03 complete — confirmation/reveal/error page enhancements (URL card, terminal block, destruction badge, already_viewed error)
 - 2026-02-16: Plan 13-01 complete — dual theme CSS tokens, FOWT prevention, theme manager, three-way toggle component
 - 2026-02-16: Plan 13-02 complete — glassmorphism surfaces, page animations, button micro-interactions, copy-button icon swap, motion-safe compliance
+- 2026-02-16: Plan 14-01 complete — static OG/Twitter/JSON-LD tags in index.html, PageMeta-based dynamic meta management, OG image
 - 2026-02-16: Plan 14-02 complete — X-Robots-Tag: noindex, nofollow header for /secret/* routes, integration tests
