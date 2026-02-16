@@ -96,6 +96,12 @@ function handleRoute(): void {
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
   }
+
+  // Notify layout shell (and any other listeners) of the route change.
+  // Fires on every navigation: initial load, popstate, and programmatic.
+  window.dispatchEvent(
+    new CustomEvent('routechange', { detail: { path } }),
+  );
 }
 
 /**
