@@ -1,273 +1,295 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-14
+**Analysis Date:** 2026-02-16
 
 ## Directory Layout
 
 ```
 secureshare/
-├── client/                    # Frontend (vanilla TS, not yet implemented except crypto)
-│   └── src/
-│       └── crypto/            # AES-256-GCM encryption module (Phase 1 complete)
-│           └── __tests__/     # Crypto unit tests
-├── server/                    # Backend (Express 5 + TypeScript)
-│   └── src/
-│       ├── config/            # Environment configuration
-│       ├── db/                # Database schema, connection, migrations
-│       ├── middleware/        # Express middleware (validation, logging, errors)
-│       ├── routes/            # HTTP endpoint handlers
-│       │   └── __tests__/     # API integration tests
-│       └── services/          # Business logic layer
-├── shared/                    # Types shared between client and server
-│   └── types/                 # Zod schemas and TypeScript interfaces
-├── .planning/                 # GSD workflow documentation
-│   ├── codebase/              # Codebase analysis docs (this directory)
-│   ├── phases/                # Phase plans and execution logs
-│   └── research/              # Pre-implementation research
-├── drizzle/                   # Generated SQL migrations (not in repo yet)
-├── node_modules/              # Dependencies
-├── package.json               # NPM manifest and scripts
-├── tsconfig.json              # Root TypeScript config
-├── vitest.config.ts           # Test runner configuration
-├── drizzle.config.ts          # Database migration config
-├── .env                       # Local environment variables (gitignored)
-├── .env.example               # Template for required env vars
-├── CLAUDE.md                  # Claude Code project guidance
-└── secret-share-prd.md        # Original PRD
+├── client/                 # Browser-side SPA (vanilla TypeScript + Vite)
+│   ├── src/               # Client source code
+│   ├── public/            # Static assets (favicons, manifest, robots.txt, sitemap)
+│   └── dist/              # Vite build output (served by Express in production)
+├── server/                # Express 5 backend
+│   └── src/               # Server source code
+├── shared/                # Code shared between client and server
+│   └── types/             # API contracts (Zod schemas + TypeScript types)
+├── .planning/             # GSD workflow documents (roadmap, phases, codebase analysis)
+├── scripts/               # Build/deploy scripts
+├── node_modules/          # npm dependencies
+├── package.json           # Dependencies and scripts
+├── tsconfig.json          # TypeScript config (ESM, bundler resolution)
+├── vite.config.ts         # Vite build config (Tailwind plugin, CSP nonce)
+├── vitest.config.ts       # Vitest test config (node environment)
+├── drizzle.config.ts      # Drizzle ORM migration config
+└── CLAUDE.md              # Project context for Claude Code
 ```
 
 ## Directory Purposes
 
-**client/src/crypto/:**
-- Purpose: Client-side encryption/decryption (zero-knowledge design)
-- Contains: `encrypt.ts`, `decrypt.ts`, `keys.ts`, `encoding.ts`, `padding.ts`, `constants.ts`, `types.ts`, `index.ts` (barrel export)
-- Key files:
-  - `index.ts`: Public API (`encrypt`, `decrypt`, key functions)
-  - `encrypt.ts`: AES-256-GCM encryption with PADME padding
-  - `decrypt.ts`: AES-256-GCM decryption with unpadding
-  - `keys.ts`: Key generation and import/export (base64url)
-  - `padding.ts`: PADME padding algorithm (prevents length leakage)
-  - `encoding.ts`: Base64/base64url utilities
-  - `__tests__/`: 5 test files with 100% coverage
+**client/src:**
+- Purpose: All browser-side code (UI, routing, crypto, API client)
+- Contains: TypeScript modules for SPA
+- Key files: `app.ts` (entry point), `router.ts` (History API router), `styles.css` (Tailwind), `theme.ts` (light/dark mode)
 
-**client/src/pages/:**
-- Purpose: Frontend page components (Phase 4 - not yet implemented)
-- Expected files: `create.ts`, `reveal.ts`, `confirmation.ts`, `error.ts`
+**client/src/crypto:**
+- Purpose: Zero-knowledge cryptography module (AES-256-GCM with Web Crypto API)
+- Contains: Key generation, encryption, decryption, PADME padding, base64 encoding
+- Key files: `encrypt.ts`, `decrypt.ts`, `keys.ts`, `padding.ts`, `encoding.ts`, `constants.ts`, `types.ts`, `index.ts` (public API)
+- Critical: Only module that imports Web Crypto API; never uses Math.random or third-party crypto libraries
 
-**client/src/components/:**
-- Purpose: Reusable UI components (Phase 4 - not yet implemented)
-- Expected files: `CopyButton.ts`, `PasswordInput.ts`
+**client/src/pages:**
+- Purpose: Top-level page modules (one per route)
+- Contains: `create.ts` (secret creation form), `reveal.ts` (secret display with password prompt), `confirmation.ts` (shareable link display), `error.ts` (404/error page)
+- Key files: Each exports `renderPageName(container: HTMLElement)` function
 
-**client/src/api/:**
-- Purpose: API client functions for server communication (Phase 4 - not yet implemented)
-- Expected files: `secrets.ts` (wrapper for POST/GET `/api/secrets`)
+**client/src/components:**
+- Purpose: Reusable UI components
+- Contains: `layout.ts` (header/footer shell), `theme-toggle.ts`, `copy-button.ts`, `share-button.ts`, `terminal-block.ts`, `loading-spinner.ts`, `expiration-select.ts`, `toast.ts`, `icons.ts` (Lucide wrapper)
+- Key files: Each exports `createComponentName()` factory function returning HTMLElement
 
-**server/src/config/:**
-- Purpose: Environment variable loading and validation
-- Contains: `env.ts` (Zod schema for DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV)
-- Key files:
-  - `env.ts`: Exports validated `env` object, fails fast on missing vars
+**client/src/api:**
+- Purpose: Typed fetch wrapper for server communication
+- Contains: `client.ts` (API functions for secrets endpoints)
+- Key files: `client.ts` exports `createSecret()`, `getSecret()`, `getSecretMeta()`, `verifySecretPassword()` + `ApiError` class
 
-**server/src/db/:**
-- Purpose: Database schema, connection pooling, migrations
-- Contains: `schema.ts`, `connection.ts`, `migrate.ts`
-- Key files:
-  - `schema.ts`: Drizzle schema for `secrets` table (id, ciphertext, expiresAt, createdAt, passwordHash, passwordAttempts)
-  - `connection.ts`: PostgreSQL pool and Drizzle ORM instance
-  - `migrate.ts`: Migration runner (called manually via `npm run db:migrate`)
+**client/public:**
+- Purpose: Static assets copied to `client/dist` during build
+- Contains: `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `og-image.png`, `robots.txt`, `site.webmanifest`, `sitemap.xml`
+- Key files: All files served at root path in production
 
-**server/src/middleware/:**
+**client/dist:**
+- Purpose: Vite build output (generated by `npm run build:client`)
+- Generated: Yes (not in git)
+- Committed: No
+- Contains: Bundled JS chunks, CSS, HTML template with `__CSP_NONCE__` placeholder, static assets
+
+**server/src:**
+- Purpose: Express backend with REST API
+- Contains: TypeScript modules for HTTP server
+- Key files: `server.ts` (entry point), `app.ts` (Express app factory)
+
+**server/src/routes:**
+- Purpose: Express route handlers
+- Contains: `secrets.ts` (secrets router factory)
+- Key files: `secrets.ts` exports `createSecretsRouter(redisClient?)` with routes: POST /, GET /:id/meta, POST /:id/verify, GET /:id
+
+**server/src/services:**
+- Purpose: Business logic layer (no HTTP concerns)
+- Contains: `secrets.service.ts` (secret lifecycle), `password.service.ts` (Argon2id hashing)
+- Key files: `secrets.service.ts` exports `createSecret()`, `retrieveAndDestroy()`, `getSecretMeta()`, `verifyAndRetrieve()`
+
+**server/src/middleware:**
 - Purpose: Express middleware for cross-cutting concerns
-- Contains: `validate.ts`, `logger.ts`, `error-handler.ts`
-- Key files:
-  - `validate.ts`: `validateBody()`, `validateParams()` factories for Zod validation
-  - `logger.ts`: Pino logger with secret ID redaction, `httpLogger` middleware
-  - `error-handler.ts`: Global error handler (500 responses)
+- Contains: `security.ts` (helmet, CSP, HTTPS), `logger.ts` (pino), `validate.ts` (Zod), `rate-limit.ts` (express-rate-limit), `error-handler.ts`
+- Key files: Each exports middleware function or factory
 
-**server/src/routes/:**
-- Purpose: HTTP endpoint handlers (thin layer delegating to services)
-- Contains: `secrets.ts`, `__tests__/secrets.test.ts`
-- Key files:
-  - `secrets.ts`: Express router with POST `/` (create) and GET `/:id` (retrieve-and-destroy)
-  - `__tests__/secrets.test.ts`: Integration tests using supertest (6 passing tests)
+**server/src/db:**
+- Purpose: Database layer (PostgreSQL + Drizzle ORM)
+- Contains: `connection.ts` (pg Pool + Drizzle instance), `schema.ts` (table definitions), `migrate.ts` (migration runner script)
+- Key files: `connection.ts` exports `pool` and `db`, `schema.ts` exports `secrets` table and types
 
-**server/src/services/:**
-- Purpose: Business logic and database operations
-- Contains: `secrets.service.ts`
-- Key files:
-  - `secrets.service.ts`: `createSecret()`, `retrieveAndDestroy()` with atomic transaction
+**server/src/config:**
+- Purpose: Environment variable validation
+- Contains: `env.ts` (Zod schema for .env)
+- Key files: `env.ts` exports `env` object with validated config
 
-**shared/types/:**
-- Purpose: Contract definitions for client-server communication
-- Contains: `api.ts`
-- Key files:
-  - `api.ts`: Zod schemas (`CreateSecretSchema`, `SecretIdParamSchema`), TypeScript interfaces (`CreateSecretResponse`, `SecretResponse`, `ErrorResponse`)
+**server/src/workers:**
+- Purpose: Background jobs (scheduled cleanup)
+- Contains: `expiration-worker.ts` (node-cron job)
+- Key files: `expiration-worker.ts` exports `startExpirationWorker()`, `stopExpirationWorker()`
 
-**.planning/:**
-- Purpose: GSD workflow documentation (roadmap, plans, state tracking)
-- Contains: `ROADMAP.md`, `STATE.md`, `PROJECT.md`, `REQUIREMENTS.md`, `config.json`, subdirectories for phases/research/codebase
-- Key files:
-  - `ROADMAP.md`: 7-phase implementation plan
-  - `STATE.md`: Current phase progress and blockers
-  - `phases/01-*/`, `phases/02-*/`: Phase-specific plans and execution logs
+**shared/types:**
+- Purpose: API contracts shared between client and server
+- Contains: `api.ts` (Zod schemas + TypeScript interfaces)
+- Key files: `api.ts` exports request/response schemas and types
 
-**.planning/codebase/:**
-- Purpose: Codebase analysis documents for GSD commands
-- Contains: This file (STRUCTURE.md), ARCHITECTURE.md (sibling)
+**.planning:**
+- Purpose: GSD workflow documentation (not part of app code)
+- Contains: `ROADMAP.md`, `STATE.md`, phase plans, codebase analysis docs
+- Subdirectories: `milestones/`, `phases/`, `todos/`, `research/`, `codebase/`, `debug/`
+
+**scripts:**
+- Purpose: Build/deploy automation scripts
+- Contains: Empty (reserved for future use)
 
 ## Key File Locations
 
 **Entry Points:**
-- `server/src/server.ts`: HTTP server startup, graceful shutdown
-- `server/src/app.ts`: Express app factory (testable, no server start)
-- `client/src/crypto/index.ts`: Crypto module public API
+- `server/src/server.ts`: Backend entry point (starts HTTP server, worker, graceful shutdown)
+- `client/src/app.ts`: Frontend entry point (DOMContentLoaded handler, initializes theme + layout + router)
+- `client/index.html`: HTML template with `__CSP_NONCE__` placeholder (injected at runtime by server)
 
 **Configuration:**
-- `tsconfig.json`: Root TypeScript config (ES2022, ESNext modules, bundler resolution)
-- `server/tsconfig.json`: Server-specific overrides (if exists)
-- `vitest.config.ts`: Test runner config
-- `drizzle.config.ts`: Database migration config (PostgreSQL URL, migrations dir)
-- `.env`: Local environment variables (DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV)
-- `.env.example`: Template showing required vars
+- `package.json`: Dependencies, scripts, `"type": "module"` for ESM
+- `tsconfig.json`: TypeScript config (ES2022, ESNext modules, bundler resolution)
+- `vite.config.ts`: Vite config (root: client, Tailwind plugin, CSP nonce placeholder, dev proxy)
+- `vitest.config.ts`: Test config (node environment, dotenv setup file)
+- `drizzle.config.ts`: Drizzle migration config (PostgreSQL connection, output dir)
+- `server/src/config/env.ts`: Runtime env var validation (Zod)
+- `.env`: Environment variables (DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV, REDIS_URL)
+- `.env.example`: Template for required env vars
 
 **Core Logic:**
-- `server/src/services/secrets.service.ts`: Secret creation and atomic retrieval
-- `client/src/crypto/encrypt.ts`: AES-256-GCM encryption
-- `client/src/crypto/decrypt.ts`: AES-256-GCM decryption
+- `client/src/crypto/encrypt.ts`: AES-256-GCM encryption with fresh key + IV
+- `client/src/crypto/decrypt.ts`: AES-256-GCM decryption with padding removal
+- `server/src/services/secrets.service.ts`: Atomic read-and-destroy transactions
+- `server/src/services/password.service.ts`: Argon2id password hashing
+- `client/src/router.ts`: SPA routing with History API + dynamic imports
 
 **Testing:**
-- `vitest.config.ts`: Test configuration (timeout 10s)
-- `server/src/routes/__tests__/secrets.test.ts`: API integration tests (6 tests)
-- `client/src/crypto/__tests__/*.test.ts`: 5 crypto unit test files (21 tests total)
+- `client/src/crypto/__tests__/`: Crypto module unit tests (5 files, 21+ tests)
+- `server/src/routes/__tests__/`: API integration tests (real PostgreSQL, Supertest)
+- `server/src/workers/__tests__/`: Worker tests
+- `client/src/components/__tests__/`: Component tests
 
 ## Naming Conventions
 
 **Files:**
-- `.ts` extension for all TypeScript source files
-- `.test.ts` suffix for test files (co-located with source in `__tests__/` subdirectories)
-- `kebab-case` for multi-word filenames: `error-handler.ts`, `secrets.service.ts`
-- Barrel exports use `index.ts` (e.g., `client/src/crypto/index.ts`)
-
-**Directories:**
-- `kebab-case` for multi-word directories: `__tests__`, `src`
-- `camelCase` NOT used for directories (consistent with Express conventions)
+- kebab-case: All files use kebab-case (e.g., `expiration-select.ts`, `copy-button.ts`, `secrets.service.ts`)
+- Test files: `*.test.ts` (co-located in `__tests__/` subdirectories)
+- Config files: `*.config.ts` (root level)
 
 **Functions:**
-- `camelCase` for functions: `createSecret`, `retrieveAndDestroy`, `validateBody`
-- Async functions explicitly return `Promise<T>`
+- camelCase: `createSecret()`, `renderCreatePage()`, `validateBody()`
+- Factory functions: Prefix with `create` or `build` (e.g., `createSecretsRouter()`, `buildApp()`)
+- Page renderers: Prefix with `render` (e.g., `renderCreatePage()`, `renderRevealPage()`)
+- Component factories: Prefix with `create` (e.g., `createIcon()`, `createExpirationSelect()`)
 
 **Variables:**
-- `camelCase` for local variables: `ciphertext`, `expiresAt`, `plaintextBytes`
-- `SCREAMING_SNAKE_CASE` for constants: `DURATION_MS`, `IV_LENGTH`, `ALGORITHM`, `SECRET_NOT_AVAILABLE`
+- camelCase: `ciphertext`, `secretId`, `redisClient`
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_LENGTH`, `ALGORITHM`, `IV_LENGTH`, `DURATION_MS`)
 
 **Types:**
-- `PascalCase` for types and interfaces: `Secret`, `EncryptResult`, `CreateSecretRequest`
-- Zod schemas use `PascalCase` with `Schema` suffix: `CreateSecretSchema`, `SecretIdParamSchema`
+- PascalCase: `EncryptResult`, `Secret`, `CreateSecretResponse`, `ApiError`
+- Interfaces: PascalCase (e.g., `PageMeta`, `EncryptedPayload`)
+- Zod schemas: PascalCase with `Schema` suffix (e.g., `CreateSecretSchema`, `SecretIdParamSchema`)
 
-**Routers:**
-- Lowercase plural noun + `Router` suffix: `secretsRouter`
+**CSS Classes:**
+- Tailwind utility classes (no custom CSS classes defined)
+- BEM not used (Tailwind-first approach)
 
 ## Where to Add New Code
 
-**New API Endpoint:**
-- Primary code: `server/src/routes/{resource}.ts` (new router file)
-- Service logic: `server/src/services/{resource}.service.ts`
-- Types/schemas: `shared/types/api.ts` (add Zod schema and TypeScript interface)
-- Tests: `server/src/routes/__tests__/{resource}.test.ts`
-- Mount router: Add to `server/src/app.ts` with `app.use('/api/{resource}', {resource}Router)`
+**New Feature (full-stack):**
+- Primary code:
+  - Client page: `client/src/pages/feature-name.ts`
+  - Client API function: `client/src/api/client.ts` (add function to existing file)
+  - Server route: `server/src/routes/feature-name.ts` (or extend `secrets.ts`)
+  - Server service: `server/src/services/feature-name.service.ts`
+  - Shared types: `shared/types/api.ts` (add Zod schema + interfaces)
+  - Database schema: `server/src/db/schema.ts` (add table or columns)
+- Tests:
+  - Client: `client/src/pages/__tests__/feature-name.test.ts`
+  - Server: `server/src/routes/__tests__/feature-name.test.ts`
+- Router: Update `client/src/router.ts` to add route pattern
+
+**New Component/Module:**
+- Implementation: `client/src/components/component-name.ts`
+- Tests: `client/src/components/__tests__/component-name.test.ts`
+- Pattern: Export factory function `createComponentName()` returning HTMLElement
 
 **New Middleware:**
-- Implementation: `server/src/middleware/{name}.ts`
-- Apply globally: Add to `server/src/app.ts` middleware chain
-- Apply per-route: Import in route file and add to route handler chain
+- Implementation: `server/src/middleware/middleware-name.ts`
+- Tests: Co-locate in `server/src/middleware/__tests__/` or test via integration tests
+- Mounting: Add to middleware pipeline in `server/src/app.ts` (order matters!)
 
-**New Frontend Page:**
-- Implementation: `client/src/pages/{page-name}.ts`
-- Components: `client/src/components/{ComponentName}.ts`
-- Styles: Inline Tailwind classes (no separate CSS files per PRD)
-- API calls: `client/src/api/{resource}.ts`
-
-**New Crypto Function:**
-- Implementation: `client/src/crypto/{function-name}.ts`
-- Tests: `client/src/crypto/__tests__/{function-name}.test.ts`
-- Public API: Export from `client/src/crypto/index.ts` if external, keep internal otherwise
-- Constants: Add to `client/src/crypto/constants.ts`
-- Types: Add to `client/src/crypto/types.ts`
-
-**New Database Table:**
-- Schema: Add to `server/src/db/schema.ts` using Drizzle `pgTable()`
-- Generate migration: `npm run db:generate` (creates SQL in `drizzle/migrations/`)
-- Apply migration: `npm run db:migrate`
-- Type exports: Export `$inferSelect` and `$inferInsert` types from schema
-
-**New Shared Type:**
-- Zod schema: Add to `shared/types/api.ts` with `z.object()`
-- TypeScript interface: Export `z.infer<typeof Schema>` or manual interface
-- Usage: Import in client API code and server validation middleware
+**New Background Worker:**
+- Implementation: `server/src/workers/worker-name.ts`
+- Tests: `server/src/workers/__tests__/worker-name.test.ts`
+- Lifecycle: Start in `server/src/server.ts`, stop in graceful shutdown handler
 
 **Utilities:**
-- Server helpers: `server/src/utils/{category}.ts` (directory not yet created)
-- Client helpers: `client/src/utils/{category}.ts` (directory not yet created)
-- Shared helpers: `shared/utils/{category}.ts` (directory not yet created)
+- Shared helpers: `shared/utils/` (create if needed)
+- Client-only helpers: `client/src/utils/` (create if needed)
+- Server-only helpers: `server/src/utils/` (create if needed)
 
-**Environment Variables:**
-- Schema: Add to `EnvSchema` in `server/src/config/env.ts`
-- Documentation: Add to `.env.example` with description comment
-- Local value: Add to `.env` (gitignored, never committed)
+**API Endpoint:**
+- Route handler: Add to `server/src/routes/secrets.ts` or create new router file
+- Service function: Add to `server/src/services/secrets.service.ts` or create new service
+- Types: Add Zod schema + interface to `shared/types/api.ts`
+- Client wrapper: Add function to `client/src/api/client.ts`
+
+**Database Changes:**
+- Schema: Edit `server/src/db/schema.ts`
+- Migration: Run `npm run db:generate` to create migration in `drizzle/` directory
+- Apply: Run `npm run db:migrate` to apply migration to database
 
 ## Special Directories
 
-**node_modules/:**
-- Purpose: NPM dependencies
+**node_modules:**
+- Purpose: npm dependencies
 - Generated: Yes (via `npm install`)
-- Committed: No (gitignored)
+- Committed: No (in .gitignore)
 
-**drizzle/migrations/:**
-- Purpose: Generated SQL migration files
+**client/dist:**
+- Purpose: Vite build output (production assets)
+- Generated: Yes (via `npm run build:client`)
+- Committed: No (in .gitignore)
+
+**drizzle:**
+- Purpose: Generated SQL migrations from schema changes
 - Generated: Yes (via `npm run db:generate`)
-- Committed: Yes (migrations are versioned)
-- Not present yet: Directory created on first migration generation
+- Committed: Yes (migrations are source code)
 
-**dist/:**
-- Purpose: Compiled TypeScript output
-- Generated: Yes (via `tsc` build, not yet configured)
-- Committed: No (gitignored)
+**.planning:**
+- Purpose: GSD workflow documentation and codebase analysis
+- Generated: Partially (created by `/gsd:*` commands)
+- Committed: Yes (workflow state is tracked)
 
-**.planning/:**
-- Purpose: GSD workflow documentation
-- Generated: Partially (by GSD commands and manual planning)
-- Committed: Yes (all planning docs tracked in git)
-
-**.planning/codebase/:**
-- Purpose: Codebase analysis for GSD command consumption
-- Generated: Yes (by `/gsd:map-codebase` command)
-- Committed: Yes (referenced by other GSD commands)
-
-**.planning/phases/NN-{phase-name}/:**
-- Purpose: Phase-specific implementation plans and logs
-- Generated: Yes (by `/gsd:plan-phase` and `/gsd:execute-phase`)
-- Committed: Yes (tracks implementation history)
-
-**.planning/research/:**
-- Purpose: Pre-implementation research and decisions
-- Generated: Yes (by initial planning workflow)
-- Committed: Yes (historical context for architecture decisions)
-
-**.claude/:**
-- Purpose: Claude Code local settings
+**.claude:**
+- Purpose: Claude Code internal state
 - Generated: Yes (by Claude Code)
-- Committed: No (gitignored, user-specific)
+- Committed: No (in .gitignore)
 
-**.git/:**
+**.git:**
 - Purpose: Git repository metadata
 - Generated: Yes (by git)
-- Committed: No (not tracked within itself)
+- Committed: No (git internal directory)
 
-**coverage/:**
-- Purpose: Test coverage reports (not yet generated)
-- Generated: Yes (via `vitest --coverage`, not yet configured)
-- Committed: No (gitignored, ephemeral)
+## Import Patterns
+
+**Client imports:**
+- Local modules: Relative paths with `.js` extension (e.g., `from './crypto/index.js'`)
+- Shared types: `from '../../../shared/types/api.js'` (relative path from client to shared)
+- External: `from 'lucide'` (npm package with Vite alias to fix broken module field)
+- CSS: `import './styles.css'` (processed by Vite)
+
+**Server imports:**
+- Local modules: Relative paths with `.js` extension (e.g., `from './db/connection.js'`)
+- Shared types: `from '../../../shared/types/api.js'` (relative path from server to shared)
+- External: Standard npm imports (e.g., `import express from 'express'`)
+- Node builtins: `node:` prefix (e.g., `from 'node:fs'`, `from 'node:path'`)
+
+**ESM quirks:**
+- `.js` extension required: Even though files are `.ts`, imports use `.js` (TypeScript + Node ESM requirement)
+- `import.meta.dirname`: Used instead of `__dirname` (ESM alternative)
+- Default imports: `express` is default import, `pinoHttp` is named export (CJS interop)
+
+**Path aliases:**
+- None defined: All imports use relative paths (no `@/` or `~/` aliases in tsconfig)
+- Vite alias: Only `lucide` aliased to fix broken npm package
+
+## File Organization
+
+**Co-located tests:**
+- Pattern: Tests live in `__tests__/` subdirectories alongside source code
+- Example: `client/src/crypto/__tests__/encrypt.test.ts` tests `client/src/crypto/encrypt.ts`
+- Naming: `filename.test.ts` for unit tests, `filename.integration.test.ts` for integration tests
+
+**Barrel files:**
+- Usage: `client/src/crypto/index.ts` exports public API (encrypt, decrypt, constants, types)
+- Not used elsewhere: Other directories do not use barrel files (explicit imports)
+
+**Single-responsibility files:**
+- Pattern: One primary export per file (e.g., `encrypt.ts` exports `encrypt()` function)
+- Exceptions: `api.ts` exports multiple schemas/types (API contract), `icons.ts` exports `createIcon()` + icon map
+
+**Module boundaries:**
+- Client never imports from server (enforced by Vite build)
+- Server never imports from client (enforced by TypeScript config)
+- Both import from shared (common types)
 
 ---
 
-*Structure analysis: 2026-02-14*
+*Structure analysis: 2026-02-16*

@@ -1,94 +1,104 @@
 # Technology Stack
 
-**Analysis Date:** 2026-02-14
+**Analysis Date:** 2026-02-16
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.9.3 - All application code (client, server, shared types)
-- JavaScript ES2022 - Compilation target, ESNext module system
+- TypeScript 5.9 - All source code (client, server, shared)
+- Compiler target: ES2022, module: ESNext, strict mode enabled
 
 **Secondary:**
-- SQL - PostgreSQL schema and queries via Drizzle ORM
+- CSS - Tailwind CSS 4.x with custom OKLCH-based design tokens
+- SQL - PostgreSQL migrations generated via Drizzle Kit
 
 ## Runtime
 
 **Environment:**
-- Node.js 22.18.0 (project targets 24.x LTS per CLAUDE.md, current dev uses v22)
+- Node.js 22.18.0 (detected)
+- Target: Node.js 24.x LTS (per CLAUDE.md)
 
 **Package Manager:**
-- npm (package-lock.json present, version 10.x)
-- Lockfile: Present and committed
+- npm 10.9.3
+- Lockfile: `package-lock.json` (lockfileVersion 3) present
 
 ## Frameworks
 
 **Core:**
-- Express 5.2.1 - HTTP server and routing
-- Drizzle ORM 0.45.1 - Database query builder and schema management
-- Vite 7.x - Frontend build tool (planned, not yet configured)
-- Tailwind CSS 4.x - Styling framework (planned, not yet configured)
+- Express 5.2.1 - HTTP server with typed routes
+- Vite 7.3.1 - Frontend build tool with dev server
+- Drizzle ORM 0.45.1 - Type-safe PostgreSQL client
+- Tailwind CSS 4.1.18 - Utility-first CSS with Vite plugin
 
 **Testing:**
-- Vitest 4.0.18 - Test runner for both client and server
+- Vitest 4.0.18 - Test runner with dual-project setup (client: happy-dom, server: node)
 - Supertest 7.2.2 - HTTP integration testing
+- happy-dom 20.6.1 - Lightweight DOM environment for client tests
+- vitest-axe 0.1.0 - Accessibility testing utilities
 
 **Build/Dev:**
-- tsx 4.21.0 - TypeScript execution and watch mode for development
-- drizzle-kit 0.31.9 - Database migration generation and execution
+- tsx 4.21.0 - TypeScript execution for dev server watch mode
+- drizzle-kit 0.31.9 - Database migration generation and application
+- @tailwindcss/vite 4.1.18 - Vite integration for Tailwind CSS 4.x
 
 ## Key Dependencies
 
 **Critical:**
-- nanoid 5.1.6 - Cryptographically secure 21-char URL-safe ID generation for secret IDs
-- zod 4.3.6 - Runtime schema validation for API requests and environment configuration
-- pg 8.18.0 - PostgreSQL client driver (node-postgres)
-- dotenv 17.3.1 - Environment variable loading from `.env` files
+- pg 8.18.0 - PostgreSQL client (connection pooling)
+- nanoid 5.1.6 - Cryptographically secure URL-safe ID generation (21-char secrets)
+- argon2 0.44.0 - OWASP-compliant password hashing (Argon2id, mem=19MiB, time=2)
+- zod 4.3.6 - Runtime schema validation for API contracts and env vars
+- Web Crypto API - Browser-native AES-256-GCM encryption (no external crypto dependencies)
 
 **Infrastructure:**
-- pino 10.3.1 - Structured JSON logging
-- pino-http 11.0.0 - HTTP request logging middleware with secret ID redaction
-- pino-pretty 13.1.3 - Human-readable log formatting for development
+- helmet 8.1.0 - Security headers (CSP with nonce, HSTS, Referrer-Policy)
+- express-rate-limit 8.2.1 - Request rate limiting middleware
+- ioredis 5.9.3 - Redis client for distributed rate limiting (optional)
+- rate-limit-redis 4.3.1 - Redis store adapter for express-rate-limit
+- node-cron 4.2.1 - Scheduled task runner for expiration cleanup worker
+- pino 10.3.1 - Structured JSON logger
+- pino-http 11.0.0 - Express request logging middleware
+- pino-pretty 13.1.3 (dev) - Pretty-print logs in development
+- dotenv 17.3.1 - Environment variable loading
 
-**Planned (from CLAUDE.md, not yet installed):**
-- helmet - CSP and security headers (Phase 3)
-- express-rate-limit - Rate limiting middleware (Phase 3)
-- ioredis or redis 7.x - Redis client for rate limiting (Phase 3)
-- argon2 - Password hashing (Phase 5)
-- node-cron - Background expiration worker (Phase 6)
+**Frontend:**
+- lucide 0.564.0 - Icon library (SVG sprites)
+- @fontsource-variable/jetbrains-mono 5.2.8 - Variable font for monospace UI elements
 
 ## Configuration
 
 **Environment:**
-- Configuration via `.env` file (example: `.env.example`)
-- Required variables validated with Zod schema in `server/src/config/env.ts`:
-  - `DATABASE_URL` - PostgreSQL connection string (must start with "postgres")
-  - `PORT` - HTTP server port (default: 3000)
-  - `LOG_LEVEL` - Pino log level (default: "info")
-  - `NODE_ENV` - Environment mode (development/production/test, default: "development")
+- Env vars loaded via `dotenv/config` at runtime and build time
+- Zod schema validation in `server/src/config/env.ts`
+- Required vars: `DATABASE_URL`, `PORT`, `LOG_LEVEL`, `NODE_ENV`
+- Optional vars: `REDIS_URL` (enables distributed rate limiting)
+- Env files: `.env` (local, gitignored), `.env.example` (committed template)
 
 **Build:**
-- `tsconfig.json` - TypeScript compiler configuration (ES2022 target, ESNext modules, strict mode)
-- `vitest.config.ts` - Test runner configuration (Node environment, 10s timeout, dotenv setup)
-- `drizzle.config.ts` - Database migration configuration (PostgreSQL dialect, schema location)
+- `tsconfig.json` - Shared TypeScript config (bundler resolution, ES2022 target, strict mode)
+- `vite.config.ts` - Vite config with Tailwind plugin, API proxy, CSP nonce placeholder
+- `vitest.config.ts` - Dual-project test config (client + server), dotenv setup file
+- `drizzle.config.ts` - Database migration config (PostgreSQL dialect, schema path)
+
+**TypeScript:**
+- Module type: ESM (`"type": "module"` in package.json)
+- Module resolution: bundler (NodeNext for backend, bundler for frontend)
+- Output: `dist/` directory (not committed)
+- Declaration maps and source maps enabled
 
 ## Platform Requirements
 
 **Development:**
-- Node.js 24.x LTS (recommended, 22.x compatible)
-- PostgreSQL 17+ database
-- Redis 7.x (planned for Phase 3 rate limiting)
+- Node.js 24.x LTS (or 22.x compatible)
+- PostgreSQL 17+ database server
+- Redis (optional, for multi-instance rate limiting)
 
 **Production:**
-- Deployment target: Not yet configured
-- HTTPS required (enforced in Phase 3)
-
-## Crypto Dependencies
-
-**Browser-Native Only:**
-- Web Crypto API (`crypto.subtle`) - AES-256-GCM encryption/decryption
-- `crypto.getRandomValues()` - Cryptographically secure random number generation
-- No third-party crypto libraries used (security invariant)
+- Deployment target: Platform with Node.js 24.x LTS support
+- PostgreSQL 17+ (connection string via `DATABASE_URL`)
+- HTTPS required (HSTS enforced in production, redirects HTTP→HTTPS)
+- Reverse proxy with `X-Forwarded-Proto` header support (Express trust proxy enabled)
 
 ---
 
-*Stack analysis: 2026-02-14*
+*Stack analysis: 2026-02-16*

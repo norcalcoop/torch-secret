@@ -1,210 +1,210 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-14
+**Analysis Date:** 2026-02-16
 
 ## Naming Patterns
 
 **Files:**
-- camelCase for TypeScript files: `secrets.service.ts`, `error-handler.ts`, `encoding.ts`
-- kebab-case for multi-word filenames: `error-handler.ts`, `secrets.service.ts`
-- Test files co-located with source: `__tests__/encoding.test.ts`, `__tests__/secrets.test.ts`
-- Suffix pattern: `.test.ts` for tests, `.service.ts` for service layer
+- TypeScript source: `kebab-case.ts` (e.g., `secrets.service.ts`, `error-handler.ts`)
+- Test files: `[source-name].test.ts` (e.g., `encoding.test.ts`, `secrets.test.ts`)
+- Config files: `[tool].config.ts` (e.g., `vitest.config.ts`, `drizzle.config.ts`)
+- Special: `__tests__/` directories contain test files co-located with source
 
 **Functions:**
-- camelCase for all functions: `createSecret()`, `retrieveAndDestroy()`, `uint8ArrayToBase64Url()`
-- Descriptive verb-first naming: `validateBody()`, `generateKey()`, `padPlaintext()`
-- Boolean checks: `redactUrl()` (returns transformed value, not boolean)
+- camelCase for all functions (e.g., `createSecret`, `validateBody`, `retrieveAndDestroy`)
+- Async functions explicitly return `Promise<T>`
+- Factory functions prefixed with `create` or `build` (e.g., `createSecretsRouter`, `buildApp`)
 
 **Variables:**
-- camelCase for variables: `expiresAt`, `ciphertext`, `keyBase64Url`
-- SCREAMING_SNAKE_CASE for constants: `VALID_CIPHERTEXT`, `SECRET_NOT_AVAILABLE`, `ALGORITHM`, `KEY_LENGTH`
-- Descriptive naming for crypto operations: `rawKey`, `binary`, `decoded`
+- camelCase for local variables (e.g., `ciphertext`, `expiresAt`, `plaintextBytes`)
+- UPPER_SNAKE_CASE for constants (e.g., `VALID_CIPHERTEXT`, `MAX_PASSWORD_ATTEMPTS`, `IV_LENGTH`)
+- Object destructuring from default imports for ESM interop:
+  - `import pg from 'pg'; const { Pool } = pg;` (`server/src/db/connection.ts`)
+  - `import pinoHttpDefault from 'pino-http'; const pinoHttp = pinoHttpDefault;`
 
 **Types:**
-- PascalCase for interfaces and types: `EncryptResult`, `Secret`, `CreateSecretRequest`
-- Schema suffix for Zod schemas: `CreateSecretSchema`, `SecretIdParamSchema`, `EnvSchema`
-- Descriptive response types: `CreateSecretResponse`, `SecretResponse`, `ErrorResponse`
+- PascalCase for interfaces and types (e.g., `EncryptResult`, `CreateSecretRequest`, `Secret`)
+- Type-only imports use `import type` (e.g., `import type { Request, Response } from 'express'`)
+- Zod schemas suffixed with `Schema` (e.g., `CreateSecretSchema`, `EnvSchema`)
+- Type inference via `z.infer<typeof Schema>` for runtime schema types
 
 ## Code Style
 
 **Formatting:**
-- No explicit formatter config detected (no `.prettierrc` or `.editorconfig`)
-- Observed patterns: 2-space indentation, single quotes for strings, semicolons required
-- Maximum line length: ~80-100 characters (observed in codebase)
-- Trailing commas in multi-line objects and arrays
+- No `.prettierrc` or `.eslintrc` detected -- formatting appears manual or editor-based
+- Indentation: 2 spaces
+- String literals: single quotes in server code, both single and double in client code
+- Line length: generally 80-100 characters, docstrings can extend further
+- Template literals used for multi-line strings and SQL
 
 **Linting:**
-- No `.eslintrc` detected
-- TypeScript strict mode enabled in `tsconfig.json`: `"strict": true`
-- Strict compiler options: `forceConsistentCasingInFileNames: true`
-
-**TypeScript:**
-- Strict mode enabled globally
-- ES2022 target with ESNext modules
-- Explicit `.js` extensions in imports: `import { db } from '../db/connection.js'`
-- Type imports use `type` keyword: `import type { Request, Response, NextFunction }`
+- No ESLint config detected
+- TypeScript strict mode enabled in `tsconfig.json`:
+  - `"strict": true`
+  - `"forceConsistentCasingInFileNames": true`
+  - `"skipLibCheck": true`
 
 ## Import Organization
 
 **Order:**
-1. External dependencies (node modules)
-2. Internal modules (relative imports)
-3. Type-only imports separated with `import type`
-
-**Example from `server/src/routes/secrets.ts`:**
-```typescript
-import { Router } from 'express';
-import { validateBody, validateParams } from '../middleware/validate.js';
-import { CreateSecretSchema, SecretIdParamSchema } from '../../../shared/types/api.js';
-import { createSecret, retrieveAndDestroy } from '../services/secrets.service.js';
-```
-
-**Example from `server/src/middleware/validate.ts`:**
-```typescript
-import type { Request, Response, NextFunction } from 'express';
-import type { ZodType } from 'zod';
-```
+1. Node built-ins with `node:` prefix (e.g., `import { readFileSync } from 'node:fs'`)
+2. External packages (e.g., `import express from 'express'`)
+3. Internal absolute imports (e.g., `import { env } from '../config/env.js'`)
+4. Type-only imports grouped separately (e.g., `import type { Request } from 'express'`)
 
 **Path Aliases:**
-- None detected
-- All imports use explicit relative paths: `../`, `../../`, `../../../shared/`
-- Server imports always use `.js` extension (NodeNext module resolution)
+- None detected -- all imports use relative paths (`../`, `./`)
+- Shared types: `import { CreateSecretSchema } from '../../../shared/types/api.js'`
+
+**ESM Extensions:**
+- All imports include `.js` extension (ESM requirement with `"type": "module"`)
+- Applies even to `.ts` source files: `import { db } from './connection.js'`
 
 ## Error Handling
 
 **Patterns:**
-- Zod validation at API boundary in `validateBody()` and `validateParams()` middleware
-- Validation errors return 400 with structured shape: `{ error: 'validation_error', details: ... }`
+- Use Zod for validation -- `safeParse()` returns `{ success: boolean, data?, error? }`
+- Validation errors return 400 with structured JSON:
+  ```typescript
+  res.status(400).json({
+    error: 'validation_error',
+    details: result.error.flatten(),
+  });
+  ```
+- Database transactions use Drizzle's `db.transaction(async (tx) => { ... })`
+- Service functions return `null` for not-found cases (never throw)
+- Anti-enumeration: identical error responses for all "not available" cases:
+  ```typescript
+  const SECRET_NOT_AVAILABLE = {
+    error: 'not_found',
+    message: 'This secret does not exist, has already been viewed, or has expired.',
+  } as const;
+  ```
 - Global error handler in `server/src/middleware/error-handler.ts` catches unhandled errors
-- Errors logged internally but never leak stack traces to client
-- Anti-enumeration: identical 404 responses for all "secret not available" cases
-
-**Standard error response shape:**
-```typescript
-{
-  error: 'validation_error' | 'not_found' | 'internal_error',
-  message: string,
-  details?: unknown // Only for validation errors
-}
-```
-
-**Example from `server/src/routes/secrets.ts`:**
-```typescript
-const SECRET_NOT_AVAILABLE = {
-  error: 'not_found',
-  message: 'This secret does not exist, has already been viewed, or has expired.',
-} as const;
-```
+- Client-side crypto functions throw on validation failures (e.g., decrypt throws if auth tag fails)
 
 ## Logging
 
 **Framework:** Pino (structured JSON logging)
 
 **Patterns:**
-- Use `logger.error()`, `logger.info()` etc. from `server/src/middleware/logger.ts`
-- Structured logging: pass objects first, then message string
-- Sensitive data redaction via `pino.redact()`: headers, cookies, secret IDs
-- Custom serializers for request objects redact secret IDs from URLs
-- Never log request/response bodies (could contain ciphertext)
-
-**Example from `server/src/middleware/error-handler.ts`:**
-```typescript
-logger.error(
-  { err: { message: err.message, stack: err.stack } },
-  'Unhandled error',
-);
-```
-
-**Redaction function:**
-```typescript
-function redactUrl(url: string | undefined): string | undefined {
-  return url?.replace(
-    /\/api\/secrets\/[A-Za-z0-9_-]+/g,
-    '/api/secrets/[REDACTED]'
-  );
-}
-```
+- Logger instance: `server/src/middleware/logger.ts` exports `logger` and `httpLogger`
+- Structured logging with objects:
+  ```typescript
+  logger.error({ err: { message: err.message, stack: err.stack } }, 'Unhandled error');
+  ```
+- HTTP logging via `pino-http` middleware
+- Secret ID redaction: `redactUrl()` replaces `/api/secrets/[21-char-id]` with `/api/secrets/[REDACTED]`
+- Log level via `LOG_LEVEL` env var (default: `'info'`)
+- Never log: secret IDs, ciphertext, IP addresses, PII
 
 ## Comments
 
 **When to Comment:**
-- JSDoc comments for all exported functions explaining purpose, params, returns
-- Inline comments for security-critical invariants and non-obvious logic
-- File-level comments describing module purpose and constraints
-- Test suites organized with comment headers describing success criteria
+- File-level JSDoc blocks describe module purpose (every module has one)
+- Function-level JSDoc for public APIs and non-obvious logic:
+  ```typescript
+  /**
+   * Atomically retrieves and destroys a secret using a three-step
+   * transaction: SELECT -> ZERO ciphertext -> DELETE.
+   *
+   * Returns null for nonexistent, expired, already-consumed, or
+   * password-protected secrets.
+   */
+  ```
+- Inline comments for security-critical logic or non-obvious algorithms:
+  ```typescript
+  // Step 2: ZERO -- overwrite ciphertext with zero characters before deletion
+  // PostgreSQL text columns cannot contain null bytes (\x00), so we use '0'.
+  ```
+- Test file headers describe coverage scope:
+  ```typescript
+  /**
+   * Tests for the encrypt module.
+   *
+   * Covers: return shape, IV prepending, key/IV uniqueness,
+   * padding tier verification, edge cases (empty, large, unicode).
+   */
+  ```
 
 **JSDoc/TSDoc:**
-- Extensive JSDoc for public API functions
-- Include `@param`, `@returns`, `@throws` tags
-- Document security constraints and invariants
-
-**Example from `client/src/crypto/keys.ts`:**
-```typescript
-/**
- * Generate a new 256-bit AES-GCM key and its base64url representation.
- *
- * The returned key is extractable with encrypt+decrypt usages (creator side).
- * The base64url string is suitable for embedding in a URL fragment.
- *
- * @returns Object with `key` (CryptoKey) and `keyBase64Url` (string, 43 chars)
- */
-export async function generateKey(): Promise<{
-  key: CryptoKey;
-  keyBase64Url: string;
-}> { ... }
-```
-
-**Security comments:**
-```typescript
-// Step 2: ZERO -- overwrite ciphertext with zero characters before deletion
-// PostgreSQL text columns cannot contain null bytes (\x00), so we use '0'.
-// This still mitigates data remanence in PostgreSQL WAL and shared buffers.
-```
+- Used extensively for functions and modules
+- Parameters documented with `@param` when behavior is non-obvious
+- Return values documented with `@returns` for complex types
+- No `@throws` tags (functions return error values or use global handler)
 
 ## Function Design
 
 **Size:**
-- Functions are small and focused (10-30 lines typical)
-- Largest functions are ~50 lines (transaction logic in `retrieveAndDestroy()`)
-- Each function has single responsibility
+- Functions range 5-50 lines
+- Large functions (e.g., `renderCreatePage` ~200 lines) broken into logical sections with comments
 
 **Parameters:**
-- Positional parameters for simple functions (2-3 max)
-- Descriptive parameter names: `ciphertext`, `expiresIn`, `keyBase64Url`
-- Zod schemas for request validation at API boundary
-- Type-safe via TypeScript inference from Zod schemas
+- Prefer explicit parameters over options objects for 1-3 params
+- Options object for 4+ params (e.g., crypto config in `constants.ts`)
+- Optional parameters typed with `?` suffix: `password?: string`
+- Default values via Zod schemas (e.g., `PORT: z.coerce.number().default(3000)`)
 
 **Return Values:**
-- Explicit return types on all exported functions
-- Use `Promise<Type>` for async functions
-- Return objects for multiple values: `{ key, keyBase64Url }`
-- Null for "not found" cases: `Promise<Secret | null>`
+- Explicit return types on all functions (no implicit `any`)
+- Service functions return domain types or `null`:
+  ```typescript
+  async function retrieveAndDestroy(id: string): Promise<Secret | null>
+  ```
+- Discriminated unions for multi-case returns:
+  ```typescript
+  Promise<
+    | { success: true; secret: Secret }
+    | { success: false; attemptsRemaining: number }
+    | null
+  >
+  ```
+- Middleware returns `void` and uses early `return` (Express 5 pattern)
 
 ## Module Design
 
 **Exports:**
-- Named exports only (no default exports)
-- Barrel export pattern in `client/src/crypto/index.ts` exposes public API
-- Internal utilities not re-exported (encoding, padding are implementation details)
-
-**Example barrel export:**
-```typescript
-export { encrypt } from './encrypt';
-export { decrypt } from './decrypt';
-export { generateKey, exportKeyToBase64Url, importKeyFromBase64Url } from './keys';
-export type { EncryptedPayload, EncryptResult } from './types';
-```
+- Named exports preferred over default exports
+- Exception: external libraries requiring default import (e.g., `express`, `pino-http`)
+- Crypto module (`client/src/crypto/index.ts`) re-exports public API:
+  ```typescript
+  export { encrypt } from './encrypt';
+  export { decrypt } from './decrypt';
+  ```
 
 **Barrel Files:**
-- Used for crypto module: `client/src/crypto/index.ts`
-- Not used elsewhere (flat structure in server)
+- Used sparingly -- only `client/src/crypto/index.ts` re-exports
+- Shared types in `shared/types/api.ts` exports all schemas and interfaces
+- Internal modules import directly (no barrel): `import { db } from '../db/connection.js'`
 
-**Module organization:**
-- Thin route handlers delegate to service layer
-- Services contain business logic and database operations
-- Middleware for cross-cutting concerns (validation, logging, error handling)
-- Shared types in `shared/types/` for client-server contract
+## TypeScript-Specific
+
+**Type Safety:**
+- `strict: true` in `tsconfig.json`
+- `ZodType<T>` for generic schema types (Zod 4.x compatibility)
+- Type-only imports: `import type { Request, Response, NextFunction } from 'express'`
+- Explicit generic constraints: `function validateBody<T>(schema: ZodType<T>)`
+
+**ESM Interop:**
+- `"module": "ESNext"`, `"moduleResolution": "bundler"` in `tsconfig.json`
+- `"type": "module"` in `package.json`
+- `.js` extensions on all imports (required for ESM)
+- Default import workarounds:
+  ```typescript
+  import pg from 'pg';
+  const { Pool } = pg;
+  ```
+
+## Security-Specific Conventions
+
+**Critical Rules:**
+- Never import Web Crypto API outside `client/src/crypto/` module
+- Never use `Math.random()` -- only `crypto.getRandomValues()` and `crypto.subtle`
+- Never log secret IDs, ciphertext, or passwords -- use redaction middleware
+- Identical error responses for not-found/expired/consumed secrets (anti-enumeration)
+- Database transactions for all atomic operations (SELECT + UPDATE + DELETE)
+- Zod validation on all inputs -- never trust request bodies or params
 
 ---
 
-*Convention analysis: 2026-02-14*
+*Convention analysis: 2026-02-16*
