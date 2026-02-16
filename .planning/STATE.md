@@ -35,6 +35,7 @@ Progress: [#######################.......] 72% (29/~32 plans estimated)
 | Phase 09 P02 | 12 | 3 tasks | 8 files |
 | Phase 10 P01 | 2 | 2 tasks | 7 files |
 | Phase 10 P02 | 1 | 2 tasks | 1 files |
+| Phase 11 P01 | 5 | 3 tasks | 6 files |
 | Phase 11 P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -60,6 +61,8 @@ v2.0 decisions so far:
 - [Phase 10-02]: ICO link first with sizes=32x32 for Chrome SVG preference bug workaround
 - [Phase 11-02]: Error icon severity colors: Lock/Bomb=danger(red), KeyRound/TriangleAlert=warning(amber), Search=muted(gray)
 - [Phase 11-02]: Reveal page Shield/Lock icons use text-accent for branded security feel at 48px
+- [Phase 11-01]: Layout shell creates DOM elements programmatically; routechange CustomEvent for decoupled router-to-layout communication
+- [Phase 11-01]: Vite resolve alias for lucide 0.564.0 broken ESM entry (module field points to nonexistent path)
 
 ### Roadmap Evolution
 
@@ -81,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 11-02-PLAN.md (Phase 11 complete)
-Resume file: .planning/phases/11-layout-shell-component-migration/11-02-SUMMARY.md
+Stopped at: Created retroactive 11-01-SUMMARY.md; Phase 11 fully documented
+Resume file: .planning/phases/11-layout-shell-component-migration/11-01-SUMMARY.md
