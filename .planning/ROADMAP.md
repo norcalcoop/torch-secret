@@ -100,11 +100,12 @@ Plans:
   4. After a secret is revealed, a prominent green success badge with checkmark icon confirms the secret has been permanently destroyed
   5. Create page includes a "Why Trust Us?" section highlighting zero-knowledge encryption, open source, no accounts, and AES-256-GCM
   6. Revealed secret content displays in a terminal code-block style (dark background, green-tinted monospace text, header bar with copy button)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md — Shared UI components: toast notification, terminal code block, share button, and copy-button toast refactor
+- [ ] 12-02-PLAN.md — Create page enhancements: textarea encryption indicator, 4-step How It Works with icons, Why Trust Us card grid
+- [ ] 12-03-PLAN.md — Confirmation/reveal/error page enhancements: prominent URL block, terminal secret display, destruction badge, already-viewed error
 
 ### Phase 13: Theme Toggle + Visual Polish
 **Goal**: Users can switch between dark, light, and system themes with their preference remembered, and the entire app feels alive with glassmorphism surfaces, smooth transitions, and tasteful micro-interactions
@@ -154,6 +155,6 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 9. Design System Foundation | v2.0 | 3/3 | Complete | 2026-02-15 |
 | 10. SEO Static Assets | v2.0 | 2/2 | Complete | 2026-02-15 |
 | 11. Layout Shell + Component Migration | v2.0 | Complete    | 2026-02-16 | - |
-| 12. Page-Level UI Enhancements | v2.0 | 0/? | Not started | - |
+| 12. Page-Level UI Enhancements | v2.0 | 0/3 | Not started | - |
 | 13. Theme Toggle + Visual Polish | v2.0 | 0/? | Not started | - |
 | 14. SEO Router Integration | v2.0 | 0/? | Not started | - |
