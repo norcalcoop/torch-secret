@@ -24,6 +24,8 @@ import {
   ApiError,
 } from '../api/client.js';
 import { createCopyButton } from '../components/copy-button.js';
+import { Shield, Lock } from 'lucide';
+import { createIcon } from '../components/icons.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { renderErrorPage } from './error.js';
 import { navigate } from '../router.js';
@@ -144,11 +146,12 @@ export async function renderRevealPage(
     wrapper.className =
       'flex flex-col items-center justify-center text-center py-16 px-4';
 
-    // Shield/lock icon (decorative, hidden from screen readers)
-    const icon = document.createElement('div');
-    icon.className = 'text-6xl mb-6';
-    icon.textContent = '\u{1F6E1}\u{FE0F}'; // Shield
-    icon.setAttribute('aria-hidden', 'true');
+    // Shield icon (decorative, hidden from screen readers)
+    const icon = createIcon(Shield, {
+      size: 48,
+      class: 'text-accent',
+    });
+    icon.classList.add('mb-6');
 
     // Heading
     const heading = document.createElement('h1');
@@ -196,10 +199,11 @@ export async function renderRevealPage(
       'flex flex-col items-center justify-center text-center py-16 px-4';
 
     // Lock icon (matching interstitial style, decorative)
-    const icon = document.createElement('div');
-    icon.className = 'text-6xl mb-6';
-    icon.textContent = '\u{1F512}'; // Lock
-    icon.setAttribute('aria-hidden', 'true');
+    const icon = createIcon(Lock, {
+      size: 48,
+      class: 'text-accent',
+    });
+    icon.classList.add('mb-6');
 
     // Heading
     const heading = document.createElement('h1');
