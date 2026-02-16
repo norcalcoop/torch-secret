@@ -34,7 +34,7 @@ See [v1.0 Roadmap Archive](milestones/v1.0-ROADMAP.md) for full phase details.
 - [x] **Phase 9: Design System Foundation** — Semantic color tokens, dark palette, typography, and icon utility module ✓
 - [x] **Phase 10: SEO Static Assets** — Favicon, robots.txt, sitemap, web manifest, and noscript fallback (completed 2026-02-15)
 - [x] **Phase 11: Layout Shell + Component Migration** — Persistent header/footer, dot-grid background, and emoji-to-Lucide icon swap (completed 2026-02-16)
-- [ ] **Phase 12: Page-Level UI Enhancements** — Per-page feature upgrades: URL display, textarea indicator, trust section, code-block secrets
+- [x] **Phase 12: Page-Level UI Enhancements** — Per-page feature upgrades: URL display, textarea indicator, trust section, code-block secrets (completed 2026-02-16)
 - [ ] **Phase 13: Theme Toggle + Visual Polish** — Dark/light/system toggle, glassmorphism, and micro-interaction animations
 - [ ] **Phase 14: SEO Router Integration** — Dynamic meta tags, noindex on secret routes, JSON-LD structured data
 
@@ -155,6 +155,6 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 9. Design System Foundation | v2.0 | 3/3 | Complete | 2026-02-15 |
 | 10. SEO Static Assets | v2.0 | 2/2 | Complete | 2026-02-15 |
 | 11. Layout Shell + Component Migration | v2.0 | Complete    | 2026-02-16 | - |
-| 12. Page-Level UI Enhancements | v2.0 | 0/3 | Not started | - |
+| 12. Page-Level UI Enhancements | v2.0 | Complete    | 2026-02-16 | - |
 | 13. Theme Toggle + Visual Polish | v2.0 | 0/? | Not started | - |
 | 14. SEO Router Integration | v2.0 | 0/? | Not started | - |
