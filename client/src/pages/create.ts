@@ -13,6 +13,17 @@ import { encrypt } from '../crypto/index.js';
 import { createSecret } from '../api/client.js';
 import { createExpirationSelect } from '../components/expiration-select.js';
 import { renderConfirmationPage } from './confirmation.js';
+import {
+  ClipboardPaste,
+  LockKeyhole,
+  Share2,
+  Flame,
+  EyeOff,
+  Code,
+  UserX,
+  ShieldCheck,
+} from 'lucide';
+import { createIcon } from '../components/icons.js';
 
 const MAX_LENGTH = 10_000;
 
@@ -70,6 +81,15 @@ export async function renderCreatePage(
   counter.className = 'text-right text-sm text-text-muted';
   counter.textContent = `0 / ${MAX_LENGTH.toLocaleString()}`;
 
+  // -- Encryption indicator (visible when textarea has content) --
+  const indicator = document.createElement('div');
+  indicator.className = 'hidden flex items-center gap-1.5 text-xs text-text-muted mt-1';
+  const lockIcon = createIcon(LockKeyhole, { size: 'sm', class: 'text-success' });
+  const indicatorLabel = document.createElement('span');
+  indicatorLabel.textContent = 'Encrypted in your browser';
+  indicator.appendChild(lockIcon);
+  indicator.appendChild(indicatorLabel);
+
   textarea.addEventListener('input', () => {
     const len = textarea.value.length;
     counter.textContent = `${len.toLocaleString()} / ${MAX_LENGTH.toLocaleString()}`;
@@ -78,11 +98,13 @@ export async function renderCreatePage(
     } else {
       counter.classList.remove('text-danger');
     }
+    indicator.classList.toggle('hidden', !textarea.value.length);
   });
 
   textareaGroup.appendChild(textareaLabel);
   textareaGroup.appendChild(textarea);
   textareaGroup.appendChild(counter);
+  textareaGroup.appendChild(indicator);
   form.appendChild(textareaGroup);
 
   // -- Expiration section --
@@ -214,6 +236,7 @@ export async function renderCreatePage(
 
   wrapper.appendChild(form);
   wrapper.appendChild(createHowItWorksSection());
+  wrapper.appendChild(createWhyTrustUsSection());
   container.appendChild(wrapper);
 }
 
@@ -226,10 +249,10 @@ function showError(errorArea: HTMLElement, message: string): void {
 }
 
 /**
- * Build the "How It Works" trust section explaining zero-knowledge encryption.
+ * Build the "How It Works" trust section with 4 icon-based steps.
  *
- * Three steps: browser encryption, encrypted storage, one-time destruction.
- * Placed below the form to build user confidence before they share a secret.
+ * Steps: Paste, Encrypt, Share, Destroy -- each with a Lucide icon in an
+ * accent-tinted circle. Placed below the form to build user confidence.
  */
 function createHowItWorksSection(): HTMLElement {
   const section = document.createElement('section');
@@ -244,26 +267,32 @@ function createHowItWorksSection(): HTMLElement {
   section.appendChild(heading);
 
   const grid = document.createElement('div');
-  grid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-6';
+  grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6';
 
-  const steps: Array<{ number: string; title: string; description: string }> = [
+  const steps = [
     {
-      number: '1',
-      title: 'Encrypted in Your Browser',
+      icon: ClipboardPaste,
+      title: 'Paste',
       description:
-        'Your secret is encrypted on your device before anything is sent. The encryption key stays in your browser and never reaches our server.',
+        'Type or paste your secret into the form. It never leaves your browser unencrypted.',
     },
     {
-      number: '2',
-      title: 'Stored Encrypted',
+      icon: LockKeyhole,
+      title: 'Encrypt',
       description:
-        'Our server only sees scrambled data it cannot read. Even a complete database breach would reveal nothing.',
+        'AES-256-GCM encryption happens entirely in your browser. The key stays with you.',
     },
     {
-      number: '3',
-      title: 'View Once, Then Destroyed',
+      icon: Share2,
+      title: 'Share',
       description:
-        'The recipient decrypts the secret in their browser using the key in the link. After viewing, the encrypted data is permanently deleted.',
+        'Send the generated link to your recipient. The encryption key is embedded in the URL fragment.',
+    },
+    {
+      icon: Flame,
+      title: 'Destroy',
+      description:
+        'After one view, the encrypted data is permanently deleted from our servers. No traces remain.',
     },
   ];
 
@@ -271,11 +300,13 @@ function createHowItWorksSection(): HTMLElement {
     const card = document.createElement('div');
     card.className = 'text-center space-y-2';
 
-    const circle = document.createElement('div');
-    circle.className =
-      'w-10 h-10 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center mx-auto text-lg';
-    circle.textContent = step.number;
-    circle.setAttribute('aria-hidden', 'true');
+    const iconContainer = document.createElement('div');
+    iconContainer.className =
+      'w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto';
+    iconContainer.appendChild(
+      createIcon(step.icon, { size: 'lg', class: 'text-accent' }),
+    );
+    iconContainer.setAttribute('aria-hidden', 'true');
 
     const title = document.createElement('h3');
     title.className = 'font-semibold text-text-primary';
@@ -285,10 +316,82 @@ function createHowItWorksSection(): HTMLElement {
     description.className = 'text-sm text-text-tertiary leading-relaxed';
     description.textContent = step.description;
 
-    card.appendChild(circle);
+    card.appendChild(iconContainer);
     card.appendChild(title);
     card.appendChild(description);
     grid.appendChild(card);
+  }
+
+  section.appendChild(grid);
+  return section;
+}
+
+/**
+ * Build the "Why Trust Us?" section with a 4-card grid.
+ *
+ * Cards: Zero Knowledge, Open Source, No Accounts, AES-256-GCM.
+ * Each card displays a Lucide icon, label heading, and brief description.
+ */
+function createWhyTrustUsSection(): HTMLElement {
+  const section = document.createElement('section');
+  section.setAttribute('aria-labelledby', 'why-trust-us-heading');
+  section.className = 'mt-8';
+
+  const heading = document.createElement('h2');
+  heading.id = 'why-trust-us-heading';
+  heading.className =
+    'text-xl sm:text-2xl font-heading font-semibold text-text-primary text-center mb-8';
+  heading.textContent = 'Why Trust Us?';
+  section.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+
+  const cards = [
+    {
+      icon: EyeOff,
+      label: 'Zero Knowledge',
+      description:
+        'Your secrets are encrypted before reaching our servers. We never see your data.',
+    },
+    {
+      icon: Code,
+      label: 'Open Source',
+      description:
+        'Our code is publicly auditable. Verify the security claims yourself.',
+    },
+    {
+      icon: UserX,
+      label: 'No Accounts',
+      description:
+        'No sign-up, no email, no tracking. Just share and go.',
+    },
+    {
+      icon: ShieldCheck,
+      label: 'AES-256-GCM',
+      description:
+        'Military-grade authenticated encryption. The same standard used by governments worldwide.',
+    },
+  ];
+
+  for (const card of cards) {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'p-4 rounded-lg border border-border bg-surface space-y-2';
+
+    const iconEl = createIcon(card.icon, { size: 'md', class: 'text-accent' });
+
+    const label = document.createElement('h3');
+    label.className = 'font-semibold text-text-primary text-sm';
+    label.textContent = card.label;
+
+    const desc = document.createElement('p');
+    desc.className = 'text-xs text-text-tertiary leading-relaxed';
+    desc.textContent = card.description;
+
+    cardEl.appendChild(iconEl);
+    cardEl.appendChild(label);
+    cardEl.appendChild(desc);
+    grid.appendChild(cardEl);
   }
 
   section.appendChild(grid);
