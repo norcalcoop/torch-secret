@@ -1,19 +1,26 @@
 /**
  * Confirmation page displayed after successful secret creation.
  *
- * Shows the shareable URL with a copy button, expiration timestamp,
- * and a warning about one-time viewing. This page is rendered
- * programmatically (state-based, not URL-based) -- refreshing the
- * browser returns to the create page since the key is gone from memory.
+ * Shows the shareable URL in a prominent card with copy button (toast
+ * feedback) and optional native share button (Web Share API progressive
+ * enhancement). Includes expiration timestamp and one-time viewing warning.
+ *
+ * This page is rendered programmatically (state-based, not URL-based) --
+ * refreshing the browser returns to the create page since the key is gone
+ * from memory.
  */
 
+import { ShieldCheck } from 'lucide';
+import { createIcon } from '../components/icons.js';
 import { createCopyButton } from '../components/copy-button.js';
+import { createShareButton } from '../components/share-button.js';
 import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
 
 /**
  * Render the confirmation page after successful secret creation.
  *
- * Replaces the container content with the share URL, copy button,
+ * Replaces the container content with the share URL in a prominent card,
+ * copy button with toast feedback, conditional native share button,
  * expiration info, one-time-view warning, and "Create Another" button.
  *
  * @param container - The DOM element to render into
@@ -37,44 +44,17 @@ export function renderConfirmationPage(
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6 text-center';
 
-  // -- Success icon --
+  // -- Success icon (Lucide ShieldCheck via shared icon system) --
   const iconContainer = document.createElement('div');
   iconContainer.className = 'flex justify-center';
 
-  const icon = document.createElement('div');
-  icon.className =
+  const iconBg = document.createElement('div');
+  iconBg.className =
     'w-16 h-16 rounded-full bg-success/10 flex items-center justify-center';
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.classList.add('w-8', 'h-8', 'text-success');
-
-  // Shield with checkmark path
-  const shieldPath = document.createElementNS(
-    'http://www.w3.org/2000/svg',
-    'path',
-  );
-  shieldPath.setAttribute(
-    'd',
-    'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
-  );
-  svg.appendChild(shieldPath);
-
-  const checkPath = document.createElementNS(
-    'http://www.w3.org/2000/svg',
-    'path',
-  );
-  checkPath.setAttribute('d', 'M9 12l2 2 4-4');
-  svg.appendChild(checkPath);
-
-  icon.appendChild(svg);
-  iconContainer.appendChild(icon);
+  const icon = createIcon(ShieldCheck, { size: 48, class: 'text-success' });
+  iconBg.appendChild(icon);
+  iconContainer.appendChild(iconBg);
   wrapper.appendChild(iconContainer);
 
   // -- Heading --
@@ -83,45 +63,40 @@ export function renderConfirmationPage(
   heading.textContent = 'Your Secure Link is Ready';
   wrapper.appendChild(heading);
 
-  // -- Share URL section --
-  const urlSection = document.createElement('div');
-  urlSection.className = 'space-y-3';
+  // -- Share URL card (primary visual element) --
+  const urlCard = document.createElement('div');
+  urlCard.className = 'p-6 rounded-lg border border-border bg-surface space-y-4 text-left';
 
-  const urlLabel = document.createElement('label');
-  urlLabel.htmlFor = 'share-url';
-  urlLabel.className = 'block text-sm text-text-muted';
+  // URL label
+  const urlLabel = document.createElement('span');
+  urlLabel.className = 'block text-sm text-text-muted mb-2';
   urlLabel.textContent = 'Share this link with your recipient:';
-  urlSection.appendChild(urlLabel);
+  urlCard.appendChild(urlLabel);
 
+  // URL display (monospace code block, full URL visible with break-all)
   const urlDisplay = document.createElement('div');
   urlDisplay.className =
-    'flex items-stretch gap-0 rounded-lg border border-border overflow-hidden';
+    'w-full px-3 py-3 rounded-lg bg-surface-raised text-text-secondary text-sm font-mono break-all select-all';
 
-  const urlInput = document.createElement('input');
-  urlInput.id = 'share-url';
-  urlInput.type = 'text';
-  urlInput.readOnly = true;
-  urlInput.value = shareUrl;
-  urlInput.className =
-    'flex-1 min-w-0 px-3 py-2 min-h-[44px] bg-surface text-text-secondary text-sm font-mono border-none focus:outline-hidden select-all';
+  const urlCode = document.createElement('code');
+  urlCode.textContent = shareUrl; // NEVER innerHTML
+  urlDisplay.appendChild(urlCode);
+  urlCard.appendChild(urlDisplay);
 
-  // Select all text on focus for easy manual copying
-  urlInput.addEventListener('focus', () => {
-    urlInput.select();
-  });
-
-  urlDisplay.appendChild(urlInput);
-  urlSection.appendChild(urlDisplay);
-
-  // -- Copy button --
-  const copyButtonContainer = document.createElement('div');
-  copyButtonContainer.className = 'flex justify-center';
+  // Button row: copy (primary) + share (secondary, conditional)
+  const buttonRow = document.createElement('div');
+  buttonRow.className = 'flex items-center gap-3 mt-3';
 
   const copyButton = createCopyButton(() => shareUrl, 'Copy Link');
-  copyButtonContainer.appendChild(copyButton);
-  urlSection.appendChild(copyButtonContainer);
+  buttonRow.appendChild(copyButton);
 
-  wrapper.appendChild(urlSection);
+  const shareBtn = createShareButton(shareUrl, 'SecureShare - Your secure link');
+  if (shareBtn) {
+    buttonRow.appendChild(shareBtn);
+  }
+
+  urlCard.appendChild(buttonRow);
+  wrapper.appendChild(urlCard);
 
   // -- Expiration notice --
   const expiresDate = new Date(expiresAt);
