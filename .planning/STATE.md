@@ -8,8 +8,8 @@ See: .planning/PROJECT.md
 
 **Milestone:** v2.0 Developer-Grade UI & SEO
 **Current phase:** Phase 13 — Theme Toggle & Visual Polish
-**Current Plan:** Plan 01 complete, Plan 02 next
-**Status:** In progress
+**Current Plan:** Plan 02 complete (phase complete)
+**Status:** Phase 13 complete
 
 ## Decisions
 
@@ -26,6 +26,10 @@ See: .planning/PROJECT.md
 - FOWT script placed before meta charset to execute before any CSS loads
 - System mode removes localStorage key so FOWT script falls through to OS preference
 - Theme toggle cycles light->dark->system (three states, not two)
+- All CSS animations gated behind motion-safe: Tailwind prefix for reduced-motion compliance
+- JS-driven icon swap uses matchMedia check for reduced-motion instead of CSS-only approach
+- Glassmorphism standard: bg-surface/80 backdrop-blur-md shadow-lg on content cards
+- Terminal block and error pages excluded from glassmorphism (distinct visual identity)
 
 ## Performance Metrics
 
@@ -35,6 +39,7 @@ See: .planning/PROJECT.md
 | 12    | 02   | 2min     | 2     | 2     |
 | 12    | 03   | 3min     | 2     | 3     |
 | 13    | 01   | 4min     | 3     | 6     |
+| 13    | 02   | 3min     | 3     | 5     |
 
 ## Session Log
 
@@ -44,3 +49,4 @@ See: .planning/PROJECT.md
 - 2026-02-16: Plan 12-02 complete — create page enhancements (textarea indicator, 4-step How It Works, Why Trust Us grid)
 - 2026-02-16: Plan 12-03 complete — confirmation/reveal/error page enhancements (URL card, terminal block, destruction badge, already_viewed error)
 - 2026-02-16: Plan 13-01 complete — dual theme CSS tokens, FOWT prevention, theme manager, three-way toggle component
+- 2026-02-16: Plan 13-02 complete — glassmorphism surfaces, page animations, button micro-interactions, copy-button icon swap, motion-safe compliance
