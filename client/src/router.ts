@@ -12,6 +12,23 @@
 export type PageRenderer = (container: HTMLElement) => void | Promise<void>;
 
 /**
+ * Route-specific SEO metadata.
+ *
+ * Every SPA navigation updates the document head via `updatePageMeta()` to
+ * set title, description, canonical URL, and robots directive. Secret and
+ * error routes set `noindex: true` which also swaps OG/Twitter tags to
+ * generic branding so no metadata leaks about secret existence.
+ */
+export interface PageMeta {
+  title: string;
+  description: string;
+  /** Defaults to window.location.origin + window.location.pathname */
+  canonical?: string;
+  /** When true, adds <meta name="robots" content="noindex, nofollow"> and removes canonical */
+  noindex?: boolean;
+}
+
+/**
  * Navigate to a new path using History API.
  * Updates the URL without a full page reload and renders the matching route.
  */
@@ -30,23 +47,119 @@ export function initRouter(): void {
 }
 
 /**
- * Update document.title and announce the new page title to screen readers.
+ * Update all SEO-related meta elements in the document head.
+ *
+ * This is the single source of truth for: document title, meta description,
+ * canonical link, robots directive, and OG/Twitter tag values. Every call
+ * fully updates all managed elements so no stale tags persist across
+ * navigation.
  *
  * Uses a clear-then-set pattern with requestAnimationFrame to ensure
  * the aria-live region announces even when navigating to the same title
  * (e.g., pressing back then forward to the same page).
  *
- * @param title - The page title (without the " - SecureShare" suffix)
+ * @param meta - Route-specific SEO metadata
  */
-export function updatePageMeta(title: string): void {
-  document.title = `${title} - SecureShare`;
+export function updatePageMeta(meta: PageMeta): void {
+  // 1. Document title
+  document.title = `${meta.title} - SecureShare`;
 
+  // 2. Meta description (create or update)
+  let descEl = document.querySelector(
+    'meta[name="description"]',
+  ) as HTMLMetaElement | null;
+  if (!descEl) {
+    descEl = document.createElement('meta');
+    descEl.name = 'description';
+    document.head.appendChild(descEl);
+  }
+  descEl.content = meta.description;
+
+  // 3. Canonical URL: remove for noindex pages (Pitfall 4), update otherwise
+  let canonicalEl = document.querySelector(
+    'link[rel="canonical"]',
+  ) as HTMLLinkElement | null;
+  if (meta.noindex) {
+    canonicalEl?.remove();
+  } else {
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.rel = 'canonical';
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.href =
+      meta.canonical ??
+      `${window.location.origin}${window.location.pathname}`;
+  }
+
+  // 4. Robots meta: add for noindex pages, remove otherwise
+  let robotsEl = document.querySelector(
+    'meta[name="robots"]',
+  ) as HTMLMetaElement | null;
+  if (meta.noindex) {
+    if (!robotsEl) {
+      robotsEl = document.createElement('meta');
+      robotsEl.name = 'robots';
+      document.head.appendChild(robotsEl);
+    }
+    robotsEl.content = 'noindex, nofollow';
+  } else {
+    robotsEl?.remove();
+  }
+
+  // 5. OG/Twitter tags: swap to generic branding for noindex pages
+  updateOgTags(meta.noindex ?? false);
+
+  // 6. Aria-live announcer (preserve existing behavior)
   const announcer = document.getElementById('route-announcer');
   if (announcer) {
     announcer.textContent = '';
     requestAnimationFrame(() => {
-      announcer.textContent = title;
+      announcer.textContent = meta.title;
     });
+  }
+}
+
+/**
+ * Swap OG and Twitter tag values between homepage branding and generic
+ * branding. Noindex pages get generic values so no metadata leaks about
+ * secret existence at a given URL.
+ */
+function updateOgTags(isNoindex: boolean): void {
+  const ogTitle = document.querySelector(
+    'meta[property="og:title"]',
+  ) as HTMLMetaElement | null;
+  const ogDesc = document.querySelector(
+    'meta[property="og:description"]',
+  ) as HTMLMetaElement | null;
+  const ogUrl = document.querySelector(
+    'meta[property="og:url"]',
+  ) as HTMLMetaElement | null;
+  const twTitle = document.querySelector(
+    'meta[name="twitter:title"]',
+  ) as HTMLMetaElement | null;
+  const twDesc = document.querySelector(
+    'meta[name="twitter:description"]',
+  ) as HTMLMetaElement | null;
+
+  if (isNoindex) {
+    // Generic branding -- no indication a secret exists at this URL
+    if (ogTitle) ogTitle.content = 'SecureShare';
+    if (ogDesc) ogDesc.content = 'Zero-knowledge secret sharing';
+    if (ogUrl) ogUrl.content = `${window.location.origin}/`;
+    if (twTitle) twTitle.content = 'SecureShare';
+    if (twDesc) twDesc.content = 'Zero-knowledge secret sharing';
+  } else {
+    // Restore homepage OG values
+    if (ogTitle)
+      ogTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (ogDesc)
+      ogDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
+    if (ogUrl) ogUrl.content = `${window.location.origin}/`;
+    if (twTitle)
+      twTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (twDesc)
+      twDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
   }
 }
 
@@ -84,19 +197,31 @@ function handleRoute(): void {
   container.classList.add('motion-safe:animate-fade-in-up');
 
   if (path === '/') {
-    updatePageMeta('Share a Secret');
+    updatePageMeta({
+      title: 'Share a Secret',
+      description:
+        'Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser.',
+    });
     import('./pages/create.js')
       .then((mod) => mod.renderCreatePage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
   } else if (path.startsWith('/secret/')) {
-    updatePageMeta("You've Received a Secret");
+    updatePageMeta({
+      title: "You've Received a Secret",
+      description: 'Zero-knowledge secret sharing',
+      noindex: true,
+    });
     import('./pages/reveal.js')
       .then((mod) => mod.renderRevealPage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
   } else {
-    updatePageMeta('Page Not Found');
+    updatePageMeta({
+      title: 'Page Not Found',
+      description: 'Zero-knowledge secret sharing',
+      noindex: true,
+    });
     import('./pages/error.js')
       .then((mod) => mod.renderErrorPage(container, 'not_found'))
       .then(() => focusPageHeading())

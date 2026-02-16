@@ -33,7 +33,11 @@ export function renderConfirmationPage(
   expiresAt: string,
 ): void {
   // Update page title and announce to screen readers
-  updatePageMeta('Your Secure Link is Ready');
+  updatePageMeta({
+    title: 'Your Secure Link is Ready',
+    description:
+      'Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser.',
+  });
 
   // Clear existing content
   while (container.firstChild) {
