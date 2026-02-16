@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 import request from 'supertest';
 import type { Express } from 'express';
 import { buildApp } from '../../app.js';
@@ -248,5 +250,53 @@ describe('Success Criterion 5: Same-origin CORS', () => {
     // No CORS headers in the response
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
     expect(res.headers['access-control-allow-methods']).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Success Criterion 6: X-Robots-Tag for secret routes
+// ---------------------------------------------------------------------------
+describe('Success Criterion 6: X-Robots-Tag', () => {
+  // The SPA catch-all only registers when client/dist/index.html exists.
+  // Create a minimal dist directory if it doesn't exist so tests are
+  // self-contained and work in CI without a prior client build.
+  const clientDistPath = resolve(import.meta.dirname, '../../../../client/dist');
+  const indexPath = resolve(clientDistPath, 'index.html');
+  let createdDist = false;
+  let spaApp: Express;
+
+  beforeAll(() => {
+    if (!existsSync(indexPath)) {
+      mkdirSync(clientDistPath, { recursive: true });
+      writeFileSync(
+        indexPath,
+        '<!DOCTYPE html><html><head></head><body>__CSP_NONCE__</body></html>',
+      );
+      createdDist = true;
+    }
+    // Build a fresh app instance with the SPA catch-all active
+    spaApp = buildApp();
+  });
+
+  afterAll(() => {
+    // Clean up temp dist only if we created it
+    if (createdDist) {
+      rmSync(clientDistPath, { recursive: true, force: true });
+    }
+  });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /secret/ routes', async () => {
+    const res = await request(spaApp).get('/secret/abc123');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
+  test('does not set X-Robots-Tag for homepage', async () => {
+    const res = await request(spaApp).get('/');
+    expect(res.headers['x-robots-tag']).toBeUndefined();
+  });
+
+  test('does not set X-Robots-Tag for non-secret SPA routes', async () => {
+    const res = await request(spaApp).get('/about');
+    expect(res.headers['x-robots-tag']).toBeUndefined();
   });
 });
