@@ -23,8 +23,8 @@ import {
   verifySecretPassword,
   ApiError,
 } from '../api/client.js';
-import { createCopyButton } from '../components/copy-button.js';
-import { Shield, Lock } from 'lucide';
+import { createTerminalBlock } from '../components/terminal-block.js';
+import { Shield, Lock, CircleCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { renderErrorPage } from './error.js';
@@ -84,9 +84,13 @@ export async function renderRevealPage(
       // Step C6: No password required, show existing interstitial
       renderInterstitial(container, id, key);
     }
-  } catch {
-    // Step C4: If error (404 or any), show not available
-    renderErrorPage(container, 'not_available');
+  } catch (err) {
+    // Step C4: If secret was already consumed (410 Gone), show distinct message
+    if (err instanceof ApiError && err.status === 410) {
+      renderErrorPage(container, 'already_viewed');
+    } else {
+      renderErrorPage(container, 'not_available');
+    }
     return;
   }
 
@@ -353,8 +357,14 @@ export async function renderRevealPage(
 }
 
 /**
- * Render the decrypted secret with copy button and destruction notice.
- * Secret text is set via textContent (NEVER innerHTML) to prevent XSS.
+ * Render the decrypted secret with destruction badge and terminal code block.
+ *
+ * Layout order: heading -> destruction badge (green success) -> terminal
+ * code block (dark bg, muted sage-green text, header with copy) -> actions.
+ *
+ * Secret text is set via textContent inside the terminal block component
+ * (NEVER innerHTML) to prevent XSS. The terminal block includes its own
+ * copy button in the header bar, so no standalone copy button is needed.
  */
 function renderRevealedSecret(
   container: HTMLElement,
@@ -370,25 +380,26 @@ function renderRevealedSecret(
   heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
   heading.textContent = 'Secret Revealed';
 
-  // Destruction notice
-  const notice = document.createElement('p');
-  notice.className = 'text-text-muted mb-6';
-  notice.textContent =
-    'This secret has been permanently destroyed from our servers.';
+  // Destruction badge (ABOVE terminal block per locked decision)
+  const badge = document.createElement('div');
+  badge.className =
+    'flex items-center gap-2 px-4 py-3 rounded-lg bg-success/10 border border-success/20 mb-6';
 
-  // Secret display area -- uses textContent for XSS prevention
-  const pre = document.createElement('pre');
-  pre.className =
-    'whitespace-pre-wrap break-words overflow-x-hidden bg-surface border border-border rounded-lg p-4 text-sm font-mono max-h-96 overflow-y-auto mb-6';
-  pre.textContent = plaintext; // NEVER use innerHTML
+  const badgeIcon = createIcon(CircleCheck, { size: 'sm', class: 'text-success' });
+  const badgeText = document.createElement('p');
+  badgeText.className = 'text-sm text-success font-medium';
+  badgeText.textContent = 'This secret has been permanently deleted from our servers';
 
-  // Copy button
-  const copyButton = createCopyButton(() => plaintext, 'Copy Secret');
+  badge.appendChild(badgeIcon);
+  badge.appendChild(badgeText);
 
-  // Actions row
+  // Terminal code block (dark bg, muted sage-green text, header with copy)
+  const terminal = createTerminalBlock(plaintext);
+  terminal.classList.add('mb-6');
+
+  // Actions row (just "Create a New Secret" -- terminal block has its own copy)
   const actions = document.createElement('div');
   actions.className = 'flex flex-col sm:flex-row items-center gap-4';
-  actions.appendChild(copyButton);
 
   // "Create a New Secret" link
   const newSecretLink = document.createElement('a');
@@ -402,9 +413,10 @@ function renderRevealedSecret(
   });
   actions.appendChild(newSecretLink);
 
+  // Element order: heading -> badge -> terminal -> actions
   wrapper.appendChild(heading);
-  wrapper.appendChild(notice);
-  wrapper.appendChild(pre);
+  wrapper.appendChild(badge);
+  wrapper.appendChild(terminal);
   wrapper.appendChild(actions);
   container.appendChild(wrapper);
 }

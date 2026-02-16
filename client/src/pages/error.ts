@@ -6,7 +6,7 @@
  * intentionally generic to prevent secret enumeration.
  */
 
-import { Lock, KeyRound, TriangleAlert, Search, Bomb } from 'lucide';
+import { Lock, KeyRound, TriangleAlert, Search, Bomb, CircleCheck } from 'lucide';
 import { createIcon, type IconNode } from '../components/icons.js';
 import { navigate } from '../router.js';
 
@@ -15,7 +15,8 @@ export type ErrorType =
   | 'not_available'
   | 'no_key'
   | 'decrypt_failed'
-  | 'destroyed';
+  | 'destroyed'
+  | 'already_viewed';
 
 /**
  * Error message configuration by type.
@@ -58,6 +59,13 @@ const ERROR_CONFIG: Record<
       'This secret has been permanently destroyed due to too many incorrect password attempts.',
     icon: Bomb,
     iconClass: 'text-danger',
+  },
+  already_viewed: {
+    heading: 'Secret Already Viewed',
+    message:
+      'This secret has already been viewed and destroyed. Secrets can only be viewed once.',
+    icon: CircleCheck,
+    iconClass: 'text-text-muted',
   },
 };
 
