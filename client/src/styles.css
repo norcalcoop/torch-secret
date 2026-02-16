@@ -37,6 +37,11 @@
 
   /* Dot-grid background (very faint, "barely there" texture) */
   --ds-color-dot-grid:        oklch(0.36 0.058 283 / 0.15);
+
+  /* Terminal code block (muted sage green, not bright phosphor) */
+  --ds-color-terminal-bg:     oklch(0.20 0.020 160);
+  --ds-color-terminal-text:   oklch(0.68 0.060 155);
+  --ds-color-terminal-header: oklch(0.25 0.025 160);
 }
 
 /* =============================================
@@ -80,6 +85,11 @@
   /* Semantic icon token */
   --color-icon: var(--ds-color-icon);
 
+  /* Terminal code block tokens */
+  --color-terminal: var(--ds-color-terminal-text);
+  --color-terminal-bg: var(--ds-color-terminal-bg);
+  --color-terminal-header: var(--ds-color-terminal-header);
+
   /* Keep white/black for button text, backgrounds, etc. */
   --color-white: #fff;
   --color-black: #000;
@@ -116,4 +126,15 @@
     transparent 1px
   );
   background-size: 44px 44px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
