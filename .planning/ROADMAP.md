@@ -70,8 +70,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Create all static SEO files: adaptive SVG favicon, ICO/PNG fallbacks, robots.txt, sitemap.xml, web manifest
-- [ ] 10-02-PLAN.md — Wire SEO assets into index.html: favicon link tags, manifest reference, noscript fallback content
+- [x] 10-01-PLAN.md — Create all static SEO files: adaptive SVG favicon, ICO/PNG fallbacks, robots.txt, sitemap.xml, web manifest
+- [x] 10-02-PLAN.md — Wire SEO assets into index.html: favicon link tags, manifest reference, noscript fallback content
 
 ### Phase 11: Layout Shell + Component Migration
 **Goal**: Every page displays within a consistent brand shell (header + footer), all emoji icons are replaced with Lucide SVGs, and the dark theme applies uniformly across every component — no visual inconsistencies from half-migrated styles
@@ -83,11 +83,11 @@ Plans:
   3. Header and footer persist across SPA route changes without re-rendering (rendered outside #app container)
   4. All emoji icons throughout the app are replaced with Lucide SVG icons (no emoji characters remain in the UI)
   5. Page background displays a subtle dot-grid pattern that provides visual texture without distracting from content
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md — Persistent layout shell: header with shield+wordmark, footer with trust signals, dot-grid background, body flexbox
+- [ ] 11-02-PLAN.md — Emoji-to-Lucide icon migration: replace 7 emojis in error.ts and reveal.ts with color-coded SVG icons
 
 ### Phase 12: Page-Level UI Enhancements
 **Goal**: Each page delivers purpose-built UI improvements — the create page guides users with trust signals, the confirmation page presents the share URL prominently, and the reveal page displays secrets in a professional terminal-style code block
@@ -152,8 +152,8 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 7. Trust and Accessibility | v1.0 | 2/2 | Complete | 2026-02-15 |
 | 8. Tech Debt Cleanup | v1.0 | 2/2 | Complete | 2026-02-14 |
 | 9. Design System Foundation | v2.0 | 3/3 | Complete | 2026-02-15 |
-| 10. SEO Static Assets | v2.0 | Complete    | 2026-02-15 | - |
-| 11. Layout Shell + Component Migration | v2.0 | 0/? | Not started | - |
+| 10. SEO Static Assets | v2.0 | 2/2 | Complete | 2026-02-15 |
+| 11. Layout Shell + Component Migration | v2.0 | 0/2 | Not started | - |
 | 12. Page-Level UI Enhancements | v2.0 | 0/? | Not started | - |
 | 13. Theme Toggle + Visual Polish | v2.0 | 0/? | Not started | - |
 | 14. SEO Router Integration | v2.0 | 0/? | Not started | - |
