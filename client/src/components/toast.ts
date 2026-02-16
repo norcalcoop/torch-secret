@@ -48,20 +48,20 @@ export function showToast(message: string, durationMs: number = 3000): void {
 
   const toast = document.createElement('div');
   toast.className =
-    'px-4 py-2 rounded-lg bg-surface-raised text-text-primary text-sm shadow-lg border border-border pointer-events-auto animate-[toast-in_200ms_ease-out]';
+    'px-4 py-2 rounded-lg bg-surface-raised text-text-primary text-sm shadow-lg border border-border pointer-events-auto motion-safe:animate-[toast-in_200ms_ease-out]';
   toast.textContent = message;
 
   root.appendChild(toast);
 
   // Auto-dismiss after duration
   setTimeout(() => {
-    toast.classList.add('opacity-0', 'transition-opacity', 'duration-200');
-    toast.addEventListener(
-      'transitionend',
-      () => {
-        toast.remove();
-      },
-      { once: true },
-    );
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      // Instant removal for reduced motion users
+      toast.remove();
+    } else {
+      toast.classList.add('opacity-0', 'transition-opacity', 'duration-200');
+      toast.addEventListener('transitionend', () => { toast.remove(); }, { once: true });
+    }
   }, durationMs);
 }

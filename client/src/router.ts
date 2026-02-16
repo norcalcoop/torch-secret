@@ -77,6 +77,12 @@ function handleRoute(): void {
     container.removeChild(container.firstChild);
   }
 
+  // Add page-enter animation (respects prefers-reduced-motion via motion-safe:)
+  container.classList.remove('motion-safe:animate-fade-in-up');
+  // Force reflow to restart animation on same-route navigations
+  void container.offsetWidth;
+  container.classList.add('motion-safe:animate-fade-in-up');
+
   if (path === '/') {
     updatePageMeta('Share a Secret');
     import('./pages/create.js')
