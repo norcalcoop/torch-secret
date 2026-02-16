@@ -2,10 +2,62 @@
 @import "@fontsource-variable/jetbrains-mono";
 
 /* =============================================
- * Design System: Raw theme variables
- * These change per-theme (Phase 13 adds light theme values)
+ * Tailwind dark variant: use .dark class on <html>
+ * instead of media query (enables manual toggle)
+ * ============================================= */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =============================================
+ * Light theme (default)
+ * OKLCH perceptual color space -- lower lightness
+ * for accent/status (contrast on light bg), higher
+ * lightness for backgrounds.
  * ============================================= */
 :root {
+  color-scheme: light;
+
+  /* Background & Surfaces */
+  --ds-color-bg:              oklch(0.98 0.005 270);
+  --ds-color-surface:         oklch(1.00 0 0);
+  --ds-color-surface-raised:  oklch(0.97 0.005 270);
+  --ds-color-surface-overlay: oklch(0.94 0.008 270);
+
+  /* Text hierarchy */
+  --ds-color-text-primary:    oklch(0.20 0.020 270);
+  --ds-color-text-secondary:  oklch(0.35 0.025 270);
+  --ds-color-text-tertiary:   oklch(0.50 0.030 270);
+  --ds-color-text-muted:      oklch(0.55 0.025 270);
+
+  /* Interactive accent (electric blue) */
+  --ds-color-accent:          oklch(0.55 0.200 255);
+  --ds-color-accent-hover:    oklch(0.48 0.220 260);
+
+  /* Borders */
+  --ds-color-border:          oklch(0.88 0.010 270);
+
+  /* Status */
+  --ds-color-danger:          oklch(0.55 0.220 25);
+  --ds-color-success:         oklch(0.52 0.180 150);
+  --ds-color-warning:         oklch(0.60 0.180 70);
+
+  /* Icons */
+  --ds-color-icon:            oklch(0.50 0.030 270);
+
+  /* Dot-grid background (very faint, "barely there" texture) */
+  --ds-color-dot-grid:        oklch(0.70 0.010 270 / 0.12);
+
+  /* Terminal code block (muted sage green, not bright phosphor) */
+  --ds-color-terminal-bg:     oklch(0.97 0.005 160);
+  --ds-color-terminal-text:   oklch(0.35 0.060 155);
+  --ds-color-terminal-header: oklch(0.94 0.008 160);
+}
+
+/* =============================================
+ * Dark theme
+ * Applied via .dark class on <html> (set by theme
+ * toggle or FOWT prevention script).
+ * ============================================= */
+.dark {
   color-scheme: dark;
 
   /* Background & Surfaces */
@@ -35,10 +87,10 @@
   /* Icons */
   --ds-color-icon:            oklch(0.67 0.047 285);
 
-  /* Dot-grid background (very faint, "barely there" texture) */
+  /* Dot-grid background */
   --ds-color-dot-grid:        oklch(0.36 0.058 283 / 0.15);
 
-  /* Terminal code block (muted sage green, not bright phosphor) */
+  /* Terminal code block */
   --ds-color-terminal-bg:     oklch(0.20 0.020 160);
   --ds-color-terminal-text:   oklch(0.68 0.060 155);
   --ds-color-terminal-header: oklch(0.25 0.025 160);
@@ -112,6 +164,20 @@
   --text-xl: 1.563rem;
   --text-2xl: 1.953rem;
   --text-3xl: 2.441rem;
+
+  /* Animation */
+  --animate-fade-in-up: fade-in-up 200ms ease-out;
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 /* =============================================
