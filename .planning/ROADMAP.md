@@ -132,10 +132,11 @@ Plans:
   2. Secret routes (/secret/*) have noindex/nofollow via both a dynamic meta tag and X-Robots-Tag HTTP header; their OG tags are minimal and generic (no indication a secret exists at that URL)
   3. Homepage includes a JSON-LD structured data block with WebApplication schema
   4. SPA router updatePageMeta() sets title, description, canonical URL, and noindex flag per route on every navigation — stale meta tags from previous routes do not persist
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md — Client-side SEO: static OG/Twitter/JSON-LD tags in index.html, OG image, refactored updatePageMeta() with PageMeta object, dynamic meta per route
+- [ ] 14-02-PLAN.md — Server-side SEO: X-Robots-Tag header for /secret/* routes in Express SPA catch-all, integration tests
 
 ## Progress
 
@@ -157,4 +158,4 @@ Phases 9 and 10 can execute in parallel (no dependency). Phases 11-14 execute se
 | 11. Layout Shell + Component Migration | v2.0 | Complete    | 2026-02-16 | - |
 | 12. Page-Level UI Enhancements | v2.0 | Complete    | 2026-02-16 | - |
 | 13. Theme Toggle + Visual Polish | v2.0 | Complete    | 2026-02-16 | - |
-| 14. SEO Router Integration | v2.0 | 0/? | Not started | - |
+| 14. SEO Router Integration | v2.0 | 0/2 | Not started | - |
