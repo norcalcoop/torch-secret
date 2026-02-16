@@ -13,6 +13,7 @@
 
 import { Shield } from 'lucide';
 import { createIcon } from './icons.js';
+import { createThemeToggle } from './theme-toggle.js';
 import { navigate } from '../router.js';
 
 /**
@@ -67,6 +68,14 @@ function createHeader(): HTMLElement {
   brand.appendChild(wordmark);
   inner.appendChild(brand);
 
+  // Right-side container: theme toggle + nav link
+  const rightSide = document.createElement('div');
+  rightSide.className = 'flex items-center gap-3';
+
+  // Theme toggle button
+  const themeToggle = createThemeToggle();
+  rightSide.appendChild(themeToggle);
+
   // "Create" nav link (hidden on create page)
   const createLink = document.createElement('a');
   createLink.href = '/';
@@ -78,7 +87,9 @@ function createHeader(): HTMLElement {
     e.preventDefault();
     navigate('/');
   });
-  inner.appendChild(createLink);
+  rightSide.appendChild(createLink);
+
+  inner.appendChild(rightSide);
 
   header.appendChild(inner);
 

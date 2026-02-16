@@ -9,10 +9,12 @@
  */
 
 import './styles.css';
+import { initThemeListener } from './theme.js';
 import { createLayoutShell } from './components/layout.js';
 import { initRouter } from './router.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeListener();
   createLayoutShell();
   initRouter();
 });
