@@ -6,6 +6,8 @@
  * intentionally generic to prevent secret enumeration.
  */
 
+import { Lock, KeyRound, TriangleAlert, Search, Bomb } from 'lucide';
+import { createIcon, type IconNode } from '../components/icons.js';
 import { navigate } from '../router.js';
 
 export type ErrorType =
@@ -21,36 +23,41 @@ export type ErrorType =
  */
 const ERROR_CONFIG: Record<
   ErrorType,
-  { heading: string; message: string; icon: string }
+  { heading: string; message: string; icon: IconNode; iconClass: string }
 > = {
   not_available: {
     heading: 'Secret Not Available',
     message:
       'This secret is no longer available. It may have already been viewed, expired, or the link is invalid.',
-    icon: '\u{1F512}', // Lock
+    icon: Lock,
+    iconClass: 'text-danger',
   },
   no_key: {
     heading: 'Invalid Link',
     message:
       'The decryption key is missing from the URL. Please ask the sender for a new link.',
-    icon: '\u{1F511}', // Key
+    icon: KeyRound,
+    iconClass: 'text-warning',
   },
   decrypt_failed: {
     heading: 'Decryption Failed',
     message:
       'Unable to decrypt this secret. The link may be corrupted. Please ask the sender for a new link.',
-    icon: '\u{26A0}\u{FE0F}', // Warning
+    icon: TriangleAlert,
+    iconClass: 'text-warning',
   },
   not_found: {
     heading: 'Page Not Found',
     message: 'The page you are looking for does not exist.',
-    icon: '\u{1F50D}', // Magnifying glass
+    icon: Search,
+    iconClass: 'text-text-muted',
   },
   destroyed: {
     heading: 'Secret Destroyed',
     message:
       'This secret has been permanently destroyed due to too many incorrect password attempts.',
-    icon: '\u{1F4A5}', // Collision/explosion
+    icon: Bomb,
+    iconClass: 'text-danger',
   },
 };
 
@@ -80,10 +87,11 @@ export function renderErrorPage(
     'flex flex-col items-center justify-center text-center py-16 px-4';
 
   // Icon (decorative, hidden from screen readers -- heading conveys meaning)
-  const icon = document.createElement('div');
-  icon.className = 'text-5xl mb-4';
-  icon.textContent = config.icon;
-  icon.setAttribute('aria-hidden', 'true');
+  const icon = createIcon(config.icon, {
+    size: 40,
+    class: config.iconClass,
+  });
+  icon.classList.add('mb-4');
 
   // Heading
   const heading = document.createElement('h1');
