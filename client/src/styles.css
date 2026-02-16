@@ -34,6 +34,9 @@
 
   /* Icons */
   --ds-color-icon:            oklch(0.67 0.047 285);
+
+  /* Dot-grid background (very faint, "barely there" texture) */
+  --ds-color-dot-grid:        oklch(0.36 0.058 283 / 0.15);
 }
 
 /* =============================================
@@ -99,4 +102,18 @@
   --text-xl: 1.563rem;
   --text-2xl: 1.953rem;
   --text-3xl: 2.441rem;
+}
+
+/* =============================================
+ * Dot-grid background pattern
+ * Sparse (44px), very faint -- engineering-grade
+ * texture applied to the content area only.
+ * ============================================= */
+.dot-grid-bg {
+  background-image: radial-gradient(
+    circle,
+    var(--ds-color-dot-grid) 1px,
+    transparent 1px
+  );
+  background-size: 44px 44px;
 }
