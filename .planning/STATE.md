@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 15: Code Quality Foundation (COMPLETE)
+**Current focus:** v3.0 Production-Ready Delivery — Phase 16: Docker & Local Development
 
 ## Current Position
 
-Phase: 15 (first of 5 in v3.0, 15 of 19 overall) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase Complete
-Last activity: 2026-02-17 — Completed 15-03 (Codebase-wide lint and format pass)
+Phase: 16 (second of 5 in v3.0, 16 of 19 overall)
+Plan: 1 of 3 in current phase (16-01 complete)
+Status: In Progress
+Last activity: 2026-02-17 — Completed 16-01 (Docker prerequisites: health endpoint, tsx, .dockerignore)
 
-Progress: [==============================] 84% (36/36 v1+v2 plans complete, 3/3 phase 15)
+Progress: [==============================] 86% (36/36 v1+v2 plans complete, 3/3 phase 15, 1/3 phase 16)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [==============================] 84% (36/36 v1+v2 plans complete, 3/3 
 | 15-01 | 2min | 2 | 7 |
 | 15-02 | 4min | 2 | 6 |
 | 15-03 | 6min | 2 | 43 |
+| 16-01 | 2min | 2 | 4 |
 
 ## Accumulated Context
 
@@ -56,6 +57,9 @@ Recent decisions affecting current work:
 - Test files get relaxed no-unsafe-* ESLint rules (supertest res.body is any)
 - void IIFE pattern for async event handlers to satisfy no-misused-promises
 - argsIgnorePattern/varsIgnorePattern '^_' for unused variable convention
+- Health endpoint mounted after JSON parser, before rate-limited routes
+- Redis status reported without active ping (client scoped to buildApp)
+- tsx moved to production deps for Docker builds (avoids TS compilation step)
 
 ### Known Tech Debt
 
@@ -72,5 +76,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 15-03-PLAN.md (Phase 15 complete)
-Resume: `/gsd:execute-phase 16` (Docker deployment next)
+Stopped at: Completed 16-01-PLAN.md
+Resume: Continue with 16-02-PLAN.md (Dockerfile and docker-compose.yml)
