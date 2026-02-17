@@ -79,13 +79,17 @@ export async function encryptForTest(
   crypto.getRandomValues(iv);
 
   // 6. Encrypt the PADDED bytes with AES-GCM
-  const ciphertextBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, paddedBytes);
+  const ciphertextBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    key,
+    paddedBytes as Uint8Array<ArrayBuffer>,
+  );
 
   // 7. Combine [IV 12 bytes][ciphertext + auth tag], base64 encode
-  const combined = new Uint8Array(iv.length + ciphertextBuffer.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(ciphertextBuffer), iv.length);
-  const ciphertext = Buffer.from(combined).toString('base64');
+  const combined = new Uint8Array(iv.byteLength + ciphertextBuffer.byteLength);
+  combined.set(new Uint8Array(iv.buffer), 0);
+  combined.set(new Uint8Array(ciphertextBuffer), iv.byteLength);
+  const ciphertext = Buffer.from(combined.buffer).toString('base64');
 
   // 8. Export key to base64url
   const rawKey = await crypto.subtle.exportKey('raw', key);
