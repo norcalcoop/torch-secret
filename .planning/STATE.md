@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 16 (second of 5 in v3.0, 16 of 19 overall)
-Plan: 1 of 3 in current phase (16-01 complete)
+Plan: 2 of 3 in current phase (16-02 complete)
 Status: In Progress
-Last activity: 2026-02-17 — Completed 16-01 (Docker prerequisites: health endpoint, tsx, .dockerignore)
+Last activity: 2026-02-17 — Completed 16-02 (Dockerfile, Drizzle migrations, Docker Compose)
 
-Progress: [==============================] 86% (36/36 v1+v2 plans complete, 3/3 phase 15, 1/3 phase 16)
+Progress: [==============================] 88% (36/36 v1+v2 plans complete, 3/3 phase 15, 2/3 phase 16)
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [==============================] 86% (36/36 v1+v2 plans complete, 3/3 
 | 15-02 | 4min | 2 | 6 |
 | 15-03 | 6min | 2 | 43 |
 | 16-01 | 2min | 2 | 4 |
+| 16-02 | 8min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -60,6 +61,9 @@ Recent decisions affecting current work:
 - Health endpoint mounted after JSON parser, before rate-limited routes
 - Redis status reported without active ping (client scoped to buildApp)
 - tsx moved to production deps for Docker builds (avoids TS compilation step)
+- --ignore-scripts for npm ci --omit=dev in Docker (skips husky, argon2 prebuilts work without install script)
+- ORM migrator (migrate.ts) for container migrations instead of drizzle-kit CLI (devDependency)
+- X-Forwarded-Proto header in Docker HEALTHCHECK to bypass production HTTPS redirect
 
 ### Known Tech Debt
 
@@ -76,5 +80,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 16-01-PLAN.md
-Resume: Continue with 16-02-PLAN.md (Dockerfile and docker-compose.yml)
+Stopped at: Completed 16-02-PLAN.md
+Resume: Continue with 16-03-PLAN.md (Render deployment configuration)
