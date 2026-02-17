@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 16: Docker & Local Development (COMPLETE)
+**Current focus:** v3.0 Production-Ready Delivery — Phase 17: E2E Testing with Playwright (IN PROGRESS)
 
 ## Current Position
 
-Phase: 16 (second of 5 in v3.0, 16 of 19 overall) -- COMPLETE
-Plan: 4 of 4 in current phase (16-04 complete, phase done)
-Status: Phase Complete
-Last activity: 2026-02-17 — Completed 16-04 (UAT Gap Fixes)
+Phase: 17 (third of 5 in v3.0, 17 of 19 overall) -- IN PROGRESS
+Plan: 1 of 2 in current phase (17-01 complete)
+Status: Executing
+Last activity: 2026-02-17 — Completed 17-01 (E2E Testing Infrastructure + Create-Reveal Test)
 
-Progress: [==============================] 90% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16)
+Progress: [==============================] 92% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 1/2 phase 17)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [==============================] 90% (36/36 v1+v2 plans complete, 3/3 
 | 16-02 | 8min | 2 | 6 |
 | 16-03 | 1min | 1 | 1 |
 | 16-04 | 2min | 2 | 6 |
+| 17-01 | 4min | 2 | 10 |
 
 ## Accumulated Context
 
@@ -71,6 +72,10 @@ Recent decisions affecting current work:
 - ipAllowList: [] on Redis keyvalue restricts to Render internal network
 - FORCE_HTTPS env var decouples HTTPS redirect from NODE_ENV (Docker Compose=false, Render=true)
 - API 404 catch-all before SPA catch-all prevents /api/* routes returning HTML
+- bypassCSP: true in Playwright config to work with Helmet CSP nonce injection
+- workers: 1, fullyParallel: false for destructive one-time-view secret tests
+- PADME padding replicated in e2e crypto-helpers to match browser encrypt/decrypt pipeline
+- Dedicated ESLint e2e rule block with globals.node and relaxed no-unsafe-* rules
 
 ### Known Tech Debt
 
@@ -87,5 +92,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 16-04-PLAN.md (Phase 16 complete with UAT gap fixes)
-Resume: Continue with Phase 17 (E2E Testing)
+Stopped at: Completed 17-01-PLAN.md (E2E infrastructure + create-reveal test)
+Resume: Continue with 17-02-PLAN.md (password, expiration, accessibility, error E2E tests)
