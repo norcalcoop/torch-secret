@@ -53,7 +53,7 @@ export function createHelmetMiddleware() {
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         baseUri: ["'self'"],
-        ...(env.FORCE_HTTPS ? { upgradeInsecureRequests: [] } : {}),
+        upgradeInsecureRequests: env.FORCE_HTTPS ? [] : null,
       },
     },
     // Disable HSTS in non-production to prevent browser lockout without TLS
