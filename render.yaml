@@ -1,0 +1,46 @@
+# Render.com Blueprint — one-click deployment for SecureShare
+# Deploy: https://render.com/deploy → import this repo
+#
+# IMPORTANT: Free tier PostgreSQL expires after 30 days (14-day grace period).
+# For persistent production use, upgrade to a paid database plan.
+# Free tier Redis (keyvalue) data is ephemeral and lost on restart.
+# Free web services spin down after 15 minutes of inactivity.
+
+services:
+  # Web service — Docker-based Node.js application
+  - type: web
+    name: secureshare
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    dockerCommand: "sh -c 'node --import tsx server/src/db/migrate.ts && node --import tsx server/src/server.ts'"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secureshare-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: secureshare-redis
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+
+  # Redis key-value store for distributed rate limiting
+  - type: keyvalue
+    name: secureshare-redis
+    plan: free
+    region: oregon
+    ipAllowList: [] # Only accessible from Render internal network
+    maxmemoryPolicy: allkeys-lru
+
+# PostgreSQL database
+databases:
+  - name: secureshare-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: "17"
