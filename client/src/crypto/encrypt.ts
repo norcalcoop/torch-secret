@@ -39,13 +39,15 @@ export async function encrypt(plaintext: string): Promise<EncryptResult> {
   const { key, keyBase64Url } = await generateKey();
 
   // 4. Generate a fresh 96-bit IV (NIST-recommended for AES-GCM)
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const iv = crypto.getRandomValues(
+    new Uint8Array(IV_LENGTH),
+  ) as Uint8Array<ArrayBuffer>;
 
   // 5. Encrypt the padded plaintext with AES-GCM
   const ciphertextBuffer = await crypto.subtle.encrypt(
     { name: ALGORITHM, iv },
     key,
-    paddedBytes,
+    paddedBytes as Uint8Array<ArrayBuffer>,
   );
 
   // 6. Prepend IV to ciphertext for transport: [IV 12 bytes][ciphertext + auth tag]

@@ -12,7 +12,7 @@ function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
   if (!redisClient) return undefined; // MemoryStore (default)
   return new RedisStore({
     sendCommand: (...args: string[]) =>
-      redisClient.call(...args) as Promise<RedisReply>,
+      redisClient.call(...(args as [string, ...string[]])) as Promise<RedisReply>,
     prefix: prefix ?? 'rl:',
   });
 }

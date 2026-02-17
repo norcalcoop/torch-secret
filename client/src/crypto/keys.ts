@@ -80,7 +80,7 @@ export async function importKeyFromBase64Url(
 
   return crypto.subtle.importKey(
     'raw',
-    rawKey,
+    rawKey as Uint8Array<ArrayBuffer>,
     ALGORITHM,
     false, // non-extractable: no need to re-export after import
     ['decrypt'], // decrypt-only: receiving side restriction
