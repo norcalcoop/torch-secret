@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 16: Docker & Local Development
+**Current focus:** v3.0 Production-Ready Delivery — Phase 16: Docker & Local Development (COMPLETE)
 
 ## Current Position
 
-Phase: 16 (second of 5 in v3.0, 16 of 19 overall)
-Plan: 2 of 3 in current phase (16-02 complete)
-Status: In Progress
-Last activity: 2026-02-17 — Completed 16-02 (Dockerfile, Drizzle migrations, Docker Compose)
+Phase: 16 (second of 5 in v3.0, 16 of 19 overall) -- COMPLETE
+Plan: 3 of 3 in current phase (16-03 complete, phase done)
+Status: Phase Complete
+Last activity: 2026-02-17 — Completed 16-03 (Render.com Blueprint)
 
-Progress: [==============================] 88% (36/36 v1+v2 plans complete, 3/3 phase 15, 2/3 phase 16)
+Progress: [==============================] 90% (36/36 v1+v2 plans complete, 3/3 phase 15, 3/3 phase 16)
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [==============================] 88% (36/36 v1+v2 plans complete, 3/3 
 | 15-03 | 6min | 2 | 43 |
 | 16-01 | 2min | 2 | 4 |
 | 16-02 | 8min | 2 | 6 |
+| 16-03 | 1min | 1 | 1 |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - --ignore-scripts for npm ci --omit=dev in Docker (skips husky, argon2 prebuilts work without install script)
 - ORM migrator (migrate.ts) for container migrations instead of drizzle-kit CLI (devDependency)
 - X-Forwarded-Proto header in Docker HEALTHCHECK to bypass production HTTPS redirect
+- ORM migrator in render.yaml dockerCommand (consistent with docker-compose.yml, drizzle-kit unavailable in prod image)
+- PORT omitted from render.yaml envVars (Render provides PORT=10000 automatically)
+- ipAllowList: [] on Redis keyvalue restricts to Render internal network
 
 ### Known Tech Debt
 
@@ -80,5 +84,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 16-02-PLAN.md
-Resume: Continue with 16-03-PLAN.md (Render deployment configuration)
+Stopped at: Completed 16-03-PLAN.md (Phase 16 complete)
+Resume: Continue with Phase 17 (E2E Testing)
