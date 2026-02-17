@@ -53,10 +53,7 @@ export interface CreateIconOptions {
  * @param options - Size, stroke, class, and accessibility overrides
  * @returns SVG element ready for DOM insertion
  */
-export function createIcon(
-  icon: IconNode,
-  options: CreateIconOptions = {},
-): SVGSVGElement {
+export function createIcon(icon: IconNode, options: CreateIconOptions = {}): SVGSVGElement {
   const { size = 'md', strokeWidth = 2, ariaLabel } = options;
 
   // Resolve pixel size from named variant or raw number
@@ -64,17 +61,17 @@ export function createIcon(
 
   // Build CSS class list -- always include 'text-icon' for --color-icon token
   const userClasses = options.class;
-  let classValue: string | string[];
+  let classValue: string;
   if (userClasses === undefined) {
     classValue = 'text-icon';
   } else if (Array.isArray(userClasses)) {
-    classValue = ['text-icon', ...userClasses];
+    classValue = ['text-icon', ...userClasses].join(' ');
   } else {
-    classValue = ['text-icon', userClasses];
+    classValue = ['text-icon', userClasses].join(' ');
   }
 
   // Build attributes for Lucide's createElement
-  const attrs: Record<string, string | number | string[]> = {
+  const attrs: Record<string, string | number> = {
     width: pixels,
     height: pixels,
     'stroke-width': strokeWidth,

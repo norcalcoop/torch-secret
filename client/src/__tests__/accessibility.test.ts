@@ -10,9 +10,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { axe } from 'vitest-axe';
-import { toHaveNoViolations } from 'vitest-axe/matchers';
+import * as matchers from 'vitest-axe/matchers';
 
-expect.extend({ toHaveNoViolations });
+expect.extend(matchers);
 
 let container: HTMLDivElement;
 
@@ -50,9 +50,7 @@ describe('Create page accessibility', () => {
     expect(h2!.textContent).toBe('How It Works');
 
     // Four h3 step headings (was 3, now 4: Paste, Encrypt, Share, Destroy)
-    const section = container.querySelector(
-      'section[aria-labelledby="how-it-works-heading"]',
-    );
+    const section = container.querySelector('section[aria-labelledby="how-it-works-heading"]');
     const h3s = section!.querySelectorAll('h3');
     expect(h3s.length).toBe(4);
   });
@@ -61,9 +59,7 @@ describe('Create page accessibility', () => {
     const { renderCreatePage } = await import('../pages/create.js');
     await renderCreatePage(container);
 
-    const section = container.querySelector(
-      'section[aria-labelledby="how-it-works-heading"]',
-    );
+    const section = container.querySelector('section[aria-labelledby="how-it-works-heading"]');
     expect(section).not.toBeNull();
   });
 
@@ -77,9 +73,7 @@ describe('Create page accessibility', () => {
     expect(h2!.textContent).toBe('Why Trust Us?');
 
     // Section labeled by its heading
-    const section = container.querySelector(
-      'section[aria-labelledby="why-trust-us-heading"]',
-    );
+    const section = container.querySelector('section[aria-labelledby="why-trust-us-heading"]');
     expect(section).not.toBeNull();
 
     // 4 trust cards with h3 headings
@@ -102,9 +96,7 @@ describe('Error page accessibility', () => {
 
 describe('Component accessibility', () => {
   it('loading spinner has role=status', async () => {
-    const { createLoadingSpinner } = await import(
-      '../components/loading-spinner.js'
-    );
+    const { createLoadingSpinner } = await import('../components/loading-spinner.js');
     const spinner = createLoadingSpinner('Testing...');
 
     expect(spinner.getAttribute('role')).toBe('status');
