@@ -64,7 +64,19 @@ export default defineConfig([
   },
 
   {
-    files: ['*.config.ts', '*.config.mjs'],
+    files: ['e2e/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+
+  {
+    files: ['*.config.ts', '*.config.mjs', 'e2e/*.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
   },
 

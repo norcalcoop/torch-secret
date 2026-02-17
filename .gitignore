@@ -9,3 +9,8 @@ dist/
 cached-*.md
 *.png
 .playwright-mcp/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
