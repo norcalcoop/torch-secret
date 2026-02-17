@@ -21,15 +21,10 @@ export async function cleanExpiredSecrets(): Promise<number> {
   const now = new Date();
 
   // Step 1: Zero ciphertext for all expired secrets (data remanence mitigation)
-  await db
-    .update(secrets)
-    .set({ ciphertext: '0' })
-    .where(lte(secrets.expiresAt, now));
+  await db.update(secrets).set({ ciphertext: '0' }).where(lte(secrets.expiresAt, now));
 
   // Step 2: Delete the zeroed rows
-  const result = await db
-    .delete(secrets)
-    .where(lte(secrets.expiresAt, now));
+  const result = await db.delete(secrets).where(lte(secrets.expiresAt, now));
 
   return result.rowCount ?? 0;
 }
@@ -66,7 +61,7 @@ export function startExpirationWorker(): void {
  */
 export function stopExpirationWorker(): void {
   if (task) {
-    task.stop();
+    void task.stop();
     task = null;
     logger.info('Expiration worker stopped');
   }

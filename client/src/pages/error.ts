@@ -35,8 +35,7 @@ const ERROR_CONFIG: Record<
   },
   no_key: {
     heading: 'Invalid Link',
-    message:
-      'The decryption key is missing from the URL. Please ask the sender for a new link.',
+    message: 'The decryption key is missing from the URL. Please ask the sender for a new link.',
     icon: KeyRound,
     iconClass: 'text-warning',
   },
@@ -62,8 +61,7 @@ const ERROR_CONFIG: Record<
   },
   already_viewed: {
     heading: 'Secret Already Viewed',
-    message:
-      'This secret has already been viewed and destroyed. Secrets can only be viewed once.',
+    message: 'This secret has already been viewed and destroyed. Secrets can only be viewed once.',
     icon: CircleCheck,
     iconClass: 'text-text-muted',
   },
@@ -78,10 +76,7 @@ const ERROR_CONFIG: Record<
  * @param container - The DOM element to render into
  * @param type - The error type determining which message to display
  */
-export function renderErrorPage(
-  container: HTMLElement,
-  type: ErrorType,
-): void {
+export function renderErrorPage(container: HTMLElement, type: ErrorType): void {
   // Clear existing content
   while (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -91,8 +86,7 @@ export function renderErrorPage(
 
   // Outer wrapper: centered content with vertical spacing
   const wrapper = document.createElement('div');
-  wrapper.className =
-    'flex flex-col items-center justify-center text-center py-16 px-4';
+  wrapper.className = 'flex flex-col items-center justify-center text-center py-16 px-4';
 
   // Icon (decorative, hidden from screen readers -- heading conveys meaning)
   const icon = createIcon(config.icon, {

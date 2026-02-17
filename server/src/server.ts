@@ -19,10 +19,11 @@ function shutdown(signal: string) {
   logger.info({ signal }, 'Shutdown signal received');
   stopExpirationWorker();
 
-  server.close(async () => {
-    await pool.end();
-    logger.info('Database pool closed');
-    process.exit(0);
+  server.close(() => {
+    void pool.end().then(() => {
+      logger.info('Database pool closed');
+      process.exit(0);
+    });
   });
 }
 

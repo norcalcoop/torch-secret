@@ -2,7 +2,11 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
 import { Redis } from 'ioredis';
-import { cspNonceMiddleware, createHelmetMiddleware, httpsRedirect } from './middleware/security.js';
+import {
+  cspNonceMiddleware,
+  createHelmetMiddleware,
+  httpsRedirect,
+} from './middleware/security.js';
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createSecretsRouter } from './routes/secrets.js';
@@ -63,18 +67,12 @@ export function buildApp() {
     app.use(express.static(clientDistPath, { index: false }));
 
     // Read HTML template once at startup for nonce injection
-    const htmlTemplate = readFileSync(
-      resolve(clientDistPath, 'index.html'),
-      'utf-8',
-    );
+    const htmlTemplate = readFileSync(resolve(clientDistPath, 'index.html'), 'utf-8');
 
     // SPA catch-all: inject per-request CSP nonce into HTML template
     // Express 5 requires named wildcard parameter (path-to-regexp v8+)
     app.get('{*path}', (req, res) => {
-      const html = htmlTemplate.replaceAll(
-        '__CSP_NONCE__',
-        res.locals.cspNonce,
-      );
+      const html = htmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce as string);
       res.setHeader('Content-Type', 'text/html');
 
       // Defense-in-depth: HTTP-level noindex for secret routes.

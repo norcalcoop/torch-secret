@@ -77,13 +77,13 @@ describe('padPlaintext', () => {
   });
 
   it('should pad 100-byte input to exactly 256 bytes (same tier as 1-byte)', () => {
-    const data = new Uint8Array(100).fill(0xAB);
+    const data = new Uint8Array(100).fill(0xab);
     const padded = padPlaintext(data);
     expect(padded.length).toBe(256);
   });
 
   it('should encode original data length as big-endian uint32 in first 4 bytes', () => {
-    const data = new Uint8Array(100).fill(0xCD);
+    const data = new Uint8Array(100).fill(0xcd);
     const padded = padPlaintext(data);
     const view = new DataView(padded.buffer, padded.byteOffset, padded.byteLength);
     expect(view.getUint32(0, false)).toBe(100);

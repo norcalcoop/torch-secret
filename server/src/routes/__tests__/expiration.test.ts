@@ -56,9 +56,7 @@ afterAll(async () => {
  * Helper: insert an expired secret directly into the database.
  * Uses a past expiresAt to bypass API validation and test expiration immediately.
  */
-async function insertExpiredSecret(opts?: {
-  passwordHash?: string | null;
-}): Promise<string> {
+async function insertExpiredSecret(opts?: { passwordHash?: string | null }): Promise<string> {
   const id = nanoid();
   await db.insert(secrets).values({
     id,
@@ -76,9 +74,7 @@ describe('GET /api/secrets/:id expiration', () => {
   test('returns 404 for expired non-password secret', async () => {
     const id = await insertExpiredSecret();
 
-    const res = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(404);
+    const res = await request(app).get(`/api/secrets/${id}`).expect(404);
 
     expect(res.body).toEqual({
       error: 'not_found',
@@ -93,9 +89,7 @@ describe('GET /api/secrets/:id expiration', () => {
       .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
       .expect(201);
 
-    const getRes = await request(app)
-      .get(`/api/secrets/${createRes.body.id}`)
-      .expect(200);
+    const getRes = await request(app).get(`/api/secrets/${createRes.body.id}`).expect(200);
 
     expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
   });
@@ -104,9 +98,7 @@ describe('GET /api/secrets/:id expiration', () => {
     const id = await insertExpiredSecret();
 
     // Attempt retrieval -- should get 404
-    await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(404);
+    await request(app).get(`/api/secrets/${id}`).expect(404);
 
     // Direct DB query: row should be gone (inline cleanup in transaction)
     const rows = await db
@@ -125,9 +117,7 @@ describe('GET /api/secrets/:id/meta expiration', () => {
   test('returns 404 for expired secret', async () => {
     const id = await insertExpiredSecret();
 
-    const res = await request(app)
-      .get(`/api/secrets/${id}/meta`)
-      .expect(404);
+    const res = await request(app).get(`/api/secrets/${id}/meta`).expect(404);
 
     expect(res.body).toEqual({
       error: 'not_found',
@@ -138,9 +128,7 @@ describe('GET /api/secrets/:id/meta expiration', () => {
   test('returns 404 for expired password-protected secret', async () => {
     const id = await insertExpiredSecret({ passwordHash: TEST_PASSWORD_HASH });
 
-    const res = await request(app)
-      .get(`/api/secrets/${id}/meta`)
-      .expect(404);
+    const res = await request(app).get(`/api/secrets/${id}/meta`).expect(404);
 
     expect(res.body).toEqual({
       error: 'not_found',
@@ -197,20 +185,14 @@ describe('anti-enumeration (expiration)', () => {
     const expiredIdPw = await insertExpiredSecret({ passwordHash: TEST_PASSWORD_HASH });
 
     // --- GET /api/secrets/:id ---
-    const expiredGetRes = await request(app)
-      .get(`/api/secrets/${expiredId1}`)
-      .expect(404);
+    const expiredGetRes = await request(app).get(`/api/secrets/${expiredId1}`).expect(404);
 
-    const nonexistentGetRes = await request(app)
-      .get(`/api/secrets/${NONEXISTENT_ID}`)
-      .expect(404);
+    const nonexistentGetRes = await request(app).get(`/api/secrets/${NONEXISTENT_ID}`).expect(404);
 
     expect(expiredGetRes.body).toEqual(nonexistentGetRes.body);
 
     // --- GET /api/secrets/:id/meta ---
-    const expiredMetaRes = await request(app)
-      .get(`/api/secrets/${expiredId2}/meta`)
-      .expect(404);
+    const expiredMetaRes = await request(app).get(`/api/secrets/${expiredId2}/meta`).expect(404);
 
     const nonexistentMetaRes = await request(app)
       .get(`/api/secrets/${NONEXISTENT_ID}/meta`)

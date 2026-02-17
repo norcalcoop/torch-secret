@@ -7,6 +7,7 @@ import {
   SecretIdParamSchema,
   VerifySecretSchema,
 } from '../../../shared/types/api.js';
+import type { CreateSecretRequest, VerifySecretRequest } from '../../../shared/types/api.js';
 import {
   createSecret,
   retrieveAndDestroy,
@@ -50,11 +51,8 @@ export function createSecretsRouter(redisClient?: Redis) {
     createSecretLimiter(redisClient),
     validateBody(CreateSecretSchema),
     async (req, res) => {
-      const secret = await createSecret(
-        req.body.ciphertext,
-        req.body.expiresIn,
-        req.body.password,
-      );
+      const body = req.body as CreateSecretRequest;
+      const secret = await createSecret(body.ciphertext, body.expiresIn, body.password);
 
       res.status(201).json({
         id: secret.id,
@@ -69,23 +67,19 @@ export function createSecretsRouter(redisClient?: Redis) {
    * requires a password and how many attempts remain.
    * Does NOT consume or modify the secret.
    */
-  router.get(
-    '/:id/meta',
-    validateParams(SecretIdParamSchema),
-    async (req, res) => {
-      const meta = await getSecretMeta(req.params.id as string);
+  router.get('/:id/meta', validateParams(SecretIdParamSchema), async (req, res) => {
+    const meta = await getSecretMeta(req.params.id as string);
 
-      if (!meta) {
-        res.status(404).json(SECRET_NOT_AVAILABLE);
-        return;
-      }
+    if (!meta) {
+      res.status(404).json(SECRET_NOT_AVAILABLE);
+      return;
+    }
 
-      res.status(200).json({
-        requiresPassword: meta.requiresPassword,
-        passwordAttemptsRemaining: meta.passwordAttemptsRemaining,
-      });
-    },
-  );
+    res.status(200).json({
+      requiresPassword: meta.requiresPassword,
+      passwordAttemptsRemaining: meta.passwordAttemptsRemaining,
+    });
+  });
 
   /**
    * POST /:id/verify (mounted at /api/secrets/:id/verify)
@@ -101,10 +95,8 @@ export function createSecretsRouter(redisClient?: Redis) {
     validateParams(SecretIdParamSchema),
     validateBody(VerifySecretSchema),
     async (req, res) => {
-      const result = await verifyAndRetrieve(
-        req.params.id as string,
-        req.body.password,
-      );
+      const verifyBody = req.body as VerifySecretRequest;
+      const result = await verifyAndRetrieve(req.params.id as string, verifyBody.password);
 
       // Not found or not password-protected
       if (result === null) {
@@ -141,23 +133,19 @@ export function createSecretsRouter(redisClient?: Redis) {
    * Returns identical 404 for nonexistent, expired, already-viewed,
    * and password-protected secrets.
    */
-  router.get(
-    '/:id',
-    validateParams(SecretIdParamSchema),
-    async (req, res) => {
-      const secret = await retrieveAndDestroy(req.params.id as string);
+  router.get('/:id', validateParams(SecretIdParamSchema), async (req, res) => {
+    const secret = await retrieveAndDestroy(req.params.id as string);
 
-      if (!secret) {
-        res.status(404).json(SECRET_NOT_AVAILABLE);
-        return;
-      }
+    if (!secret) {
+      res.status(404).json(SECRET_NOT_AVAILABLE);
+      return;
+    }
 
-      res.status(200).json({
-        ciphertext: secret.ciphertext,
-        expiresAt: secret.expiresAt.toISOString(),
-      });
-    },
-  );
+    res.status(200).json({
+      ciphertext: secret.ciphertext,
+      expiresAt: secret.expiresAt.toISOString(),
+    });
+  });
 
   return router;
 }

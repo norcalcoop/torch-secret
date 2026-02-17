@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "@fontsource-variable/jetbrains-mono";
+@import 'tailwindcss';
+@import '@fontsource-variable/jetbrains-mono';
 
 /* =============================================
  * Tailwind dark variant: use .dark class on <html>
@@ -17,38 +17,38 @@
   color-scheme: light;
 
   /* Background & Surfaces */
-  --ds-color-bg:              oklch(0.98 0.005 270);
-  --ds-color-surface:         oklch(1.00 0 0);
-  --ds-color-surface-raised:  oklch(0.97 0.005 270);
+  --ds-color-bg: oklch(0.98 0.005 270);
+  --ds-color-surface: oklch(1 0 0);
+  --ds-color-surface-raised: oklch(0.97 0.005 270);
   --ds-color-surface-overlay: oklch(0.94 0.008 270);
 
   /* Text hierarchy */
-  --ds-color-text-primary:    oklch(0.20 0.020 270);
-  --ds-color-text-secondary:  oklch(0.35 0.025 270);
-  --ds-color-text-tertiary:   oklch(0.50 0.030 270);
-  --ds-color-text-muted:      oklch(0.55 0.025 270);
+  --ds-color-text-primary: oklch(0.2 0.02 270);
+  --ds-color-text-secondary: oklch(0.35 0.025 270);
+  --ds-color-text-tertiary: oklch(0.5 0.03 270);
+  --ds-color-text-muted: oklch(0.55 0.025 270);
 
   /* Interactive accent (electric blue) */
-  --ds-color-accent:          oklch(0.55 0.200 255);
-  --ds-color-accent-hover:    oklch(0.48 0.220 260);
+  --ds-color-accent: oklch(0.55 0.2 255);
+  --ds-color-accent-hover: oklch(0.48 0.22 260);
 
   /* Borders */
-  --ds-color-border:          oklch(0.88 0.010 270);
+  --ds-color-border: oklch(0.88 0.01 270);
 
   /* Status */
-  --ds-color-danger:          oklch(0.55 0.220 25);
-  --ds-color-success:         oklch(0.52 0.180 150);
-  --ds-color-warning:         oklch(0.60 0.180 70);
+  --ds-color-danger: oklch(0.55 0.22 25);
+  --ds-color-success: oklch(0.52 0.18 150);
+  --ds-color-warning: oklch(0.6 0.18 70);
 
   /* Icons */
-  --ds-color-icon:            oklch(0.50 0.030 270);
+  --ds-color-icon: oklch(0.5 0.03 270);
 
   /* Dot-grid background (very faint, "barely there" texture) */
-  --ds-color-dot-grid:        oklch(0.70 0.010 270 / 0.12);
+  --ds-color-dot-grid: oklch(0.7 0.01 270 / 0.12);
 
   /* Terminal code block (muted sage green, not bright phosphor) */
-  --ds-color-terminal-bg:     oklch(0.97 0.005 160);
-  --ds-color-terminal-text:   oklch(0.35 0.060 155);
+  --ds-color-terminal-bg: oklch(0.97 0.005 160);
+  --ds-color-terminal-text: oklch(0.35 0.06 155);
   --ds-color-terminal-header: oklch(0.94 0.008 160);
 }
 
@@ -61,38 +61,38 @@
   color-scheme: dark;
 
   /* Background & Surfaces */
-  --ds-color-bg:              oklch(0.23 0.038 283);
-  --ds-color-surface:         oklch(0.27 0.055 282);
-  --ds-color-surface-raised:  oklch(0.30 0.057 282);
+  --ds-color-bg: oklch(0.23 0.038 283);
+  --ds-color-surface: oklch(0.27 0.055 282);
+  --ds-color-surface-raised: oklch(0.3 0.057 282);
   --ds-color-surface-overlay: oklch(0.34 0.059 283);
 
   /* Text hierarchy */
-  --ds-color-text-primary:    oklch(0.96 0.020 286);
-  --ds-color-text-secondary:  oklch(0.84 0.033 286);
-  --ds-color-text-tertiary:   oklch(0.67 0.047 285);
-  --ds-color-text-muted:      oklch(0.65 0.053 285);
+  --ds-color-text-primary: oklch(0.96 0.02 286);
+  --ds-color-text-secondary: oklch(0.84 0.033 286);
+  --ds-color-text-tertiary: oklch(0.67 0.047 285);
+  --ds-color-text-muted: oklch(0.65 0.053 285);
 
   /* Interactive accent (electric blue) */
-  --ds-color-accent:          oklch(0.71 0.143 255);
-  --ds-color-accent-hover:    oklch(0.62 0.188 260);
+  --ds-color-accent: oklch(0.71 0.143 255);
+  --ds-color-accent-hover: oklch(0.62 0.188 260);
 
   /* Borders */
-  --ds-color-border:          oklch(0.36 0.058 283);
+  --ds-color-border: oklch(0.36 0.058 283);
 
   /* Status */
-  --ds-color-danger:          oklch(0.64 0.208 25);
-  --ds-color-success:         oklch(0.72 0.192 150);
-  --ds-color-warning:         oklch(0.77 0.165 70);
+  --ds-color-danger: oklch(0.64 0.208 25);
+  --ds-color-success: oklch(0.72 0.192 150);
+  --ds-color-warning: oklch(0.77 0.165 70);
 
   /* Icons */
-  --ds-color-icon:            oklch(0.67 0.047 285);
+  --ds-color-icon: oklch(0.67 0.047 285);
 
   /* Dot-grid background */
-  --ds-color-dot-grid:        oklch(0.36 0.058 283 / 0.15);
+  --ds-color-dot-grid: oklch(0.36 0.058 283 / 0.15);
 
   /* Terminal code block */
-  --ds-color-terminal-bg:     oklch(0.20 0.020 160);
-  --ds-color-terminal-text:   oklch(0.68 0.060 155);
+  --ds-color-terminal-bg: oklch(0.2 0.02 160);
+  --ds-color-terminal-text: oklch(0.68 0.06 155);
   --ds-color-terminal-header: oklch(0.25 0.025 160);
 }
 
@@ -154,7 +154,8 @@
   /* Typography */
   --font-heading: 'JetBrains Mono Variable', ui-monospace, monospace;
   --font-body: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  --font-mono:
+    'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
 
   /* Type scale (Major Third, 1.25 ratio from 1rem base) */
   --text-xs: 0.64rem;
@@ -186,11 +187,7 @@
  * texture applied to the content area only.
  * ============================================= */
 .dot-grid-bg {
-  background-image: radial-gradient(
-    circle,
-    var(--ds-color-dot-grid) 1px,
-    transparent 1px
-  );
+  background-image: radial-gradient(circle, var(--ds-color-dot-grid) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 

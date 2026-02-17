@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <script>
-      (function() {
+      (function () {
         var t = localStorage.getItem('theme');
         var d = t === 'dark' || (!t && matchMedia('(prefers-color-scheme:dark)').matches);
         document.documentElement.classList.toggle('dark', d);
@@ -12,72 +12,100 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
-    <meta name="description" content="Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser.">
-    <link rel="canonical" href="https://secureshare.example.com/">
+    <meta
+      name="description"
+      content="Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser."
+    />
+    <link rel="canonical" href="https://secureshare.example.com/" />
     <title>SecureShare - Share Secrets Securely</title>
     <!-- Open Graph -->
-    <meta property="og:title" content="SecureShare - Zero-Knowledge Secret Sharing">
-    <meta property="og:description" content="End-to-end encrypted. One-time view. No accounts.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://secureshare.example.com/">
-    <meta property="og:image" content="https://secureshare.example.com/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SecureShare - Zero-knowledge one-time secret sharing">
-    <meta property="og:site_name" content="SecureShare">
+    <meta property="og:title" content="SecureShare - Zero-Knowledge Secret Sharing" />
+    <meta property="og:description" content="End-to-end encrypted. One-time view. No accounts." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://secureshare.example.com/" />
+    <meta property="og:image" content="https://secureshare.example.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="SecureShare - Zero-knowledge one-time secret sharing" />
+    <meta property="og:site_name" content="SecureShare" />
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SecureShare - Zero-Knowledge Secret Sharing">
-    <meta name="twitter:description" content="End-to-end encrypted. One-time view. No accounts.">
-    <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SecureShare - Zero-Knowledge Secret Sharing" />
+    <meta name="twitter:description" content="End-to-end encrypted. One-time view. No accounts." />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="stylesheet" href="/src/styles.css" />
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" nonce="__CSP_NONCE__">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "SecureShare",
-      "url": "https://secureshare.example.com/",
-      "description": "Zero-knowledge, one-time secret sharing. End-to-end encrypted in your browser.",
-      "applicationCategory": "SecurityApplication",
-      "operatingSystem": "All",
-      "browserRequirements": "Requires JavaScript and Web Crypto API",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SecureShare",
+        "url": "https://secureshare.example.com/",
+        "description": "Zero-knowledge, one-time secret sharing. End-to-end encrypted in your browser.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript and Web Crypto API",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
       }
-    }
     </script>
   </head>
-  <body class="min-h-screen flex flex-col bg-bg text-text-primary font-body">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-accent focus:ring-offset-2">
+  <body class="flex min-h-screen flex-col bg-bg font-body text-text-primary">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-white focus:ring-2 focus:ring-accent focus:ring-offset-2"
+    >
       Skip to main content
     </a>
     <div id="route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <main id="main-content">
-      <div id="app" class="max-w-2xl mx-auto px-4 py-8">
+      <div id="app" class="mx-auto max-w-2xl px-4 py-8">
         <noscript>
-          <div style="max-width: 36rem; margin: 2rem auto; padding: 1.5rem; font-family: system-ui, -apple-system, sans-serif; color: #e8e4f0; line-height: 1.6;">
-            <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #f0ecf8;">SecureShare</h1>
-            <p style="margin-bottom: 0.75rem;">
-              Share secrets securely with zero-knowledge, one-time encrypted links.
-              Your secret is encrypted entirely in your browser before it ever reaches our server.
+          <div
+            style="
+              max-width: 36rem;
+              margin: 2rem auto;
+              padding: 1.5rem;
+              font-family:
+                system-ui,
+                -apple-system,
+                sans-serif;
+              color: #e8e4f0;
+              line-height: 1.6;
+            "
+          >
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #f0ecf8">
+              SecureShare
+            </h1>
+            <p style="margin-bottom: 0.75rem">
+              Share secrets securely with zero-knowledge, one-time encrypted links. Your secret is
+              encrypted entirely in your browser before it ever reaches our server.
             </p>
-            <p style="margin-bottom: 0.75rem;">
-              <strong>How it works:</strong> Paste your secret, get an encrypted link, share it.
-              The recipient views it once, then it's permanently destroyed. No accounts required.
+            <p style="margin-bottom: 0.75rem">
+              <strong>How it works:</strong> Paste your secret, get an encrypted link, share it. The
+              recipient views it once, then it's permanently destroyed. No accounts required.
             </p>
-            <p style="margin-bottom: 0.75rem; padding: 0.75rem; border-left: 3px solid #4d8bf5; background: rgba(77, 139, 245, 0.1);">
-              <strong>Security:</strong> AES-256-GCM encryption. The encryption key lives only in the URL fragment
-              and never reaches the server. Even a complete database breach reveals nothing.
+            <p
+              style="
+                margin-bottom: 0.75rem;
+                padding: 0.75rem;
+                border-left: 3px solid #4d8bf5;
+                background: rgba(77, 139, 245, 0.1);
+              "
+            >
+              <strong>Security:</strong> AES-256-GCM encryption. The encryption key lives only in
+              the URL fragment and never reaches the server. Even a complete database breach reveals
+              nothing.
             </p>
-            <p style="color: #a89ec4; font-size: 0.875rem; margin-top: 1rem;">
-              JavaScript is required to use SecureShare. Encryption and decryption
-              happen entirely in your browser using the Web Crypto API.
+            <p style="color: #a89ec4; font-size: 0.875rem; margin-top: 1rem">
+              JavaScript is required to use SecureShare. Encryption and decryption happen entirely
+              in your browser using the Web Crypto API.
             </p>
           </div>
         </noscript>

@@ -20,9 +20,7 @@ export const secrets = pgTable('secrets', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 
   /** Creation timestamp for metadata */
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 
   /** Argon2id hash of optional password (Phase 5) */
   passwordHash: text('password_hash'),

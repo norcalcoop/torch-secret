@@ -47,9 +47,7 @@ export function setThemePreference(pref: ThemePreference): void {
  */
 export function applyTheme(): void {
   const pref = getThemePreference();
-  const isDark =
-    pref === 'dark' ||
-    (pref === 'system' && matchMedia(DARK_MQ).matches);
+  const isDark = pref === 'dark' || (pref === 'system' && matchMedia(DARK_MQ).matches);
 
   document.documentElement.classList.toggle('dark', isDark);
   document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';

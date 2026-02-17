@@ -136,8 +136,7 @@ describe('Success Criterion 2: Rate limiting on POST /api/secrets', () => {
     // Send 15 GET requests -- none should return 429
     // (they will return 400 for bad ID format, which is expected)
     for (let i = 0; i < 15; i++) {
-      const res = await request(rateLimitApp)
-        .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01');
+      const res = await request(rateLimitApp).get('/api/secrets/xxxxxxxxxxxxxxxxxxx01');
       expect(res.status).not.toBe(429);
     }
   });
@@ -177,8 +176,7 @@ describe('Success Criterion 3: HTTPS redirect and HSTS', () => {
 
   test('HTTPS redirect skipped in non-production', async () => {
     // In test environment, a plain HTTP request should NOT redirect
-    const res = await request(app)
-      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01');
+    const res = await request(app).get('/api/secrets/xxxxxxxxxxxxxxxxxxx01');
 
     // Should NOT be a 301 redirect -- confirms HTTPS redirect is skipped
     expect(res.status).not.toBe(301);
@@ -208,9 +206,7 @@ describe('Success Criterion 4: Referrer-Policy', () => {
     const { id } = createRes.body;
 
     // Retrieve it and check referrer policy
-    const getRes = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    const getRes = await request(app).get(`/api/secrets/${id}`).expect(200);
 
     expect(getRes.headers['referrer-policy']).toBe('no-referrer');
   });

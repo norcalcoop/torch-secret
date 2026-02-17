@@ -6,11 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  generateKey,
-  exportKeyToBase64Url,
-  importKeyFromBase64Url,
-} from '../keys';
+import { generateKey, exportKeyToBase64Url, importKeyFromBase64Url } from '../keys';
 import { ALGORITHM } from '../constants';
 
 const URL_SAFE_REGEX = /^[A-Za-z0-9_-]+$/;
@@ -68,9 +64,7 @@ describe('key uniqueness', () => {
   });
 
   it('10 calls to generateKey produce 10 unique keyBase64Url values', async () => {
-    const results = await Promise.all(
-      Array.from({ length: 10 }, () => generateKey()),
-    );
+    const results = await Promise.all(Array.from({ length: 10 }, () => generateKey()));
     const uniqueKeys = new Set(results.map((r) => r.keyBase64Url));
     expect(uniqueKeys.size).toBe(10);
   });
@@ -125,21 +119,13 @@ describe('export/import round-trip', () => {
     // Encrypt some data with the original key
     const plaintext = new TextEncoder().encode('zero-knowledge secret sharing');
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await crypto.subtle.encrypt(
-      { name: ALGORITHM, iv },
-      originalKey,
-      plaintext,
-    );
+    const ciphertext = await crypto.subtle.encrypt({ name: ALGORITHM, iv }, originalKey, plaintext);
 
     // Import the key from base64url
     const importedKey = await importKeyFromBase64Url(keyBase64Url);
 
     // Decrypt with the imported key
-    const decrypted = await crypto.subtle.decrypt(
-      { name: ALGORITHM, iv },
-      importedKey,
-      ciphertext,
-    );
+    const decrypted = await crypto.subtle.decrypt({ name: ALGORITHM, iv }, importedKey, ciphertext);
 
     const decryptedText = new TextDecoder().decode(decrypted);
     expect(decryptedText).toBe('zero-knowledge secret sharing');

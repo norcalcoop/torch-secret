@@ -53,8 +53,7 @@ export function renderConfirmationPage(
   iconContainer.className = 'flex justify-center';
 
   const iconBg = document.createElement('div');
-  iconBg.className =
-    'w-16 h-16 rounded-full bg-success/10 flex items-center justify-center';
+  iconBg.className = 'w-16 h-16 rounded-full bg-success/10 flex items-center justify-center';
 
   const icon = createIcon(ShieldCheck, { size: 48, class: 'text-success' });
   iconBg.appendChild(icon);
@@ -69,7 +68,8 @@ export function renderConfirmationPage(
 
   // -- Share URL card (primary visual element) --
   const urlCard = document.createElement('div');
-  urlCard.className = 'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-4 text-left';
+  urlCard.className =
+    'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-4 text-left';
 
   // URL label
   const urlLabel = document.createElement('span');
@@ -93,7 +93,11 @@ export function renderConfirmationPage(
 
   const copyButton = createCopyButton(() => shareUrl, 'Copy Link');
   copyButton.classList.remove('transition-colors');
-  copyButton.classList.add('transition-all', 'motion-safe:hover:scale-[1.02]', 'motion-safe:active:scale-[0.98]');
+  copyButton.classList.add(
+    'transition-all',
+    'motion-safe:hover:scale-[1.02]',
+    'motion-safe:active:scale-[0.98]',
+  );
   buttonRow.appendChild(copyButton);
 
   const shareBtn = createShareButton(shareUrl, 'SecureShare - Your secure link');
@@ -113,8 +117,7 @@ export function renderConfirmationPage(
 
   // -- Warning text --
   const warning = document.createElement('div');
-  warning.className =
-    'px-4 py-3 rounded-lg bg-accent/10 backdrop-blur-sm text-accent text-sm';
+  warning.className = 'px-4 py-3 rounded-lg bg-accent/10 backdrop-blur-sm text-accent text-sm';
   warning.textContent =
     'This link can only be viewed once. Once opened, the secret is permanently destroyed.';
   wrapper.appendChild(warning);

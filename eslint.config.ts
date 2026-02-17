@@ -18,6 +18,12 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
   },
 
   {
@@ -36,6 +42,22 @@ export default defineConfig([
 
   {
     files: ['shared/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+
+  {
+    files: ['**/*.test.ts', '**/__tests__/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+
+  {
+    files: ['scripts/**/*.mjs'],
     languageOptions: {
       globals: globals.node,
     },

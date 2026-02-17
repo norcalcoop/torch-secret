@@ -57,15 +57,10 @@ export async function createSecret(
  * The caller must not distinguish between these cases (SECR-07
  * anti-enumeration).
  */
-export async function retrieveAndDestroy(
-  id: string,
-): Promise<Secret | null> {
+export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
   return db.transaction(async (tx) => {
     // Step 1: SELECT -- get the secret
-    const [secret] = await tx
-      .select()
-      .from(secrets)
-      .where(eq(secrets.id, id));
+    const [secret] = await tx.select().from(secrets).where(eq(secrets.id, id));
 
     if (!secret) {
       return null;
@@ -158,16 +153,11 @@ export async function verifyAndRetrieve(
   id: string,
   password: string,
 ): Promise<
-  | { success: true; secret: Secret }
-  | { success: false; attemptsRemaining: number }
-  | null
+  { success: true; secret: Secret } | { success: false; attemptsRemaining: number } | null
 > {
   return db.transaction(async (tx) => {
     // Step 1: SELECT the full secret row
-    const [secret] = await tx
-      .select()
-      .from(secrets)
-      .where(eq(secrets.id, id));
+    const [secret] = await tx.select().from(secrets).where(eq(secrets.id, id));
 
     if (!secret) {
       return null;

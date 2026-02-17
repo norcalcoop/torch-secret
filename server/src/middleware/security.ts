@@ -11,11 +11,7 @@ import { env } from '../config/env.js';
  * in `res.locals.cspNonce`. MUST run before helmet so the nonce is
  * available when helmet builds the Content-Security-Policy header.
  */
-export function cspNonceMiddleware(
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function cspNonceMiddleware(_req: Request, res: Response, next: NextFunction): void {
   crypto.randomBytes(32, (err, randomBytes) => {
     if (err) {
       next(err);
@@ -80,11 +76,7 @@ export function createHelmetMiddleware() {
  * Relies on `trust proxy` being set so `req.secure` correctly
  * reflects the X-Forwarded-Proto header from the reverse proxy.
  */
-export function httpsRedirect(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function httpsRedirect(req: Request, res: Response, next: NextFunction): void {
   if (process.env.NODE_ENV !== 'production') {
     next();
     return;

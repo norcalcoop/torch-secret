@@ -49,6 +49,7 @@ Individuals and teams constantly need to share sensitive information (passwords,
 A single-purpose tool that makes sharing secrets as easy as pasting into Slack, but actually secure.
 
 **Guiding Principles:**
+
 - **Simplicity first:** No accounts, no signup, no complexity
 - **Security by default:** Client-side encryption, zero-knowledge architecture
 - **Trust through transparency:** Clear communication about what happens to data
@@ -76,6 +77,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **So that** the credential doesn't live permanently in Slack/email
 
 **Acceptance Criteria:**
+
 - I can paste my secret into a text field without logging in
 - I can optionally set a password and expiration time
 - I receive a unique link I can copy and share
@@ -88,6 +90,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **So that** I know the credential won't be accessible to anyone else
 
 **Acceptance Criteria:**
+
 - I can click the link and immediately see the secret
 - I can copy the secret to my clipboard
 - I see confirmation that the secret has been destroyed
@@ -112,6 +115,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0 (Must Have)
 
 **Requirements:**
+
 - Single textarea input field for secret text (max 10,000 characters)
 - Optional password protection field
 - Optional expiration time selector (1 hour, 24 hours, 7 days, 30 days)
@@ -121,6 +125,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 - Encryption key embedded in URL fragment (never sent to server)
 
 **UI Flow:**
+
 1. User lands on homepage
 2. User pastes secret into textarea
 3. User optionally sets password and/or custom expiration
@@ -134,6 +139,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0 (Must Have)
 
 **Requirements:**
+
 - Parse secret ID from URL path and encryption key from fragment
 - Fetch encrypted secret from server
 - Decrypt client-side using key from URL fragment
@@ -144,6 +150,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 - Display when secret was created
 
 **UI Flow:**
+
 1. Recipient clicks secret link
 2. If password-protected, show password prompt
 3. If password correct (or no password), fetch encrypted secret
@@ -157,6 +164,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0 (Must Have)
 
 **Requirements:**
+
 - Background job runs every 5 minutes
 - Checks for secrets past expiration time
 - Deletes expired secrets from database
@@ -168,6 +176,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P1 (Nice to Have for MVP)
 
 **Requirements:**
+
 - Sender can set optional password when creating secret
 - Password hashed and stored separately from encrypted secret
 - Recipient must enter password before viewing secret
@@ -179,6 +188,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P1 (Nice to Have)
 
 **Requirements:**
+
 - One-click copy button for generated link (sender side)
 - One-click copy button for secret text (receiver side)
 - Visual confirmation when copied ("Copied!")
@@ -193,6 +203,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0 (Critical)
 
 **Requirements:**
+
 - **Zero-knowledge architecture:** Server never sees plaintext secrets
 - **Client-side encryption:** AES-256-GCM encryption in browser before transmission
 - **Key management:** Encryption key never transmitted to server (URL fragment only)
@@ -207,6 +218,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0
 
 **Requirements:**
+
 - Page load time: < 1 second on 3G connection
 - Secret creation: < 500ms total (including encryption)
 - Secret retrieval: < 300ms total (including decryption)
@@ -218,6 +230,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0
 
 **Requirements:**
+
 - No tracking cookies or analytics that collect PII
 - Minimal data collection (only: secret ID, creation time, expiration time, view status)
 - No third-party scripts except essential infrastructure (CDN)
@@ -229,6 +242,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P0
 
 **Requirements:**
+
 - Mobile responsive (works on phones, tablets, desktop)
 - Accessible (WCAG 2.1 AA compliance)
 - Works without JavaScript for basic functionality (progressive enhancement)
@@ -240,6 +254,7 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Priority:** P1
 
 **Requirements:**
+
 - Automated backups every 6 hours
 - Database redundancy (primary + replica)
 - Graceful degradation if services fail
@@ -282,16 +297,19 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 ### Technology Stack (Recommended)
 
 **Frontend:**
+
 - HTML/CSS/JavaScript (vanilla or React)
 - Web Crypto API for encryption
 - Responsive CSS framework (Tailwind)
 
 **Backend:**
+
 - Node.js/Express or Python/Flask
 - PostgreSQL for data persistence
 - Redis for rate limiting
 
 **Infrastructure:**
+
 - Cloud hosting (Vercel, Railway, Render)
 - Automated SSL certificates
 - Environment-based configuration
@@ -301,14 +319,16 @@ A single-purpose tool that makes sharing secrets as easy as pasting into Slack, 
 **Algorithm:** AES-256-GCM  
 **Key Generation:** Crypto.getRandomValues() for 256-bit key  
 **IV Generation:** Unique 96-bit IV per secret  
-**Key Derivation:** Not needed (random key per secret)  
+**Key Derivation:** Not needed (random key per secret)
 
 **URL Format:**
+
 ```
 https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ```
 
 **Server Stores:**
+
 ```json
 {
   "id": "abc123",
@@ -325,18 +345,19 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 
 **Table: secrets**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | VARCHAR(32) | PRIMARY KEY | Unique secret identifier |
-| encrypted_data | TEXT | NOT NULL | Encrypted secret blob |
-| iv | VARCHAR(32) | NOT NULL | Initialization vector (base64) |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| expires_at | TIMESTAMP | NOT NULL | Expiration timestamp |
-| viewed | BOOLEAN | DEFAULT false | Whether secret has been viewed |
-| password_hash | VARCHAR(255) | NULLABLE | Optional password (bcrypt) |
-| view_count | INTEGER | DEFAULT 0 | Number of view attempts |
+| Column         | Type         | Constraints   | Description                    |
+| -------------- | ------------ | ------------- | ------------------------------ |
+| id             | VARCHAR(32)  | PRIMARY KEY   | Unique secret identifier       |
+| encrypted_data | TEXT         | NOT NULL      | Encrypted secret blob          |
+| iv             | VARCHAR(32)  | NOT NULL      | Initialization vector (base64) |
+| created_at     | TIMESTAMP    | NOT NULL      | Creation timestamp             |
+| expires_at     | TIMESTAMP    | NOT NULL      | Expiration timestamp           |
+| viewed         | BOOLEAN      | DEFAULT false | Whether secret has been viewed |
+| password_hash  | VARCHAR(255) | NULLABLE      | Optional password (bcrypt)     |
+| view_count     | INTEGER      | DEFAULT 0     | Number of view attempts        |
 
 **Indexes:**
+
 - `idx_expires_at` on `expires_at` (for cleanup job)
 - `idx_viewed` on `viewed` (for statistics)
 
@@ -347,6 +368,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Landing Page (Create Secret)
 
 **Layout:**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -378,6 +400,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Confirmation Page (After Creation)
 
 **Layout:**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -402,6 +425,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### View Secret Page
 
 **Layout:**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -428,6 +452,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Password-Protected View
 
 **Layout (Before Password Entry):**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -448,6 +473,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Error States
 
 **Secret Already Viewed:**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -464,6 +490,7 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ```
 
 **Secret Expired:**
+
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
@@ -514,16 +541,19 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Primary Metrics (Week 1-4)
 
 **Adoption:**
+
 - Daily active secrets created
 - Successful secret retrievals
 - Success rate (viewed / created)
 
 **Engagement:**
+
 - Repeat usage (same IP creating 2+ secrets)
 - Average time between creation and retrieval
 - Password protection adoption rate
 
 **Quality:**
+
 - Error rate (failed encryptions, 404s, etc.)
 - Average page load time
 - Uptime percentage
@@ -531,11 +561,13 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Secondary Metrics (Month 2+)
 
 **Growth:**
+
 - Week-over-week growth in secret creation
 - Referral source tracking (organic vs. shared)
 - Geographic distribution of users
 
 **Product-Market Fit:**
+
 - Net Promoter Score (NPS) survey
 - User feedback sentiment
 - Feature request themes
@@ -543,12 +575,14 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Success Criteria for MVP
 
 **Launch Success (Week 4):**
+
 - 100+ secrets created
 - 80%+ successful retrieval rate
 - < 1% error rate
 - 99%+ uptime
 
 **Product-Market Fit Indicators (Month 3):**
+
 - 1,000+ secrets created per week
 - 20%+ repeat usage rate
 - Organic growth (no paid marketing)
@@ -561,16 +595,19 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Phase 1: Internal Alpha (Week 1)
 
 **Objectives:**
+
 - Validate core functionality
 - Test encryption/decryption flow
 - Identify critical bugs
 
 **Activities:**
+
 - Deploy to staging environment
 - Team testing (10 people)
 - Bug fixes and polish
 
 **Success Criteria:**
+
 - 0 critical bugs
 - 100% successful secret retrieval
 - Positive team feedback
@@ -578,17 +615,20 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Phase 2: Private Beta (Week 2-3)
 
 **Objectives:**
+
 - Validate with real users
 - Test under realistic load
 - Gather initial feedback
 
 **Activities:**
+
 - Invite 50-100 friendly users
 - Monitor usage patterns
 - Iterate based on feedback
 - Performance testing
 
 **Success Criteria:**
+
 - 200+ secrets created
 - 90%+ success rate
 - No critical security issues
@@ -597,17 +637,20 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 ### Phase 3: Public Launch (Week 4)
 
 **Objectives:**
+
 - Reach broader audience
 - Establish product in market
 - Begin organic growth
 
 **Activities:**
+
 - Post to Product Hunt, Hacker News, Reddit
 - Share in relevant Slack communities
 - Publish "How We Built This" blog post
 - Monitor for scaling issues
 
 **Success Criteria:**
+
 - 1,000+ secrets in first week
 - Featured on Product Hunt
 - Positive community reception
@@ -619,49 +662,52 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 
 ### Security Risks
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Client-side encryption compromised | Critical | Low | Code review, security audit, open source for transparency |
-| Database breach exposes encrypted secrets | High | Medium | Even if breached, secrets unreadable without keys; keys never stored |
-| Timing attack reveals secret length | Medium | Low | Pad all secrets to fixed length before encryption |
-| Rate limiting bypassed | Medium | Medium | Multiple rate limiting layers (IP, session, global) |
-| XSS attack steals secrets | Critical | Low | Strict CSP, sanitize all inputs, framework protections |
+| Risk                                      | Impact   | Likelihood | Mitigation                                                           |
+| ----------------------------------------- | -------- | ---------- | -------------------------------------------------------------------- |
+| Client-side encryption compromised        | Critical | Low        | Code review, security audit, open source for transparency            |
+| Database breach exposes encrypted secrets | High     | Medium     | Even if breached, secrets unreadable without keys; keys never stored |
+| Timing attack reveals secret length       | Medium   | Low        | Pad all secrets to fixed length before encryption                    |
+| Rate limiting bypassed                    | Medium   | Medium     | Multiple rate limiting layers (IP, session, global)                  |
+| XSS attack steals secrets                 | Critical | Low        | Strict CSP, sanitize all inputs, framework protections               |
 
 ### Technical Risks
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Browser crypto API compatibility | Medium | Low | Polyfills for older browsers, feature detection |
-| Database failure loses secrets | High | Low | Automated backups, database redundancy |
-| Expiration job fails | Medium | Low | Monitoring, alerting, manual cleanup fallback |
-| Traffic spike overwhelms server | Medium | Medium | Auto-scaling, CDN for static assets, rate limiting |
+| Risk                             | Impact | Likelihood | Mitigation                                         |
+| -------------------------------- | ------ | ---------- | -------------------------------------------------- |
+| Browser crypto API compatibility | Medium | Low        | Polyfills for older browsers, feature detection    |
+| Database failure loses secrets   | High   | Low        | Automated backups, database redundancy             |
+| Expiration job fails             | Medium | Low        | Monitoring, alerting, manual cleanup fallback      |
+| Traffic spike overwhelms server  | Medium | Medium     | Auto-scaling, CDN for static assets, rate limiting |
 
 ### Business Risks
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Low adoption (not solving real problem) | High | Medium | Beta testing validates problem, MVP iterates on feedback |
-| Competitors with more features | Medium | High | Focus on simplicity as differentiator, fastest to market |
-| Abuse for malicious purposes | Medium | Medium | Rate limiting, abuse monitoring, clear ToS |
-| Hosting costs exceed budget | Low | Low | Efficient architecture, reasonable usage limits |
+| Risk                                    | Impact | Likelihood | Mitigation                                               |
+| --------------------------------------- | ------ | ---------- | -------------------------------------------------------- |
+| Low adoption (not solving real problem) | High   | Medium     | Beta testing validates problem, MVP iterates on feedback |
+| Competitors with more features          | Medium | High       | Focus on simplicity as differentiator, fastest to market |
+| Abuse for malicious purposes            | Medium | Medium     | Rate limiting, abuse monitoring, clear ToS               |
+| Hosting costs exceed budget             | Low    | Low        | Efficient architecture, reasonable usage limits          |
 
 ---
 
 ## Open Questions
 
 ### For User Research
+
 - [ ] What expiration times do users actually want? (Current guess: 1h, 24h, 7d, 30d)
 - [ ] Is password protection necessary for MVP or can it wait?
 - [ ] Do users want notifications when their secret is viewed?
 - [ ] Would users pay for features like longer expiration or file uploads?
 
 ### For Technical Validation
+
 - [ ] What's the optimal max secret length? (Current: 10KB)
 - [ ] Should we support secret editing before first view?
 - [ ] Do we need a "burn on failed password" feature?
 - [ ] Should URL fragments use base64 or base64url encoding?
 
 ### For Product Strategy
+
 - [ ] Should we show a public counter of "secrets shared" for social proof?
 - [ ] Do we build a browser extension post-MVP?
 - [ ] Should there be a "premium" tier with longer retention?
@@ -688,9 +734,9 @@ https://secureshare.app/s/[SECRET_ID]#[BASE64_ENCRYPTION_KEY]
 
 ### Changelog
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-02-13 | Product Team | Initial MVP PRD |
+| Version | Date       | Author       | Changes         |
+| ------- | ---------- | ------------ | --------------- |
+| 1.0     | 2026-02-13 | Product Team | Initial MVP PRD |
 
 ---
 

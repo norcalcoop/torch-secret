@@ -17,12 +17,7 @@
  */
 
 import { decrypt } from '../crypto/index.js';
-import {
-  getSecret,
-  getSecretMeta,
-  verifySecretPassword,
-  ApiError,
-} from '../api/client.js';
+import { getSecret, getSecretMeta, verifySecretPassword, ApiError } from '../api/client.js';
 import { createTerminalBlock } from '../components/terminal-block.js';
 import { Shield, Lock, CircleCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
@@ -41,18 +36,12 @@ const SECRET_ID_LENGTH = 21;
  *
  * @param container - The DOM element to render into
  */
-export async function renderRevealPage(
-  container: HTMLElement,
-): Promise<void> {
+export async function renderRevealPage(container: HTMLElement): Promise<void> {
   // Step A: Extract key from URL fragment IMMEDIATELY
   let key: string | null = window.location.hash.slice(1);
 
   // Step A (cont): Strip fragment from URL bar -- key exists only in memory now
-  history.replaceState(
-    null,
-    '',
-    window.location.pathname + window.location.search,
-  );
+  history.replaceState(null, '', window.location.pathname + window.location.search);
 
   // Step B: Extract secret ID from path
   const segments = window.location.pathname.split('/');
@@ -82,7 +71,7 @@ export async function renderRevealPage(
       renderPasswordEntry(container, id, key, meta.passwordAttemptsRemaining);
     } else {
       // Step C6: No password required, show existing interstitial
-      renderInterstitial(container, id, key);
+      renderInterstitial(container);
     }
   } catch (err) {
     // Step C4: If secret was already consumed (410 Gone), show distinct message
@@ -101,9 +90,7 @@ export async function renderRevealPage(
   async function handleReveal(): Promise<void> {
     // Clear container and show loading spinner
     clearContainer(container);
-    container.appendChild(
-      createLoadingSpinner('Decrypting your secret...'),
-    );
+    container.appendChild(createLoadingSpinner('Decrypting your secret...'));
 
     try {
       // Fetch ciphertext from API (triggers atomic delete on server)
@@ -122,10 +109,7 @@ export async function renderRevealPage(
       if (err instanceof ApiError && (err.status === 404 || err.status === 410)) {
         // Generic "not available" message for API errors (anti-enumeration)
         renderErrorPage(container, 'not_available');
-      } else if (
-        err instanceof Error &&
-        err.message.includes('Decryption failed')
-      ) {
+      } else if (err instanceof Error && err.message.includes('Decryption failed')) {
         renderErrorPage(container, 'decrypt_failed');
       } else {
         // Unknown errors: show generic "not available" (don't leak details)
@@ -139,16 +123,11 @@ export async function renderRevealPage(
    * CRITICAL: No API call is made here. The page is completely inert
    * until the user explicitly clicks the button.
    */
-  function renderInterstitial(
-    target: HTMLElement,
-    _id: string,
-    _key: string,
-  ): void {
+  function renderInterstitial(target: HTMLElement): void {
     clearContainer(target);
 
     const wrapper = document.createElement('div');
-    wrapper.className =
-      'flex flex-col items-center justify-center text-center py-16 px-4';
+    wrapper.className = 'flex flex-col items-center justify-center text-center py-16 px-4';
 
     // Shield icon (decorative, hidden from screen readers)
     const icon = createIcon(Shield, {
@@ -174,7 +153,9 @@ export async function renderRevealPage(
     button.className =
       'bg-accent text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold text-lg hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
     button.textContent = 'Reveal Secret';
-    button.addEventListener('click', handleReveal);
+    button.addEventListener('click', () => {
+      void handleReveal();
+    });
 
     wrapper.appendChild(icon);
     wrapper.appendChild(heading);
@@ -199,8 +180,7 @@ export async function renderRevealPage(
     clearContainer(target);
 
     const wrapper = document.createElement('div');
-    wrapper.className =
-      'flex flex-col items-center justify-center text-center py-16 px-4';
+    wrapper.className = 'flex flex-col items-center justify-center text-center py-16 px-4';
 
     // Lock icon (matching interstitial style, decorative)
     const icon = createIcon(Lock, {
@@ -217,15 +197,13 @@ export async function renderRevealPage(
     // Subtext
     const subtext = document.createElement('p');
     subtext.className = 'text-text-muted mb-6 max-w-md';
-    subtext.textContent =
-      'This secret is password protected. Enter the password to reveal it.';
+    subtext.textContent = 'This secret is password protected. Enter the password to reveal it.';
 
     // Attempt counter
     const attemptText = document.createElement('p');
     attemptText.className = `text-sm font-medium mb-6 ${attemptsRemaining <= 1 ? 'text-danger' : 'text-warning'}`;
-    attemptText.textContent = attemptsRemaining === 1
-      ? '1 attempt remaining'
-      : `${attemptsRemaining} attempts remaining`;
+    attemptText.textContent =
+      attemptsRemaining === 1 ? '1 attempt remaining' : `${attemptsRemaining} attempts remaining`;
 
     // Form container (max width for readability)
     const form = document.createElement('form');
@@ -257,8 +235,7 @@ export async function renderRevealPage(
 
     // Error message area (hidden initially)
     const errorArea = document.createElement('div');
-    errorArea.className =
-      'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
+    errorArea.className = 'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
     errorArea.setAttribute('role', 'alert');
     form.appendChild(errorArea);
 
@@ -271,80 +248,78 @@ export async function renderRevealPage(
     form.appendChild(submitButton);
 
     // Form submit handler
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
+      void (async () => {
+        // Hide previous errors
+        errorArea.classList.add('hidden');
+        errorArea.textContent = '';
 
-      // Hide previous errors
-      errorArea.classList.add('hidden');
-      errorArea.textContent = '';
-
-      const passwordValue = passwordInput.value;
-      if (!passwordValue) {
-        errorArea.textContent = 'Please enter a password.';
-        errorArea.classList.remove('hidden');
-        return;
-      }
-
-      // Disable form during verification
-      passwordInput.disabled = true;
-      submitButton.disabled = true;
-      submitButton.textContent = 'Verifying...';
-
-      try {
-        // Call verify endpoint (atomically destroys on success)
-        const { ciphertext } = await verifySecretPassword(secretId, passwordValue);
-
-        // Decrypt client-side
-        const plaintext = await decrypt(ciphertext, encryptionKey);
-
-        // Render the revealed secret
-        renderRevealedSecret(container, plaintext);
-
-        // Best-effort memory cleanup
-        key = null;
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 403) {
-          // Wrong password -- parse remaining attempts from error body
-          const body = err.body as { attemptsRemaining?: number };
-          const remaining = body.attemptsRemaining ?? 0;
-
-          if (remaining === 0) {
-            // Secret was auto-destroyed after max wrong attempts
-            renderErrorPage(container, 'destroyed');
-            return;
-          }
-
-          // Update attempt counter text and style
-          attemptText.textContent = remaining === 1
-            ? '1 attempt remaining'
-            : `${remaining} attempts remaining`;
-          attemptText.className = `text-sm font-medium mb-6 ${remaining <= 1 ? 'text-danger' : 'text-warning'}`;
-
-          // Show error message
-          errorArea.textContent = remaining === 1
-            ? `Wrong password. 1 attempt remaining.`
-            : `Wrong password. ${remaining} attempts remaining.`;
+        const passwordValue = passwordInput.value;
+        if (!passwordValue) {
+          errorArea.textContent = 'Please enter a password.';
           errorArea.classList.remove('hidden');
-
-          // Re-enable form
-          passwordInput.disabled = false;
-          submitButton.disabled = false;
-          submitButton.textContent = 'Verify Password';
-          passwordInput.value = '';
-          passwordInput.focus();
-        } else if (err instanceof ApiError && err.status === 404) {
-          // Secret gone (concurrent destroy or expired)
-          renderErrorPage(container, 'not_available');
-        } else if (
-          err instanceof Error &&
-          err.message.includes('Decryption failed')
-        ) {
-          renderErrorPage(container, 'decrypt_failed');
-        } else {
-          // Unknown error -- show generic message
-          renderErrorPage(container, 'not_available');
+          return;
         }
-      }
+
+        // Disable form during verification
+        passwordInput.disabled = true;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Verifying...';
+
+        try {
+          // Call verify endpoint (atomically destroys on success)
+          const { ciphertext } = await verifySecretPassword(secretId, passwordValue);
+
+          // Decrypt client-side
+          const plaintext = await decrypt(ciphertext, encryptionKey);
+
+          // Render the revealed secret
+          renderRevealedSecret(container, plaintext);
+
+          // Best-effort memory cleanup
+          key = null;
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 403) {
+            // Wrong password -- parse remaining attempts from error body
+            const body = err.body as { attemptsRemaining?: number };
+            const remaining = body.attemptsRemaining ?? 0;
+
+            if (remaining === 0) {
+              // Secret was auto-destroyed after max wrong attempts
+              renderErrorPage(container, 'destroyed');
+              return;
+            }
+
+            // Update attempt counter text and style
+            attemptText.textContent =
+              remaining === 1 ? '1 attempt remaining' : `${remaining} attempts remaining`;
+            attemptText.className = `text-sm font-medium mb-6 ${remaining <= 1 ? 'text-danger' : 'text-warning'}`;
+
+            // Show error message
+            errorArea.textContent =
+              remaining === 1
+                ? `Wrong password. 1 attempt remaining.`
+                : `Wrong password. ${remaining} attempts remaining.`;
+            errorArea.classList.remove('hidden');
+
+            // Re-enable form
+            passwordInput.disabled = false;
+            submitButton.disabled = false;
+            submitButton.textContent = 'Verify Password';
+            passwordInput.value = '';
+            passwordInput.focus();
+          } else if (err instanceof ApiError && err.status === 404) {
+            // Secret gone (concurrent destroy or expired)
+            renderErrorPage(container, 'not_available');
+          } else if (err instanceof Error && err.message.includes('Decryption failed')) {
+            renderErrorPage(container, 'decrypt_failed');
+          } else {
+            // Unknown error -- show generic message
+            renderErrorPage(container, 'not_available');
+          }
+        }
+      })();
     });
 
     wrapper.appendChild(icon);
@@ -366,10 +341,7 @@ export async function renderRevealPage(
  * (NEVER innerHTML) to prevent XSS. The terminal block includes its own
  * copy button in the header bar, so no standalone copy button is needed.
  */
-function renderRevealedSecret(
-  container: HTMLElement,
-  plaintext: string,
-): void {
+function renderRevealedSecret(container: HTMLElement, plaintext: string): void {
   clearContainer(container);
 
   const wrapper = document.createElement('div');

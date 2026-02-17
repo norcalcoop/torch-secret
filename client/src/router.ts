@@ -65,9 +65,7 @@ export function updatePageMeta(meta: PageMeta): void {
   document.title = `${meta.title} - SecureShare`;
 
   // 2. Meta description (create or update)
-  let descEl = document.querySelector(
-    'meta[name="description"]',
-  ) as HTMLMetaElement | null;
+  let descEl = document.querySelector<HTMLMetaElement>('meta[name="description"]');
   if (!descEl) {
     descEl = document.createElement('meta');
     descEl.name = 'description';
@@ -76,9 +74,7 @@ export function updatePageMeta(meta: PageMeta): void {
   descEl.content = meta.description;
 
   // 3. Canonical URL: remove for noindex pages (Pitfall 4), update otherwise
-  let canonicalEl = document.querySelector(
-    'link[rel="canonical"]',
-  ) as HTMLLinkElement | null;
+  let canonicalEl = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   if (meta.noindex) {
     canonicalEl?.remove();
   } else {
@@ -87,15 +83,11 @@ export function updatePageMeta(meta: PageMeta): void {
       canonicalEl.rel = 'canonical';
       document.head.appendChild(canonicalEl);
     }
-    canonicalEl.href =
-      meta.canonical ??
-      `${window.location.origin}${window.location.pathname}`;
+    canonicalEl.href = meta.canonical ?? `${window.location.origin}${window.location.pathname}`;
   }
 
   // 4. Robots meta: add for noindex pages, remove otherwise
-  let robotsEl = document.querySelector(
-    'meta[name="robots"]',
-  ) as HTMLMetaElement | null;
+  let robotsEl = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
   if (meta.noindex) {
     if (!robotsEl) {
       robotsEl = document.createElement('meta');
@@ -126,21 +118,11 @@ export function updatePageMeta(meta: PageMeta): void {
  * secret existence at a given URL.
  */
 function updateOgTags(isNoindex: boolean): void {
-  const ogTitle = document.querySelector(
-    'meta[property="og:title"]',
-  ) as HTMLMetaElement | null;
-  const ogDesc = document.querySelector(
-    'meta[property="og:description"]',
-  ) as HTMLMetaElement | null;
-  const ogUrl = document.querySelector(
-    'meta[property="og:url"]',
-  ) as HTMLMetaElement | null;
-  const twTitle = document.querySelector(
-    'meta[name="twitter:title"]',
-  ) as HTMLMetaElement | null;
-  const twDesc = document.querySelector(
-    'meta[name="twitter:description"]',
-  ) as HTMLMetaElement | null;
+  const ogTitle = document.querySelector<HTMLMetaElement>('meta[property="og:title"]');
+  const ogDesc = document.querySelector<HTMLMetaElement>('meta[property="og:description"]');
+  const ogUrl = document.querySelector<HTMLMetaElement>('meta[property="og:url"]');
+  const twTitle = document.querySelector<HTMLMetaElement>('meta[name="twitter:title"]');
+  const twDesc = document.querySelector<HTMLMetaElement>('meta[name="twitter:description"]');
 
   if (isNoindex) {
     // Generic branding -- no indication a secret exists at this URL
@@ -151,15 +133,11 @@ function updateOgTags(isNoindex: boolean): void {
     if (twDesc) twDesc.content = 'Zero-knowledge secret sharing';
   } else {
     // Restore homepage OG values
-    if (ogTitle)
-      ogTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
-    if (ogDesc)
-      ogDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
+    if (ogTitle) ogTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (ogDesc) ogDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
     if (ogUrl) ogUrl.content = `${window.location.origin}/`;
-    if (twTitle)
-      twTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
-    if (twDesc)
-      twDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
+    if (twTitle) twTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (twDesc) twDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
   }
 }
 
@@ -230,9 +208,7 @@ function handleRoute(): void {
 
   // Notify layout shell (and any other listeners) of the route change.
   // Fires on every navigation: initial load, popstate, and programmatic.
-  window.dispatchEvent(
-    new CustomEvent('routechange', { detail: { path } }),
-  );
+  window.dispatchEvent(new CustomEvent('routechange', { detail: { path } }));
 }
 
 /**

@@ -41,10 +41,7 @@ function binaryStringToUint8Array(binary: string): Uint8Array {
 export function uint8ArrayToBase64Url(bytes: Uint8Array): string {
   const binary = uint8ArrayToBinaryString(bytes);
   if (binary.length === 0) return '';
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /**

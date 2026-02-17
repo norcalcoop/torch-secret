@@ -8,11 +8,7 @@
 
 import { Sun, Moon, Monitor, type IconNode } from 'lucide';
 import { createIcon } from './icons.js';
-import {
-  getThemePreference,
-  setThemePreference,
-  type ThemePreference,
-} from '../theme.js';
+import { getThemePreference, setThemePreference, type ThemePreference } from '../theme.js';
 
 /** Cycle order: light -> dark -> system -> light ... */
 const CYCLE: ThemePreference[] = ['light', 'dark', 'system'];

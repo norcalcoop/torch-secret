@@ -30,9 +30,7 @@ const MAX_LENGTH = 10_000;
 /**
  * Render the create page into the given container.
  */
-export async function renderCreatePage(
-  container: HTMLElement,
-): Promise<void> {
+export function renderCreatePage(container: HTMLElement): void {
   // -- Page wrapper --
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
@@ -47,8 +45,7 @@ export async function renderCreatePage(
 
   const subtext = document.createElement('p');
   subtext.className = 'text-text-muted';
-  subtext.textContent =
-    'End-to-end encrypted. One-time view. No accounts.';
+  subtext.textContent = 'End-to-end encrypted. One-time view. No accounts.';
 
   header.appendChild(heading);
   header.appendChild(subtext);
@@ -156,8 +153,7 @@ export async function renderCreatePage(
 
   // -- Error display area --
   const errorArea = document.createElement('div');
-  errorArea.className =
-    'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
+  errorArea.className = 'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
   errorArea.setAttribute('role', 'alert');
   form.appendChild(errorArea);
 
@@ -170,68 +166,60 @@ export async function renderCreatePage(
   form.appendChild(submitButton);
 
   // -- Submit handler --
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  form.addEventListener('submit', (e) => {
+    void (async () => {
+      e.preventDefault();
 
-    // Hide previous errors
-    errorArea.classList.add('hidden');
-    errorArea.textContent = '';
+      // Hide previous errors
+      errorArea.classList.add('hidden');
+      errorArea.textContent = '';
 
-    // Validate non-empty
-    const text = textarea.value.trim();
-    if (!text) {
-      showError(errorArea, 'Please enter a secret to share.');
-      return;
-    }
+      // Validate non-empty
+      const text = textarea.value.trim();
+      if (!text) {
+        showError(errorArea, 'Please enter a secret to share.');
+        return;
+      }
 
-    // Get expiration
-    const expiresIn = expirationSelect.value as
-      | '1h'
-      | '24h'
-      | '7d'
-      | '30d';
+      // Get expiration
+      const expiresIn = expirationSelect.value as '1h' | '24h' | '7d' | '30d';
 
-    // Get optional password
-    const password = passwordInput.value || undefined;
+      // Get optional password
+      const password = passwordInput.value || undefined;
 
-    // Disable form during submission
-    submitButton.disabled = true;
-    textarea.disabled = true;
-    expirationSelect.disabled = true;
-    passwordInput.disabled = true;
+      // Disable form during submission
+      submitButton.disabled = true;
+      textarea.disabled = true;
+      expirationSelect.disabled = true;
+      passwordInput.disabled = true;
 
-    try {
-      // Step 1: Encrypt in the browser
-      submitButton.textContent = 'Encrypting...';
-      const result = await encrypt(text);
+      try {
+        // Step 1: Encrypt in the browser
+        submitButton.textContent = 'Encrypting...';
+        const result = await encrypt(text);
 
-      // Step 2: Send to API (include password only if provided)
-      submitButton.textContent = 'Sending...';
-      const response = await createSecret(
-        result.payload.ciphertext,
-        expiresIn,
-        password,
-      );
+        // Step 2: Send to API (include password only if provided)
+        submitButton.textContent = 'Sending...';
+        const response = await createSecret(result.payload.ciphertext, expiresIn, password);
 
-      // Step 3: Build share URL with key in fragment
-      const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
+        // Step 3: Build share URL with key in fragment
+        const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
-      // Step 4: Render confirmation page (state-based, not URL-based)
-      renderConfirmationPage(container, shareUrl, response.expiresAt);
-    } catch (err) {
-      // Restore form state
-      submitButton.disabled = false;
-      textarea.disabled = false;
-      expirationSelect.disabled = false;
-      passwordInput.disabled = false;
-      submitButton.textContent = 'Create Secure Link';
+        // Step 4: Render confirmation page (state-based, not URL-based)
+        renderConfirmationPage(container, shareUrl, response.expiresAt);
+      } catch (err) {
+        // Restore form state
+        submitButton.disabled = false;
+        textarea.disabled = false;
+        expirationSelect.disabled = false;
+        passwordInput.disabled = false;
+        submitButton.textContent = 'Create Secure Link';
 
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong. Please try again.';
-      showError(errorArea, message);
-    }
+        const message =
+          err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+        showError(errorArea, message);
+      }
+    })();
   });
 
   wrapper.appendChild(form);
@@ -303,9 +291,7 @@ function createHowItWorksSection(): HTMLElement {
     const iconContainer = document.createElement('div');
     iconContainer.className =
       'w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto';
-    iconContainer.appendChild(
-      createIcon(step.icon, { size: 'lg', class: 'text-accent' }),
-    );
+    iconContainer.appendChild(createIcon(step.icon, { size: 'lg', class: 'text-accent' }));
     iconContainer.setAttribute('aria-hidden', 'true');
 
     const title = document.createElement('h3');
@@ -323,7 +309,8 @@ function createHowItWorksSection(): HTMLElement {
   }
 
   const glassContainer = document.createElement('div');
-  glassContainer.className = 'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg';
+  glassContainer.className =
+    'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg';
   glassContainer.appendChild(grid);
   section.appendChild(glassContainer);
   return section;
@@ -360,14 +347,12 @@ function createWhyTrustUsSection(): HTMLElement {
     {
       icon: Code,
       label: 'Open Source',
-      description:
-        'Our code is publicly auditable. Verify the security claims yourself.',
+      description: 'Our code is publicly auditable. Verify the security claims yourself.',
     },
     {
       icon: UserX,
       label: 'No Accounts',
-      description:
-        'No sign-up, no email, no tracking. Just share and go.',
+      description: 'No sign-up, no email, no tracking. Just share and go.',
     },
     {
       icon: ShieldCheck,
@@ -379,7 +364,8 @@ function createWhyTrustUsSection(): HTMLElement {
 
   for (const card of cards) {
     const cardEl = document.createElement('div');
-    cardEl.className = 'p-4 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-2';
+    cardEl.className =
+      'p-4 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-2';
 
     const iconEl = createIcon(card.icon, { size: 'md', class: 'text-accent' });
 

@@ -27,10 +27,7 @@ import { ALGORITHM, IV_LENGTH, TAG_LENGTH } from './constants';
  * @returns The original plaintext string
  * @throws Error if ciphertext is too short, key is wrong, or data is tampered
  */
-export async function decrypt(
-  ciphertextBase64: string,
-  keyBase64Url: string,
-): Promise<string> {
+export async function decrypt(ciphertextBase64: string, keyBase64Url: string): Promise<string> {
   // 1. Decode from base64
   const combined = base64ToUint8Array(ciphertextBase64);
 
@@ -51,11 +48,7 @@ export async function decrypt(
   // 6. Decrypt with AES-GCM (catches wrong key / tampered data)
   let paddedBuffer: ArrayBuffer;
   try {
-    paddedBuffer = await crypto.subtle.decrypt(
-      { name: ALGORITHM, iv },
-      key,
-      ciphertextWithTag,
-    );
+    paddedBuffer = await crypto.subtle.decrypt({ name: ALGORITHM, iv }, key, ciphertextWithTag);
   } catch {
     throw new Error('Decryption failed: invalid key or corrupted data');
   }

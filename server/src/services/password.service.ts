@@ -35,9 +35,6 @@ export async function hashPassword(password: string): Promise<string> {
  * Uses `crypto.timingSafeEqual` internally (PASS-05) to prevent
  * timing side-channel attacks on the hash comparison.
  */
-export async function verifyPassword(
-  hash: string,
-  password: string,
-): Promise<boolean> {
+export async function verifyPassword(hash: string, password: string): Promise<boolean> {
   return argon2.verify(hash, password);
 }

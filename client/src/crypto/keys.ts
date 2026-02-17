@@ -67,9 +67,7 @@ export async function exportKeyToBase64Url(key: CryptoKey): Promise<string> {
  * @throws DOMException if the decoded bytes do not form a valid AES key
  * @returns A non-extractable, decrypt-only AES-GCM CryptoKey
  */
-export async function importKeyFromBase64Url(
-  base64url: string,
-): Promise<CryptoKey> {
+export async function importKeyFromBase64Url(base64url: string): Promise<CryptoKey> {
   if (base64url.length !== EXPECTED_KEY_BASE64URL_LENGTH) {
     throw new Error(
       `Invalid key length: expected ${EXPECTED_KEY_BASE64URL_LENGTH} base64url characters for a 256-bit key, got ${base64url.length}`,

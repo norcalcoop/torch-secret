@@ -49,10 +49,7 @@ function swapToCheckIcon(iconSpan: HTMLElement): void {
  * @param label - Button label (defaults to "Copy")
  * @returns A styled button element
  */
-export function createCopyButton(
-  getText: () => string,
-  label?: string,
-): HTMLButtonElement {
+export function createCopyButton(getText: () => string, label?: string): HTMLButtonElement {
   const button = document.createElement('button');
   const defaultLabel = label ?? 'Copy';
   button.type = 'button';
@@ -69,23 +66,25 @@ export function createCopyButton(
   labelSpan.textContent = defaultLabel;
   button.appendChild(labelSpan);
 
-  button.addEventListener('click', async () => {
-    const text = getText();
+  button.addEventListener('click', () => {
+    void (async () => {
+      const text = getText();
 
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard');
-      swapToCheckIcon(iconSpan);
-    } catch {
-      // Fallback for older browsers or insecure contexts
       try {
-        fallbackCopy(text);
+        await navigator.clipboard.writeText(text);
         showToast('Copied to clipboard');
         swapToCheckIcon(iconSpan);
       } catch {
-        showToast('Failed to copy');
+        // Fallback for older browsers or insecure contexts
+        try {
+          fallbackCopy(text);
+          showToast('Copied to clipboard');
+          swapToCheckIcon(iconSpan);
+        } catch {
+          showToast('Failed to copy');
+        }
       }
-    }
+    })();
   });
 
   return button;

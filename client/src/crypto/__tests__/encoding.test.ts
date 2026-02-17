@@ -24,8 +24,8 @@ describe('uint8ArrayToBase64Url', () => {
   it('should encode a 32-byte array (simulating a key) with no +, /, or = characters', () => {
     // A 32-byte array with values that would produce +, /, and = in standard base64
     const input = new Uint8Array([
-      62, 63, 255, 254, 253, 252, 251, 250, 128, 129, 130, 131, 132, 133, 134,
-      135, 200, 201, 202, 203, 204, 205, 206, 207, 0, 1, 2, 3, 4, 5, 6, 7,
+      62, 63, 255, 254, 253, 252, 251, 250, 128, 129, 130, 131, 132, 133, 134, 135, 200, 201, 202,
+      203, 204, 205, 206, 207, 0, 1, 2, 3, 4, 5, 6, 7,
     ]);
     const result = uint8ArrayToBase64Url(input);
     expect(result).not.toMatch(/[+/=]/);

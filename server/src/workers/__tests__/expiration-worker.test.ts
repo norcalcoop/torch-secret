@@ -50,7 +50,7 @@ async function insertSecret(opts: {
 }): Promise<string> {
   const id = nanoid();
   const expiresAt = opts.expired
-    ? new Date(Date.now() - 60_000)   // 1 minute ago
+    ? new Date(Date.now() - 60_000) // 1 minute ago
     : new Date(Date.now() + 86_400_000); // 24 hours from now
 
   await db.insert(secrets).values({
@@ -68,8 +68,8 @@ async function insertSecret(opts: {
 // ---------------------------------------------------------------------------
 describe('cleanExpiredSecrets', () => {
   test('deletes expired secrets', async () => {
-    const id1 = await insertSecret({ expired: true });
-    const id2 = await insertSecret({ expired: true });
+    const _id1 = await insertSecret({ expired: true });
+    const _id2 = await insertSecret({ expired: true });
 
     const deletedCount = await cleanExpiredSecrets();
 
@@ -89,17 +89,11 @@ describe('cleanExpiredSecrets', () => {
     expect(deletedCount).toBe(1);
 
     // Expired secret gone
-    const expiredRows = await db
-      .select()
-      .from(secrets)
-      .where(eq(secrets.id, expiredId));
+    const expiredRows = await db.select().from(secrets).where(eq(secrets.id, expiredId));
     expect(expiredRows).toHaveLength(0);
 
     // Non-expired secret still exists with original ciphertext
-    const validRows = await db
-      .select()
-      .from(secrets)
-      .where(eq(secrets.id, validId));
+    const validRows = await db.select().from(secrets).where(eq(secrets.id, validId));
     expect(validRows).toHaveLength(1);
     expect(validRows[0].ciphertext).toBe(VALID_CIPHERTEXT);
   });
@@ -116,10 +110,7 @@ describe('cleanExpiredSecrets', () => {
     expect(deletedCount).toBe(1);
 
     // Row is gone -- cleanup completed both steps
-    const rows = await db
-      .select()
-      .from(secrets)
-      .where(eq(secrets.id, id));
+    const rows = await db.select().from(secrets).where(eq(secrets.id, id));
     expect(rows).toHaveLength(0);
   });
 
@@ -131,8 +122,8 @@ describe('cleanExpiredSecrets', () => {
   });
 
   test('handles mix of password-protected and non-password expired secrets', async () => {
-    const nonPwId = await insertSecret({ expired: true });
-    const pwId = await insertSecret({ expired: true, passwordHash: TEST_PASSWORD_HASH });
+    const _nonPwId = await insertSecret({ expired: true });
+    const _pwId = await insertSecret({ expired: true, passwordHash: TEST_PASSWORD_HASH });
 
     const deletedCount = await cleanExpiredSecrets();
 

@@ -52,9 +52,7 @@ export function padmeLength(len: number): number {
  */
 export function padPlaintext(data: Uint8Array): Uint8Array {
   if (data.length > MAX_INPUT_SIZE) {
-    throw new Error(
-      `Input data exceeds maximum size: ${data.length} > ${MAX_INPUT_SIZE} bytes`
-    );
+    throw new Error(`Input data exceeds maximum size: ${data.length} > ${MAX_INPUT_SIZE} bytes`);
   }
 
   const totalDataLen = 4 + data.length; // 4 bytes for length prefix

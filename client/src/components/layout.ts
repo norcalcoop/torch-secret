@@ -47,8 +47,7 @@ function createHeader(): HTMLElement {
   header.className = 'sticky top-0 z-40 backdrop-blur-md bg-bg/80';
 
   const inner = document.createElement('div');
-  inner.className =
-    'max-w-2xl mx-auto px-4 h-14 flex items-center justify-between';
+  inner.className = 'max-w-2xl mx-auto px-4 h-14 flex items-center justify-between';
 
   // Brand mark: shield icon + "SecureShare" wordmark
   const brand = document.createElement('a');
@@ -80,8 +79,7 @@ function createHeader(): HTMLElement {
   const createLink = document.createElement('a');
   createLink.href = '/';
   createLink.id = 'nav-create-link';
-  createLink.className =
-    'text-sm text-text-secondary hover:text-accent transition-colors';
+  createLink.className = 'text-sm text-text-secondary hover:text-accent transition-colors';
   createLink.textContent = 'Create';
   createLink.addEventListener('click', (e) => {
     e.preventDefault();
@@ -117,11 +115,7 @@ function createFooter(): HTMLElement {
   inner.className =
     'max-w-2xl mx-auto px-4 flex flex-wrap justify-center gap-6 text-xs text-text-muted';
 
-  const signals = [
-    'Zero-knowledge encryption',
-    'AES-256-GCM',
-    'Open Source',
-  ];
+  const signals = ['Zero-knowledge encryption', 'AES-256-GCM', 'Open Source'];
 
   for (const text of signals) {
     const span = document.createElement('span');

@@ -77,9 +77,7 @@ describe('padding verification', () => {
     const resultShort = await encrypt('hi');
     const resultMedium = await encrypt('a'.repeat(200));
     // Both should pad to 256 bytes (minimum tier), producing same base64 length
-    expect(resultShort.payload.ciphertext.length).toBe(
-      resultMedium.payload.ciphertext.length,
-    );
+    expect(resultShort.payload.ciphertext.length).toBe(resultMedium.payload.ciphertext.length);
   });
 
   it('input exceeding minimum tier produces longer ciphertext', async () => {

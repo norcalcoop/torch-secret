@@ -76,12 +76,12 @@ Two trust boundaries define the entire security model:
 
 ## API Endpoints
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/secrets` | Create secret (receives encrypted blob, never plaintext) |
-| GET | `/api/secrets/:id` | Retrieve + atomic delete (no password) |
-| GET | `/api/secrets/:id/meta` | Check if password required (does NOT consume secret) |
-| POST | `/api/secrets/:id/verify` | Password verify + retrieve + atomic delete |
+| Method | Path                      | Purpose                                                  |
+| ------ | ------------------------- | -------------------------------------------------------- |
+| POST   | `/api/secrets`            | Create secret (receives encrypted blob, never plaintext) |
+| GET    | `/api/secrets/:id`        | Retrieve + atomic delete (no password)                   |
+| GET    | `/api/secrets/:id/meta`   | Check if password required (does NOT consume secret)     |
+| POST   | `/api/secrets/:id/verify` | Password verify + retrieve + atomic delete               |
 
 ## Development Commands
 

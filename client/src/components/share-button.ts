@@ -21,15 +21,9 @@ import { showToast } from './toast.js';
  * @param title - The title for the share dialog
  * @returns A styled button element, or null if unsupported
  */
-export function createShareButton(
-  url: string,
-  title: string,
-): HTMLButtonElement | null {
+export function createShareButton(url: string, title: string): HTMLButtonElement | null {
   // Feature detection: return null if Web Share API is unavailable
-  if (
-    typeof navigator === 'undefined' ||
-    typeof navigator.share !== 'function'
-  ) {
+  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') {
     return null;
   }
 
@@ -46,16 +40,18 @@ export function createShareButton(
   const labelText = document.createTextNode('Share');
   button.appendChild(labelText);
 
-  button.addEventListener('click', async () => {
-    try {
-      await navigator.share({ title, url });
-    } catch (err: unknown) {
-      // User cancelled the share dialog -- this is normal, not an error
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
+  button.addEventListener('click', () => {
+    void (async () => {
+      try {
+        await navigator.share({ title, url });
+      } catch (err: unknown) {
+        // User cancelled the share dialog -- this is normal, not an error
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        showToast('Sharing failed. Try copying the link instead.');
       }
-      showToast('Sharing failed. Try copying the link instead.');
-    }
+    })();
   });
 
   return button;

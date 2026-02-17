@@ -39,9 +39,7 @@ export async function encrypt(plaintext: string): Promise<EncryptResult> {
   const { key, keyBase64Url } = await generateKey();
 
   // 4. Generate a fresh 96-bit IV (NIST-recommended for AES-GCM)
-  const iv = crypto.getRandomValues(
-    new Uint8Array(IV_LENGTH),
-  ) as Uint8Array<ArrayBuffer>;
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
 
   // 5. Encrypt the padded plaintext with AES-GCM
   const ciphertextBuffer = await crypto.subtle.encrypt(

@@ -63,10 +63,7 @@ describe('POST /api/secrets', () => {
 
   // Success Criterion 1b: Validation
   test('rejects missing ciphertext with 400', async () => {
-    const res = await request(app)
-      .post('/api/secrets')
-      .send({ expiresIn: '24h' })
-      .expect(400);
+    const res = await request(app).post('/api/secrets').send({ expiresIn: '24h' }).expect(400);
 
     expect(res.body.error).toBe('validation_error');
   });
@@ -115,9 +112,7 @@ describe('GET /api/secrets/:id', () => {
     const { id } = createRes.body;
 
     // Retrieve it
-    const getRes = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    const getRes = await request(app).get(`/api/secrets/${id}`).expect(200);
 
     expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
     expect(getRes.body.expiresAt).toBeDefined();
@@ -133,20 +128,14 @@ describe('GET /api/secrets/:id', () => {
     const { id } = createRes.body;
 
     // First retrieval -- should succeed
-    await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    await request(app).get(`/api/secrets/${id}`).expect(200);
 
     // Second retrieval -- should fail
-    await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(404);
+    await request(app).get(`/api/secrets/${id}`).expect(404);
   });
 
   test('rejects invalid ID format with 400', async () => {
-    const res = await request(app)
-      .get('/api/secrets/tooshort')
-      .expect(400);
+    const res = await request(app).get('/api/secrets/tooshort').expect(400);
 
     expect(res.body.error).toBe('validation_error');
   });
@@ -166,19 +155,13 @@ describe('anti-enumeration', () => {
     const { id } = createRes.body;
 
     // First GET consumes it
-    await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    await request(app).get(`/api/secrets/${id}`).expect(200);
 
     // Second GET -- consumed secret
-    const consumedRes = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(404);
+    const consumedRes = await request(app).get(`/api/secrets/${id}`).expect(404);
 
     // GET a completely made-up 21-char ID -- nonexistent secret
-    const nonexistentRes = await request(app)
-      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01')
-      .expect(404);
+    const nonexistentRes = await request(app).get('/api/secrets/xxxxxxxxxxxxxxxxxxx01').expect(404);
 
     // Response bodies must be byte-identical
     expect(consumedRes.body).toEqual(nonexistentRes.body);
@@ -203,9 +186,7 @@ describe('data destruction', () => {
     const { id } = createRes.body;
 
     // Retrieve via GET (consumes it)
-    await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    await request(app).get(`/api/secrets/${id}`).expect(200);
 
     // Verify row no longer exists in the database
     const rows = await db
@@ -301,9 +282,7 @@ describe('GET /api/secrets/:id/meta', () => {
       .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
       .expect(201);
 
-    const res = await request(app)
-      .get(`/api/secrets/${createRes.body.id}/meta`)
-      .expect(200);
+    const res = await request(app).get(`/api/secrets/${createRes.body.id}/meta`).expect(200);
 
     expect(res.body).toEqual({
       requiresPassword: true,
@@ -317,9 +296,7 @@ describe('GET /api/secrets/:id/meta', () => {
       .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
       .expect(201);
 
-    const res = await request(app)
-      .get(`/api/secrets/${createRes.body.id}/meta`)
-      .expect(200);
+    const res = await request(app).get(`/api/secrets/${createRes.body.id}/meta`).expect(200);
 
     expect(res.body).toEqual({
       requiresPassword: false,
@@ -328,9 +305,7 @@ describe('GET /api/secrets/:id/meta', () => {
   });
 
   test('returns 404 for nonexistent secret', async () => {
-    const res = await request(app)
-      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01/meta')
-      .expect(404);
+    const res = await request(app).get('/api/secrets/xxxxxxxxxxxxxxxxxxx01/meta').expect(404);
 
     expect(res.body).toEqual({
       error: 'not_found',
@@ -351,9 +326,7 @@ describe('GET /api/secrets/:id/meta', () => {
     await request(app).get(`/api/secrets/${id}/meta`).expect(200);
 
     // Secret should still be retrievable via GET /:id (non-password)
-    const getRes = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
+    const getRes = await request(app).get(`/api/secrets/${id}`).expect(200);
 
     expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
   });
@@ -369,9 +342,7 @@ describe('GET /api/secrets/:id bypass prevention', () => {
       .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
       .expect(201);
 
-    await request(app)
-      .get(`/api/secrets/${createRes.body.id}`)
-      .expect(404);
+    await request(app).get(`/api/secrets/${createRes.body.id}`).expect(404);
   });
 
   test('404 response for password-protected secret is identical to nonexistent secret', async () => {
@@ -381,14 +352,10 @@ describe('GET /api/secrets/:id bypass prevention', () => {
       .expect(201);
 
     // Password-bypass attempt
-    const bypassRes = await request(app)
-      .get(`/api/secrets/${createRes.body.id}`)
-      .expect(404);
+    const bypassRes = await request(app).get(`/api/secrets/${createRes.body.id}`).expect(404);
 
     // Nonexistent ID
-    const nonexistentRes = await request(app)
-      .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01')
-      .expect(404);
+    const nonexistentRes = await request(app).get('/api/secrets/xxxxxxxxxxxxxxxxxxx01').expect(404);
 
     // Response bodies must be identical (anti-enumeration)
     expect(bypassRes.body).toEqual(nonexistentRes.body);
@@ -474,9 +441,7 @@ describe('POST /api/secrets/:id/verify', () => {
     expect(wrong2.body.attemptsRemaining).toBe(1);
 
     // Meta should reflect decremented attempts
-    const metaRes = await request(app)
-      .get(`/api/secrets/${id}/meta`)
-      .expect(200);
+    const metaRes = await request(app).get(`/api/secrets/${id}/meta`).expect(200);
     expect(metaRes.body.passwordAttemptsRemaining).toBe(1);
   });
 
@@ -489,27 +454,16 @@ describe('POST /api/secrets/:id/verify', () => {
     const { id } = createRes.body;
 
     // Wrong attempt 1
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-1' })
-      .expect(403);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-1' }).expect(403);
 
     // Wrong attempt 2
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-2' })
-      .expect(403);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-2' }).expect(403);
 
     // Wrong attempt 3 -- triggers auto-destroy, returns 404 (0 attempts = destroyed)
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-3' })
-      .expect(404);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-3' }).expect(404);
 
     // Meta should return 404 (secret is gone)
-    await request(app)
-      .get(`/api/secrets/${id}/meta`)
-      .expect(404);
+    await request(app).get(`/api/secrets/${id}/meta`).expect(404);
 
     // Direct DB: row no longer exists
     const rows = await db
@@ -584,18 +538,9 @@ describe('anti-enumeration (password)', () => {
     const { id } = createRes.body;
 
     // Destroy via 3 wrong attempts
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-1' })
-      .expect(403);
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-2' })
-      .expect(403);
-    await request(app)
-      .post(`/api/secrets/${id}/verify`)
-      .send({ password: 'wrong-3' })
-      .expect(404);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-1' }).expect(403);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-2' }).expect(403);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-3' }).expect(404);
 
     // POST verify to destroyed ID
     const destroyedVerifyRes = await request(app)
@@ -613,9 +558,7 @@ describe('anti-enumeration (password)', () => {
     expect(destroyedVerifyRes.body).toEqual(fakeVerifyRes.body);
 
     // Also verify via meta endpoint
-    const destroyedMetaRes = await request(app)
-      .get(`/api/secrets/${id}/meta`)
-      .expect(404);
+    const destroyedMetaRes = await request(app).get(`/api/secrets/${id}/meta`).expect(404);
 
     const fakeMetaRes = await request(app)
       .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01/meta')

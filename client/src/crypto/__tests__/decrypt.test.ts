@@ -73,9 +73,7 @@ describe('wrong key rejection', () => {
   it('throws when decrypting with a different key', async () => {
     const result = await encrypt('secret data');
     const { keyBase64Url: wrongKey } = await generateKey();
-    await expect(
-      decrypt(result.payload.ciphertext, wrongKey),
-    ).rejects.toThrow('Decryption failed');
+    await expect(decrypt(result.payload.ciphertext, wrongKey)).rejects.toThrow('Decryption failed');
   });
 
   it('error does not expose internal details', async () => {
@@ -105,9 +103,7 @@ describe('tampered ciphertext', () => {
     tampered[targetIndex] = tampered[targetIndex] ^ 0x01;
 
     const tamperedBase64 = uint8ArrayToBase64(tampered);
-    await expect(
-      decrypt(tamperedBase64, result.keyBase64Url),
-    ).rejects.toThrow('Decryption failed');
+    await expect(decrypt(tamperedBase64, result.keyBase64Url)).rejects.toThrow('Decryption failed');
   });
 });
 
@@ -121,9 +117,7 @@ describe('tampered IV', () => {
     tampered[5] = tampered[5] ^ 0x01;
 
     const tamperedBase64 = uint8ArrayToBase64(tampered);
-    await expect(
-      decrypt(tamperedBase64, result.keyBase64Url),
-    ).rejects.toThrow('Decryption failed');
+    await expect(decrypt(tamperedBase64, result.keyBase64Url)).rejects.toThrow('Decryption failed');
   });
 });
 

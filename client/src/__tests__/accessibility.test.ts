@@ -29,7 +29,7 @@ afterEach(() => {
 describe('Create page accessibility', () => {
   it('has no accessibility violations', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
-    await renderCreatePage(container);
+    renderCreatePage(container);
 
     const results = await axe(container, {
       rules: { 'color-contrast': { enabled: false } },
@@ -39,7 +39,7 @@ describe('Create page accessibility', () => {
 
   it('"How It Works" section has proper heading hierarchy', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
-    await renderCreatePage(container);
+    renderCreatePage(container);
 
     // h1 exists (page heading)
     expect(container.querySelector('h1')).not.toBeNull();
@@ -57,7 +57,7 @@ describe('Create page accessibility', () => {
 
   it('"How It Works" section is labeled by its heading', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
-    await renderCreatePage(container);
+    renderCreatePage(container);
 
     const section = container.querySelector('section[aria-labelledby="how-it-works-heading"]');
     expect(section).not.toBeNull();
@@ -65,7 +65,7 @@ describe('Create page accessibility', () => {
 
   it('"Why Trust Us?" section has proper heading hierarchy', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
-    await renderCreatePage(container);
+    renderCreatePage(container);
 
     // h2 for "Why Trust Us?"
     const h2 = container.querySelector('h2#why-trust-us-heading');

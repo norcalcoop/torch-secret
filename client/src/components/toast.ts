@@ -61,7 +61,13 @@ export function showToast(message: string, durationMs: number = 3000): void {
       toast.remove();
     } else {
       toast.classList.add('opacity-0', 'transition-opacity', 'duration-200');
-      toast.addEventListener('transitionend', () => { toast.remove(); }, { once: true });
+      toast.addEventListener(
+        'transitionend',
+        () => {
+          toast.remove();
+        },
+        { once: true },
+      );
     }
   }, durationMs);
 }
