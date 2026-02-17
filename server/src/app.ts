@@ -64,6 +64,13 @@ export function buildApp() {
   // Mount API routes (factory creates fresh router + rate limiter per app)
   app.use('/api/secrets', createSecretsRouter(redisClient));
 
+  // API catch-all: return JSON 404 for any unmatched /api/* request.
+  // MUST come after all API routes and before the SPA catch-all to prevent
+  // API requests from falling through to the HTML response.
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'not_found' });
+  });
+
   // Serve built frontend assets in production (or when client/dist exists)
   const clientDistPath = resolve(import.meta.dirname, '../../client/dist');
   if (existsSync(clientDistPath)) {
