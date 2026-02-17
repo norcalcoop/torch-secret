@@ -7,6 +7,7 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   REDIS_URL: z.string().url().optional(),
+  FORCE_HTTPS: z.coerce.boolean().default(false),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

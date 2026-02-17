@@ -35,6 +35,7 @@ services:
       DATABASE_URL: postgresql://secureshare:secureshare@db:5432/secureshare
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
+      FORCE_HTTPS: "false"
       PORT: "3000"
       LOG_LEVEL: info
     depends_on:

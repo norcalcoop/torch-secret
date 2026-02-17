@@ -53,7 +53,7 @@ export function createHelmetMiddleware() {
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         baseUri: ["'self'"],
-        upgradeInsecureRequests: [],
+        ...(env.FORCE_HTTPS ? { upgradeInsecureRequests: [] } : {}),
       },
     },
     // Disable HSTS in non-production to prevent browser lockout without TLS
@@ -71,13 +71,15 @@ export function createHelmetMiddleware() {
 /**
  * HTTPS redirect middleware.
  *
- * In production, redirects HTTP requests to HTTPS with a 301.
- * Skips in development/test to avoid redirect loops without TLS.
+ * Redirects HTTP requests to HTTPS with a 301 when FORCE_HTTPS is true.
+ * Decoupled from NODE_ENV so Docker Compose can run production mode
+ * without HTTPS redirect (FORCE_HTTPS=false), while Render.com
+ * enables it explicitly (FORCE_HTTPS=true).
  * Relies on `trust proxy` being set so `req.secure` correctly
  * reflects the X-Forwarded-Proto header from the reverse proxy.
  */
 export function httpsRedirect(req: Request, res: Response, next: NextFunction): void {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!env.FORCE_HTTPS) {
     next();
     return;
   }
