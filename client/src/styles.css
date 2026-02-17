@@ -9,91 +9,99 @@
 
 /* =============================================
  * Light theme (default)
- * OKLCH perceptual color space -- lower lightness
- * for accent/status (contrast on light bg), higher
- * lightness for backgrounds.
+ * sRGB hex values derived from OKLCH perceptual
+ * color space. Using hex to ensure axe-core WCAG
+ * contrast checks compute correctly across all
+ * browsers (axe-core 4.x has incomplete OKLCH
+ * color conversion support).
+ *
+ * WCAG 2.1 AA compliance: all text and interactive
+ * colors achieve >= 4.5:1 contrast ratio against
+ * their backgrounds.
  * ============================================= */
 :root {
   color-scheme: light;
 
   /* Background & Surfaces */
-  --ds-color-bg: oklch(0.98 0.005 270);
-  --ds-color-surface: oklch(1 0 0);
-  --ds-color-surface-raised: oklch(0.97 0.005 270);
-  --ds-color-surface-overlay: oklch(0.94 0.008 270);
+  --ds-color-bg: #f7f8fc; /* oklch(0.98 0.005 270) */
+  --ds-color-surface: #ffffff; /* oklch(1 0 0) */
+  --ds-color-surface-raised: #f4f5f9; /* oklch(0.97 0.005 270) */
+  --ds-color-surface-overlay: #e9ebf1; /* oklch(0.94 0.008 270) */
 
   /* Text hierarchy */
-  --ds-color-text-primary: oklch(0.2 0.02 270);
-  --ds-color-text-secondary: oklch(0.35 0.025 270);
-  --ds-color-text-tertiary: oklch(0.5 0.03 270);
-  --ds-color-text-muted: oklch(0.55 0.025 270);
+  --ds-color-text-primary: #12161f; /* oklch(0.2 0.02 270) */
+  --ds-color-text-secondary: #353a48; /* oklch(0.35 0.025 270) */
+  --ds-color-text-tertiary: #5c6375; /* oklch(0.5 0.03 270) */
+  --ds-color-text-muted: #5d6372; /* oklch(0.50 0.025 270) */
 
-  /* Interactive accent (electric blue) */
-  --ds-color-accent: oklch(0.55 0.2 255);
-  --ds-color-accent-hover: oklch(0.48 0.22 260);
+  /* Interactive accent (electric blue -- WCAG AA: 7.65:1 vs white) */
+  --ds-color-accent: #154fac; /* oklch(0.45 0.16 260) */
+  --ds-color-accent-hover: #173796; /* oklch(0.38 0.16 265) */
 
   /* Borders */
-  --ds-color-border: oklch(0.88 0.01 270);
+  --ds-color-border: #d5d7de; /* oklch(0.88 0.01 270) */
 
-  /* Status */
-  --ds-color-danger: oklch(0.55 0.22 25);
-  --ds-color-success: oklch(0.52 0.18 150);
-  --ds-color-warning: oklch(0.6 0.18 70);
+  /* Status (WCAG AA compliant: all >= 4.5:1 on light backgrounds) */
+  --ds-color-danger: #a9131f; /* oklch(0.47 0.18 25) -- 6.4:1 vs white */
+  --ds-color-success: #195c2e; /* oklch(0.42 0.10 150) -- 7.8:1 vs white */
+  --ds-color-warning: #7e4f04; /* oklch(0.47 0.10 70) -- 6.8:1 vs white */
 
   /* Icons */
-  --ds-color-icon: oklch(0.5 0.03 270);
+  --ds-color-icon: #5c6375; /* oklch(0.5 0.03 270) */
 
   /* Dot-grid background (very faint, "barely there" texture) */
-  --ds-color-dot-grid: oklch(0.7 0.01 270 / 0.12);
+  --ds-color-dot-grid: rgb(173 176 186 / 0.12); /* oklch(0.7 0.01 270 / 0.12) */
 
   /* Terminal code block (muted sage green, not bright phosphor) */
-  --ds-color-terminal-bg: oklch(0.97 0.005 160);
-  --ds-color-terminal-text: oklch(0.35 0.06 155);
-  --ds-color-terminal-header: oklch(0.94 0.008 160);
+  --ds-color-terminal-bg: #f2f6f4; /* oklch(0.97 0.005 160) */
+  --ds-color-terminal-text: #1d442c; /* oklch(0.35 0.06 155) */
+  --ds-color-terminal-header: #e7ede9; /* oklch(0.94 0.008 160) */
 }
 
 /* =============================================
  * Dark theme
  * Applied via .dark class on <html> (set by theme
  * toggle or FOWT prevention script).
+ * sRGB hex values derived from OKLCH for consistent
+ * axe-core accessibility scanning.
  * ============================================= */
 .dark {
   color-scheme: dark;
 
   /* Background & Surfaces */
-  --ds-color-bg: oklch(0.23 0.038 283);
-  --ds-color-surface: oklch(0.27 0.055 282);
-  --ds-color-surface-raised: oklch(0.3 0.057 282);
-  --ds-color-surface-overlay: oklch(0.34 0.059 283);
+  --ds-color-bg: #1a1a2e; /* oklch(0.23 0.038 283) */
+  --ds-color-surface: #222240; /* oklch(0.27 0.055 282) */
+  --ds-color-surface-raised: #292a4a; /* oklch(0.3 0.057 282) */
+  --ds-color-surface-overlay: #343456; /* oklch(0.34 0.059 283) */
 
   /* Text hierarchy */
-  --ds-color-text-primary: oklch(0.96 0.02 286);
-  --ds-color-text-secondary: oklch(0.84 0.033 286);
-  --ds-color-text-tertiary: oklch(0.67 0.047 285);
-  --ds-color-text-muted: oklch(0.65 0.053 285);
+  --ds-color-text-primary: #f0f0ff; /* oklch(0.96 0.02 286) */
+  --ds-color-text-secondary: #c8c8e0; /* oklch(0.84 0.033 286) */
+  --ds-color-text-tertiary: #9292b2; /* oklch(0.67 0.047 285) */
+  --ds-color-text-muted: #8b8baf; /* oklch(0.65 0.053 285) */
 
   /* Interactive accent (electric blue) */
-  --ds-color-accent: oklch(0.71 0.143 255);
-  --ds-color-accent-hover: oklch(0.62 0.188 260);
+  --ds-color-accent: #60a4f9; /* oklch(0.71 0.143 255) */
+  --ds-color-accent-hover: #3b81f5; /* oklch(0.62 0.188 260) */
 
   /* Borders */
-  --ds-color-border: oklch(0.36 0.058 283);
+  --ds-color-border: #39395b; /* oklch(0.36 0.058 283) */
 
   /* Status */
-  --ds-color-danger: oklch(0.64 0.208 25);
-  --ds-color-success: oklch(0.72 0.192 150);
-  --ds-color-warning: oklch(0.77 0.165 70);
+  --ds-color-danger: #f04546; /* oklch(0.64 0.208 25) */
+  --ds-color-success: #1bc45e; /* oklch(0.72 0.192 150) */
+  --ds-color-warning: #f69e0b; /* oklch(0.77 0.165 70) */
 
   /* Icons */
-  --ds-color-icon: oklch(0.67 0.047 285);
+  --ds-color-icon: #9292b2; /* oklch(0.67 0.047 285) */
 
   /* Dot-grid background */
-  --ds-color-dot-grid: oklch(0.36 0.058 283 / 0.15);
+  --ds-color-dot-grid: rgb(57 57 91 / 0.15); /* oklch(0.36 0.058 283 / 0.15) */
 
   /* Terminal code block */
-  --ds-color-terminal-bg: oklch(0.2 0.02 160);
-  --ds-color-terminal-text: oklch(0.68 0.06 155);
-  --ds-color-terminal-header: oklch(0.25 0.025 160);
+  --ds-color-terminal-bg: #0e1913; /* oklch(0.2 0.02 160) */
+  --ds-color-terminal-text: #7ba488; /* oklch(0.68 0.06 155) */
+  --ds-color-terminal-header: #17251d; /* oklch(0.25 0.025 160) */
 }
 
 /* =============================================
@@ -184,11 +192,22 @@
 /* =============================================
  * Dot-grid background pattern
  * Sparse (44px), very faint -- engineering-grade
- * texture applied to the content area only.
+ * texture applied via pseudo-element so that
+ * axe-core can determine the parent's opaque
+ * background-color for WCAG contrast checks.
  * ============================================= */
 .dot-grid-bg {
+  position: relative;
+}
+
+.dot-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background-image: radial-gradient(circle, var(--ds-color-dot-grid) 1px, transparent 1px);
   background-size: 44px 44px;
+  pointer-events: none;
+  z-index: -1;
 }
 
 @keyframes toast-in {
