@@ -35,8 +35,7 @@ COPY shared/ ./shared/
 COPY tsconfig.json ./
 COPY server/tsconfig.json ./server/tsconfig.json
 
-# Copy Drizzle config and migrations for db:migrate
-COPY drizzle.config.ts ./
+# Copy Drizzle SQL migrations for ORM migrator (migrate.ts)
 COPY drizzle/ ./drizzle/
 
 # Copy built frontend from build stage
@@ -44,7 +43,7 @@ COPY --from=build /app/client/dist ./client/dist
 
 # Docker HEALTHCHECK (node:24-slim has no curl/wget)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)throw new Error()}).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:3000/api/health',{headers:{'X-Forwarded-Proto':'https'}}).then(r=>{if(!r.ok)throw new Error()}).catch(()=>process.exit(1))"
 
 # Switch to non-root user (built into node images, UID 1000)
 USER node
