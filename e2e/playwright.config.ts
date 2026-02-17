@@ -21,7 +21,7 @@ export default defineConfig({
     timeout: 30_000,
     stdout: 'pipe',
     stderr: 'pipe',
-    env: { NODE_ENV: 'test', FORCE_HTTPS: 'false' },
+    env: { NODE_ENV: 'test', FORCE_HTTPS: 'false', E2E_TEST: 'true' },
   },
 
   projects: [
