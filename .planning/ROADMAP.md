@@ -44,7 +44,7 @@ See [v2.0 Roadmap Archive](milestones/v2.0-ROADMAP.md) for full phase details.
 
 - [x] **Phase 15: Code Quality Foundation** - ESLint + Prettier + Husky pre-commit hooks + TypeScript strict-mode fixes (completed 2026-02-17)
 - [x] **Phase 16: Docker & Local Development** - Dockerfile + docker-compose + health check endpoint + Render deployment config (gap closure in progress) (completed 2026-02-17)
-- [ ] **Phase 17: E2E Testing with Playwright** - Browser tests covering full user journeys, error states, accessibility, and multi-browser
+- [x] **Phase 17: E2E Testing with Playwright** - Browser tests covering full user journeys, error states, accessibility, and multi-browser (completed 2026-02-17)
 - [ ] **Phase 18: CI/CD Pipeline** - GitHub Actions workflow with lint, test, build, E2E, and auto-deploy to Render
 - [ ] **Phase 19: GitHub Repository Polish** - README with screenshots, issue/PR templates, CONTRIBUTING guide, CHANGELOG, and release
 
@@ -90,7 +90,7 @@ Plans:
   3. E2E tests verify the password-protected flow (create with password, attempt reveal, enter password, see secret)
   4. E2E tests verify error states (already viewed secret shows error, expired secret shows error, invalid link shows error)
   5. Automated axe-core accessibility checks run within E2E tests and report zero critical violations
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 17-01-PLAN.md — Install Playwright, configure project infrastructure, create API fixtures with PADME encryption, write create-share-reveal serial test
 - [ ] 17-02-PLAN.md — Write password-protected flow, error states, and accessibility E2E tests
@@ -140,6 +140,6 @@ Plans:
 | 14. SEO Router Integration | v2.0 | 2/2 | Complete | 2026-02-16 |
 | 15. Code Quality Foundation | v3.0 | 3/3 | Complete | 2026-02-17 |
 | 16. Docker & Local Development | v3.0 | 4/4 | Complete | 2026-02-17 |
-| 17. E2E Testing with Playwright | 1/2 | In Progress|  | - |
+| 17. E2E Testing with Playwright | 2/2 | Complete   | 2026-02-17 | - |
 | 18. CI/CD Pipeline | v3.0 | 0/? | Not started | - |
 | 19. GitHub Repository Polish | v3.0 | 0/? | Not started | - |

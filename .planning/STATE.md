@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 17: E2E Testing with Playwright (IN PROGRESS)
+**Current focus:** v3.0 Production-Ready Delivery — Phase 17: E2E Testing with Playwright (COMPLETE)
 
 ## Current Position
 
-Phase: 17 (third of 5 in v3.0, 17 of 19 overall) -- IN PROGRESS
-Plan: 1 of 2 in current phase (17-01 complete)
-Status: Executing
-Last activity: 2026-02-17 — Completed 17-01 (E2E Testing Infrastructure + Create-Reveal Test)
+Phase: 17 (third of 5 in v3.0, 17 of 19 overall) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-02-17 — Completed 17-02 (Password, Error States, Accessibility E2E Tests)
 
-Progress: [==============================] 92% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 1/2 phase 17)
+Progress: [==============================] 95% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17)
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [==============================] 92% (36/36 v1+v2 plans complete, 3/3 
 | 16-03 | 1min | 1 | 1 |
 | 16-04 | 2min | 2 | 6 |
 | 17-01 | 4min | 2 | 10 |
+| 17-02 | 28min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - workers: 1, fullyParallel: false for destructive one-time-view secret tests
 - PADME padding replicated in e2e crypto-helpers to match browser encrypt/decrypt pipeline
 - Dedicated ESLint e2e rule block with globals.node and relaxed no-unsafe-* rules
+- sRGB hex colors in CSS custom properties instead of OKLCH (axe-core 4.x OKLCH conversion unreliable)
+- Dot-grid background as ::before pseudo-element for clean axe-core background resolution
+- E2E_TEST env var for rate limit override (avoids breaking Vitest rate limit tests)
 
 ### Known Tech Debt
 
@@ -92,5 +96,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 17-01-PLAN.md (E2E infrastructure + create-reveal test)
-Resume: Continue with 17-02-PLAN.md (password, expiration, accessibility, error E2E tests)
+Stopped at: Completed 17-02-PLAN.md (password, error states, accessibility E2E tests)
+Resume: Continue with Phase 18 (CI/CD pipeline)

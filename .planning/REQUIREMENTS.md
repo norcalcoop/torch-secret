@@ -27,11 +27,11 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 
 - [x] **TEST-01**: Playwright configured with separate e2e/ directory and *.spec.ts naming (no Vitest collision)
 - [x] **TEST-02**: E2E test covers full create → share → reveal user journey
-- [ ] **TEST-03**: E2E test covers password-protected secret flow (create with password, reveal with password)
-- [ ] **TEST-04**: E2E test covers error states (already viewed, expired, invalid link)
+- [x] **TEST-03**: E2E test covers password-protected secret flow (create with password, reveal with password)
+- [x] **TEST-04**: E2E test covers error states (already viewed, expired, invalid link)
 - [x] **TEST-05**: E2E tests use API fixtures for secret creation (one-time secrets are destructive)
 - [x] **TEST-06**: Playwright runs across Chromium, Firefox, and WebKit in CI
-- [ ] **TEST-07**: Automated accessibility checks (axe-core) run in Playwright E2E tests
+- [x] **TEST-07**: Automated accessibility checks (axe-core) run in Playwright E2E tests
 
 ### CI/CD Pipeline
 
@@ -86,11 +86,11 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 | DOCK-05 | Phase 16 | Pending |
 | TEST-01 | Phase 17 | Complete |
 | TEST-02 | Phase 17 | Complete |
-| TEST-03 | Phase 17 | Pending |
-| TEST-04 | Phase 17 | Pending |
+| TEST-03 | Phase 17 | Complete |
+| TEST-04 | Phase 17 | Complete |
 | TEST-05 | Phase 17 | Complete |
 | TEST-06 | Phase 17 | Complete |
-| TEST-07 | Phase 17 | Pending |
+| TEST-07 | Phase 17 | Complete |
 | CICD-01 | Phase 18 | Pending |
 | CICD-02 | Phase 18 | Pending |
 | CICD-03 | Phase 18 | Pending |
