@@ -2,6 +2,9 @@ import { type Store, rateLimit } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { Redis } from 'ioredis';
 
+/** In test mode, raise rate limits to avoid blocking E2E multi-browser test runs. */
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 /**
  * Create a RedisStore for rate limiting when a Redis client is provided,
  * otherwise return undefined to use the default MemoryStore.
@@ -33,7 +36,7 @@ function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
 export function createSecretLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    limit: 10, // 10 requests per window per IP
+    limit: isTestEnv ? 1000 : 10, // 10 requests per window per IP (1000 in test)
     standardHeaders: 'draft-7', // RateLimit-* headers (IETF draft-7)
     legacyHeaders: false, // No X-RateLimit-* headers
     statusCode: 429,
@@ -62,7 +65,7 @@ export function createSecretLimiter(redisClient?: Redis) {
 export function verifySecretLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 15, // 15 attempts per window per IP
+    limit: isTestEnv ? 1000 : 15, // 15 attempts per window per IP (1000 in test)
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     statusCode: 429,
