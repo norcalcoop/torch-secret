@@ -1,0 +1,53 @@
+# ============================================================
+# Stage 1: Install ALL dependencies (dev + prod)
+# Needed for: Vite frontend build, native modules (argon2)
+# ============================================================
+FROM node:24-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ============================================================
+# Stage 2: Build frontend assets with Vite
+# ============================================================
+FROM deps AS build
+WORKDIR /app
+COPY . .
+RUN npm run build:client
+
+# ============================================================
+# Stage 3: Production image (minimal)
+# - Only production dependencies (no vite, eslint, vitest)
+# - Non-root user (node, UID 1000)
+# - Includes tsx for running TypeScript server directly
+# ============================================================
+FROM node:24-slim AS production
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Install production dependencies only
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# Copy server source (TypeScript, executed via tsx at runtime)
+COPY server/ ./server/
+COPY shared/ ./shared/
+COPY tsconfig.json ./
+COPY server/tsconfig.json ./server/tsconfig.json
+
+# Copy Drizzle config and migrations for db:migrate
+COPY drizzle.config.ts ./
+COPY drizzle/ ./drizzle/
+
+# Copy built frontend from build stage
+COPY --from=build /app/client/dist ./client/dist
+
+# Docker HEALTHCHECK (node:24-slim has no curl/wget)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)throw new Error()}).catch(()=>process.exit(1))"
+
+# Switch to non-root user (built into node images, UID 1000)
+USER node
+
+EXPOSE 3000
+CMD ["node", "--import", "tsx", "server/src/server.ts"]
