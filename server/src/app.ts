@@ -10,6 +10,7 @@ import {
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createSecretsRouter } from './routes/secrets.js';
+import { healthRouter } from './routes/health.js';
 import { env } from './config/env.js';
 
 /**
@@ -56,6 +57,9 @@ export function buildApp() {
 
   // Parse JSON bodies with explicit size limit (100kb prevents abuse)
   app.use(express.json({ limit: '100kb' }));
+
+  // Health check -- before rate-limited routes
+  app.use('/api/health', healthRouter);
 
   // Mount API routes (factory creates fresh router + rate limiter per app)
   app.use('/api/secrets', createSecretsRouter(redisClient));
