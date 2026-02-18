@@ -6,11 +6,11 @@ services:
       POSTGRES_PASSWORD: secureshare
       POSTGRES_DB: secureshare
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U secureshare"]
+      test: ['CMD-SHELL', 'pg_isready -U secureshare']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -19,9 +19,9 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,20 +30,25 @@ services:
     build: .
     init: true
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       DATABASE_URL: postgresql://secureshare:secureshare@db:5432/secureshare
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
-      FORCE_HTTPS: "false"
-      PORT: "3000"
+      FORCE_HTTPS: 'false'
+      PORT: '3000'
       LOG_LEVEL: info
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["sh", "-c", "node --import tsx server/src/db/migrate.ts && node --import tsx server/src/server.ts"]
+    command:
+      [
+        'sh',
+        '-c',
+        'node --import tsx server/src/db/migrate.ts && node --import tsx server/src/server.ts',
+      ]
 
 volumes:
   pgdata:

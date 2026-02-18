@@ -29,7 +29,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: FORCE_HTTPS
-        value: "true"
+        value: 'true'
       - key: LOG_LEVEL
         value: info
 
@@ -46,4 +46,4 @@ databases:
   - name: secureshare-db
     plan: free
     region: oregon
-    postgresMajorVersion: "17"
+    postgresMajorVersion: '17'
