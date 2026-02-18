@@ -5,6 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-02-15)
 - ✅ **v2.0 Developer-Grade UI & SEO** — Phases 9-14 (shipped 2026-02-16)
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
+- 🚧 **v4.0 Hybrid Anonymous + Account Model** — Phases 21-27 (in progress)
 
 ## Phases
 
@@ -52,6 +53,100 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 
 </details>
 
+### 🚧 v4.0 Hybrid Anonymous + Account Model (In Progress)
+
+**Milestone Goal:** Evolve SecureShare into a hybrid model — anonymous users get instant secret creation with auto-generated passphrases, while optional accounts unlock a secret dashboard, email notifications, and a progressive conversion funnel. Every feature preserves the zero-knowledge invariant: no log, DB record, or analytics event may contain both a user ID and a secret ID together.
+
+- [ ] **Phase 21: Schema Foundation** - Add users table and nullable user_id FK on secrets; apply migration safely
+- [ ] **Phase 22: Authentication** - Better Auth with email/password, OAuth (Google + GitHub), sessions, email verification
+- [ ] **Phase 23: Secret Dashboard** - Authenticated user's secret history, labels, status display, pre-view deletion
+- [ ] **Phase 24: EFF Diceware Passphrase Generator** - Client-side 4-word passphrase generation with two-channel UI
+- [ ] **Phase 25: PostHog Analytics** - Privacy-safe funnel tracking with mandatory URL fragment sanitization
+- [ ] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend
+- [ ] **Phase 27: Conversion Prompts + Rate Limits + Legal Pages** - Tightened anonymous limits, inline prompts, Privacy Policy, ToS
+
+## Phase Details
+
+### Phase 21: Schema Foundation
+**Goal**: The database schema is extended to support user accounts and secret ownership metadata, with all migrations applied safely and the zero-knowledge invariant formally documented as a hard design constraint before any auth code is written
+**Depends on**: Phase 20 (v3.0 complete)
+**Requirements**: None directly (infrastructure enabling Phases 22-27)
+**Success Criteria** (what must be TRUE):
+  1. `users` table exists in production schema with Better Auth-compatible columns
+  2. `secrets` table has a nullable `user_id` foreign key column — existing anonymous rows remain valid with `user_id = NULL`
+  3. Migration applies without downtime to existing data (additive-only change)
+  4. Drizzle bug #4147 workaround applied: column addition and FK constraint are in separate migration steps if generated together
+  5. Zero-knowledge invariant is documented: no code path may create a log line, analytics event, or DB record containing both `userId` and `secretId` in the same record
+**Plans**: TBD
+
+### Phase 22: Authentication
+**Goal**: Users can create accounts, verify their email, log in with email/password or OAuth (Google and GitHub), maintain sessions across browser refreshes, reset forgotten passwords, and log out — with all security invariants correctly implemented
+**Depends on**: Phase 21
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08
+**Success Criteria** (what must be TRUE):
+  1. User can register with email and password and receives a verification email before account features unlock
+  2. User can log in with email/password and remain logged in across browser refreshes and new tabs
+  3. User can sign in with Google or GitHub and land on their dashboard without creating a separate password
+  4. User can request a password reset and set a new password via the emailed link
+  5. User can log out from any page and the session is fully destroyed (cannot re-access dashboard without logging in again)
+**Plans**: TBD
+
+### Phase 23: Secret Dashboard
+**Goal**: Authenticated users can view their secret history with metadata only, add labels to new secrets, and delete unviewed secrets before they are accessed — while the dashboard never exposes secret content, ciphertext, or encryption keys
+**Depends on**: Phase 22
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05
+**Success Criteria** (what must be TRUE):
+  1. Authenticated user can navigate to their dashboard and see a list of secrets they created (label, created_at, expires_at, status, notification setting)
+  2. Each secret displays one of four correct statuses: Active (unviewed, not expired), Viewed, Expired, or Deleted
+  3. Authenticated user can add an optional label when creating a secret and that label appears in the dashboard list
+  4. Authenticated user can delete an Active secret from the dashboard before it has been viewed — the deletion is permanent and immediate
+  5. Dashboard API never returns ciphertext, the encryption key fragment, or the recipient's IP address in any response
+**Plans**: TBD
+
+### Phase 24: EFF Diceware Passphrase Generator
+**Goal**: All users (anonymous and authenticated) can generate a secure 4-word EFF Diceware passphrase client-side when creating a secret, with one-click regeneration and separate copy, plus two-channel security guidance on the confirmation page
+**Depends on**: Phase 21 (no auth dependency — works for anonymous users too)
+**Requirements**: PASS-01, PASS-02, PASS-03, PASS-04
+**Success Criteria** (what must be TRUE):
+  1. When creating a secret, a 4-word EFF Diceware passphrase is generated automatically using `crypto.getRandomValues` — no server call required
+  2. User can click a regenerate button to get a fresh passphrase without losing their typed secret content
+  3. On the confirmation page, user can copy the passphrase independently from the share link with a single click
+  4. Confirmation page displays two-channel security guidance explaining that the link and passphrase should be sent via separate channels
+**Plans**: TBD
+
+### Phase 25: PostHog Analytics
+**Goal**: The application tracks funnel events via PostHog without collecting any PII, secret content, or encryption keys — with URL fragment sanitization enforced at initialization so encryption keys on reveal-page URLs are never transmitted to PostHog servers
+**Depends on**: Phase 22 (identified user events require req.user from auth)
+**Requirements**: ANLT-01, ANLT-02, ANLT-03
+**Success Criteria** (what must be TRUE):
+  1. Funnel events (secret created, secret viewed, user registered, prompt shown, account created) are captured in PostHog and visible in the project dashboard
+  2. The `$current_url` and `$referrer` properties in every PostHog event have the URL fragment (`#...`) stripped — verified by inspecting a reveal-page event in the PostHog event explorer showing no key material in any property
+  3. Authenticated users are identified in PostHog by their internal user ID (not email, name, or any other PII) after login, enabling funnel analysis across anonymous and authenticated sessions
+**Plans**: TBD
+
+### Phase 26: Email Notifications
+**Goal**: Authenticated users can opt in to receive a transactional email via Resend when a specific secret is viewed and destroyed — the notification confirms permanent deletion without including secret content, the recipient's IP address, or the encryption key
+**Depends on**: Phase 23 (dashboard metadata schema and user context), Phase 22 (auth)
+**Requirements**: NOTF-01, NOTF-02, NOTF-03
+**Success Criteria** (what must be TRUE):
+  1. Authenticated user sees a per-secret notification toggle when creating a secret — it is off by default and only available to logged-in users
+  2. When an opted-in secret is viewed and destroyed, the account owner receives a transactional email via Resend within a reasonable time
+  3. The notification email confirms the secret was viewed and permanently deleted without including the secret text, the encryption key, the viewer's IP address, or the secret label (unless the user explicitly opted in to label inclusion)
+**Plans**: TBD
+
+### Phase 27: Conversion Prompts + Rate Limits + Legal Pages
+**Goal**: Anonymous users face tightened rate limits with clear upsell copy directing them toward free accounts, authenticated users get higher limits and extended expiration, inline conversion prompts appear at three natural moments without blocking the core create flow, and Privacy Policy and Terms of Service pages are accessible at canonical URLs
+**Depends on**: Phase 22 (account upgrade path must be solid before limits tighten), Phase 25 (PostHog for prompt effectiveness measurement)
+**Requirements**: CONV-01, CONV-02, CONV-03, CONV-04, CONV-05, CONV-06, LEGAL-01, LEGAL-02
+**Success Criteria** (what must be TRUE):
+  1. Anonymous users are limited to 3 secrets/hour and 10 secrets/day, and can only set expiration up to 1 hour — these limits are enforced server-side with versioned Redis keys so existing counters are not inherited
+  2. Authenticated users can create up to 20 secrets/day and set expiration up to 7 days
+  3. After their first secret creation, anonymous users see a non-blocking inline prompt on the confirmation page mentioning the account benefit (not a modal, does not interrupt the create flow)
+  4. After their third secret creation, anonymous users see a benefit-focused upsell prompt on the confirmation page highlighting dashboard, notifications, and higher limits
+  5. When an anonymous user hits the rate limit, the 429 response includes inline upsell copy and a link to create a free account — not just a generic error message
+  6. Privacy Policy is accessible at `/privacy` and Terms of Service is accessible at `/terms`, both with correct noindex meta tags
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -76,3 +171,10 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 | 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
 | 19. GitHub Repository Polish | v3.0 | 3/3 | Complete | 2026-02-18 |
 | 20. Fix Multi-Browser CI | v3.0 | 1/1 | Complete | 2026-02-18 |
+| 21. Schema Foundation | v4.0 | 0/TBD | Not started | - |
+| 22. Authentication | v4.0 | 0/TBD | Not started | - |
+| 23. Secret Dashboard | v4.0 | 0/TBD | Not started | - |
+| 24. EFF Diceware Passphrase Generator | v4.0 | 0/TBD | Not started | - |
+| 25. PostHog Analytics | v4.0 | 0/TBD | Not started | - |
+| 26. Email Notifications | v4.0 | 0/TBD | Not started | - |
+| 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 0/TBD | Not started | - |

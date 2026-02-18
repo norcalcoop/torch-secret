@@ -107,43 +107,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PASS-01 | — | Pending |
-| PASS-02 | — | Pending |
-| PASS-03 | — | Pending |
-| PASS-04 | — | Pending |
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| AUTH-06 | — | Pending |
-| AUTH-07 | — | Pending |
-| AUTH-08 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
-| NOTF-01 | — | Pending |
-| NOTF-02 | — | Pending |
-| NOTF-03 | — | Pending |
-| ANLT-01 | — | Pending |
-| ANLT-02 | — | Pending |
-| ANLT-03 | — | Pending |
-| CONV-01 | — | Pending |
-| CONV-02 | — | Pending |
-| CONV-03 | — | Pending |
-| CONV-04 | — | Pending |
-| CONV-05 | — | Pending |
-| CONV-06 | — | Pending |
-| LEGAL-01 | — | Pending |
-| LEGAL-02 | — | Pending |
+| PASS-01 | Phase 24 | Pending |
+| PASS-02 | Phase 24 | Pending |
+| PASS-03 | Phase 24 | Pending |
+| PASS-04 | Phase 24 | Pending |
+| AUTH-01 | Phase 22 | Pending |
+| AUTH-02 | Phase 22 | Pending |
+| AUTH-03 | Phase 22 | Pending |
+| AUTH-04 | Phase 22 | Pending |
+| AUTH-05 | Phase 22 | Pending |
+| AUTH-06 | Phase 22 | Pending |
+| AUTH-07 | Phase 22 | Pending |
+| AUTH-08 | Phase 22 | Pending |
+| DASH-01 | Phase 23 | Pending |
+| DASH-02 | Phase 23 | Pending |
+| DASH-03 | Phase 23 | Pending |
+| DASH-04 | Phase 23 | Pending |
+| DASH-05 | Phase 23 | Pending |
+| NOTF-01 | Phase 26 | Pending |
+| NOTF-02 | Phase 26 | Pending |
+| NOTF-03 | Phase 26 | Pending |
+| ANLT-01 | Phase 25 | Pending |
+| ANLT-02 | Phase 25 | Pending |
+| ANLT-03 | Phase 25 | Pending |
+| CONV-01 | Phase 27 | Pending |
+| CONV-02 | Phase 27 | Pending |
+| CONV-03 | Phase 27 | Pending |
+| CONV-04 | Phase 27 | Pending |
+| CONV-05 | Phase 27 | Pending |
+| CONV-06 | Phase 27 | Pending |
+| LEGAL-01 | Phase 27 | Pending |
+| LEGAL-02 | Phase 27 | Pending |
 
 **Coverage:**
 - v4.0 requirements: 31 total
-- Mapped to phases: 0 (roadmap not yet created)
-- Unmapped: 31 ⚠️
+- Mapped to phases: 31
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*
