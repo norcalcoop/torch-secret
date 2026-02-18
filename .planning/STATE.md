@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 18: CI/CD Pipeline (IN PROGRESS)
+**Current focus:** v3.0 Production-Ready Delivery — Phase 18: CI/CD Pipeline (COMPLETE)
 
 ## Current Position
 
-Phase: 18 (fourth of 5 in v3.0, 18 of 19 overall) -- IN PROGRESS
-Plan: 2 of 2 in current phase (18-02 complete, 18-01 pending)
-Status: Plan 18-02 complete
-Last activity: 2026-02-18 — Completed 18-02 (Render auto-deploy trigger and CI badge README)
+Phase: 18 (fourth of 5 in v3.0, 18 of 19 overall) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-02-18 — Completed 18-01 (CI Pipeline workflow with lint, test, E2E)
 
-Progress: [==============================] 96% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 1/2 phase 18)
+Progress: [==============================] 98% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 2/2 phase 18)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [==============================] 96% (36/36 v1+v2 plans complete, 3/3 
 | 16-04 | 2min | 2 | 6 |
 | 17-01 | 4min | 2 | 10 |
 | 17-02 | 28min | 2 | 6 |
+| 18-01 | 2min | 2 | 5 |
 | 18-02 | 1min | 1 | 2 |
 
 ## Accumulated Context
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - Dot-grid background as ::before pseudo-element for clean axe-core background resolution
 - E2E_TEST env var for rate limit override (avoids breaking Vitest rate limit tests)
 - autoDeployTrigger: checksPass in render.yaml gates deployment on CI checks passing
+- GitHub Actions v4 (checkout, setup-node, cache, upload-artifact) -- plan specified v6 but v4 is current
+- V8 coverage with text + json-summary reporters, no threshold enforcement (informational only)
+- Lint job gates test and e2e jobs; test and e2e run in parallel after lint passes
 - Minimal README placeholder -- Phase 19 expands into full project README
 
 ### Known Tech Debt
@@ -99,5 +103,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 18-02-PLAN.md (Render auto-deploy trigger and CI badge README)
-Resume: /gsd:execute-phase 18 (plan 18-01 still pending)
+Stopped at: Completed 18-01-PLAN.md (CI Pipeline - all phase 18 plans complete)
+Resume: /gsd:execute-phase 19

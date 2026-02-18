@@ -45,7 +45,7 @@ See [v2.0 Roadmap Archive](milestones/v2.0-ROADMAP.md) for full phase details.
 - [x] **Phase 15: Code Quality Foundation** - ESLint + Prettier + Husky pre-commit hooks + TypeScript strict-mode fixes (completed 2026-02-17)
 - [x] **Phase 16: Docker & Local Development** - Dockerfile + docker-compose + health check endpoint + Render deployment config (gap closure in progress) (completed 2026-02-17)
 - [x] **Phase 17: E2E Testing with Playwright** - Browser tests covering full user journeys, error states, accessibility, and multi-browser (completed 2026-02-17)
-- [ ] **Phase 18: CI/CD Pipeline** - GitHub Actions workflow with lint, test, build, E2E, and auto-deploy to Render
+- [x] **Phase 18: CI/CD Pipeline** - GitHub Actions workflow with lint, test, build, E2E, and auto-deploy to Render (completed 2026-02-18)
 - [ ] **Phase 19: GitHub Repository Polish** - README with screenshots, issue/PR templates, CONTRIBUTING guide, CHANGELOG, and release
 
 ## Phase Details
@@ -104,7 +104,7 @@ Plans:
   2. A lint failure causes the CI workflow to fail fast before running tests
   3. E2E tests run in CI with PostgreSQL and Redis service containers (not mocked)
   4. Merging to main triggers an automatic deployment to Render.com
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 18-01-PLAN.md — GitHub Actions CI workflow with lint, test+coverage, and E2E jobs
 - [x] 18-02-PLAN.md — Render auto-deploy trigger and CI badge README
@@ -144,5 +144,5 @@ Plans:
 | 15. Code Quality Foundation | v3.0 | 3/3 | Complete | 2026-02-17 |
 | 16. Docker & Local Development | v3.0 | 4/4 | Complete | 2026-02-17 |
 | 17. E2E Testing with Playwright | v3.0 | 2/2 | Complete | 2026-02-17 |
-| 18. CI/CD Pipeline | v3.0 | 1/2 | In progress | - |
+| 18. CI/CD Pipeline | 2/2 | Complete   | 2026-02-18 | - |
 | 19. GitHub Repository Polish | v3.0 | 0/? | Not started | - |
