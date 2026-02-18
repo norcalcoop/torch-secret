@@ -2,7 +2,7 @@
 
 ## What This Is
 
-SecureShare is a polished, developer-grade web application for sharing passwords, API keys, and sensitive text securely via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Dark terminal-inspired UI with glassmorphism surfaces, complete SEO infrastructure, and professional presentation. No accounts, no signup — just paste, encrypt, share, and destroy.
+SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Dark terminal-inspired UI with glassmorphism surfaces, complete SEO infrastructure, multi-browser E2E tests, containerized deployment, and CI/CD pipeline. No accounts, no signup — just paste, encrypt, share, and destroy.
 
 ## Core Value
 
@@ -33,50 +33,54 @@ Users can share sensitive information once, securely, without accounts or comple
 - ✓ Complete SEO infrastructure (meta tags, OG/Twitter, favicons, robots.txt, sitemap, JSON-LD) — v2.0
 - ✓ Dynamic per-route meta tags with noindex protection for secret URLs — v2.0
 - ✓ prefers-reduced-motion compliance for all animations — v2.0
+- ✓ ESLint 10 flat config + Prettier 3.8 + Husky pre-commit hooks — v3.0
+- ✓ TypeScript strict-mode errors resolved, entire codebase lints clean — v3.0
+- ✓ Multi-stage Docker build + docker-compose one-command local stack — v3.0
+- ✓ Health check endpoint (GET /api/health) with service status — v3.0
+- ✓ Render.com Blueprint (render.yaml) for one-click production deployment — v3.0
+- ✓ Playwright E2E tests: create→reveal, password flow, error states, axe-core accessibility — v3.0
+- ✓ Playwright runs across Chromium, Firefox, and WebKit in CI — v3.0
+- ✓ GitHub Actions CI/CD: lint gates tests, E2E with service containers, auto-deploy to Render — v3.0
+- ✓ Professional GitHub presence: README, issue/PR templates, CONTRIBUTING.md, CHANGELOG, Release — v3.0
 
 ### Active
 
-**Milestone v3.0: Production-Ready Delivery**
-
-- [ ] E2E browser tests covering full create-share-reveal user journeys
-- [ ] Unit test gap coverage for untested code paths
-- [ ] ESLint + Prettier configuration with pre-commit hooks
-- [ ] TypeScript strict-mode error resolution
-- [ ] Dockerfile + docker-compose for local development
-- [ ] Render.com deployment configuration for one-click production deploy
-- [ ] GitHub Actions CI/CD pipeline (lint → test → build → deploy)
-- [ ] GitHub repo polish (issue templates, PR templates, contributing guide, badges)
-- [ ] Enhanced app homepage with hero, features, trust signals, and create form
-- [ ] Polished README with screenshots, architecture diagram, and install instructions
-- [ ] Product Hunt + social media launch preparation
+(No active requirements — planning next milestone)
 
 ### Out of Scope
 
 - User accounts and authentication — zero-friction is the core differentiator
-- File uploads — text only for MVP, reduces complexity and storage costs
+- File uploads — text only, reduces complexity and storage costs
 - Editing/revoking secrets after creation — one-time links are the model
 - Analytics dashboard for users — no accounts means no dashboard
-- Browser extensions — web-first for MVP
-- Public API — internal use only for now
-- Team/organization features — individual sharing for MVP
+- Browser extensions — web-first
+- Public API — internal use only
+- Team/organization features — individual sharing
 - Mobile apps — responsive web covers mobile use cases
 - Real-time notifications when secret is viewed — adds complexity without core value
 - Offline mode — real-time server interaction is core to the destroy model
+- Unit test gap coverage beyond current 163 tests — coverage is adequate for current scope
+- Enhanced homepage hero/features redesign — deferred; current create-form homepage works well
+- Product Hunt / social media launch — deferred; needs production domain first
 
 ## Context
 
-Shipped v2.0 with ~6,296 LOC (6,089 TS + 207 CSS) across 14 phases (8 in v1.0 + 6 in v2.0).
+Shipped v3.0 with ~6,633 LOC TypeScript across 20 phases, 51 plans total (22 in v1.0 + 14 in v2.0 + 15 in v3.0).
+
 Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17.
 Crypto: Web Crypto API (AES-256-GCM), PADME padding, Argon2id password hashing.
-163 tests (87 crypto, 32 API integration, 14 security, 13 expiration, 6 accessibility, 4 SEO, 7 UI).
-Redis-backed rate limiting with MemoryStore fallback for single-instance deployments.
+163 unit tests (87 crypto, 32 API integration, 14 security, 13 expiration, 6 accessibility, 4 SEO, 7 UI).
+E2E: Playwright with Chromium, Firefox, WebKit — 4 spec files covering all critical user flows.
+CI/CD: GitHub Actions lint → test → E2E → auto-deploy to Render.com.
 Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphism surfaces.
 SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret routes.
 
 **Known tech debt:**
 - Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
-- Pre-existing TypeScript strict-mode errors in crypto/icons/accessibility files
 - Lucide ESM workaround via Vite resolve.alias (upstream bug)
+- Playwright webServer 30s timeout risk on slow CI runners (fix: pre-build client in CI e2e job)
+- Codecov badge shows "unknown" until CODECOV_TOKEN added to GitHub repo secrets
+- Bare `docker run <image>` skips migrations (only docker-compose / render.yaml supported paths)
 
 ## Constraints
 
@@ -110,10 +114,15 @@ SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret rou
 | Static OG tags in HTML (not JS-rendered) | Social crawlers don't execute JS; static tags always available | ✓ Good |
 | X-Robots-Tag + meta noindex defense-in-depth | Belt-and-suspenders: server header + client meta for secret routes | ✓ Good |
 | Toast replace strategy (no stacking) | Simpler UX; only latest feedback visible | ✓ Good |
-
-| Render.com for deployment | Free tier, easy Docker deploy, built-in PostgreSQL + Redis | — Pending |
-| Playwright for E2E tests | Modern, fast, built-in multi-browser, great CI support | — Pending |
-| ESLint + Prettier for code quality | Industry standard, wide ecosystem, pre-commit hook support | — Pending |
+| Render.com for deployment | Free tier, easy Docker deploy, built-in PostgreSQL + Redis | ✓ Good |
+| Playwright for E2E tests | Modern, fast, built-in multi-browser, great CI support | ✓ Good |
+| ESLint 10 flat config + Prettier + Husky | Industry standard; projectService auto-discovers tsconfig; pre-commit prevents regressions | ✓ Good |
+| Multi-stage Docker build (deps→build→prod) | No dev deps in production image; non-root user; argon2 native module included | ✓ Good |
+| FORCE_HTTPS env var over NODE_ENV check | Decouples HTTPS redirect from environment; docker-compose can use prod mode locally | ✓ Good |
+| workers: 1, fullyParallel: false for E2E | Destructive one-time secrets require serial test execution | ✓ Good |
+| lint job gates test/e2e in CI | Fail fast on code quality before expensive test runs | ✓ Good |
+| autoDeployTrigger: checksPass in render.yaml | Deploy only when all CI checks pass; prevents broken deploys | ✓ Good |
+| YAML form issue templates over markdown | Structured validation, required fields, better contributor UX | ✓ Good |
 
 ---
-*Last updated: 2026-02-16 after v3.0 milestone start*
+*Last updated: 2026-02-18 after v3.0 milestone*
