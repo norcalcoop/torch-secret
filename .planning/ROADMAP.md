@@ -135,7 +135,10 @@ Plans:
   1. `.github/workflows/ci.yml` installs all Playwright browsers (not just Chromium) and runs E2E tests without a `--project` filter
   2. A Firefox or WebKit failure in E2E tests blocks the CI build
   3. REQUIREMENTS.md checkboxes for QUAL-01..05 and DOCK-01..05 are marked `[x]` (documentation artifact fix)
-**Plans:** 0/1 plans
+**Plans:** 1 plan
+
+Plans:
+- [ ] 20-01-PLAN.md — Remove Chromium-only restrictions from CI e2e job (3 line changes)
 
 ## Progress
 
