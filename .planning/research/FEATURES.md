@@ -1,357 +1,473 @@
-# Feature Landscape: Production-Ready Delivery
+# Feature Research: v4.0 Hybrid Anonymous + Account Model
 
-**Domain:** Docker deployment, CI/CD pipelines, E2E testing, code quality tooling, marketing homepage for a security-focused web app
-**Researched:** 2026-02-16
-**Overall Confidence:** HIGH -- verified against Playwright official docs, Docker official guidance, GitHub Actions docs, ESLint/typescript-eslint official docs, and competitor analysis of OneTimeSecret, Yopass, and Password Pusher
-
-## Context
-
-SecureShare v2.0 is feature-complete: AES-256-GCM encryption, create/share/reveal workflow, password protection, expiration worker, dark terminal design system, three-way theme toggle, glassmorphism UI, WCAG 2.1 AA accessibility, full SEO infrastructure (OG tags, JSON-LD, sitemap, robots.txt, favicon), and 163 tests (unit + integration). What does NOT exist: Dockerfile, docker-compose, CI/CD pipeline, E2E tests, ESLint/Prettier config, pre-commit hooks, or an enhanced marketing homepage for Product Hunt launch.
-
-### Existing Infrastructure Inventory
-
-- **Testing:** Vitest 4.x with 163 tests -- unit tests (crypto, components) and integration tests (API routes with real PostgreSQL). No E2E browser tests.
-- **Code quality:** Zero linting/formatting tooling. No ESLint, no Prettier, no pre-commit hooks.
-- **Deployment:** Manual `npm run dev:server` and `npm run dev:client`. No Dockerfile, no docker-compose, no CI/CD.
-- **Homepage:** Create form with "How It Works" (4 steps) and "Why Trust Us" (4 cards) sections below. Functional, not marketing-optimized.
+**Domain:** Zero-knowledge one-time secret sharing SaaS with hybrid anonymous/account model
+**Researched:** 2026-02-18
+**Confidence:** HIGH (verified against EFF official docs, competitor live products, SaaS conversion research)
 
 ---
 
-## Table Stakes
+## Context: What Already Exists
 
-Features users and contributors expect. Missing any of these makes the project feel unprofessional for a public launch.
+SecureShare v3.0 is production-ready: AES-256-GCM browser encryption, create/share/reveal workflow, password protection (Argon2id), configurable expiration (1h/24h/7d/30d), 3-attempt auto-destroy, copy-to-clipboard, toast notifications, terminal-style reveal UI, rate limiting (10 creations/hour per IP, Redis-backed), dark/light/system theme, WCAG 2.1 AA, full SEO, Playwright E2E tests, Docker + CI/CD, ESLint/Prettier, marketing homepage.
 
-### 1. Docker Compose for Local Development
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Contributors should not need to manually install and configure PostgreSQL 17+ and Redis. Every serious open-source project provides a one-command dev environment setup. The current workflow requires manually starting PostgreSQL and Redis, which is a contributor friction point. |
-| **Complexity** | LOW |
-| **Dependencies** | None -- standalone infrastructure concern |
-| **Notes** | Compose file should define three services: `postgres` (PostgreSQL 17 with volume persistence), `redis` (Redis 7 with AOF persistence), and optionally `app` (Node.js dev server). The `app` service is optional because most developers prefer running `npm run dev:server` locally with hot reload rather than inside a container. Environment variables should match `.env.example`. |
-
-### 2. Production Dockerfile (Multi-Stage Build)
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Any cloud deployment (Railway, Render, Fly.io, AWS ECS, self-hosted) requires a container image. Without a Dockerfile, deployment is ad-hoc and unreproducible. The PRD explicitly targets cloud hosting. |
-| **Complexity** | MEDIUM |
-| **Dependencies** | None -- standalone infrastructure concern |
-| **Notes** | Must use multi-stage build: (1) `build` stage compiles TypeScript and builds Vite client, (2) `production` stage copies only compiled output and installs production dependencies. Use `node:24-slim` (NOT Alpine) because the project depends on `argon2`, which has well-documented SIGSEGV issues on Alpine's musl libc. Run as non-root user. Use `dumb-init` as PID 1 for proper signal handling. Set `NODE_ENV=production`. Include `.dockerignore` to exclude `.git`, `node_modules`, test files, `.planning`, and `.env`. |
-
-**Critical pitfall:** The `argon2` native module requires `node:24-slim` (Debian-based with glibc) instead of the smaller `node:24-alpine`. This is a known issue: argon2 pre-built binaries do not exist for musl, and source compilation on Alpine has caused SIGSEGV crashes since Alpine 3.14+. Using `node:24-slim` adds roughly 50MB to the image but eliminates this entire class of runtime failures.
-
-### 3. ESLint + Prettier Configuration
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | 163 tests exist but zero code quality tooling. Inconsistent code style across 30+ TypeScript files is a maintenance burden. Contributors expect linting to catch bugs (unused variables, floating promises) and formatting to be automated. |
-| **Complexity** | LOW-MEDIUM |
-| **Dependencies** | None -- standalone tooling concern |
-| **Notes** | Use ESLint flat config (`eslint.config.mjs`) with `@eslint/js` recommended rules + `typescript-eslint` strict rules. Add `eslint-config-prettier/flat` as the last config to disable rules that conflict with Prettier. Prettier config in `.prettierrc` with single quotes, trailing commas, 80-char print width (matching existing code style). Biome is faster but has gaps in type-aware linting and smaller plugin ecosystem -- ESLint + Prettier remains the safer choice for a TypeScript project that needs `@typescript-eslint/no-floating-promises` and similar type-checked rules. |
-
-### 4. Pre-Commit Hooks (Husky + lint-staged)
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Without pre-commit hooks, linting and formatting only happen if developers remember to run them. CI catches violations but only after a push. Pre-commit hooks enforce quality at the point of commit. |
-| **Complexity** | LOW |
-| **Dependencies** | Requires ESLint + Prettier (Feature 3) to be configured first |
-| **Notes** | `husky` for Git hooks management, `lint-staged` to run linters only on staged files. Pre-commit hook runs: (1) `prettier --write` on staged files, (2) `eslint --fix` on staged `.ts` files. The `prepare` script in `package.json` auto-installs hooks on `npm install`. |
-
-### 5. GitHub Actions CI Pipeline
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Every push and PR must be validated automatically. Without CI, broken code can be merged and deployment failures are discovered too late. GitHub Actions is the obvious choice since the repo is on GitHub. |
-| **Complexity** | MEDIUM |
-| **Dependencies** | Requires ESLint (Feature 3) and Dockerfile (Feature 2) |
-| **Notes** | Single workflow file `.github/workflows/ci.yml` with jobs: (1) **Lint** -- run ESLint and Prettier check, (2) **Test** -- run Vitest with PostgreSQL and Redis service containers, (3) **Build** -- run `vite build` and TypeScript compilation to catch type errors, (4) **Docker** -- build Docker image to verify Dockerfile works (no push). Use `node:24` and PostgreSQL 17 service container. Pin action versions for security. Cache `node_modules` with `actions/cache` or `actions/setup-node` cache. Run on `push` to `main` and all pull requests. |
-
-### 6. E2E Test Foundation (Playwright)
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | 163 unit/integration tests exist but zero browser tests. The critical user flows (create secret, copy link, reveal secret, password protection) involve browser-specific behavior: Web Crypto API, clipboard, URL fragments, DOM manipulation. These cannot be tested with Vitest's Node.js environment. A security tool that does not test its end-to-end encryption flow in a real browser has a testing gap at the most critical boundary. |
-| **Complexity** | MEDIUM-HIGH |
-| **Dependencies** | Requires Docker Compose (Feature 1) or manual PostgreSQL/Redis for test infrastructure |
-| **Notes** | Use Playwright (not Cypress) -- it surpassed Cypress in downloads in 2024, has better multi-browser support, and runs faster. Configure `playwright.config.ts` with `webServer` to auto-start the dev server. Test the complete create-share-reveal cycle in Chromium. Cover: (1) create secret and get link, (2) open link and view secret, (3) verify secret is destroyed after viewing, (4) password-protected flow, (5) expired secret error state. Add to CI pipeline as a separate job. |
-
-### 7. Enhanced Marketing Homepage
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | The current homepage is functional (form + trust sections) but not optimized for a Product Hunt / Hacker News launch. Competitors (OneTimeSecret, Password Pusher) have dedicated marketing sections. The PRD explicitly plans a public launch with Product Hunt. A developer visiting from a launch post needs to immediately understand the value prop, see trust signals, and either use the tool or share it. |
-| **Complexity** | MEDIUM |
-| **Dependencies** | Existing design system (dark theme, glassmorphism, Lucide icons, JetBrains Mono) |
-| **Notes** | See detailed breakdown in "Marketing Homepage Feature Breakdown" section below. |
+v4.0 adds: EFF Diceware passphrase generator, user accounts (email + OAuth), secret dashboard with history metadata, email viewed-notifications, Pro tier (extended expiration, file uploads, webhooks, custom passwords), progressive conversion prompts, tightened anonymous rate limits (3/hour, 10/day), PostHog analytics.
 
 ---
 
-## Marketing Homepage Feature Breakdown
+## Feature Landscape
 
-Security and privacy tools have distinct homepage patterns. Based on analysis of OneTimeSecret, Yopass, Password Pusher, and top-performing cybersecurity landing pages:
+### Feature Area 1: EFF Diceware Passphrase Generator
 
-### Homepage Sections (In Order)
+**What it is:** Browser-side random passphrase generation using the EFF long wordlist (7,776 words, 5-dice selection scheme) as a convenience feature on the create-secret form. Replaces the burden of choosing a manual password.
 
-#### 7a. Hero Section with Value Proposition
+**Technical grounding:** EFF long wordlist = 7,776 words (6^5). Each word = 12.9 bits of entropy. 4-word passphrase = ~51.7 bits (adequate for most use cases; EFF recommends 6 words / 77 bits for high-security contexts). Generation must use `crypto.getRandomValues()` — no `Math.random()`. The wordlist must be bundled client-side; no server round-trip for generation. Source: [EFF Diceware official docs](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases).
 
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Every comparable tool leads with a clear value statement. OneTimeSecret: "Signed. Sealed. Delivered." Password Pusher: "Go Ahead. Email Another Password." The current SecureShare header ("Share a Secret / End-to-end encrypted. One-time view. No accounts.") is functional but not punchy. |
-| **Complexity** | LOW |
-| **What It Includes** | Bold headline (problem-aware, not feature-aware), one-line subheadline explaining what the tool does, and a clear CTA to scroll down to the create form or start typing immediately. The hero should be above-the-fold and occupy no more than 30% of the viewport -- the create form must remain visible without scrolling on desktop. |
+#### Table Stakes
 
-**Pattern from competitors:** The most effective security tool homepages keep the hero SHORT and get the user to the action (the form) immediately. OneTimeSecret and Yopass put the form front-and-center. The marketing content lives BELOW the form, not above it. SecureShare should follow this pattern.
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| "Generate Passphrase" button in password field | Users who enable password protection shouldn't have to invent passwords themselves. Every comparable tool offers generation. | LOW | Appears as an icon/link inside or adjacent to the password input. Replaces field value on click. |
+| Regenerate button | Generated phrases are accepted or retried. One-time generation with no way to regenerate creates friction — user may not like the words. | LOW | Same button or separate small "Regenerate" link. Each click calls `crypto.getRandomValues()` fresh. |
+| Copy-to-clipboard for generated passphrase | The passphrase must reach the recipient separately (two-channel security). If the user can't copy it easily, they'll skip password protection entirely. | LOW | Existing copy-button component can be reused. |
+| Two-channel security note | Users must understand the passphrase travels separately from the link. Without this instruction, they'll email/message both together, defeating the purpose. | LOW | Static inline callout: "Share this passphrase separately — not in the same message as the link." |
 
-#### 7b. Create Form (Retain, Elevate)
+#### Differentiators
 
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | The form IS the product. It must remain the dominant element. Wrapping it in marketing content that pushes it below the fold is an anti-pattern for utility tools. |
-| **Complexity** | LOW (already built) |
-| **What Changes** | Minor visual elevation -- slightly larger card, more prominent glassmorphism, optional subtle "encryption active" indicator. The form itself should not change functionally. |
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Display word count selector (4 vs 6 words) | 4 words (~51 bits) is convenient but not high-security. Pro users sharing credentials to enterprise systems need 6 words (~77 bits). Giving users control over strength signals sophistication. | LOW | Toggle or dropdown: "Standard (4 words)" / "Strong (6 words, Pro)". Free tier: 4-word only. Pro: both. |
+| Entropy readout alongside passphrase | "~52 bits of entropy" shown next to the generated phrase reassures technical users that generation is cryptographically strong, not random-looking-but-weak. | LOW | Text label, not a strength meter. "~52 bits" is more honest and less gameable than a color bar. |
+| Inline word-list attribution ("EFF Diceware") | EFF is a trusted privacy organization. Attributing the wordlist adds credibility without adding UI complexity. | LOW | Small "EFF wordlist" link in tooltip or footnote. Differentiates from "we rolled our own" generators. |
 
-#### 7c. Trust Signals Bar
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Security tools need immediate credibility. Users are being asked to paste sensitive information. A compact row of trust signals between the form and detailed content reduces anxiety. OneTimeSecret shows "SOC2, GDPR, CCPA & HIPAA" badges. |
-| **Complexity** | LOW |
-| **What It Includes** | Compact horizontal bar with 3-4 key signals: "Zero-Knowledge Encryption", "Open Source", "No Accounts Required", "AES-256-GCM." Use Lucide icons (already available). This should be a single visual row, not a card grid -- save the detailed cards for the "Why Trust Us" section. |
-
-#### 7d. How It Works (Retain, Visual Upgrade)
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Already exists with 4 steps (Paste, Encrypt, Share, Destroy). This is table stakes for security tools -- users need to understand the mechanism to trust it. |
-| **Complexity** | LOW |
-| **What Changes** | Add a simple visual flow diagram or numbered step indicators with connecting lines/arrows between steps. The current grid layout is functional but does not convey a sequential flow. Consider a horizontal timeline on desktop, vertical on mobile. |
-
-#### 7e. Security Deep-Dive Section
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Developer and security-conscious users want technical details, not just "military-grade encryption" marketing speak. This is the primary differentiator from consumer-facing secret sharing tools. OneTimeSecret, Yopass, and PrivateBin all highlight their encryption specifics. |
-| **Complexity** | MEDIUM |
-| **What It Includes** | Technical explanation of the zero-knowledge architecture: (1) "Your browser generates a unique 256-bit AES key", (2) "The key lives ONLY in the URL fragment (#) which is never sent to the server", (3) "Even a complete server breach reveals nothing." Include a visual diagram showing browser vs server trust boundary. Optionally show a code snippet or pseudocode of the encryption flow -- developers trust code more than marketing copy. |
-
-**Differentiator from competitors:** Most tools say "encrypted." SecureShare can SHOW it by including a simplified code diagram or architecture visual that demonstrates the URL fragment key isolation. This is uniquely compelling for a developer audience and a Hacker News launch.
-
-#### 7f. Use Cases Section
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Users need to see themselves in the product. The PRD identifies four target audiences: remote workers, developers, content creators, and everyday consumers. Showing specific use cases ("Share an API key with a contractor", "Send login credentials to a team member") makes the value concrete. |
-| **Complexity** | LOW |
-| **What It Includes** | 3-4 use case cards with icon, title, and one-line description. Focus on developer-relevant scenarios: API keys, database credentials, environment variables, SSH keys. Each card should feel like a real scenario, not a generic feature bullet. |
-
-#### 7g. Why Trust Us (Retain, Restructure)
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Already exists with 4 cards (Zero Knowledge, Open Source, No Accounts, AES-256-GCM). This section is the closing argument before a skeptical user decides to use the tool. |
-| **Complexity** | LOW |
-| **What Changes** | Restructure into a more compelling layout. Add "open source" link to the actual GitHub repo (social proof through transparency). Add a "View Source" or "Audit Our Code" CTA. For a security tool, the ability to verify claims is the strongest trust signal. |
-
-#### 7h. Open Source CTA / GitHub Badge
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | For a Product Hunt launch targeting developers, the GitHub repo is a primary trust signal. Top-performing developer tool launches on Product Hunt prominently feature GitHub stars, fork counts, and contribution invitations. |
-| **Complexity** | LOW |
-| **What It Includes** | GitHub star count badge or link to repository. "Star us on GitHub" call-to-action. This acts as social proof AND drives engagement. |
-
-#### 7i. Footer Enhancement
-
-| Aspect | Detail |
-|--------|--------|
-| **Why Expected** | Current footer is minimal (header with SecureShare name). A launch-ready footer needs: Privacy Policy link, Terms of Service link, GitHub repo link, and "Built with" technology badges (optional). |
-| **Complexity** | LOW |
-| **What It Includes** | Multi-column footer with product links, legal links, and social/GitHub link. Keep it minimal -- this is a single-purpose tool, not an enterprise platform. |
-
----
-
-## Differentiators
-
-Features that set SecureShare apart in the deployment/testing/marketing domain. Not expected, but create a professional, polished impression.
-
-### 8. Playwright Visual Regression Tests
-
-| Aspect | Detail |
-|--------|--------|
-| **Value Proposition** | Beyond functional E2E tests, visual regression testing catches unintended style changes across the dark/light theme, glassmorphism cards, and responsive layouts. For a tool where visual trust signals matter (the UI IS the security indicator), visual regressions are impactful. |
-| **Complexity** | MEDIUM |
-| **Notes** | Playwright has built-in screenshot comparison via `expect(page).toHaveScreenshot()`. Capture baseline screenshots for: homepage (dark + light), create form states, reveal page, error states. Run as a separate CI job. |
-
-### 9. Docker Health Checks
-
-| Aspect | Detail |
-|--------|--------|
-| **Value Proposition** | Health check endpoints (`/api/health`) enable container orchestrators (Docker Compose, Kubernetes, Railway, Render) to detect and restart unhealthy containers. Without health checks, a crashed Node.js process inside a "running" container is invisible. |
-| **Complexity** | LOW |
-| **Notes** | Add `GET /api/health` endpoint returning `200 OK` with `{ status: "healthy", timestamp: "..." }`. Include database connectivity check. Add `HEALTHCHECK` instruction to Dockerfile. Reference in docker-compose health check config. |
-
-### 10. Animated "Zero-Knowledge" Diagram
-
-| Aspect | Detail |
-|--------|--------|
-| **Value Proposition** | A CSS-animated diagram showing data flow (Browser encrypts -> Server stores blob -> Recipient decrypts) on the marketing homepage would be the single most compelling visual for Hacker News / Product Hunt. No comparable tool does this. |
-| **Complexity** | MEDIUM-HIGH |
-| **Notes** | CSS-only animation (no JS library) showing three nodes: Browser, Server, Database. Animated data packets flow between them with labels ("encrypted blob", "key stays here"). Use `@keyframes` with `prefers-reduced-motion` fallback to static diagram. This is the homepage's "wow factor" for technical audiences. |
-
-### 11. CI Docker Image Publishing
-
-| Aspect | Detail |
-|--------|--------|
-| **Value Proposition** | Auto-publish Docker images to GitHub Container Registry (GHCR) on tagged releases. Enables `docker pull ghcr.io/username/secureshare:latest` for self-hosters. |
-| **Complexity** | LOW |
-| **Notes** | Add a separate CI job triggered on `v*` tags that builds and pushes to GHCR. Uses `docker/build-push-action` GitHub Action. Include multi-platform build (`linux/amd64`, `linux/arm64`) for M-series Mac and cloud ARM instances. |
-
-### 12. Privacy Policy and Terms of Service Pages
-
-| Aspect | Detail |
-|--------|--------|
-| **Value Proposition** | A launch-ready product needs legal pages. The footer should link to them. The PRD requires "Transparent and easily accessible privacy policies." For a privacy-focused tool, this is especially important -- the privacy policy itself is a trust signal. |
-| **Complexity** | LOW |
-| **Notes** | Add `/privacy` and `/terms` routes to the SPA router. Static content pages styled with the existing design system. Content should emphasize: no tracking, no analytics, no cookies, data deleted after viewing, zero-knowledge architecture. |
-
----
-
-## Anti-Features
-
-Features that seem related to this milestone but should be explicitly avoided.
+#### Anti-Features
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Kubernetes manifests / Helm charts | Over-engineering for a single-service app. The target deployment is Railway/Render/Fly.io, not K8s. | Dockerfile + docker-compose only. |
-| Cypress instead of Playwright | Slower, commercial licensing for CI parallelism, single-browser by default, losing market share. | Playwright -- faster, multi-browser, Apache 2.0 license, larger ecosystem. |
-| Biome instead of ESLint + Prettier | Biome v2.0 covers ~85% of typescript-eslint rules. Missing `no-floating-promises` and some type-aware rules that matter for a security app. Plugin ecosystem is immature. | ESLint flat config + typescript-eslint + Prettier. Revisit Biome in 6 months. |
-| Full-page marketing site separate from the app | OneTimeSecret recently separated their marketing site from the app. This is premature for SecureShare -- the product IS the homepage. Separating them doubles maintenance. | Enhanced homepage that combines marketing + tool in one page. |
-| Analytics/tracking for launch metrics | Violates the zero-tracking privacy promise. The PRD says "No tracking cookies or analytics that collect PII." | Server-side anonymous counters only (secrets created/retrieved per day, no PII). If analytics are needed, use privacy-respecting Plausible with explicit user consent. |
-| Animated hero video or complex above-fold animation | Pushes the create form below the fold. Increases page weight. Conflicts with <1s load target on 3G. | Static hero text + inline form. Animations only below the fold. |
-| Dynamic secret counter ("X secrets shared") on homepage | Requires API endpoint that leaks usage data. Counter value reveals platform size, which could inform attack decisions. | No public usage counters. If needed post-launch, show a static "Trusted by developers" badge instead. |
-| Email capture / newsletter signup | Violates no-accounts, no-PII philosophy. Adds friction. Distracts from the core action (creating a secret). | GitHub star CTA instead -- drives engagement without collecting PII. |
-| Complex deployment pipeline (staging, canary, blue-green) | Single developer project. No traffic yet. Over-engineering. | Single CI pipeline: lint -> test -> build -> Docker image. Manual deploy to target platform. |
-| E2E tests for every visual state | Diminishing returns. 5-8 critical flow tests provide 90% of the value. 50 E2E tests are slow and fragile. | Test the 5 critical user flows. Visual regression for key pages. |
+| Strength meter color bar | Meaningless for diceware — all 4-word EFF passphrases have identical entropy. A strength bar on a diceware output is misleading theater. | Show entropy bits (factual) instead of a subjective bar. |
+| User-typed passphrase strength estimation | Scope creep. If the user types their own password, we hash it with Argon2id — strength estimation is not our responsibility in a zero-knowledge model. | Show only the entropy readout for generated passphrases. Leave typed passwords unevaluated. |
+| Server-side passphrase generation | Defeats zero-knowledge property. Server would see passphrase candidates in logs. | All generation in browser via `crypto.getRandomValues()`. |
+| Storing the generated passphrase | We store only the Argon2id hash of whatever password the user sets, not the passphrase itself. Never log, never store, never transmit in plaintext. | Client discards passphrase after user copies it. Never sent to server in unhashed form. |
+
+---
+
+### Feature Area 2: User Accounts (Registration, Login, OAuth)
+
+**What it is:** Optional account system layered on top of the existing anonymous flow. No account required to use core features. Accounts unlock: secret history dashboard, email notifications, Pro features.
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Email + password registration | Every SaaS with accounts needs baseline email auth. Users expect to sign up with email, even if they prefer OAuth in practice. | MEDIUM | Use existing Argon2id for password hashing. Add `users` table to Drizzle schema. Email verification required before dashboard access. |
+| Google OAuth | Google OAuth is the most common social login for developer-facing tools. Reduces friction significantly. | MEDIUM | Use passport.js or a purpose-built OAuth library. Callback route needed. No account-linking complexity if email matches existing account. |
+| GitHub OAuth | Developer-tool users skew toward GitHub accounts. SecureShare targets developers. GitHub OAuth is expected for this audience, more than Facebook or Apple. | MEDIUM | Same OAuth library as Google. Prioritize GitHub as the second OAuth option. |
+| Secure session management | After login, users need a session (cookie or JWT). Session must not store or expose secret content — sessions are only for identity, never for secret retrieval. | MEDIUM | HTTP-only signed cookies with express-session and Redis store. Session data: user ID, email, plan. Nothing about secrets. |
+| Password reset via email | Required for any production email-based auth. Users forget passwords. Without reset, support burden grows. | MEDIUM | Time-limited reset tokens (24h), emailed link, server-side token invalidation after use. |
+| Logout | Trivially expected. | LOW | Session destruction, cookie clearing. |
+| Anonymous → account upgrade path | Anonymous users who created secrets and then register should see those secrets in their dashboard IF they created them during the same browser session. | HIGH | Associate anonymous-session secrets with account on upgrade by matching session ID at registration time. Requires planning (see Feature Area 3). |
+
+#### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| "Save to account" prompt shown after secret creation | Anonymous users see a prompt after creating their first secret: "Create a free account to track when this is viewed." Converts at the moment of highest motivation. | MEDIUM | Non-blocking inline prompt below the share link. Not a modal — non-intrusive. Dismissible. |
+| Remember anonymous secrets across devices via account | An anonymous secret is tied to a browser session. Registering converts those secrets to persistent history, accessible from any device. | HIGH | Complex identity merge — session-scoped secrets must be claimed at account creation. |
+
+#### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Requiring account for core features | The zero-knowledge anonymous model is the product's core identity. Gating creates abandonment, contradicts the "no accounts" value prop on the homepage. | Preserve anonymous-first UX. Accounts are enhancement, not prerequisite. |
+| Storing passwords in plaintext or reversible form | Obvious security failure. | Argon2id only, OWASP parameters (already in codebase). |
+| Facebook / Apple OAuth as primary options | Developer audience does not skew toward these. Adds implementation complexity with lower conversion value. | Google + GitHub covers 80%+ of the target audience. Add others post-launch if user demand warrants. |
+| Email verification on registration before first use | Forces users to go check email before using the dashboard — kills momentum. | Allow limited dashboard access immediately (view the secret you just created), require email verification only for notifications and Pro features. |
+
+---
+
+### Feature Area 3: Secret History Dashboard
+
+**What it is:** A list of metadata about secrets the authenticated user has created. Zero-knowledge constraint applies: the dashboard shows only metadata (label, creation time, expiry time, status). It never shows secret content or the URL fragment key.
+
+**The fundamental dashboard challenge:** Once a secret is viewed, it is atomically destroyed (SELECT → zero → DELETE). The system retains a metadata record with the viewed status. The user can see "this secret was viewed at 14:32 UTC" but cannot see what the secret contained or retrieve it. This is correct behavior — explaining it clearly in the UI is important.
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Secret list with status states | Users who create secrets expect to know if they were viewed. The core value of a notification dashboard is confirmation of delivery. | MEDIUM | See status model below. |
+| Status states: Active / Viewed / Expired / Deleted | These four states cover all possible outcomes for a one-time secret. Users need distinct visual treatment for each. | LOW | Active: green dot, "Awaiting view". Viewed: checkmark, "Viewed [time]". Expired: gray, "Expired [time]". Deleted: strikethrough, "Deleted by you". |
+| Created time and expiry time display | Users want to know when the secret was created and when it will self-destruct if never viewed. | LOW | Both stored in existing `secrets` table already. |
+| Optional label per secret | Without labels, a list of secrets is meaningless ("Secret created at 14:30" tells the user nothing). Labels let users track which secret went to whom. | LOW | Optional free-text label (max 100 chars), set at creation time. Stored in metadata row only — never encrypted alongside the secret. |
+| Pre-view deletion (delete before recipient opens) | Users frequently realize they sent the wrong link or changed their mind. Ability to revoke an unviewed secret is essential. | MEDIUM | "Delete" action on Active secrets only. Triggers existing atomic destroy. Updates metadata row status to "Deleted". |
+| Pagination or virtual scroll | A user who creates 50+ secrets needs a usable list. | LOW-MEDIUM | Simple pagination (20 per page). No infinite scroll needed — this is not a high-volume list. |
+
+#### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| "Copy share link again" from dashboard | After creation, the share link exists only in the confirmation page. Users who navigate away lose it. The dashboard shows the share URL (NOT the fragment key). | MEDIUM | Store share URL (without #key) in metadata. User can copy the base URL. Note: the key in the fragment is gone — they cannot regenerate the full URL with key. Add explicit "Link cannot be reconstructed — store it now" warning on creation. |
+| Bulk delete | Power users who create many secrets for testing/dev want to clean up. | LOW | Checkbox multi-select + bulk delete action. Active secrets only. |
+| Secret count and usage stats | "You've created 47 secrets this month" — lightweight usage awareness that may nudge Pro consideration. | LOW | Simple aggregate count in dashboard header. No detailed analytics (that's PostHog's job). |
+| Filter by status | For users with long history, filtering to "Active" only (secrets still unviewed) is the highest-value view. | LOW | Tab-based filter: All / Active / Viewed / Expired. |
+
+#### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Showing or reconstructing secret content | Fatal zero-knowledge violation. The server never had plaintext. The URL fragment (#key) was never stored. | Show metadata only. Explicitly tell users "Secret content is not stored." in empty state copy. |
+| Showing IP address of viewer | Privacy violation for the recipient. Logs must not contain IPs (already a constraint in existing middleware). | Show only timestamp of view event. No geolocation, no IP, no device data. |
+| Infinite secret history by default (free tier) | Unbounded metadata storage per free user. | Free tier: 30 days of history. Pro: 90 days or unlimited. |
+| "Re-share" or duplicate secret button | A "re-share" creates a new secret with identical content — but the server never had the plaintext content in the first place. Cannot re-encrypt what was never stored. | Explain in UI: "One-time secrets cannot be duplicated. Create a new secret." |
+
+---
+
+### Feature Area 4: Email Notifications (Secret Viewed Alert)
+
+**What it is:** When an authenticated user creates a secret with notifications enabled, they receive an email when their secret is viewed (or when it expires unviewed, if they opt in).
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| "Notify me when viewed" toggle at creation | Users who want notification must be able to opt in per-secret. This is why they created an account — a global setting is insufficient because some secrets are casual (no notification needed), others are important (notification required). | LOW-MEDIUM | Toggle on the create form, only visible to logged-in users. Default off. |
+| Email alert on secret view | The primary value of account creation for many users. Reduces the need to check the dashboard. | MEDIUM | Trigger on the POST /api/secrets/:id (GET + verify routes) atomic destroy sequence. After destroy, if user opted in, enqueue an email job. |
+| Notification email content | The email must convey the right information without revealing what the secret contained (zero-knowledge). | LOW | See email content design below. |
+| Unsubscribe / notification preferences | Users must be able to turn off email notifications at the account level. Required by anti-spam regulations (CAN-SPAM, GDPR). | LOW-MEDIUM | Account settings page with notification toggles. One-click unsubscribe link in every email. |
+
+**Email content design (zero-knowledge compliant):**
+
+Subject line: `Your secret was viewed — SecureShare`
+
+Body should include:
+- Confirmation that the specific secret (referenced by label if set, or by creation time) was viewed
+- Exact timestamp of the view event (UTC)
+- Statement that the secret has been permanently deleted
+- Explicit statement that the email does NOT contain the secret content (zero-knowledge reassurance)
+- Link to the dashboard to see full history
+- One-click unsubscribe link
+
+What NOT to include:
+- Secret content (never stored server-side)
+- Recipient IP address or location (privacy violation)
+- Link to "view the secret again" (it no longer exists)
+- Any personal information about the recipient
+
+Example body structure:
+```
+Your secret "[label or 'created Jan 15 at 14:30']" was viewed.
+
+Viewed at: 2026-01-18 09:14 UTC
+
+The secret has been permanently deleted from our servers.
+(The content is end-to-end encrypted — we never had access to it.)
+
+View your secret history →
+
+Unsubscribe from viewed notifications
+```
+
+#### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| "Notify if not viewed by expiry" alert | Sender discovers recipient never opened the link. Useful for chasing up. Different from viewed notification — triggers on the expiration worker cron job instead. | MEDIUM | Separate opt-in toggle: "Notify me if this secret expires unviewed." Requires expiration worker to check notification preference on cleanup. |
+| Notification channel: email + webhook (Pro) | Power users (developers, DevOps teams) want webhook delivery for secrets viewed notifications, not just email. Enables integration into Slack, PagerDuty, CI/CD pipelines. | MEDIUM | Webhook URL per account (Pro). POST JSON payload to configured URL on view event. Same payload structure as password.link. |
+
+#### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Notification email containing the secret label by default | If the label is "SSH key for AWS prod", that's sensitive information in a potentially insecure email inbox. | Make label inclusion in email opt-in at account settings level. Default: "A secret you created" (no label). |
+| Real-time "read receipt" branding ("Your recipient opened your secret at X:XX from IP 192.168.x.x") | Mimics surveillance product aesthetics. Creates discomfort for recipients if they learn their IP was logged and emailed. | Log only the timestamp. Do not collect or display IP. |
+| Email at account signup level only (all-or-nothing) | Some secrets are sensitive (notify me), some are casual (don't care). All-or-nothing wastes time for both types. | Per-secret opt-in toggle at creation time. |
+
+---
+
+### Feature Area 5: Pro Subscription Tier
+
+**What it is:** A paid tier (~$7/month based on spec) unlocking features that go beyond the free account. In the one-time secret sharing market, the direct comparator is OneTimeSecret (free + $35/month Identity Plus) and password.link (team/Pro tier). The $7/month price point targets individual developers and small teams.
+
+**Market positioning at $7/month:** This price signals "professional tool, not enterprise platform." At this price, users expect: increased limits, access to all features (file uploads, longer expiration, webhooks), and reliable service — not custom domains or white-labeling (that's $35/month territory).
+
+#### Table Stakes (for a $7/month secret-sharing Pro tier)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Extended expiration: up to 90 days | Free: 1h/24h/7d/30d. Pro users share secrets in long-running projects and need 90-day window. 90 days is the standard industry extension (beyond 30 days). | LOW | Add 90-day option to expiration select, gated behind Pro check. |
+| File uploads up to 25MB | Sharing configuration files, certificates, key files alongside text secrets is a common need. File support is the single feature most cited in competitor comparisons as a differentiator for Pro tiers. | HIGH | File uploads require: client-side AES-256-GCM encryption of binary files, base64 or ArrayBuffer storage, MIME type validation, size limits, and storage considerations (DB vs object storage). This is the highest-complexity item in v4.0. |
+| Higher rate limits | Free: 3/hour, 10/day. Pro should remove or significantly raise these. Rate limiting anonymous users is good; penalizing paying customers is churn. | LOW | Pro: 60 creations/hour, no daily cap. Or: unlimited. Check Redis key by user ID, not IP, for authenticated users. |
+| Unlimited secret history retention | Free: 30-day history. Pro: unlimited or 1-year. History is the primary ongoing value for Pro users managing DevOps secrets. | LOW | Database retention policy tied to plan in users table. Cleanup cron skips Pro user metadata rows. |
+| Webhook notifications on secret view | Developers integrating SecureShare into CI/CD pipelines or Slack workflows need webhook delivery, not just email. password.link offers this. It is the second-most cited Pro feature after file uploads. | MEDIUM | Webhook URL stored per-account. POST on view event. Include: timestamp, label (if set), secret ID hash (not content). Retry logic for failures (3 attempts, exponential backoff). |
+
+#### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| 6-word Diceware passphrase option | Longer passphrases for high-security use cases. Small feature, low cost, meaningful for security-conscious Pro users. | LOW | 6-word = ~77 bits entropy. Toggle in passphrase generator, gated to Pro. |
+| Custom password complexity (Pro enforced strength) | Pro users in regulated industries may need to enforce minimum passphrase entropy. | LOW-MEDIUM | Account-level setting: "Require strong passphrase (6+ words) on all secrets I create." |
+| API access for programmatic secret creation | Developers want to create secrets from CI/CD pipelines, scripts, deploy hooks. SecureShare already has REST endpoints — the question is authentication and rate limits. | MEDIUM | API key management in account settings. API keys authenticate as the user. Rate limits apply to API key, not IP. |
+| Priority support | At $7/month, users expect a way to report issues and get timely response. | LOW | Email support SLA, labeled in pricing. Not a live chat. |
+
+#### Anti-Features (what $7/month does NOT warrant)
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Custom domain / white-labeling | This is OneTimeSecret's $35/month Identity Plus differentiator. Custom domains require DNS configuration, TLS cert management per domain, and branded email sending — far too much ops burden for $7/month. | Custom domains are a future tier ($25-35/month) or enterprise offering. |
+| Team member accounts / SSO | Multi-user management, seat billing, and SSO integration (SAML, OIDC) are enterprise features. Way beyond a $7/month personal Pro tier. | If team demand emerges post-launch, introduce a separate "Teams" plan. |
+| Unlimited file uploads / no size cap | Unbounded storage is a cost center. 25MB per file with reasonable usage limits keeps this manageable. | 25MB per file, 500MB monthly storage quota for Pro. Beyond: overage or higher tier. |
+| Annual billing complexity at launch | Adds payment infrastructure complexity. Not worth it until monthly retention is proven. | Monthly billing only at v4.0 launch. Annual option post-launch. |
+
+---
+
+### Feature Area 6: Progressive Conversion Prompts
+
+**What it is:** The system of in-product messages that move users from anonymous use → free account → Pro subscription. Research shows behavior-triggered prompts outperform time-based email sequences: 47% higher open rate, 115% higher clickthrough vs time-based email, 265% higher clickthrough vs newsletters. Key principle from Spotify/Dropbox/Grammarly analysis: prompts work when users feel they're choosing to pay, not being forced.
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Anonymous → account prompt after secret creation | The moment immediately after creating a secret is peak motivation. User just experienced value. Inline (non-modal) prompt: "Want to know when it's viewed? Create a free account." | LOW | Shown below share link on confirmation page. Dismissible. One-time per session (not every creation). |
+| Feature discovery callout on restricted actions | When anonymous user tries to access a feature that requires an account (dashboard, notifications), redirect to registration with context: "Create a free account to track your secrets." Not a generic 401 page. | LOW-MEDIUM | Context-aware auth redirect. Each restricted feature has a specific benefit message, not a generic "please log in." |
+| Rate limit upsell messaging | When anonymous user hits the new 3/hour or 10/day limit, the error message must include upsell: "Anonymous limit reached. Create a free account for higher limits." | LOW | Update rate limit error response JSON and frontend display to include account upgrade CTA. |
+| Free → Pro conversion at feature gate | When free user tries to use a Pro feature (file upload, 90-day expiry, 6-word passphrase, webhook), show an inline gate with brief benefit explanation and "Upgrade to Pro" link. | LOW-MEDIUM | Feature gate component: lock icon + short copy + upgrade CTA. Not a full-screen modal. Consistent pattern across all Pro features. |
+
+#### Differentiators
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Persistent low-friction banner for free users approaching limits | Dropbox pattern: persistent non-blocking banner once a user has created 8+ secrets in a day on free tier. "You're nearing your daily limit. Upgrade for unlimited." Dismissible, reappears on next session. | LOW | Dashboard header banner. Not on every page — only dashboard and creation page. |
+| Contextual "save this secret's history" prompt | If a free user creates a secret without being logged in and then visits the dashboard route, show: "Create a free account to see all your secrets in one place." Converts the user at the moment they're already looking for dashboard functionality. | LOW | 404-style page for /dashboard when anonymous, but with registration CTA rather than plain error. |
+| PostHog funnel tracking to measure prompt effectiveness | Without analytics on which prompts convert, iteration is guesswork. Track: prompt shown → dismissed vs. clicked → registration completion rate → first paid conversion. | MEDIUM | PostHog event schema: `prompt_shown`, `prompt_dismissed`, `prompt_clicked`, `account_created`, `subscription_started`. Anonymous ID merges to identified user on registration (PostHog's standard `identify()` + `alias()` flow). |
+
+#### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Full-screen modal blocking secret creation | Interrupts the core flow. The product's value prop is frictionless anonymous use. A blocking modal converts but destroys brand trust and causes abandonment. | Inline prompts only. Modal reserved for hard feature gates (file upload attempted on free). |
+| Repeated upsell on every page view | Aggressive prompting causes users to install ad blockers or abandon entirely. Appcues research confirms coercive prompts backfire. | Show the same prompt max once per session per type. |
+| Showing Pro pricing prominently before user sees value | Pricing before value is a conversion killer. Users need to experience the product before they care about price. | Prompt shows benefit first ("Track when your secrets are viewed"), price only on the upgrade page itself. |
+| Email drip campaign to anonymous users | We don't have anonymous users' emails. Even if we collected them, emailing users who expected anonymity damages trust. | In-product prompts only for conversion. Email is only for users who explicitly registered. |
+
+---
+
+### Feature Area 7: Rate Limiting Changes (Anonymous Tightening)
+
+**What it is:** Reducing the anonymous creation rate limit from current 10/hour to 3/hour, 10/day — with account creation as the upsell path.
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Per-IP daily rate limit (10/day) | Existing hourly limit catches burst abuse but not sustained low-rate abuse. Daily cap prevents determined anonymous users from relying on the app as a free unlimited service. | LOW | Redis key with 24h TTL per IP. Incremented on each creation. |
+| Rate limit error with upsell copy | Plain 429 error with no guidance causes abandonment. Rate limit error should educate: what the limit is, why it exists, how to get more (create account). | LOW | Update `rate-limit.ts` error response and frontend error display component. |
+| Free account exemption from IP-based anonymous limits | Authenticated users are rate-limited by user ID, not IP. Free account = 60/hour, unlimited daily. This incentivizes registration without blocking legitimate use. | LOW | Middleware checks auth state first. Authenticated → user-ID rate limit key. Anonymous → IP rate limit key. |
+
+---
+
+### Feature Area 8: PostHog Analytics Integration
+
+**What it is:** Privacy-respecting product analytics to understand usage patterns, conversion funnels, and feature adoption.
+
+#### Table Stakes
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Anonymous event tracking (no PII for anonymous users) | PostHog can track product events without identifying users. Anonymous session = anonymous distinct ID. No email, no IP in event properties. | LOW-MEDIUM | PostHog JS SDK initialized with `person_profiles: 'identified_only'` to avoid storing anonymous user profiles. Track: `secret_created`, `secret_viewed`, `page_viewed`. |
+| User identification on account creation | On registration, call `posthog.identify(userId, { plan: 'free' })`. On upgrade, `posthog.capture('$set', { plan: 'pro' })`. This merges pre-registration behavior with the identified user. | LOW | Standard PostHog pattern. `identify()` automatically aliases the previous anonymous ID. |
+| Conversion funnel events | Track the five-step funnel: `create_page_visited` → `secret_created` → `conversion_prompt_shown` → `account_created` → `subscription_started`. | LOW | Five `posthog.capture()` calls at the relevant moments. No additional infrastructure needed. |
+| CSP nonce compatibility | PostHog JS must work with the existing per-request CSP nonce (inline script policy). | MEDIUM | PostHog script must be loaded via the nonce mechanism, not injected as an inline script. Use PostHog's `<script>` tag loading with nonce attribute applied by the server's CSP nonce injection. |
+
+#### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Tracking secret content or recipient behavior | Privacy violation, zero-knowledge violation. | Track only sender-side creation events and account-level actions. Never instrument the reveal page in a way that sends data to third parties. |
+| PostHog session recording on the create form | Session recording would capture keystrokes in the secret textarea. Catastrophic privacy failure. | Disable session recording entirely (PostHog default is off for `<textarea>` but explicitly disable globally). |
+| Google Analytics / GA4 | Sends data to Google, conflicts with the no-tracking privacy promise, and requires cookie consent banners (GDPR). | PostHog self-hosted or PostHog Cloud EU region. Avoids third-party data sharing. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[ESLint + Prettier Config]
-    |-- required by --> [Pre-Commit Hooks (Husky + lint-staged)]
-    |-- required by --> [CI Pipeline (lint job)]
+[User Accounts]
+    |-- required by --> [Secret Dashboard]
+    |-- required by --> [Email Notifications]
+    |-- required by --> [Pro Tier Subscription]
+    |-- required by --> [Progressive Conversion (account prompts)]
+    |-- required by --> [API Access (Pro)]
+    |-- required by --> [Webhook Notifications (Pro)]
 
-[Docker Compose (dev)]
-    |-- enhances --> [E2E Tests] (provides PostgreSQL/Redis for test runs)
-    |-- enhances --> [CI Pipeline] (validates compose config)
+[Secret Dashboard]
+    |-- requires --> [User Accounts]
+    |-- requires --> [Metadata schema: label, status, viewed_at]
+    |-- enhances --> [Email Notifications] (viewed status visible in both)
+    |-- required by --> [Progressive Conversion (save-to-dashboard prompt)]
 
-[Production Dockerfile]
-    |-- required by --> [CI Pipeline (Docker build job)]
-    |-- required by --> [CI Docker Image Publishing]
-    |-- requires --> [Health Check Endpoint] (for HEALTHCHECK instruction)
+[Email Notifications]
+    |-- requires --> [User Accounts] (email address to send to)
+    |-- requires --> [Transactional email provider] (e.g., Resend, Postmark)
+    |-- optional --> [Secret Dashboard] (link in email to dashboard)
 
-[Health Check Endpoint]
-    |-- required by --> [Production Dockerfile] (HEALTHCHECK)
-    |-- required by --> [Docker Compose] (healthcheck config for depends_on)
+[Pro Tier]
+    |-- requires --> [User Accounts] (plan stored on user record)
+    |-- requires --> [Payment processor] (Stripe)
+    |-- unlocks --> [File Uploads] (complex: requires separate implementation)
+    |-- unlocks --> [Extended Expiration 90d] (low: add expiry option)
+    |-- unlocks --> [Webhook Notifications] (medium: requires webhook infra)
+    |-- unlocks --> [6-word Diceware] (low: add word count option)
+    |-- unlocks --> [API Keys] (medium: key management UI + auth middleware)
+    |-- unlocks --> [Unlimited History Retention] (low: skip cleanup for Pro)
 
-[E2E Tests (Playwright)]
-    |-- requires --> [Running app + database] (webServer config or Docker Compose)
-    |-- required by --> [CI Pipeline (E2E job)]
-    |-- enhances --> [Visual Regression Tests]
+[EFF Diceware Generator]
+    |-- requires --> [existing password field] (already built)
+    |-- enhances --> [password protection] (already built)
+    |-- no account dependency --> [4-word version is free/anonymous]
+    |-- gated by Pro --> [6-word version only]
 
-[CI Pipeline]
-    |-- requires --> [ESLint + Prettier] (lint job)
-    |-- requires --> [Vitest tests pass] (test job)
-    |-- requires --> [Vite build succeeds] (build job)
-    |-- optional --> [Dockerfile builds] (Docker job)
-    |-- optional --> [E2E tests pass] (E2E job)
+[Progressive Conversion Prompts]
+    |-- requires --> [User Accounts] (to offer as upsell destination)
+    |-- requires --> [Rate Limiting Changes] (rate limit upsell needs new limits)
+    |-- enhances --> [PostHog Analytics] (track prompt effectiveness)
 
-[Marketing Homepage]
-    |-- requires --> [Existing design system] (dark theme, glassmorphism, Lucide icons)
-    |-- independent of all infrastructure features
-    |-- enhances --> [SEO infrastructure] (already exists from v2.0)
+[PostHog Analytics]
+    |-- requires --> [CSP nonce system] (existing — must allow PostHog domain)
+    |-- enhances --> [Progressive Conversion] (measure which prompts convert)
+    |-- no dependency on other v4.0 features (can ship independently)
 
-[Privacy Policy / Terms of Service]
-    |-- requires --> [SPA Router] (new routes)
-    |-- requires --> [Marketing Homepage] (footer links to these pages)
+[File Uploads (Pro)]
+    |-- requires --> [Pro Tier]
+    |-- requires --> [Client-side binary encryption] (new crypto module work)
+    |-- requires --> [Storage solution decision] (DB vs S3 vs object storage)
+    |-- conflicts with --> [Zero-knowledge model requires client-side encryption of files, not just text]
 ```
 
-### Dependency Summary
+### Dependency Notes
 
-Two independent tracks can proceed in parallel:
-
-1. **Infrastructure Track:** ESLint/Prettier -> Pre-commit hooks -> Dockerfile + Docker Compose -> CI Pipeline -> E2E Tests
-2. **Marketing Track:** Enhanced Homepage -> Privacy/Terms pages
-
-The infrastructure track is sequential because each piece depends on the previous one. The marketing track is independent and can be built at any point.
+- **Accounts are the v4.0 backbone:** Dashboard, notifications, Pro, and conversion all require accounts. Build accounts first.
+- **File uploads are the highest-complexity item:** Client-side binary encryption, storage architecture, and size limits all interact. This should be a standalone phase even within Pro tier work.
+- **Diceware is independent:** No account dependency for the core 4-word free version. Can ship in Phase 1 before accounts are built.
+- **PostHog is independent:** Can be instrumented at any time. Best done early to capture conversion funnel data from day one of accounts.
+- **Rate limiting changes have a UX dependency:** Tightening anonymous limits without the account upsell messaging ready creates a bad experience. Ship both together.
 
 ---
 
-## MVP Recommendation for This Milestone
+## MVP Definition
 
-### Must Ship (Core -- enables professional launch)
+### Ship in v4.0 (enables the hybrid model)
 
-1. **Docker Compose for development** -- removes contributor friction; 1 hour of work
-2. **Production Dockerfile** -- required for any deployment; use `node:24-slim` not Alpine
-3. **ESLint + Prettier** -- code quality baseline; catches real bugs in existing code
-4. **Pre-commit hooks** -- enforces quality; 15 minutes of work once ESLint exists
-5. **GitHub Actions CI** -- automated validation on every push/PR
-6. **E2E test foundation** -- 5-8 Playwright tests covering the critical create-reveal cycle
-7. **Enhanced marketing homepage** -- hero + trust signals + security deep-dive + use cases for Product Hunt launch
+- [ ] **User accounts (email + OAuth)** — backbone of all other v4.0 features
+- [ ] **Secret dashboard with status metadata** — primary reason users create accounts
+- [ ] **Email "secret viewed" notification** — single highest-value conversion driver (users create accounts explicitly for this)
+- [ ] **EFF Diceware passphrase generator (4-word, free tier)** — independent, low-complexity, high UX value
+- [ ] **Anonymous rate limit tightening with upsell messaging** — drives account creation
+- [ ] **Progressive conversion prompts** — inline, non-blocking, post-creation and at rate limit
+- [ ] **PostHog analytics (anonymous + identified)** — needed from day one to measure conversion
+- [ ] **Pro tier with extended expiration (90 days)** — lowest-complexity Pro feature, validates payment infrastructure
 
-### Should Ship (Polish -- differentiates from competitors)
+### Add After Accounts Are Stable (v4.1)
 
-8. **Health check endpoint** -- 30 minutes of work; enables container orchestration
-9. **Privacy Policy / Terms of Service** -- legal requirement for launch; trust signal
-10. **Animated zero-knowledge diagram** -- homepage "wow factor" for technical audience
-11. **GitHub badge / open source CTA** -- drives engagement from launch traffic
+- [ ] **Pro: Webhook notifications** — add after email notifications are proven
+- [ ] **Pro: API key access** — add after Pro billing is validated
+- [ ] **Pro: 6-word Diceware (Pro)** — trivial feature extension, not launch-critical
+- [ ] **"Notify if expires unviewed" email** — useful but secondary to viewed notification
 
-### Defer (Post-Launch)
+### Defer (v4.2+)
 
-12. **Visual regression tests** -- valuable but not blocking launch
-13. **CI Docker image publishing** -- only matters after launch when self-hosters appear
-14. **Multi-platform Docker builds** -- nice for ARM but not launch-critical
+- [ ] **Pro: File uploads (25MB)** — highest complexity in v4.0 scope; requires storage architecture decision, client-side binary encryption, and extensive security review. Do not ship alongside accounts launch. Needs its own milestone.
+- [ ] **Bulk secret delete** — nice-to-have, not blocking
+- [ ] **Annual billing option** — add after monthly retention is proven
+- [ ] **Custom domains** — enterprise feature, different price tier
+
+---
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| User accounts (email + OAuth) | HIGH | MEDIUM | P1 |
+| Secret dashboard with status | HIGH | MEDIUM | P1 |
+| Email viewed notification | HIGH | MEDIUM | P1 |
+| EFF Diceware generator (4-word) | MEDIUM | LOW | P1 |
+| Anonymous rate limit + upsell | MEDIUM | LOW | P1 |
+| Progressive conversion prompts | HIGH | LOW-MEDIUM | P1 |
+| PostHog analytics | MEDIUM | LOW-MEDIUM | P1 |
+| Pro tier: extended expiration (90d) | MEDIUM | LOW | P1 |
+| Pro tier: webhooks | MEDIUM | MEDIUM | P2 |
+| Pro tier: API keys | MEDIUM | MEDIUM | P2 |
+| Notify if expires unviewed | LOW-MEDIUM | MEDIUM | P2 |
+| Pro tier: 6-word Diceware | LOW | LOW | P2 |
+| Pro tier: file uploads | HIGH | HIGH | P2 |
+| Annual billing | LOW | MEDIUM | P3 |
+| Bulk secret delete | LOW | LOW | P3 |
+| Custom domains | LOW | HIGH | P3 |
+
+---
+
+## Competitor Feature Analysis
+
+| Feature | OneTimeSecret | password.link | scrt.link | SecureShare v4.0 Approach |
+|---------|--------------|---------------|-----------|--------------------------|
+| Anonymous use | Yes (default) | Yes | Yes | Yes (preserved, tightened limits) |
+| User accounts | Yes (email) | Yes | Yes | Email + Google + GitHub OAuth |
+| Secret dashboard | Yes (basic) | Yes (team) | Not confirmed | Yes, metadata-only, zero-knowledge compliant |
+| Email notification on view | Confirmed | Yes (+ Slack + webhook) | Not confirmed | Yes (per-secret opt-in toggle) |
+| Diceware passphrase | No | No | No | Yes (EFF long wordlist, differentiator) |
+| File uploads | No (text only) | Yes (registered) | No | Pro tier, v4.2 (deferred) |
+| Webhooks | No | Yes (Pro) | No | Pro tier v4.1 |
+| Custom domain | $35/month | Enterprise | No | Future tier (not v4.0) |
+| Pricing (Pro) | $35/month (Identity Plus) | Not public | Free only | ~$7/month |
+| Rate limiting messaging | Basic 429 | Unknown | Unknown | Upsell copy in rate limit error |
+
+---
+
+## Zero-Knowledge Implications Per Feature
+
+This section flags how the zero-knowledge constraint affects each feature area — critical for implementation and copy writing.
+
+| Feature | ZK Implication | Implementation Constraint |
+|---------|---------------|--------------------------|
+| Secret dashboard | Cannot show content, cannot reconstruct link with key | Store only: label, created_at, expires_at, viewed_at, status. Never store the #key fragment. |
+| "Copy link again" from dashboard | The full share URL with #key is not stored server-side | Store the base URL only. Display clear message: "Key cannot be recovered. Store your share link now." |
+| Email notification | Email cannot confirm what the secret contained | Email says "a secret was viewed" never "your [thing] was viewed" (content unknown to server) |
+| File uploads (Pro, v4.2) | Files must be encrypted in-browser before upload | New binary encryption module needed. Same AES-256-GCM, but for ArrayBuffer. No server-side processing of file content. |
+| PostHog on reveal page | Reveal page must not send analytics events that include secret metadata | Capture only `secret_revealed` event with no properties. No label, no content, no timing that could leak sensitivity. |
+| Webhook payload | Webhook cannot include secret content | Webhook payload: { event: "secret_viewed", timestamp, secret_id_hash, label_if_set }. Never ciphertext, never plaintext. |
 
 ---
 
 ## Sources
 
-### Docker & Deployment
-- [Docker Hub: Node.js Official Images](https://hub.docker.com/_/node) -- HIGH confidence
-- [Snyk: Choosing the Best Node.js Docker Image](https://snyk.io/blog/choosing-the-best-node-js-docker-image/) -- MEDIUM confidence
-- [argon2 Alpine SIGSEGV issues](https://github.com/ranisalt/node-argon2/issues/302) -- HIGH confidence (verified via multiple GitHub issues)
-- [Andrea Diotallevi: Multi-Stage Docker Builds for TypeScript](https://www.andreadiotallevi.com/blog/how-to-create-a-production-image-for-a-node-typescript-app-using-docker-multi-stage-builds/) -- MEDIUM confidence
+### EFF Diceware
+- [EFF's New Wordlists for Random Passphrases](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases) — HIGH confidence (official EFF documentation)
+- [Diceware.dmuth.org — UX pattern reference](https://diceware.dmuth.org/) — HIGH confidence (live reference implementation, observed directly)
+- [EFF Dice-Generated Passphrases](https://www.eff.org/dice) — HIGH confidence (official)
 
-### CI/CD
-- [GitHub Actions CI/CD Complete Guide 2026](https://devtoolbox.dedyn.io/blog/github-actions-cicd-complete-guide) -- MEDIUM confidence
-- [CYBERTEC: PostgreSQL GitHub Actions CI](https://www.cybertec-postgresql.com/en/postgresql-github-actions-continuous-integration/) -- MEDIUM confidence
-- [OneUptime: Service Containers in GitHub Actions](https://oneuptime.com/blog/post/2025-12-20-service-containers-github-actions/view) -- MEDIUM confidence
+### Secret Dashboard / Competitor Analysis
+- [OneTimeSecret Pricing](https://onetimesecret.com/en/pricing/) — HIGH confidence (live product, observed directly; $0 + $35/month Identity Plus)
+- [password.link Features](https://password.link/en) — HIGH confidence (live product, observed directly; notifications, webhooks, attachments, teams)
+- [OneTimeSecret Security Best Practices Docs](https://docs.onetimesecret.com/en/security-best-practices/) — HIGH confidence (official docs)
+- [The Ultimate Guide to Secure One-Time Secret Sharing 2025](https://techopsasia.com/blog/best-one-time-secret-sharing-tools-2025) — MEDIUM confidence (third-party analysis)
+- [scrt.link vs OneTimeSecret Comparison](https://blog.stophe.com/scrtlink-vs-one-time-secret) — MEDIUM confidence (blog post, author is scrt.link creator)
 
-### E2E Testing
-- [Playwright Official Docs: webServer Config](https://playwright.dev/docs/test-webserver) -- HIGH confidence
-- [Guide to Playwright E2E Testing 2026](https://www.deviqa.com/blog/guide-to-playwright-end-to-end-testing-in-2025/) -- MEDIUM confidence
-- [DevAssure: Database Test Automation with Playwright + PostgreSQL](https://www.devassure.io/blog/database-test-automation-playwright-postgresql-testing/) -- MEDIUM confidence
+### Progressive Conversion
+- [Best Freemium Upgrade Prompts (Appcues)](https://www.appcues.com/blog/best-freemium-upgrade-prompts) — HIGH confidence (multiple real-world examples from Spotify, Dropbox, Grammarly, Slack)
+- [PostHog Anonymous User Tracking](https://github.com/PostHog/posthog.com/blob/master/contents/tutorials/identifying-users-guide.md) — HIGH confidence (official PostHog docs)
+- [Progressive Profiling 101 (Descope)](https://www.descope.com/learn/post/progressive-profiling) — MEDIUM confidence
+- [SaaS Signup Flow UX (Userpilot)](https://userpilot.com/blog/saas-signup-flow/) — MEDIUM confidence
 
-### Code Quality
-- [typescript-eslint: Getting Started](https://typescript-eslint.io/getting-started/) -- HIGH confidence
-- [ESLint: Flat Config with extends and defineConfig](https://eslint.org/blog/2025/03/flat-config-extends-define-config-global-ignores/) -- HIGH confidence
-- [eslint-config-prettier: Flat Config Setup](https://github.com/prettier/eslint-config-prettier) -- HIGH confidence
-- [Biome vs ESLint 2025 Comparison](https://betterstack.com/community/guides/scaling-nodejs/biome-eslint/) -- MEDIUM confidence
+### SaaS Pricing / Pro Tier
+- [SaaS Freemium Conversion Rates 2026 (First Page Sage)](https://firstpagesage.com/seo-blog/saas-freemium-conversion-rates/) — MEDIUM confidence
+- [Upgrade Trigger — Product-Led Growth (SEOJuice)](https://seojuice.com/glossary/growth/product-led-growth/upgrade-trigger/) — MEDIUM confidence
+- [Freemium Conversion Rate Guide (Userpilot)](https://userpilot.com/blog/freemium-conversion-rate/) — MEDIUM confidence
 
-### Pre-Commit Hooks
-- [Husky GitHub Repository](https://github.com/typicode/husky) -- HIGH confidence
-- [lint-staged GitHub Repository](https://github.com/lint-staged/lint-staged) -- HIGH confidence
-
-### Marketing & Competitor Analysis
-- [OneTimeSecret Homepage](https://onetimesecret.com/) -- HIGH confidence (direct observation)
-- [Password Pusher Homepage](https://pwpush.com/) -- HIGH confidence (direct observation)
-- [Yopass Homepage](https://yopass.se/) -- HIGH confidence (direct observation)
-- [Caffeine Marketing: Best Cybersecurity Landing Pages 2025](https://www.caffeinemarketing.com/blog/best-16-cybersecurity-landing-pages) -- MEDIUM confidence
-- [How to Launch a Developer Tool on Product Hunt 2026](https://hackmamba.io/developer-marketing/how-to-launch-on-product-hunt/) -- MEDIUM confidence
+### Email Notifications
+- [password.link Notifications](https://password.link/en) — HIGH confidence (observed: email + Slack + webhook triggers confirmed)
+- [Security Notifications Deliverability (MailChannels)](https://blog.mailchannels.com/security-notifications-alerts-account-activity-emails-why-deliverability-matters/) — MEDIUM confidence
+- [What is Transactional Email? (MagicBell)](https://www.magicbell.com/blog/what-is-a-transactional-email-and-why-is-it-important) — MEDIUM confidence
 
 ---
-*Feature landscape research for: SecureShare v3.0 Production-Ready Delivery*
-*Researched: 2026-02-16*
+
+*Feature landscape research for: SecureShare v4.0 Hybrid Anonymous + Account Model*
+*Researched: 2026-02-18*
