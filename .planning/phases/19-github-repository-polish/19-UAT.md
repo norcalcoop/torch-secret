@@ -72,9 +72,18 @@ skipped: 0
 ## Gaps
 
 - truth: "CI pipeline passes lint checks on push to main"
-  status: failed
+  status: fixed
   reason: "User reported: the ci failed lint"
   severity: major
   test: discovered during UAT (not a numbered test)
-  artifacts: []
-  missing: []
+  root_cause: "4 YAML files (.github/ISSUE_TEMPLATE/bug-report.yml, feature-request.yml, docker-compose.yml, render.yaml) were created but never run through Prettier before commit"
+  artifacts:
+    - path: ".github/ISSUE_TEMPLATE/bug-report.yml"
+      issue: "Prettier formatting violations"
+    - path: ".github/ISSUE_TEMPLATE/feature-request.yml"
+      issue: "Prettier formatting violations"
+    - path: "docker-compose.yml"
+      issue: "Prettier formatting violations"
+    - path: "render.yaml"
+      issue: "Prettier formatting violations"
+  fix: "Ran `npx prettier --write` on all 4 files, committed as d2adc89"
