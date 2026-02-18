@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery -- COMPLETE (all 19 phases, all 50 plans shipped)
+**Current focus:** Gap closure -- Phase 20 complete (TEST-06 multi-browser CI fix)
 
 ## Current Position
 
-Phase: 19 (fifth of 5 in v3.0, 19 of 19 overall) -- COMPLETE
-Plan: 3 of 3 in current phase (all plans complete)
-Status: All phases and plans complete. v3.0 shipped.
-Last activity: 2026-02-18 -- Completed 19-03 (CHANGELOG, version bump, v3.0 GitHub Release)
+Phase: 20 (gap closure, 20 of 20 overall) -- COMPLETE
+Plan: 1 of 1 in current phase (all plans complete)
+Status: All phases and plans complete. v3.0 shipped. TEST-06 gap closed.
+Last activity: 2026-02-18 -- Completed 20-01 (expand CI E2E to Chromium + Firefox + WebKit)
 
 Progress: [==============================] 100% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 2/2 phase 18, 3/3 phase 19)
 
@@ -30,6 +30,7 @@ Progress: [==============================] 100% (36/36 v1+v2 plans complete, 3/3
 | v1.0 MVP | 8 | 22 | 2 days |
 | v2.0 UI & SEO | 6 | 14 | 3 days |
 | v3.0 Production-Ready | 5 | 14 | 2 days |
+| Gap Closure | 1 | 1 | 1 day |
 
 **v3.0 Plan Metrics:**
 
@@ -49,6 +50,7 @@ Progress: [==============================] 100% (36/36 v1+v2 plans complete, 3/3
 | 19-01 | 5min | 2 | 9 |
 | 19-02 | 2min | 2 | 6 |
 | 19-03 | 3min | 2 | 2 |
+| 20-01 | 1min | 1 | 1 |
 
 ## Accumulated Context
 
@@ -100,6 +102,8 @@ Recent decisions affecting current work:
 - Keep a Changelog 1.1.0 format for CHANGELOG.md
 - Narrative release notes telling full project journey across v1.0, v2.0, v3.0
 - v3.0 tag created via gh release create (tag + release in one command)
+- playwright install --with-deps (no browser arg) installs all browsers in CI -- cache key unchanged
+- --project filter removed from CI playwright test command so playwright.config.ts drives browser selection
 
 ### Known Tech Debt
 
@@ -116,5 +120,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 19-03-PLAN.md (CHANGELOG, version bump, v3.0 Release) -- ALL PLANS COMPLETE
-Resume: Project fully shipped. v1.0 + v2.0 + v3.0 all released.
+Stopped at: Completed 20-01-PLAN.md (expand CI E2E to multi-browser) -- ALL PLANS COMPLETE
+Resume: Project fully shipped. v1.0 + v2.0 + v3.0 all released. TEST-06 gap closed.

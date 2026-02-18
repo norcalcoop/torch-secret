@@ -30,7 +30,7 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 - [x] **TEST-03**: E2E test covers password-protected secret flow (create with password, reveal with password)
 - [x] **TEST-04**: E2E test covers error states (already viewed, expired, invalid link)
 - [x] **TEST-05**: E2E tests use API fixtures for secret creation (one-time secrets are destructive)
-- [ ] **TEST-06**: Playwright runs across Chromium, Firefox, and WebKit in CI
+- [x] **TEST-06**: Playwright runs across Chromium, Firefox, and WebKit in CI
 - [x] **TEST-07**: Automated accessibility checks (axe-core) run in Playwright E2E tests
 
 ### CI/CD Pipeline
@@ -89,7 +89,7 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 | TEST-03 | Phase 17 | Complete |
 | TEST-04 | Phase 17 | Complete |
 | TEST-05 | Phase 17 | Complete |
-| TEST-06 | Phase 20 | Pending |
+| TEST-06 | Phase 20 | Complete |
 | TEST-07 | Phase 17 | Complete |
 | CICD-01 | Phase 18 | Complete |
 | CICD-02 | Phase 18 | Complete |

@@ -47,7 +47,7 @@ See [v2.0 Roadmap Archive](milestones/v2.0-ROADMAP.md) for full phase details.
 - [x] **Phase 17: E2E Testing with Playwright** - Browser tests covering full user journeys, error states, accessibility, and multi-browser (completed 2026-02-17)
 - [x] **Phase 18: CI/CD Pipeline** - GitHub Actions workflow with lint, test, build, E2E, and auto-deploy to Render (completed 2026-02-18)
 - [x] **Phase 19: GitHub Repository Polish** - README with screenshots, issue/PR templates, CONTRIBUTING guide, CHANGELOG, and release (completed 2026-02-18)
-- [ ] **Phase 20: Fix Multi-Browser CI** - Close TEST-06 gap: enable Chromium, Firefox, and WebKit in CI; fix REQUIREMENTS.md documentation artifacts
+- [x] **Phase 20: Fix Multi-Browser CI** - Close TEST-06 gap: enable Chromium, Firefox, and WebKit in CI; fix REQUIREMENTS.md documentation artifacts (completed 2026-02-18)
 
 ## Phase Details
 
@@ -135,7 +135,7 @@ Plans:
   1. `.github/workflows/ci.yml` installs all Playwright browsers (not just Chromium) and runs E2E tests without a `--project` filter
   2. A Firefox or WebKit failure in E2E tests blocks the CI build
   3. REQUIREMENTS.md checkboxes for QUAL-01..05 and DOCK-01..05 are marked `[x]` (documentation artifact fix)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 20-01-PLAN.md — Remove Chromium-only restrictions from CI e2e job (3 line changes)
@@ -165,4 +165,4 @@ Plans:
 | 17. E2E Testing with Playwright | v3.0 | 2/2 | Complete | 2026-02-17 |
 | 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
 | 19. GitHub Repository Polish | v3.0 | Complete    | 2026-02-18 | 2026-02-18 |
-| 20. Fix Multi-Browser CI | v3.0 | 0/1 | Pending | — |
+| 20. Fix Multi-Browser CI | 1/1 | Complete   | 2026-02-18 | — |
