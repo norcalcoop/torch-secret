@@ -38,7 +38,7 @@ See [v2.0 Roadmap Archive](milestones/v2.0-ROADMAP.md) for full phase details.
 
 </details>
 
-### v3.0 Production-Ready Delivery (Shipped 2026-02-18)
+### v3.0 Production-Ready Delivery (Gap Closure In Progress)
 
 **Milestone Goal:** Transform SecureShare from a working application into a production-ready, professionally-delivered open source project with automated quality gates, containerized deployment, end-to-end browser tests, CI/CD pipeline, and polished GitHub presence.
 
@@ -47,6 +47,7 @@ See [v2.0 Roadmap Archive](milestones/v2.0-ROADMAP.md) for full phase details.
 - [x] **Phase 17: E2E Testing with Playwright** - Browser tests covering full user journeys, error states, accessibility, and multi-browser (completed 2026-02-17)
 - [x] **Phase 18: CI/CD Pipeline** - GitHub Actions workflow with lint, test, build, E2E, and auto-deploy to Render (completed 2026-02-18)
 - [x] **Phase 19: GitHub Repository Polish** - README with screenshots, issue/PR templates, CONTRIBUTING guide, CHANGELOG, and release (completed 2026-02-18)
+- [ ] **Phase 20: Fix Multi-Browser CI** - Close TEST-06 gap: enable Chromium, Firefox, and WebKit in CI; fix REQUIREMENTS.md documentation artifacts
 
 ## Phase Details
 
@@ -125,6 +126,17 @@ Plans:
 - [x] 19-02-PLAN.md — Issue/PR templates, CONTRIBUTING.md, and SECURITY.md
 - [x] 19-03-PLAN.md — CHANGELOG.md, version bump, and v3.0 GitHub Release
 
+### Phase 20: Fix Multi-Browser CI
+**Goal**: CI runs Playwright E2E tests across all three browsers (Chromium, Firefox, WebKit), closing the TEST-06 gap identified in the v3.0 milestone audit
+**Depends on**: Phase 19
+**Requirements**: TEST-06
+**Gap Closure:** Closes gaps from v3.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `.github/workflows/ci.yml` installs all Playwright browsers (not just Chromium) and runs E2E tests without a `--project` filter
+  2. A Firefox or WebKit failure in E2E tests blocks the CI build
+  3. REQUIREMENTS.md checkboxes for QUAL-01..05 and DOCK-01..05 are marked `[x]` (documentation artifact fix)
+**Plans:** 0/1 plans
+
 ## Progress
 
 **Execution Order:** Phases execute sequentially: 15 → 16 → 17 → 18 → 19
@@ -150,3 +162,4 @@ Plans:
 | 17. E2E Testing with Playwright | v3.0 | 2/2 | Complete | 2026-02-17 |
 | 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
 | 19. GitHub Repository Polish | v3.0 | Complete    | 2026-02-18 | 2026-02-18 |
+| 20. Fix Multi-Browser CI | v3.0 | 0/1 | Pending | — |

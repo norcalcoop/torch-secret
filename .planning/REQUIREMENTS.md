@@ -9,19 +9,19 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 
 ### Code Quality
 
-- [ ] **QUAL-01**: ESLint 10 flat config with typescript-eslint type-aware rules enforces consistent code style
-- [ ] **QUAL-02**: Prettier 3.8 formats all source files with consistent style
-- [ ] **QUAL-03**: Husky pre-commit hooks run lint-staged on changed files before every commit
-- [ ] **QUAL-04**: All pre-existing TypeScript strict-mode errors in crypto/icons/accessibility files are resolved
-- [ ] **QUAL-05**: Entire codebase passes lint and format checks with zero violations
+- [x] **QUAL-01**: ESLint 10 flat config with typescript-eslint type-aware rules enforces consistent code style
+- [x] **QUAL-02**: Prettier 3.8 formats all source files with consistent style
+- [x] **QUAL-03**: Husky pre-commit hooks run lint-staged on changed files before every commit
+- [x] **QUAL-04**: All pre-existing TypeScript strict-mode errors in crypto/icons/accessibility files are resolved
+- [x] **QUAL-05**: Entire codebase passes lint and format checks with zero violations
 
 ### Docker & Deployment
 
-- [ ] **DOCK-01**: Multi-stage Dockerfile using node:24-slim builds production-optimized image
-- [ ] **DOCK-02**: docker-compose.yml starts app + PostgreSQL + Redis for local development with one command
-- [ ] **DOCK-03**: Health check endpoint (GET /api/health) returns service status for Docker, Render, and Playwright
-- [ ] **DOCK-04**: Render.com Blueprint (render.yaml) enables one-click production deployment
-- [ ] **DOCK-05**: Production Docker image runs without dev dependencies and uses non-root user
+- [x] **DOCK-01**: Multi-stage Dockerfile using node:24-slim builds production-optimized image
+- [x] **DOCK-02**: docker-compose.yml starts app + PostgreSQL + Redis for local development with one command
+- [x] **DOCK-03**: Health check endpoint (GET /api/health) returns service status for Docker, Render, and Playwright
+- [x] **DOCK-04**: Render.com Blueprint (render.yaml) enables one-click production deployment
+- [x] **DOCK-05**: Production Docker image runs without dev dependencies and uses non-root user
 
 ### E2E Testing
 
@@ -30,7 +30,7 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 - [x] **TEST-03**: E2E test covers password-protected secret flow (create with password, reveal with password)
 - [x] **TEST-04**: E2E test covers error states (already viewed, expired, invalid link)
 - [x] **TEST-05**: E2E tests use API fixtures for secret creation (one-time secrets are destructive)
-- [x] **TEST-06**: Playwright runs across Chromium, Firefox, and WebKit in CI
+- [ ] **TEST-06**: Playwright runs across Chromium, Firefox, and WebKit in CI
 - [x] **TEST-07**: Automated accessibility checks (axe-core) run in Playwright E2E tests
 
 ### CI/CD Pipeline
@@ -74,22 +74,22 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QUAL-01 | Phase 15 | Pending |
-| QUAL-02 | Phase 15 | Pending |
-| QUAL-03 | Phase 15 | Pending |
-| QUAL-04 | Phase 15 | Pending |
-| QUAL-05 | Phase 15 | Pending |
-| DOCK-01 | Phase 16 | Pending |
-| DOCK-02 | Phase 16 | Pending |
-| DOCK-03 | Phase 16 | Pending |
-| DOCK-04 | Phase 16 | Pending |
-| DOCK-05 | Phase 16 | Pending |
+| QUAL-01 | Phase 15 | Complete |
+| QUAL-02 | Phase 15 | Complete |
+| QUAL-03 | Phase 15 | Complete |
+| QUAL-04 | Phase 15 | Complete |
+| QUAL-05 | Phase 15 | Complete |
+| DOCK-01 | Phase 16 | Complete |
+| DOCK-02 | Phase 16 | Complete |
+| DOCK-03 | Phase 16 | Complete |
+| DOCK-04 | Phase 16 | Complete |
+| DOCK-05 | Phase 16 | Complete |
 | TEST-01 | Phase 17 | Complete |
 | TEST-02 | Phase 17 | Complete |
 | TEST-03 | Phase 17 | Complete |
 | TEST-04 | Phase 17 | Complete |
 | TEST-05 | Phase 17 | Complete |
-| TEST-06 | Phase 17 | Complete |
+| TEST-06 | Phase 20 | Pending |
 | TEST-07 | Phase 17 | Complete |
 | CICD-01 | Phase 18 | Complete |
 | CICD-02 | Phase 18 | Complete |
