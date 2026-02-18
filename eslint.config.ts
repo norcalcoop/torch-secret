@@ -64,6 +64,18 @@ export default defineConfig([
   },
 
   {
+    files: ['scripts/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+
+  {
     files: ['e2e/**/*.ts'],
     languageOptions: {
       globals: globals.node,

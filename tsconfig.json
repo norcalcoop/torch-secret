@@ -15,6 +15,6 @@
     "lib": ["ES2022", "DOM"],
     "types": ["vitest/globals"]
   },
-  "include": ["client/src/**/*.ts", "shared/**/*.ts", "server/src/**/*.ts"],
+  "include": ["client/src/**/*.ts", "shared/**/*.ts", "server/src/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
