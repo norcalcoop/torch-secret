@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v3.0 Production-Ready Delivery — Phase 18: CI/CD Pipeline (COMPLETE)
+**Current focus:** v3.0 Production-Ready Delivery — Phase 19: GitHub Repository Polish (IN PROGRESS)
 
 ## Current Position
 
-Phase: 18 (fourth of 5 in v3.0, 18 of 19 overall) -- COMPLETE
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Phase complete
-Last activity: 2026-02-18 — Completed 18-01 (CI Pipeline workflow with lint, test, E2E)
+Phase: 19 (fifth of 5 in v3.0, 19 of 19 overall) -- IN PROGRESS
+Plan: 2 of 3 in current phase
+Status: Executing plan 19-02
+Last activity: 2026-02-18 — Completed 19-02 (Community templates: issue forms, PR template, CONTRIBUTING, SECURITY)
 
-Progress: [==============================] 98% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 2/2 phase 18)
+Progress: [==============================] 99% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 2/2 phase 18, 2/3 phase 19)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [==============================] 98% (36/36 v1+v2 plans complete, 3/3 
 | 17-02 | 28min | 2 | 6 |
 | 18-01 | 2min | 2 | 5 |
 | 18-02 | 1min | 1 | 2 |
+| 19-02 | 2min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - V8 coverage with text + json-summary reporters, no threshold enforcement (informational only)
 - Lint job gates test and e2e jobs; test and e2e run in parallel after lint passes
 - Minimal README placeholder -- Phase 19 expands into full project README
+- YAML form templates for issue templates (structured validation, better UX than classic markdown)
+- Security vulnerabilities redirect to GitHub private advisory reporting (never public issues)
+- PR checklist mirrors actual CI gates (lint, format, test, tsc, e2e)
 
 ### Known Tech Debt
 
@@ -103,5 +107,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 18-01-PLAN.md (CI Pipeline - all phase 18 plans complete)
-Resume: /gsd:execute-phase 19
+Stopped at: Completed 19-02-PLAN.md (Community templates: issue forms, PR template, CONTRIBUTING, SECURITY)
+Resume: /gsd:execute-phase 19 (continue with plan 19-03)
