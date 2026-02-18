@@ -46,8 +46,8 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 - [x] **REPO-02**: Issue templates for bug reports and feature requests
 - [x] **REPO-03**: Pull request template with checklist
 - [x] **REPO-04**: CONTRIBUTING.md with dev setup, code style, and PR process
-- [ ] **REPO-05**: CHANGELOG.md tracking releases with semantic versioning
-- [ ] **REPO-06**: GitHub Release created for v3.0 with release notes
+- [x] **REPO-05**: CHANGELOG.md tracking releases with semantic versioning
+- [x] **REPO-06**: GitHub Release created for v3.0 with release notes
 
 ## Future Requirements
 
@@ -99,8 +99,8 @@ Requirements for v3.0 Production-Ready Delivery. Each maps to roadmap phases.
 | REPO-02 | Phase 19 | Complete |
 | REPO-03 | Phase 19 | Complete |
 | REPO-04 | Phase 19 | Complete |
-| REPO-05 | Phase 19 | Pending |
-| REPO-06 | Phase 19 | Pending |
+| REPO-05 | Phase 19 | Complete |
+| REPO-06 | Phase 19 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 27 total
