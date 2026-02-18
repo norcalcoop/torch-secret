@@ -134,17 +134,17 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
       - name: Install Playwright system deps
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install-deps
 
       - name: Run database migrations
         run: node --import tsx server/src/db/migrate.ts
 
       - name: Run E2E tests
-        run: npx playwright test --config e2e/playwright.config.ts --project=chromium
+        run: npx playwright test --config e2e/playwright.config.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
