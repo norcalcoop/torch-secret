@@ -133,6 +133,9 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      - name: Run database migrations
+        run: node --import tsx server/src/db/migrate.ts
+
       - name: Run E2E tests
         run: npx playwright test --config e2e/playwright.config.ts --project=chromium
 
