@@ -5,6 +5,11 @@ export default defineConfig({
     globals: false,
     testTimeout: 10_000,
     setupFiles: ['dotenv/config'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary'],
+      reportsDirectory: './coverage',
+    },
     projects: [
       {
         test: {
