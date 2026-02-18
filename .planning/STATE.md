@@ -2,16 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-18 after v3.0 milestone)
+See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** Planning next milestone
+**Current focus:** v4.0 — Hybrid Anonymous + Account Model
 
 ## Current Position
 
-Phase: — (v3.0 complete, 20/20 phases shipped)
-Status: v3.0 archived. All three milestones shipped. Ready for next milestone planning.
-Last activity: 2026-02-18 — Completed v3.0 milestone archival
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-18 — Milestone v4.0 started
 
 ## Performance Metrics
 
@@ -42,5 +43,5 @@ All decisions logged in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: v3.0 milestone complete and archived
-Resume: `/gsd:new-milestone` to start next milestone cycle
+Stopped at: v4.0 milestone started — defining requirements
+Resume: Continue requirements definition and roadmap creation

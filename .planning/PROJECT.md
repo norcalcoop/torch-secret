@@ -1,5 +1,18 @@
 # SecureShare
 
+## Current Milestone: v4.0 Hybrid Anonymous + Account Model
+
+**Goal:** Evolve SecureShare from a pure anonymous tool into a hybrid model — anonymous users get instant secret creation with auto-generated passphrases, while optional accounts unlock dashboard, email notifications, extended expiration, and a Pro monetization tier.
+
+**Target features:**
+- Auto-generated EFF Diceware passphrases for two-channel security (all users)
+- User accounts (email + OAuth) with dashboard, history, and labeling
+- Pro tier ($7/month) via Stripe — extended expiration, file uploads, webhooks
+- Progressive conversion funnel from anonymous → free → Pro
+- PostHog analytics and legal documents (Privacy Policy, ToS)
+
+---
+
 ## What This Is
 
 SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Dark terminal-inspired UI with glassmorphism surfaces, complete SEO infrastructure, multi-browser E2E tests, containerized deployment, and CI/CD pipeline. No accounts, no signup — just paste, encrypt, share, and destroy.
@@ -45,23 +58,30 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ### Active
 
-(No active requirements — planning next milestone)
+<!-- v4.0 Hybrid Anonymous + Account Model -->
+
+- [ ] Auto-generated EFF Diceware passphrases (4-word, client-side, two-channel security flow)
+- [ ] User account registration and login (email/password + OAuth via Google and GitHub)
+- [ ] User dashboard — secret history, pre-view deletion, secret labeling
+- [ ] Email notifications when secrets are viewed (SendGrid integration)
+- [ ] Extended expiration for account users (up to 7 days vs 1h anonymous)
+- [ ] Pro tier ($7/month) via Stripe — 90-day expiration, unlimited secrets, file uploads (25MB), webhook notifications
+- [ ] Tightened anonymous rate limits: 3/hour and 10/day with friendly conversion prompts
+- [ ] Progressive conversion prompts (soft after 1st secret, medium after 3rd, hard on rate limit)
+- [ ] Product analytics via PostHog (anonymous-safe, no PII)
+- [ ] Legal documents: Privacy Policy and Terms of Service
 
 ### Out of Scope
 
-- User accounts and authentication — zero-friction is the core differentiator
-- File uploads — text only, reduces complexity and storage costs
 - Editing/revoking secrets after creation — one-time links are the model
-- Analytics dashboard for users — no accounts means no dashboard
 - Browser extensions — web-first
-- Public API — internal use only
-- Team/organization features — individual sharing
+- Public API — internal use only; even Pro tier does not expose public API
+- Team/organization features — individual sharing only; Enterprise is future
 - Mobile apps — responsive web covers mobile use cases
-- Real-time notifications when secret is viewed — adds complexity without core value
 - Offline mode — real-time server interaction is core to the destroy model
-- Unit test gap coverage beyond current 163 tests — coverage is adequate for current scope
-- Enhanced homepage hero/features redesign — deferred; current create-form homepage works well
-- Product Hunt / social media launch — deferred; needs production domain first
+- Unit test gap coverage beyond current tests — coverage is adequate for current scope
+- Enhanced homepage hero redesign — deferred; create-form homepage works well
+- Real-time push notifications — email-on-view is sufficient; websocket notifications deferred
 
 ## Context
 
@@ -125,4 +145,4 @@ SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret rou
 | YAML form issue templates over markdown | Structured validation, required fields, better contributor UX | ✓ Good |
 
 ---
-*Last updated: 2026-02-18 after v3.0 milestone*
+*Last updated: 2026-02-18 after v4.0 milestone started*
