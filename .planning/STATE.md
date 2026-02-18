@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 19 (fifth of 5 in v3.0, 19 of 19 overall) -- IN PROGRESS
-Plan: 2 of 3 in current phase
-Status: Executing plan 19-02
-Last activity: 2026-02-18 — Completed 19-02 (Community templates: issue forms, PR template, CONTRIBUTING, SECURITY)
+Plan: 2 of 3 in current phase (19-01 and 19-02 complete, 19-03 remaining)
+Status: Executing phase 19
+Last activity: 2026-02-18 — Completed 19-01 (README, screenshots, LICENSE, Codecov CI)
 
 Progress: [==============================] 99% (36/36 v1+v2 plans complete, 3/3 phase 15, 4/4 phase 16, 2/2 phase 17, 2/2 phase 18, 2/3 phase 19)
 
@@ -45,6 +45,7 @@ Progress: [==============================] 99% (36/36 v1+v2 plans complete, 3/3 
 | 17-02 | 28min | 2 | 6 |
 | 18-01 | 2min | 2 | 5 |
 | 18-02 | 1min | 1 | 2 |
+| 19-01 | 5min | 2 | 9 |
 | 19-02 | 2min | 2 | 6 |
 
 ## Accumulated Context
@@ -88,6 +89,9 @@ Recent decisions affecting current work:
 - V8 coverage with text + json-summary reporters, no threshold enforcement (informational only)
 - Lint job gates test and e2e jobs; test and e2e run in parallel after lint passes
 - Minimal README placeholder -- Phase 19 expands into full project README
+- Added scripts/**/*.ts to tsconfig include and ESLint config for screenshot script linting
+- Dark theme screenshots for visual impact in README hero section
+- Codecov integration via codecov/codecov-action@v5 with fail_ci_if_error: false
 - YAML form templates for issue templates (structured validation, better UX than classic markdown)
 - Security vulnerabilities redirect to GitHub private advisory reporting (never public issues)
 - PR checklist mirrors actual CI gates (lint, format, test, tsc, e2e)
@@ -107,5 +111,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 19-02-PLAN.md (Community templates: issue forms, PR template, CONTRIBUTING, SECURITY)
+Stopped at: Completed 19-01-PLAN.md (README, screenshots, LICENSE, Codecov CI)
 Resume: /gsd:execute-phase 19 (continue with plan 19-03)
