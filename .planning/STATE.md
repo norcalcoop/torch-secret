@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication)
-Plan: 01 complete (1 of 6 plans in phase 22)
-Status: Phase 22 in progress — Plan 01 complete, ready for Plan 02
-Last activity: 2026-02-19 — Phase 22 Plan 01 executed (Better Auth foundation: auth.ts, email.ts, env vars)
+Plan: 02 complete (2 of 6 plans in phase 22)
+Status: Phase 22 in progress — Plan 02 complete, ready for Plan 03
+Last activity: 2026-02-19 — Phase 22 Plan 02 executed (Better Auth browser client: auth-client.ts, dashboard.ts)
 
 Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements complete)
 
@@ -28,6 +28,7 @@ Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements compl
 | Phase 21 P03 | 1 | 2 tasks | 2 files |
 | Phase 21 P02 | 6 | 1 tasks | 4 files |
 | Phase 22 P01 | 4 min | 2 tasks | 6 files |
+| Phase 22 P02 | 2 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -51,6 +52,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22-01]: Email callbacks use non-async fire-and-forget (void + Promise.resolve()) to satisfy @typescript-eslint/require-await while maintaining better-auth Promise<void> type contract
 - [Phase 22-01]: drizzleAdapter uses both usePlural: true AND explicit user: schema.users mapping — belt-and-suspenders safety against Better Auth table name mismatch
 - [Phase 22-01]: requireEmailVerification: env.NODE_ENV !== 'test' — bypasses email gate in test environment
+- [Phase 22-02]: baseURL omitted from createAuthClient() — Better Auth infers from window.location; works for both Vite dev proxy and same-origin production
+- [Phase 22-02]: isSession() type guard to safely narrow better-auth any-typed getSession return — avoids @typescript-eslint/no-unsafe-member-access throughout dashboard
+- [Phase 22-02]: result.data cast to unknown before narrowing — satisfies no-unsafe-assignment without disabling the rule
 
 ### Known Tech Debt
 
@@ -66,5 +70,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 22-01-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 02 next)
+Stopped at: Completed 22-02-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 03 next)
