@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 21 of 27 (Schema Foundation)
-Plan: — (roadmap created, planning not yet started)
-Status: Ready to plan
-Last activity: 2026-02-18 — v4.0 roadmap created (7 phases, 31 requirements mapped)
+Plan: 03 complete (3 of 3 plans in phase 21)
+Status: Phase 21 complete — ready for Phase 22
+Last activity: 2026-02-19 — Phase 21 Plan 03 executed (invariant documentation created)
 
-Progress: [░░░░░░░░░░] 0% (v4.0)
+Progress: [█░░░░░░░░░] ~4% (v4.0 — 1/31 requirements complete)
 
 ## Performance Metrics
 
@@ -25,6 +25,7 @@ Progress: [░░░░░░░░░░] 0% (v4.0)
 | v3.0 Production-Ready | 6 | 15 | 2 days |
 | **Total shipped** | **20** | **51** | **~7 days** |
 | v4.0 in progress | 7 planned | TBD | — |
+| Phase 21 P03 | 1 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -38,6 +39,7 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - PostHog sanitize_properties stripping URL fragments is mandatory — misconfiguration leaks AES-256-GCM keys permanently
 - Drizzle bug #4147: inspect generated SQL after db:generate; split FK + column additions into two migration steps if needed
 - Better Auth requires sameSite: 'lax' on session cookie (not 'strict') for OAuth callback redirects to work
+- [Phase 21]: INVARIANTS.md placed in .planning/ as canonical source for zero-knowledge invariant with three-way cross-reference lock (schema.ts + INVARIANTS.md + CLAUDE.md)
 
 ### Known Tech Debt
 
@@ -52,6 +54,6 @@ Key v4.0 architectural constraints (carry forward to every phase):
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Phase 21 context gathered — decisions captured in .planning/phases/21-schema-foundation/21-CONTEXT.md
-Resume: Run /gsd:plan-phase 21
+Last session: 2026-02-19
+Stopped at: Completed 21-03-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication)
