@@ -138,6 +138,32 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 - **Server tsconfig:** Extends root but overrides to `NodeNext` module resolution and excludes DOM types.
 - **Middleware order in `app.ts`:** Trust proxy → HTTPS redirect → CSP nonce → Helmet → logger → JSON parser → routes → static/SPA → error handler. Order matters for correctness.
 
+## Zero-Knowledge Invariant (Hard Convention)
+
+**MANDATORY CHECK:** Before writing any code that touches the database schema, application logger, or analytics events, read `.planning/INVARIANTS.md`. This invariant governs all of v4.0 and must not be violated.
+
+### The Rule
+
+No database record, log line, or analytics event may contain **both** a `userId` **and** a `secretId` in the same payload. These two identifiers must remain permanently separated across all systems.
+
+### Why This Matters
+
+Combining `userId` + `secretId` in any shared record creates a deanonymization attack surface — an attacker with DB or log access could correlate which user created which secret, violating the zero-knowledge security model.
+
+### Current Enforcement (as of Phase 21)
+
+| System                 | Rule                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `secrets.user_id` (DB) | Nullable FK to users.id; `secrets.id` is NEVER stored in users/sessions rows |
+| Pino logger            | Redacts secret IDs from URL paths via regex — no secretId in log output      |
+| PostHog (Phase 25)     | `sanitize_properties` must strip URL fragments before any event fires        |
+
+### When Adding New Systems
+
+Extend the table in `.planning/INVARIANTS.md` first, then implement. Update the block comment in `server/src/db/schema.ts` to match.
+
+See `.planning/INVARIANTS.md` for the complete rule, rationale, enforcement table, and extension protocol.
+
 ## Frontend UI/UX Workflow
 
 **MANDATORY:** Before writing or modifying any frontend UI/UX code (HTML, CSS, templates, components, pages, layouts, styles, or visual elements), you MUST first invoke the `frontend-design` skill. This applies to any task that changes what the user sees — new pages, component creation, styling updates, layout changes, responsive adjustments, or visual redesigns. Do not skip this step even for small visual tweaks. The skill ensures design quality, consistency, and production-grade output.
