@@ -26,6 +26,7 @@ Progress: [█░░░░░░░░░] ~4% (v4.0 — 1/31 requirements compl
 | **Total shipped** | **20** | **51** | **~7 days** |
 | v4.0 in progress | 7 planned | TBD | — |
 | Phase 21 P03 | 1 | 2 tasks | 2 files |
+| Phase 21 P02 | 6 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -43,6 +44,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 21-01]: onDelete: 'set null' on secrets.userId — preserves already-shared links if user deletes account; cascade would be a data-loss bug
 - [Phase 21-01]: onDelete: 'cascade' on sessions.userId and accounts.userId — Better Auth requirement for session cleanup
 - [Phase 21-01]: sql template tag must be imported from drizzle-orm (not drizzle-orm/pg-core)
+- [Phase 21]: [Phase 21-02]: Drizzle bug #4147 workaround: drizzle-kit CASE B (single combined file) — split into 0001_add_auth_tables.sql and 0002_add_secrets_user_id.sql with ADD COLUMN before ADD CONSTRAINT
+- [Phase 21]: [Phase 21-02]: Descriptive migration tag names (0001_add_auth_tables, 0002_add_secrets_user_id) chosen over drizzle-kit auto-slugs for operational clarity
 
 ### Known Tech Debt
 

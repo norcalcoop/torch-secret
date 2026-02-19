@@ -57,7 +57,7 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 
 **Milestone Goal:** Evolve SecureShare into a hybrid model — anonymous users get instant secret creation with auto-generated passphrases, while optional accounts unlock a secret dashboard, email notifications, and a progressive conversion funnel. Every feature preserves the zero-knowledge invariant: no log, DB record, or analytics event may contain both a user ID and a secret ID together.
 
-- [ ] **Phase 21: Schema Foundation** - Add users table and nullable user_id FK on secrets; apply migration safely
+- [x] **Phase 21: Schema Foundation** - Add users table and nullable user_id FK on secrets; apply migration safely (completed 2026-02-19)
 - [ ] **Phase 22: Authentication** - Better Auth with email/password, OAuth (Google + GitHub), sessions, email verification
 - [ ] **Phase 23: Secret Dashboard** - Authenticated user's secret history, labels, status display, pre-view deletion
 - [ ] **Phase 24: EFF Diceware Passphrase Generator** - Client-side 4-word passphrase generation with two-channel UI
@@ -176,7 +176,7 @@ Plans:
 | 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
 | 19. GitHub Repository Polish | v3.0 | 3/3 | Complete | 2026-02-18 |
 | 20. Fix Multi-Browser CI | v3.0 | 1/1 | Complete | 2026-02-18 |
-| 21. Schema Foundation | 2/3 | In Progress|  | - |
+| 21. Schema Foundation | 3/3 | Complete   | 2026-02-19 | - |
 | 22. Authentication | v4.0 | 0/TBD | Not started | - |
 | 23. Secret Dashboard | v4.0 | 0/TBD | Not started | - |
 | 24. EFF Diceware Passphrase Generator | v4.0 | 0/TBD | Not started | - |
