@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication)
-Plan: 05 complete (5 of 6 plans in phase 22)
-Status: Phase 22 in progress — Plan 05 complete, ready for Plan 06
-Last activity: 2026-02-19 — Phase 22 Plan 05 executed (Forgot-password and reset-password pages, router auth routes)
+Plan: 06 in progress — Task 1 complete, awaiting human-verify checkpoint (Task 2)
+Status: Phase 22 in progress — Plan 06 Task 1 committed, paused at checkpoint
+Last activity: 2026-02-19 — Phase 22 Plan 06 Task 1 executed (Auth integration tests, 12 tests passing)
 
-Progress: [██░░░░░░░░] ~12% (v4.0 — 14/31 requirements complete)
+Progress: [██░░░░░░░░] ~14% (v4.0 — 22/31 requirements complete: AUTH-01 through AUTH-08 verified by automated tests)
 
 ## Performance Metrics
 
@@ -31,6 +31,7 @@ Progress: [██░░░░░░░░] ~12% (v4.0 — 14/31 requirements com
 | Phase 22 P02 | 2 min | 2 tasks | 2 files |
 | Phase 22 P04 | 5 | 2 tasks | 2 files |
 | Phase 22 P05 | 2 | 2 tasks | 3 files |
+| Phase 22 P06 | 4 min | 1 task | 2 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22]: [Phase 22-05]: renderForgotPasswordPage/renderResetPasswordPage are non-async (void return) — no top-level await; async triggers require-await lint error
 - [Phase 22]: [Phase 22-05]: forgot-password success state is generic (prevents email enumeration) — same message whether account exists or not
 - [Phase 22]: [Phase 22-05]: reset-password extracts token via URLSearchParams(?token=) — Better Auth appends token because requestPasswordReset used redirectTo: '/reset-password'
+- [Phase 22-06]: Better Auth requestPasswordReset endpoint path is /api/auth/request-password-reset (not /api/auth/forget-password as documented elsewhere)
+- [Phase 22-06]: drizzleAdapter with usePlural: true requires explicit verifications: schema.verification mapping — Better Auth looks for 'verifications' key but schema exports 'verification' (singular)
 
 ### Known Tech Debt
 
@@ -81,5 +84,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 22-05-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 06 next)
+Stopped at: Paused at 22-06 checkpoint:human-verify (Task 2) — awaiting manual browser verification of auth flows
+Resume: After human approves checkpoint, continue 22-06 Task 2 (all automated tests already pass)
