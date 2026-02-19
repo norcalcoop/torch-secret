@@ -21,8 +21,17 @@ export const auth = betterAuth({
     provider: 'pg',
     schema: {
       ...schema,
-      // Better Auth uses singular "user" internally; our table is plural "users"
+      // Better Auth uses singular model names internally; our tables are plural.
+      // With usePlural: true, Better Auth appends 's' when resolving model names to schema keys.
+      // This means it looks for "users", "sessions", "accounts", "verifications" — but our
+      // schema object has keys "users", "sessions", "accounts", "verification" (no trailing 's').
+      //
+      // Explicit mappings resolve all naming mismatches:
+      //   Better Auth "user" -> appends 's' -> looks for "users" -> found via ...schema
+      //   Better Auth "verification" -> appends 's' -> looks for "verifications" -> NOT in schema
+      //     Workaround: provide "verifications" key pointing to schema.verification table
       user: schema.users,
+      verifications: schema.verification,
     },
     usePlural: true,
   }),
