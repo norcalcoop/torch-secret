@@ -194,6 +194,56 @@ function handleRoute(): void {
       .then((mod) => mod.renderRevealPage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
+  } else if (path === '/login') {
+    updatePageMeta({
+      title: 'Sign In',
+      description: 'Sign in to your SecureShare account.',
+      noindex: true,
+    });
+    import('./pages/login.js')
+      .then((mod) => mod.renderLoginPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/register') {
+    updatePageMeta({
+      title: 'Create Account',
+      description: 'Create a free SecureShare account.',
+      noindex: true,
+    });
+    import('./pages/register.js')
+      .then((mod) => mod.renderRegisterPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/forgot-password') {
+    updatePageMeta({
+      title: 'Reset Password',
+      description: 'Request a password reset for your SecureShare account.',
+      noindex: true,
+    });
+    import('./pages/forgot-password.js')
+      .then((mod) => mod.renderForgotPasswordPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/reset-password') {
+    updatePageMeta({
+      title: 'Set New Password',
+      description: 'Set a new password for your SecureShare account.',
+      noindex: true,
+    });
+    import('./pages/reset-password.js')
+      .then((mod) => mod.renderResetPasswordPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/dashboard') {
+    updatePageMeta({
+      title: 'Dashboard',
+      description: 'Your SecureShare dashboard.',
+      noindex: true,
+    });
+    import('./pages/dashboard.js')
+      .then((mod) => mod.renderDashboardPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
   } else {
     updatePageMeta({
       title: 'Page Not Found',
