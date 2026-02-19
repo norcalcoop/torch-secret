@@ -53,5 +53,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: v4.0 roadmap written — 7 phases (21-27), 31 requirements mapped, ready to plan Phase 21
+Stopped at: Phase 21 context gathered — decisions captured in .planning/phases/21-schema-foundation/21-CONTEXT.md
 Resume: Run /gsd:plan-phase 21
