@@ -77,7 +77,12 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
   3. Migration applies without downtime to existing data (additive-only change)
   4. Drizzle bug #4147 workaround applied: column addition and FK constraint are in separate migration steps if generated together
   5. Zero-knowledge invariant is documented: no code path may create a log line, analytics event, or DB record containing both `userId` and `secretId` in the same record
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 21-01-PLAN.md — Extend schema.ts with Better Auth tables + nullable user_id FK on secrets
+- [ ] 21-02-PLAN.md — Generate migrations, apply bug #4147 workaround, run db:migrate
+- [ ] 21-03-PLAN.md — Create .planning/INVARIANTS.md + add zero-knowledge convention to CLAUDE.md
 
 ### Phase 22: Authentication
 **Goal**: Users can create accounts, verify their email, log in with email/password or OAuth (Google and GitHub), maintain sessions across browser refreshes, reset forgotten passwords, and log out — with all security invariants correctly implemented
