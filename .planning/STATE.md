@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication)
-Plan: 04 complete (4 of 6 plans in phase 22)
-Status: Phase 22 in progress — Plan 04 complete, ready for Plan 05
-Last activity: 2026-02-19 — Phase 22 Plan 04 executed (Login and register pages: login.ts, register.ts)
+Plan: 05 complete (5 of 6 plans in phase 22)
+Status: Phase 22 in progress — Plan 05 complete, ready for Plan 06
+Last activity: 2026-02-19 — Phase 22 Plan 05 executed (Forgot-password and reset-password pages, router auth routes)
 
 Progress: [██░░░░░░░░] ~12% (v4.0 — 14/31 requirements complete)
 
@@ -30,6 +30,7 @@ Progress: [██░░░░░░░░] ~12% (v4.0 — 14/31 requirements com
 | Phase 22 P01 | 4 min | 2 tasks | 6 files |
 | Phase 22 P02 | 2 min | 2 tasks | 2 files |
 | Phase 22 P04 | 5 | 2 tasks | 2 files |
+| Phase 22 P05 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22]: [Phase 22-04]: Google icon built via createElementNS + individual path elements (no innerHTML) — security hook enforces XSS-safe DOM construction
 - [Phase 22]: [Phase 22-04]: Register success shows email verification card in-place (no navigate) — requireEmailVerification: true means unverified users cannot log in
 - [Phase 22]: [Phase 22-04]: OAuth error callback pattern: errorCallbackURL sets ?error=oauth, login/register pages check URLSearchParams on mount
+- [Phase 22]: [Phase 22-05]: renderForgotPasswordPage/renderResetPasswordPage are non-async (void return) — no top-level await; async triggers require-await lint error
+- [Phase 22]: [Phase 22-05]: forgot-password success state is generic (prevents email enumeration) — same message whether account exists or not
+- [Phase 22]: [Phase 22-05]: reset-password extracts token via URLSearchParams(?token=) — Better Auth appends token because requestPasswordReset used redirectTo: '/reset-password'
 
 ### Known Tech Debt
 
@@ -77,5 +81,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 22-04-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 05 next)
+Stopped at: Completed 22-05-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 06 next)
