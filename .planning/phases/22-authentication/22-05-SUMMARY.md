@@ -116,6 +116,15 @@ None - no external service configuration required.
 - forgot-password and reset-password pages are wired to authClient methods
 - Ready for Phase 22-06 (final auth phase integration/polish or remaining auth work)
 
+## Self-Check: PASSED
+
+- FOUND: client/src/pages/forgot-password.ts
+- FOUND: client/src/pages/reset-password.ts
+- FOUND: .planning/phases/22-authentication/22-05-SUMMARY.md
+- FOUND commit: 3a37214 (Task 1 — forgot-password and reset-password pages)
+- FOUND commit: 3d70bcc (Task 2 — router auth routes)
+- FOUND commit: 15d44a5 (plan metadata)
+
 ---
 *Phase: 22-authentication*
 *Completed: 2026-02-19*
