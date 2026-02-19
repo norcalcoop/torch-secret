@@ -40,6 +40,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - Drizzle bug #4147: inspect generated SQL after db:generate; split FK + column additions into two migration steps if needed
 - Better Auth requires sameSite: 'lax' on session cookie (not 'strict') for OAuth callback redirects to work
 - [Phase 21]: INVARIANTS.md placed in .planning/ as canonical source for zero-knowledge invariant with three-way cross-reference lock (schema.ts + INVARIANTS.md + CLAUDE.md)
+- [Phase 21-01]: onDelete: 'set null' on secrets.userId — preserves already-shared links if user deletes account; cascade would be a data-loss bug
+- [Phase 21-01]: onDelete: 'cascade' on sessions.userId and accounts.userId — Better Auth requirement for session cleanup
+- [Phase 21-01]: sql template tag must be imported from drizzle-orm (not drizzle-orm/pg-core)
 
 ### Known Tech Debt
 
