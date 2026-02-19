@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication)
-Plan: 02 complete (2 of 6 plans in phase 22)
-Status: Phase 22 in progress — Plan 02 complete, ready for Plan 03
-Last activity: 2026-02-19 — Phase 22 Plan 02 executed (Better Auth browser client: auth-client.ts, dashboard.ts)
+Plan: 03 complete (3 of 6 plans in phase 22)
+Status: Phase 22 in progress — Plan 03 complete, ready for Plan 04
+Last activity: 2026-02-19 — Phase 22 Plan 03 executed (Express auth wiring: app.ts, require-auth.ts, me.ts)
 
 Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements complete)
 
@@ -55,6 +55,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22-02]: baseURL omitted from createAuthClient() — Better Auth infers from window.location; works for both Vite dev proxy and same-origin production
 - [Phase 22-02]: isSession() type guard to safely narrow better-auth any-typed getSession return — avoids @typescript-eslint/no-unsafe-member-access throughout dashboard
 - [Phase 22-02]: result.data cast to unknown before narrowing — satisfies no-unsafe-assignment without disabling the rule
+- [Phase 22-03]: toNodeHandler(auth) mounted at /api/auth/{*splat} BEFORE express.json() — reversed order causes silent hangs on all auth requests (body-stream consumed before auth can read it)
+- [Phase 22-03]: requireAuth uses auth.api.getSession() + fromNodeHeaders() — canonical Better Auth session validation pattern for Express
+- [Phase 22-03]: /api catch-all moved to after /api/me to prevent 404 interception of GET /api/me requests
 
 ### Known Tech Debt
 
@@ -70,5 +73,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 22-02-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 03 next)
+Stopped at: Completed 22-03-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 04 next)
