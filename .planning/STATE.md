@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication)
-Plan: 03 complete (3 of 6 plans in phase 22)
-Status: Phase 22 in progress — Plan 03 complete, ready for Plan 04
-Last activity: 2026-02-19 — Phase 22 Plan 03 executed (Express auth wiring: app.ts, require-auth.ts, me.ts)
+Plan: 04 complete (4 of 6 plans in phase 22)
+Status: Phase 22 in progress — Plan 04 complete, ready for Plan 05
+Last activity: 2026-02-19 — Phase 22 Plan 04 executed (Login and register pages: login.ts, register.ts)
 
-Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements complete)
+Progress: [██░░░░░░░░] ~12% (v4.0 — 14/31 requirements complete)
 
 ## Performance Metrics
 
@@ -29,6 +29,7 @@ Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements compl
 | Phase 21 P02 | 6 | 1 tasks | 4 files |
 | Phase 22 P01 | 4 min | 2 tasks | 6 files |
 | Phase 22 P02 | 2 min | 2 tasks | 2 files |
+| Phase 22 P04 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22-03]: toNodeHandler(auth) mounted at /api/auth/{*splat} BEFORE express.json() — reversed order causes silent hangs on all auth requests (body-stream consumed before auth can read it)
 - [Phase 22-03]: requireAuth uses auth.api.getSession() + fromNodeHeaders() — canonical Better Auth session validation pattern for Express
 - [Phase 22-03]: /api catch-all moved to after /api/me to prevent 404 interception of GET /api/me requests
+- [Phase 22]: [Phase 22-04]: Google icon built via createElementNS + individual path elements (no innerHTML) — security hook enforces XSS-safe DOM construction
+- [Phase 22]: [Phase 22-04]: Register success shows email verification card in-place (no navigate) — requireEmailVerification: true means unverified users cannot log in
+- [Phase 22]: [Phase 22-04]: OAuth error callback pattern: errorCallbackURL sets ?error=oauth, login/register pages check URLSearchParams on mount
 
 ### Known Tech Debt
 
@@ -73,5 +77,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 22-03-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 04 next)
+Stopped at: Completed 22-04-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 05 next)
