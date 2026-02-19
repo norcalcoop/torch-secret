@@ -94,7 +94,15 @@ Plans:
   3. User can sign in with Google or GitHub and land on their dashboard without creating a separate password
   4. User can request a password reset and set a new password via the emailed link
   5. User can log out from any page and the session is fully destroyed (cannot re-access dashboard without logging in again)
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Install better-auth + resend, add env vars, create email service and auth.ts
+- [ ] 22-02-PLAN.md — Create frontend auth-client.ts and minimal dashboard stub page
+- [ ] 22-03-PLAN.md — Wire Better Auth into Express (app.ts), requireAuth middleware, /api/me route
+- [ ] 22-04-PLAN.md — Create login and register pages with OAuth buttons
+- [ ] 22-05-PLAN.md — Create forgot-password and reset-password pages, update SPA router
+- [ ] 22-06-PLAN.md — Auth integration tests + human verify checkpoint
 
 ### Phase 23: Secret Dashboard
 **Goal**: Authenticated users can view their secret history with metadata only, add labels to new secrets, and delete unviewed secrets before they are accessed — while the dashboard never exposes secret content, ciphertext, or encryption keys
