@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 21: Schema Foundation
+**Current focus:** v4.0 — Phase 22: Authentication
 
 ## Current Position
 
-Phase: 21 of 27 (Schema Foundation)
-Plan: 03 complete (3 of 3 plans in phase 21)
-Status: Phase 21 complete — ready for Phase 22
-Last activity: 2026-02-19 — Phase 21 Plan 03 executed (invariant documentation created)
+Phase: 22 of 27 (Authentication)
+Plan: 01 complete (1 of 6 plans in phase 22)
+Status: Phase 22 in progress — Plan 01 complete, ready for Plan 02
+Last activity: 2026-02-19 — Phase 22 Plan 01 executed (Better Auth foundation: auth.ts, email.ts, env vars)
 
-Progress: [█░░░░░░░░░] ~4% (v4.0 — 1/31 requirements complete)
+Progress: [█░░░░░░░░░] ~7% (v4.0 — 9/31 requirements complete)
 
 ## Performance Metrics
 
@@ -27,6 +27,7 @@ Progress: [█░░░░░░░░░] ~4% (v4.0 — 1/31 requirements compl
 | v4.0 in progress | 7 planned | TBD | — |
 | Phase 21 P03 | 1 | 2 tasks | 2 files |
 | Phase 21 P02 | 6 | 1 tasks | 4 files |
+| Phase 22 P01 | 4 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -46,6 +47,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 21-01]: sql template tag must be imported from drizzle-orm (not drizzle-orm/pg-core)
 - [Phase 21]: [Phase 21-02]: Drizzle bug #4147 workaround: drizzle-kit CASE B (single combined file) — split into 0001_add_auth_tables.sql and 0002_add_secrets_user_id.sql with ADD COLUMN before ADD CONSTRAINT
 - [Phase 21]: [Phase 21-02]: Descriptive migration tag names (0001_add_auth_tables, 0002_add_secrets_user_id) chosen over drizzle-kit auto-slugs for operational clarity
+- [Phase 22-01]: RESEND_API_KEY uses z.string().min(1) not startsWith('re_') — test env can use placeholder values
+- [Phase 22-01]: Email callbacks use non-async fire-and-forget (void + Promise.resolve()) to satisfy @typescript-eslint/require-await while maintaining better-auth Promise<void> type contract
+- [Phase 22-01]: drizzleAdapter uses both usePlural: true AND explicit user: schema.users mapping — belt-and-suspenders safety against Better Auth table name mismatch
+- [Phase 22-01]: requireEmailVerification: env.NODE_ENV !== 'test' — bypasses email gate in test environment
 
 ### Known Tech Debt
 
@@ -61,5 +66,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 21-03-PLAN.md
-Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication)
+Stopped at: Completed 22-01-PLAN.md
+Resume: Run /gsd:execute-phase 22 (Phase 22: Authentication — Plan 02 next)

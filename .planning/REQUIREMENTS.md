@@ -16,14 +16,14 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 
 ### AUTH — Authentication
 
-- [ ] **AUTH-01**: User can register with email and password
-- [ ] **AUTH-02**: User receives email verification and must verify before accessing account features
-- [ ] **AUTH-03**: User can log in with email and password
-- [ ] **AUTH-04**: User can reset password via email link
-- [ ] **AUTH-05**: User session persists across browser refreshes (Redis-backed server sessions)
-- [ ] **AUTH-06**: User can sign in with Google via OAuth
-- [ ] **AUTH-07**: User can sign in with GitHub via OAuth
-- [ ] **AUTH-08**: User can log out and session is destroyed
+- [x] **AUTH-01**: User can register with email and password
+- [x] **AUTH-02**: User receives email verification and must verify before accessing account features
+- [x] **AUTH-03**: User can log in with email and password
+- [x] **AUTH-04**: User can reset password via email link
+- [x] **AUTH-05**: User session persists across browser refreshes (Redis-backed server sessions)
+- [x] **AUTH-06**: User can sign in with Google via OAuth
+- [x] **AUTH-07**: User can sign in with GitHub via OAuth
+- [x] **AUTH-08**: User can log out and session is destroyed
 
 ### DASH — Dashboard
 
@@ -111,14 +111,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PASS-02 | Phase 24 | Pending |
 | PASS-03 | Phase 24 | Pending |
 | PASS-04 | Phase 24 | Pending |
-| AUTH-01 | Phase 22 | Pending |
-| AUTH-02 | Phase 22 | Pending |
-| AUTH-03 | Phase 22 | Pending |
-| AUTH-04 | Phase 22 | Pending |
-| AUTH-05 | Phase 22 | Pending |
-| AUTH-06 | Phase 22 | Pending |
-| AUTH-07 | Phase 22 | Pending |
-| AUTH-08 | Phase 22 | Pending |
+| AUTH-01 | Phase 22 | Complete |
+| AUTH-02 | Phase 22 | Complete |
+| AUTH-03 | Phase 22 | Complete |
+| AUTH-04 | Phase 22 | Complete |
+| AUTH-05 | Phase 22 | Complete |
+| AUTH-06 | Phase 22 | Complete |
+| AUTH-07 | Phase 22 | Complete |
+| AUTH-08 | Phase 22 | Complete |
 | DASH-01 | Phase 23 | Pending |
 | DASH-02 | Phase 23 | Pending |
 | DASH-03 | Phase 23 | Pending |
