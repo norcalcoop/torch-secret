@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 22-authentication
 source: 22-01-SUMMARY.md, 22-02-SUMMARY.md, 22-03-SUMMARY.md, 22-04-SUMMARY.md, 22-05-SUMMARY.md, 22-06-SUMMARY.md
 started: 2026-02-19T18:00:00Z
@@ -62,5 +62,9 @@ skipped: 0
   reason: "User reported: it lands on page not found and a button to create a new secret not a link back to login or forgot-password (when not authenticated). When logged in the page correctly shows the error card with a 'Request a new one' link to /forgot-password."
   severity: major
   test: 7
-  artifacts: []
-  missing: []
+  root_cause: "router.ts handleRoute() uses exact path === '/reset-password' matching with no trailing-slash normalization. When a user types the URL directly into the browser address bar (more likely when not in an active SPA session / not logged in), a trailing slash (/reset-password/) causes the route to fall through to the 404 fallback. SPA navigate() calls always produce clean paths, so auth-state (logged in = SPA navigation; not logged in = typed URL) correlates with the symptom. The reset-password.ts page code and the !token guard are both correct."
+  artifacts:
+    - path: "client/src/router.ts"
+      issue: "handleRoute() at line 163 reads path = window.location.pathname with no normalization. All route comparisons are exact string matches, so /reset-password/ falls through to the else branch (404)."
+  missing:
+    - "Strip trailing slash from path in handleRoute() before route matching: const path = window.location.pathname.replace(/\\/$/, '') || '/';"
