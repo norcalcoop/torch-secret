@@ -37,6 +37,7 @@ Progress: [████░░░░░░] ~29% (v4.0 — 28/35 requirements com
 | Phase 23 P02 | 4 min | 3 tasks | 8 files |
 | Phase 23 P03 | 8 min | 2 tasks | 3 files |
 | Phase 23 P05 | 8 | 1 tasks | 2 files |
+| Phase 24-eff-diceware-passphrase-generator P01 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 23]: [Phase 23-04]: Used authClient singleton from api/auth-client.js in layout.ts — prevents duplicate Better Auth client instances; consistent with project convention
 - [Phase 23]: Session creation in dashboard tests uses Better Auth sign-up/sign-in API (not direct DB session insert) — correct session token format is opaque; direct insert would require matching Better Auth internal token encoding
 - [Phase 23]: INVARIANTS.md verification included as explicit tests so future changes that remove the dashboard logger entry would cause test failures, providing documentation enforcement
+- [Phase 24-eff-diceware-passphrase-generator]: EFF_WORDS typed as string[] not as const — prevents TS language-server slowdown on 7,776-element literal array
+- [Phase 24-eff-diceware-passphrase-generator]: EFF_WORDS exported from passphrase.ts for test membership verification — private would require weaker tests
+- [Phase 24-eff-diceware-passphrase-generator]: Rejection sampling cutoff 4294964736 for n=7776 eliminates modulo bias; rejection probability ~0.0000006 per word
+- [Phase 24-eff-diceware-passphrase-generator]: Added no-unsafe-call: off to ESLint test file override — importing unresolved modules during TDD RED phase causes false positives
 
 ### Known Tech Debt
 
@@ -106,5 +111,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 23-05-PLAN.md — Phase 23 Secret Dashboard complete (all 5 plans, 109 server tests passing)
-Resume: Phase 23 complete — move to next phase per ROADMAP (Phase 24+)
+Stopped at: Completed 24-01-PLAN.md — EFF Diceware passphrase module (passphrase.ts, 7776 words, 10 tests passing)
+Resume: Phase 24 Plan 01 complete — continue with Phase 24 Plan 02 (create page passphrase UI)

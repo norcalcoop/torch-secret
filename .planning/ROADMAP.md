@@ -199,7 +199,7 @@ Plans:
 | 21. Schema Foundation | 3/3 | Complete    | 2026-02-19 | - |
 | 22. Authentication | 7/7 | Complete    | 2026-02-20 | - |
 | 23. Secret Dashboard | 5/5 | Complete    | 2026-02-20 | - |
-| 24. EFF Diceware Passphrase Generator | v4.0 | 0/3 | Not started | - |
+| 24. EFF Diceware Passphrase Generator | 1/3 | In Progress|  | - |
 | 25. PostHog Analytics | v4.0 | 0/TBD | Not started | - |
 | 26. Email Notifications | v4.0 | 0/TBD | Not started | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 0/TBD | Not started | - |
