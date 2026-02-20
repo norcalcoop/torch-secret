@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 23 of 27 (Secret Dashboard) — IN PROGRESS
-Plan: 2 of 5 complete (23-02 Dashboard Backend API)
-Status: Phase 23 Plan 02 complete — dashboard routes, optional auth, soft-delete lifecycle, split expiration worker; Plan 23-03 (dashboard UI) is next
-Last activity: 2026-02-20 — Phase 23 Plan 02 complete (dashboard API routes + service layer)
+Plan: 3 of 5 complete (23-03 Frontend API Client + Auth-Gated Label Field)
+Status: Phase 23 Plan 03 complete — API client extended with dashboard functions, create page auth-gated label field via progressive enhancement; Plan 23-04 (dashboard page UI) is next
+Last activity: 2026-02-20 — Phase 23 Plan 03 complete (frontend API client + create page label field)
 
 Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
 
@@ -35,6 +35,7 @@ Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements com
 | Phase 22 P07 | 1 | 2 tasks | 1 files |
 | Phase 23 P01 | 2 min | 3 tasks | 4 files |
 | Phase 23 P02 | 4 min | 3 tasks | 8 files |
+| Phase 23 P03 | 8 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 23-02]: deleteUserSecret() owner verification and status check happen inside transaction — prevents TOCTOU race
 - [Phase 23-02]: auto-destroy on password brute-force always hard-deletes even user-owned secrets — brute-force targets do not get dashboard history
 - [Phase 23-02]: getUserSecrets() explicit column list is the sole enforcement preventing ciphertext/passwordHash from appearing in dashboard responses
+- [Phase 23-03]: renderCreatePage stays synchronous (void return) not async — fire-and-forget IIFE for auth check avoids @typescript-eslint/require-await; PageRenderer accepts void | Promise<void> so both work
+- [Phase 23-03]: Progressive enhancement order: form appended to container before auth check fires — anonymous users see zero delay; authenticated users see label field appear after brief async pause
+- [Phase 23-03]: labelInput captured as mutable closure variable initialized to null — auth IIFE sets it after mount; submit handler reads labelInput?.value safely
 
 ### Known Tech Debt
 
@@ -98,5 +102,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 23-02-PLAN.md — Phase 23 Dashboard Backend API (routes, optional auth, soft-delete lifecycle, expiration worker split)
-Resume: Begin Phase 23 Plan 03 (dashboard UI) — depends on Plans 01 and 02
+Stopped at: Completed 23-03-PLAN.md — Phase 23 Frontend API Client + Auth-Gated Label Field
+Resume: Begin Phase 23 Plan 04 (dashboard page UI) — depends on Plans 01, 02, and 03
