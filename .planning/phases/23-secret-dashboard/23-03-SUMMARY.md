@@ -124,6 +124,16 @@ None — no external service configuration required.
 - Create page is auth-aware: authenticated users who visit the create page will see the "Add label" collapsible field after a brief async auth check
 - Labels submitted via create form will be stored in the DB (via the server-side label handling added in Plan 23-02) and will appear in the dashboard secrets list
 
+## Self-Check: PASSED
+
+All files present and all commits verified:
+- `client/src/api/client.ts` — FOUND
+- `client/src/pages/create.ts` — FOUND
+- `client/src/pages/confirmation.ts` — FOUND
+- `23-03-SUMMARY.md` — FOUND
+- commit 9291e8f (Task 1) — FOUND
+- commit 975f00a (Task 2) — FOUND
+
 ---
 *Phase: 23-secret-dashboard*
 *Completed: 2026-02-20*
