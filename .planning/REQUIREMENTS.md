@@ -31,7 +31,7 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 - [x] **DASH-02**: Secret status correctly reflects four states: Active, Viewed, Expired, Deleted
 - [x] **DASH-03**: Authenticated user can add an optional label when creating a secret
 - [x] **DASH-04**: Authenticated user can delete an Active (unviewed) secret before it is accessed
-- [ ] **DASH-05**: Dashboard never displays secret content, ciphertext, or the encryption key
+- [x] **DASH-05**: Dashboard never displays secret content, ciphertext, or the encryption key
 
 ### NOTF — Email Notifications
 
@@ -123,7 +123,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 23 | Complete |
 | DASH-03 | Phase 23 | Complete |
 | DASH-04 | Phase 23 | Complete |
-| DASH-05 | Phase 23 | Pending |
+| DASH-05 | Phase 23 | Complete |
 | NOTF-01 | Phase 26 | Pending |
 | NOTF-02 | Phase 26 | Pending |
 | NOTF-03 | Phase 26 | Pending |

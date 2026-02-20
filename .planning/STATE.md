@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 23 of 27 (Secret Dashboard) — IN PROGRESS
-Plan: 1 of 4 complete (23-01 Schema Foundation)
-Status: Phase 23 Plan 01 complete — schema extended, migration applied, shared types updated; Plans 23-02 and 23-03 are next
-Last activity: 2026-02-20 — Phase 23 Plan 01 complete (schema foundation for dashboard columns)
+Plan: 2 of 5 complete (23-02 Dashboard Backend API)
+Status: Phase 23 Plan 02 complete — dashboard routes, optional auth, soft-delete lifecycle, split expiration worker; Plan 23-03 (dashboard UI) is next
+Last activity: 2026-02-20 — Phase 23 Plan 02 complete (dashboard API routes + service layer)
 
-Progress: [███░░░░░░░] ~26% (v4.0 — 26/31 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-04)
+Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
 
 ## Performance Metrics
 
@@ -34,6 +34,7 @@ Progress: [███░░░░░░░] ~26% (v4.0 — 26/31 requirements com
 | Phase 22 P06 | ~50 min | 2 tasks | 2 files |
 | Phase 22 P07 | 1 | 2 tasks | 1 files |
 | Phase 23 P01 | 2 min | 3 tasks | 4 files |
+| Phase 23 P02 | 4 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 23-01]: Drizzle bug #4147 confirmed not applicable for 0003 — four new columns have no FK constraints, single-file migration is safe
 - [Phase 23-01]: notify defaults to false at DB level — explicit opt-in; actual email wired in Phase 26
 - [Phase 23-01]: label max 100 chars enforced at Zod layer only (no DB constraint) — reduces migration complexity
+- [Phase 23-02]: optionalAuth never returns 401 — session check failure is non-fatal; anonymous users proceed unchanged
+- [Phase 23-02]: deleteUserSecret() owner verification and status check happen inside transaction — prevents TOCTOU race
+- [Phase 23-02]: auto-destroy on password brute-force always hard-deletes even user-owned secrets — brute-force targets do not get dashboard history
+- [Phase 23-02]: getUserSecrets() explicit column list is the sole enforcement preventing ciphertext/passwordHash from appearing in dashboard responses
 
 ### Known Tech Debt
 
@@ -93,5 +98,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 23-01-PLAN.md — Phase 23 Schema Foundation (dashboard columns + shared types)
-Resume: Begin Phase 23 Plan 02 (dashboard API routes) and/or Plan 03 (dashboard UI) — both depend on Plan 01 (Wave 1)
+Stopped at: Completed 23-02-PLAN.md — Phase 23 Dashboard Backend API (routes, optional auth, soft-delete lifecycle, expiration worker split)
+Resume: Begin Phase 23 Plan 03 (dashboard UI) — depends on Plans 01 and 02
