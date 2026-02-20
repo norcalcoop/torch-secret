@@ -26,11 +26,13 @@ import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
  * @param container - The DOM element to render into
  * @param shareUrl - The full shareable URL including the encryption key fragment
  * @param expiresAt - ISO 8601 timestamp string for when the secret expires
+ * @param label - Optional label set by the authenticated user during creation
  */
 export function renderConfirmationPage(
   container: HTMLElement,
   shareUrl: string,
   expiresAt: string,
+  label?: string,
 ): void {
   // Update page title and announce to screen readers
   updatePageMeta({
@@ -114,6 +116,14 @@ export function renderConfirmationPage(
   expirationNotice.className = 'text-sm text-text-muted';
   expirationNotice.textContent = `This link expires on ${expiresDate.toLocaleString()}`;
   wrapper.appendChild(expirationNotice);
+
+  // -- Label (only visible to the authenticated creator, shown for reference) --
+  if (label) {
+    const labelEl = document.createElement('p');
+    labelEl.className = 'text-sm text-text-muted';
+    labelEl.textContent = `Label: ${label}`;
+    wrapper.appendChild(labelEl);
+  }
 
   // -- Warning text --
   const warning = document.createElement('div');

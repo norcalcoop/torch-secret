@@ -7,10 +7,15 @@
  *
  * After successful creation, renders the confirmation page in the same container
  * (state-based transition, not URL-based).
+ *
+ * Progressive enhancement: for authenticated users, an optional collapsible
+ * "Add label" field is appended after the form renders (non-blocking async auth
+ * check). Anonymous users see no label field -- it is absent from the DOM.
  */
 
 import { encrypt } from '../crypto/index.js';
 import { createSecret } from '../api/client.js';
+import { authClient } from '../api/auth-client.js';
 import { createExpirationSelect } from '../components/expiration-select.js';
 import { renderConfirmationPage } from './confirmation.js';
 import {
@@ -28,7 +33,80 @@ import { createIcon } from '../components/icons.js';
 const MAX_LENGTH = 10_000;
 
 /**
+ * Shape of a Better Auth session user.
+ * Typed explicitly to avoid unsafe `any` member access on the library return value.
+ */
+interface SessionUser {
+  name?: string | null;
+  email: string;
+}
+
+/**
+ * Shape of the session object returned by getSession().
+ */
+interface Session {
+  user: SessionUser;
+}
+
+/**
+ * Type guard: verify that a value matches the Session shape.
+ */
+function isSession(value: unknown): value is Session {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj['user'] !== 'object' || obj['user'] === null) return false;
+  const user = obj['user'] as Record<string, unknown>;
+  return typeof user['email'] === 'string';
+}
+
+/**
+ * Creates the collapsible label field for authenticated users.
+ * Uses details/summary pattern matching the existing "Advanced options" section.
+ */
+function createLabelField(): HTMLElement {
+  const details = document.createElement('details');
+  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+
+  const summary = document.createElement('summary');
+  summary.className =
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
+  summary.textContent = 'Add label';
+
+  const content = document.createElement('div');
+  content.className = 'px-4 pb-4 space-y-1';
+
+  const label = document.createElement('label');
+  label.htmlFor = 'secret-label';
+  label.className = 'block text-sm font-medium text-text-secondary';
+  label.textContent = 'Label';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'secret-label';
+  input.name = 'secret-label';
+  input.placeholder = 'e.g. "AWS keys for staging"';
+  input.maxLength = 100;
+  input.className =
+    'w-full px-3 py-2 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+
+  const hint = document.createElement('p');
+  hint.className = 'text-xs text-text-muted mt-1';
+  hint.textContent = 'Only visible to you in your dashboard.';
+
+  content.appendChild(label);
+  content.appendChild(input);
+  content.appendChild(hint);
+  details.appendChild(summary);
+  details.appendChild(content);
+  return details;
+}
+
+/**
  * Render the create page into the given container.
+ *
+ * Returns void synchronously -- the auth check for progressive label enhancement
+ * runs as a fire-and-forget IIFE (void async pattern) after the form is painted.
+ * PageRenderer in router.ts accepts void | Promise<void> so this is compatible.
  */
 export function renderCreatePage(container: HTMLElement): void {
   // -- Page wrapper --
@@ -165,6 +243,9 @@ export function renderCreatePage(container: HTMLElement): void {
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 
+  // -- Label field reference (set async by progressive enhancement below) --
+  let labelInput: HTMLInputElement | null = null;
+
   // -- Submit handler --
   form.addEventListener('submit', (e) => {
     void (async () => {
@@ -187,32 +268,41 @@ export function renderCreatePage(container: HTMLElement): void {
       // Get optional password
       const password = passwordInput.value || undefined;
 
+      // Get optional label (only present for authenticated users)
+      const label = labelInput?.value.trim() || undefined;
+
       // Disable form during submission
       submitButton.disabled = true;
       textarea.disabled = true;
       expirationSelect.disabled = true;
       passwordInput.disabled = true;
+      if (labelInput) {
+        labelInput.disabled = true;
+      }
 
       try {
         // Step 1: Encrypt in the browser
         submitButton.textContent = 'Encrypting...';
         const result = await encrypt(text);
 
-        // Step 2: Send to API (include password only if provided)
+        // Step 2: Send to API (include optional fields only if provided)
         submitButton.textContent = 'Sending...';
-        const response = await createSecret(result.payload.ciphertext, expiresIn, password);
+        const response = await createSecret(result.payload.ciphertext, expiresIn, password, label);
 
         // Step 3: Build share URL with key in fragment
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
         // Step 4: Render confirmation page (state-based, not URL-based)
-        renderConfirmationPage(container, shareUrl, response.expiresAt);
+        renderConfirmationPage(container, shareUrl, response.expiresAt, label);
       } catch (err) {
         // Restore form state
         submitButton.disabled = false;
         textarea.disabled = false;
         expirationSelect.disabled = false;
         passwordInput.disabled = false;
+        if (labelInput) {
+          labelInput.disabled = false;
+        }
         submitButton.textContent = 'Create Secure Link';
 
         const message =
@@ -223,9 +313,33 @@ export function renderCreatePage(container: HTMLElement): void {
   });
 
   wrapper.appendChild(form);
+
+  // Render the page immediately (anonymous user experience is unchanged)
   wrapper.appendChild(createHowItWorksSection());
   wrapper.appendChild(createWhyTrustUsSection());
   container.appendChild(wrapper);
+
+  // Progressive enhancement: add label field if authenticated (non-blocking)
+  // This runs after the form is in the DOM so anonymous users see no delay.
+  void (async () => {
+    try {
+      const result = await authClient.getSession();
+      // result.data is typed as `any` by better-auth's fully-generic client;
+      // assign to unknown before type-narrowing to avoid no-unsafe-assignment.
+      const data: unknown = result.data as unknown;
+      if (isSession(data)) {
+        const labelField = createLabelField();
+        // Insert after the "Advanced options" details element
+        const advancedDetails = form.querySelector('details');
+        if (advancedDetails) {
+          form.insertBefore(labelField, advancedDetails.nextSibling);
+        }
+        labelInput = labelField.querySelector('#secret-label') as HTMLInputElement;
+      }
+    } catch {
+      // Auth check failure: label field simply not shown (silent degradation)
+    }
+  })();
 }
 
 /**
