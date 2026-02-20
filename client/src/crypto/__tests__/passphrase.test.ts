@@ -77,8 +77,8 @@ describe('generatePassphrase — uses crypto.getRandomValues', () => {
 
   it('calls crypto.getRandomValues at least 4 times when generating 4 words', () => {
     generatePassphrase();
-    expect(getRandomValuesSpy).toHaveBeenCalledTimes(expect.any(Number));
-    // Called at least once per word (4 words minimum = 4 calls)
+    // Called at least once per word (4 words minimum = 4 calls).
+    // Rejection sampling may cause additional calls (extremely rare: ~0.0000006 per word).
     expect(getRandomValuesSpy.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
 });
