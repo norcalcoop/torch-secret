@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 22: Authentication
+**Current focus:** v4.0 — Phase 23: Secret Dashboard
 
 ## Current Position
 
-Phase: 22 of 27 (Authentication) — COMPLETE
-Plan: All 7 plans complete (including gap-closure 07)
-Status: Phase 22 fully complete — all auth requirements verified + trailing-slash router fix; Phase 23 (Secret Dashboard) is next
-Last activity: 2026-02-20 — Phase 22 Plan 07 complete (trailing-slash normalization gap closure)
+Phase: 23 of 27 (Secret Dashboard) — IN PROGRESS
+Plan: 1 of 4 complete (23-01 Schema Foundation)
+Status: Phase 23 Plan 01 complete — schema extended, migration applied, shared types updated; Plans 23-02 and 23-03 are next
+Last activity: 2026-02-20 — Phase 23 Plan 01 complete (schema foundation for dashboard columns)
 
-Progress: [███░░░░░░░] ~21% (v4.0 — 22/31 requirements complete: AUTH-01 through AUTH-08 verified by integration tests + human verification)
+Progress: [███░░░░░░░] ~26% (v4.0 — 26/31 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-04)
 
 ## Performance Metrics
 
@@ -33,6 +33,7 @@ Progress: [███░░░░░░░] ~21% (v4.0 — 22/31 requirements com
 | Phase 22 P05 | 2 | 2 tasks | 3 files |
 | Phase 22 P06 | ~50 min | 2 tasks | 2 files |
 | Phase 22 P07 | 1 | 2 tasks | 1 files |
+| Phase 23 P01 | 2 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22-06]: NODE_ENV=test in .env silently disables requireEmailVerification in dev — dev environments must use NODE_ENV=development; test runner sets its own NODE_ENV=test
 - [Phase 22-06]: Better Auth client normalizes EMAIL_NOT_VERIFIED to INVALID_EMAIL_OR_PASSWORD — intentional (prevents email enumeration); UI shows generic message for unverified sign-in attempts
 - [Phase 22]: Trailing slash normalization uses pathname.replace(/\/$/, '') || '/' — the || '/' guard is essential: ''.replace() returns '' not '/', preserving root path match
+- [Phase 23-01]: status column is text (not PostgreSQL enum) — avoids ALTER TYPE migrations when adding new states; values constrained at application layer
+- [Phase 23-01]: Drizzle bug #4147 confirmed not applicable for 0003 — four new columns have no FK constraints, single-file migration is safe
+- [Phase 23-01]: notify defaults to false at DB level — explicit opt-in; actual email wired in Phase 26
+- [Phase 23-01]: label max 100 chars enforced at Zod layer only (no DB constraint) — reduces migration complexity
 
 ### Known Tech Debt
 
@@ -88,5 +93,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 22-07-PLAN.md — Phase 22 Authentication gap closure (trailing-slash normalization)
-Resume: Begin Phase 23 (Secret Dashboard) — depends on Phase 22
+Stopped at: Completed 23-01-PLAN.md — Phase 23 Schema Foundation (dashboard columns + shared types)
+Resume: Begin Phase 23 Plan 02 (dashboard API routes) and/or Plan 03 (dashboard UI) — both depend on Plan 01 (Wave 1)
