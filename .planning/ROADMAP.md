@@ -59,7 +59,7 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 
 - [x] **Phase 21: Schema Foundation** - Add users table and nullable user_id FK on secrets; apply migration safely (completed 2026-02-19)
 - [x] **Phase 22: Authentication** - Better Auth with email/password, OAuth (Google + GitHub), sessions, email verification (completed 2026-02-19)
-- [ ] **Phase 23: Secret Dashboard** - Authenticated user's secret history, labels, status display, pre-view deletion
+- [x] **Phase 23: Secret Dashboard** - Authenticated user's secret history, labels, status display, pre-view deletion (completed 2026-02-20)
 - [ ] **Phase 24: EFF Diceware Passphrase Generator** - Client-side 4-word passphrase generation with two-channel UI
 - [ ] **Phase 25: PostHog Analytics** - Privacy-safe funnel tracking with mandatory URL fragment sanitization
 - [ ] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend
@@ -193,7 +193,7 @@ Plans:
 | 20. Fix Multi-Browser CI | v3.0 | 1/1 | Complete | 2026-02-18 |
 | 21. Schema Foundation | 3/3 | Complete    | 2026-02-19 | - |
 | 22. Authentication | 7/7 | Complete    | 2026-02-20 | - |
-| 23. Secret Dashboard | 4/5 | In Progress|  | - |
+| 23. Secret Dashboard | 5/5 | Complete   | 2026-02-20 | - |
 | 24. EFF Diceware Passphrase Generator | v4.0 | 0/TBD | Not started | - |
 | 25. PostHog Analytics | v4.0 | 0/TBD | Not started | - |
 | 26. Email Notifications | v4.0 | 0/TBD | Not started | - |

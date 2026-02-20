@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 23 of 27 (Secret Dashboard) — IN PROGRESS
-Plan: 4 of 5 in progress (23-04 Dashboard UI — Task 1 complete, checkpoint:human-verify pending)
-Status: Phase 23 Plan 04 Task 1 complete — full dashboard page rebuilt with secret table, status tabs, delete modal, empty state, and auth-reactive header nav link; awaiting human visual verification at checkpoint
-Last activity: 2026-02-20 — Phase 23 Plan 04 Task 1 committed (dashboard UI)
+Phase: 23 of 27 (Secret Dashboard) — COMPLETE
+Plan: 5 of 5 complete (23-05 Tests — all tasks done)
+Status: Phase 23 fully complete — all 5 plans shipped (schema, backend API, create page, dashboard UI, integration tests); 109 server tests pass
+Last activity: 2026-02-20 — Phase 23 Plan 05 committed (dashboard + expiration worker integration tests)
 
-Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
+Progress: [████░░░░░░] ~29% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements com
 | Phase 23 P01 | 2 min | 3 tasks | 4 files |
 | Phase 23 P02 | 4 min | 3 tasks | 8 files |
 | Phase 23 P03 | 8 min | 2 tasks | 3 files |
+| Phase 23 P05 | 8 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 23-03]: Progressive enhancement order: form appended to container before auth check fires — anonymous users see zero delay; authenticated users see label field appear after brief async pause
 - [Phase 23-03]: labelInput captured as mutable closure variable initialized to null — auth IIFE sets it after mount; submit handler reads labelInput?.value safely
 - [Phase 23]: [Phase 23-04]: Used authClient singleton from api/auth-client.js in layout.ts — prevents duplicate Better Auth client instances; consistent with project convention
+- [Phase 23]: Session creation in dashboard tests uses Better Auth sign-up/sign-in API (not direct DB session insert) — correct session token format is opaque; direct insert would require matching Better Auth internal token encoding
+- [Phase 23]: INVARIANTS.md verification included as explicit tests so future changes that remove the dashboard logger entry would cause test failures, providing documentation enforcement
 
 ### Known Tech Debt
 
@@ -103,5 +106,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Paused at checkpoint: 23-04 Task 2 (human-verify) — dashboard UI built, awaiting visual sign-off
-Resume: After human approves checkpoint, continue with Plan 23-04 Task 2 approval then move to Plan 23-05
+Stopped at: Completed 23-05-PLAN.md — Phase 23 Secret Dashboard complete (all 5 plans, 109 server tests passing)
+Resume: Phase 23 complete — move to next phase per ROADMAP (Phase 24+)
