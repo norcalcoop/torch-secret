@@ -114,7 +114,14 @@ Plans:
   3. Authenticated user can add an optional label when creating a secret and that label appears in the dashboard list
   4. Authenticated user can delete an Active secret from the dashboard before it has been viewed — the deletion is permanent and immediate
   5. Dashboard API never returns ciphertext, the encryption key fragment, or the recipient's IP address in any response
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 23-01-PLAN.md — Schema migration: add label, notify, status, viewedAt columns to secrets table
+- [ ] 23-02-PLAN.md — Backend API: dashboard routes, optionalAuth, soft-delete service extensions, expiration worker update, logger fix
+- [ ] 23-03-PLAN.md — Shared types + API client + auth-gated label field on create page
+- [ ] 23-04-PLAN.md — Dashboard page rebuild: tab filter, status table, deletion modal, empty state, header nav link
+- [ ] 23-05-PLAN.md — Integration tests (dashboard routes + expiration worker) + INVARIANTS.md update
 
 ### Phase 24: EFF Diceware Passphrase Generator
 **Goal**: All users (anonymous and authenticated) can generate a secure 4-word EFF Diceware passphrase client-side when creating a secret, with one-click regeneration and separate copy, plus two-channel security guidance on the confirmation page
