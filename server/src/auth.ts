@@ -6,6 +6,33 @@ import { resend } from './services/email.js';
 import { env } from './config/env.js';
 
 /**
+ * Rewrites a Better Auth-generated URL so its origin (and any embedded
+ * callbackURL param) points at APP_URL instead of BETTER_AUTH_URL.
+ *
+ * In dev, BETTER_AUTH_URL=:3000 but users should land on Vite (:5173).
+ * In production both vars share the same origin, making this a no-op.
+ */
+function toAppUrl(url: string): string {
+  if (!env.APP_URL) return url;
+  const target = new URL(env.APP_URL);
+  const parsed = new URL(url);
+  parsed.protocol = target.protocol;
+  parsed.host = target.host;
+  const callbackParam = parsed.searchParams.get('callbackURL');
+  if (callbackParam) {
+    try {
+      const cb = new URL(callbackParam);
+      cb.protocol = target.protocol;
+      cb.host = target.host;
+      parsed.searchParams.set('callbackURL', cb.toString());
+    } catch {
+      // relative path — leave as-is
+    }
+  }
+  return parsed.toString();
+}
+
+/**
  * ZERO-KNOWLEDGE INVARIANT — read before modifying this file.
  * See: .planning/INVARIANTS.md
  *
@@ -47,7 +74,7 @@ export const auth = betterAuth({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
         subject: 'Reset your SecureShare password',
-        text: `Click to reset your password: ${url}\n\nIf you did not request this, you can ignore this email.`,
+        text: `Click to reset your password: ${toAppUrl(url)}\n\nIf you did not request this, you can ignore this email.`,
       });
       return Promise.resolve();
     },
@@ -59,7 +86,7 @@ export const auth = betterAuth({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
         subject: 'Verify your SecureShare email',
-        text: `Click to verify your email: ${url}\n\nIf you did not create an account, you can ignore this email.`,
+        text: `Click to verify your email: ${toAppUrl(url)}\n\nIf you did not create an account, you can ignore this email.`,
       });
       return Promise.resolve();
     },
