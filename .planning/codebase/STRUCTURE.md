@@ -1,6 +1,6 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-16
+**Analysis Date:** 2026-02-20
 
 ## Directory Layout
 
@@ -15,6 +15,9 @@ secureshare/
 ├── shared/                # Code shared between client and server
 │   └── types/             # API contracts (Zod schemas + TypeScript types)
 ├── .planning/             # GSD workflow documents (roadmap, phases, codebase analysis)
+├── e2e/                   # Playwright end-to-end tests
+│   ├── specs/            # Test files
+│   └── fixtures/         # Test fixtures and data
 ├── scripts/               # Build/deploy scripts
 ├── node_modules/          # npm dependencies
 ├── package.json           # Dependencies and scripts
@@ -22,7 +25,9 @@ secureshare/
 ├── vite.config.ts         # Vite build config (Tailwind plugin, CSP nonce)
 ├── vitest.config.ts       # Vitest test config (node environment)
 ├── drizzle.config.ts      # Drizzle ORM migration config
-└── CLAUDE.md              # Project context for Claude Code
+├── eslint.config.ts       # ESLint config
+├── CLAUDE.md              # Project context for Claude Code
+└── drizzle/              # Generated migrations (committed to git)
 ```
 
 ## Directory Purposes
@@ -40,7 +45,7 @@ secureshare/
 
 **client/src/pages:**
 - Purpose: Top-level page modules (one per route)
-- Contains: `create.ts` (secret creation form), `reveal.ts` (secret display with password prompt), `confirmation.ts` (shareable link display), `error.ts` (404/error page)
+- Contains: `create.ts` (secret creation form), `reveal.ts` (secret display with password prompt), `confirmation.ts` (shareable link display), `error.ts` (404/error page), `login.ts`, `register.ts`, `dashboard.ts` (shows user's secrets), `reset-password.ts`, `forgot-password.ts`
 - Key files: Each exports `renderPageName(container: HTMLElement)` function
 
 **client/src/components:**
@@ -67,17 +72,17 @@ secureshare/
 **server/src:**
 - Purpose: Express backend with REST API
 - Contains: TypeScript modules for HTTP server
-- Key files: `server.ts` (entry point), `app.ts` (Express app factory)
+- Key files: `server.ts` (entry point), `app.ts` (Express app factory), `auth.ts` (BetterAuth config)
 
 **server/src/routes:**
 - Purpose: Express route handlers
-- Contains: `secrets.ts` (secrets router factory)
+- Contains: `secrets.ts` (secrets router factory), `health.ts` (health check), `me.ts` (user profile)
 - Key files: `secrets.ts` exports `createSecretsRouter(redisClient?)` with routes: POST /, GET /:id/meta, POST /:id/verify, GET /:id
 
 **server/src/services:**
 - Purpose: Business logic layer (no HTTP concerns)
-- Contains: `secrets.service.ts` (secret lifecycle), `password.service.ts` (Argon2id hashing)
-- Key files: `secrets.service.ts` exports `createSecret()`, `retrieveAndDestroy()`, `getSecretMeta()`, `verifyAndRetrieve()`
+- Contains: `secrets.service.ts` (secret lifecycle), `password.service.ts` (Argon2id hashing), `email.service.ts` (Resend email client)
+- Key files: `secrets.service.ts` exports `createSecret()`, `retrieveAndDestroy()`, `getSecretMeta()`, `verifyAndRetrieve()`, `cleanExpiredSecrets()`
 
 **server/src/middleware:**
 - Purpose: Express middleware for cross-cutting concerns
@@ -104,14 +109,25 @@ secureshare/
 - Contains: `api.ts` (Zod schemas + TypeScript interfaces)
 - Key files: `api.ts` exports request/response schemas and types
 
+**e2e:**
+- Purpose: End-to-end Playwright tests (Phase 23)
+- Contains: `specs/` (test files), `fixtures/` (test data)
+- Config: `playwright.config.ts`
+
 **.planning:**
 - Purpose: GSD workflow documentation (not part of app code)
 - Contains: `ROADMAP.md`, `STATE.md`, phase plans, codebase analysis docs
 - Subdirectories: `milestones/`, `phases/`, `todos/`, `research/`, `codebase/`, `debug/`
 
+**drizzle:**
+- Purpose: Generated SQL migrations from schema changes
+- Generated: Yes (via `npm run db:generate`)
+- Committed: Yes (migrations are source code)
+- Contents: `*.sql` migration files, `meta/` directory
+
 **scripts:**
 - Purpose: Build/deploy automation scripts
-- Contains: Empty (reserved for future use)
+- Contains: Reserved for future use
 
 ## Key File Locations
 
@@ -124,10 +140,11 @@ secureshare/
 - `package.json`: Dependencies, scripts, `"type": "module"` for ESM
 - `tsconfig.json`: TypeScript config (ES2022, ESNext modules, bundler resolution)
 - `vite.config.ts`: Vite config (root: client, Tailwind plugin, CSP nonce placeholder, dev proxy)
-- `vitest.config.ts`: Test config (node environment, dotenv setup file)
+- `vitest.config.ts`: Test config (node environment, dotenv setup file, multi-project for client+server)
 - `drizzle.config.ts`: Drizzle migration config (PostgreSQL connection, output dir)
+- `eslint.config.ts`: ESLint rules (TypeScript, imports, best practices)
 - `server/src/config/env.ts`: Runtime env var validation (Zod)
-- `.env`: Environment variables (DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV, REDIS_URL)
+- `.env`: Environment variables (DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV, REDIS_URL, auth secrets)
 - `.env.example`: Template for required env vars
 
 **Core Logic:**
@@ -136,12 +153,14 @@ secureshare/
 - `server/src/services/secrets.service.ts`: Atomic read-and-destroy transactions
 - `server/src/services/password.service.ts`: Argon2id password hashing
 - `client/src/router.ts`: SPA routing with History API + dynamic imports
+- `server/src/auth.ts`: BetterAuth configuration (Phase 22)
 
 **Testing:**
 - `client/src/crypto/__tests__/`: Crypto module unit tests (5 files, 21+ tests)
 - `server/src/routes/__tests__/`: API integration tests (real PostgreSQL, Supertest)
 - `server/src/workers/__tests__/`: Worker tests
 - `client/src/components/__tests__/`: Component tests
+- `e2e/`: End-to-end Playwright tests (Phase 23)
 
 ## Naming Conventions
 
@@ -175,13 +194,14 @@ secureshare/
 - Primary code:
   - Client page: `client/src/pages/feature-name.ts`
   - Client API function: `client/src/api/client.ts` (add function to existing file)
-  - Server route: `server/src/routes/feature-name.ts` (or extend `secrets.ts`)
+  - Server route: `server/src/routes/feature-name.ts` (or extend existing routes)
   - Server service: `server/src/services/feature-name.service.ts`
   - Shared types: `shared/types/api.ts` (add Zod schema + interfaces)
   - Database schema: `server/src/db/schema.ts` (add table or columns)
 - Tests:
   - Client: `client/src/pages/__tests__/feature-name.test.ts`
   - Server: `server/src/routes/__tests__/feature-name.test.ts`
+  - E2E: `e2e/specs/feature-name.spec.ts`
 - Router: Update `client/src/router.ts` to add route pattern
 
 **New Component/Module:**
@@ -265,6 +285,7 @@ secureshare/
 - `.js` extension required: Even though files are `.ts`, imports use `.js` (TypeScript + Node ESM requirement)
 - `import.meta.dirname`: Used instead of `__dirname` (ESM alternative)
 - Default imports: `express` is default import, `pinoHttp` is named export (CJS interop)
+- Pool import: `pg` destructured from default import (`const { Pool } = pg`)
 
 **Path aliases:**
 - None defined: All imports use relative paths (no `@/` or `~/` aliases in tsconfig)
@@ -290,6 +311,23 @@ secureshare/
 - Server never imports from client (enforced by TypeScript config)
 - Both import from shared (common types)
 
+## Multi-Project Test Config
+
+**client tests (vitest):**
+- Environment: happy-dom
+- Include: `client/src/**/*.test.ts`
+- Runs in parallel
+
+**server tests (vitest):**
+- Environment: node
+- Include: `server/src/**/*.test.ts`
+- fileParallelism: false (sequential to avoid database lock conflicts)
+
+**e2e tests (playwright):**
+- Environment: Chromium/Firefox/WebKit browsers
+- Include: `e2e/specs/**/*.spec.ts`
+- Config: `e2e/playwright.config.ts`
+
 ---
 
-*Structure analysis: 2026-02-16*
+*Structure analysis: 2026-02-20*
