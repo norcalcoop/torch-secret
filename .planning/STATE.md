@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 23 of 27 (Secret Dashboard) — IN PROGRESS
-Plan: 3 of 5 complete (23-03 Frontend API Client + Auth-Gated Label Field)
-Status: Phase 23 Plan 03 complete — API client extended with dashboard functions, create page auth-gated label field via progressive enhancement; Plan 23-04 (dashboard page UI) is next
-Last activity: 2026-02-20 — Phase 23 Plan 03 complete (frontend API client + create page label field)
+Plan: 4 of 5 in progress (23-04 Dashboard UI — Task 1 complete, checkpoint:human-verify pending)
+Status: Phase 23 Plan 04 Task 1 complete — full dashboard page rebuilt with secret table, status tabs, delete modal, empty state, and auth-reactive header nav link; awaiting human visual verification at checkpoint
+Last activity: 2026-02-20 — Phase 23 Plan 04 Task 1 committed (dashboard UI)
 
 Progress: [████░░░░░░] ~28% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
 
@@ -87,6 +87,7 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 23-03]: renderCreatePage stays synchronous (void return) not async — fire-and-forget IIFE for auth check avoids @typescript-eslint/require-await; PageRenderer accepts void | Promise<void> so both work
 - [Phase 23-03]: Progressive enhancement order: form appended to container before auth check fires — anonymous users see zero delay; authenticated users see label field appear after brief async pause
 - [Phase 23-03]: labelInput captured as mutable closure variable initialized to null — auth IIFE sets it after mount; submit handler reads labelInput?.value safely
+- [Phase 23]: [Phase 23-04]: Used authClient singleton from api/auth-client.js in layout.ts — prevents duplicate Better Auth client instances; consistent with project convention
 
 ### Known Tech Debt
 
@@ -102,5 +103,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 23-03-PLAN.md — Phase 23 Frontend API Client + Auth-Gated Label Field
-Resume: Begin Phase 23 Plan 04 (dashboard page UI) — depends on Plans 01, 02, and 03
+Stopped at: Paused at checkpoint: 23-04 Task 2 (human-verify) — dashboard UI built, awaiting visual sign-off
+Resume: After human approves checkpoint, continue with Plan 23-04 Task 2 approval then move to Plan 23-05
