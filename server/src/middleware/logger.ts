@@ -25,7 +25,9 @@ export const logger = pino({
 
 /** Redact secret IDs from URL paths to prevent log leakage */
 function redactUrl(url: string | undefined): string | undefined {
-  return url?.replace(/\/api\/secrets\/[A-Za-z0-9_-]+/g, '/api/secrets/[REDACTED]');
+  return url
+    ?.replace(/\/api\/secrets\/[A-Za-z0-9_-]+/g, '/api/secrets/[REDACTED]')
+    ?.replace(/\/api\/dashboard\/secrets\/[A-Za-z0-9_-]+/g, '/api/dashboard/secrets/[REDACTED]');
 }
 
 /** HTTP request logger middleware that redacts secret IDs from URL paths */

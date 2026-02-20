@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
-import { lte } from 'drizzle-orm';
+import { lte, and, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { secrets } from '../db/schema.js';
 import { logger } from '../middleware/logger.js';
@@ -9,22 +9,39 @@ import { logger } from '../middleware/logger.js';
 let task: ScheduledTask | null = null;
 
 /**
- * Bulk-delete expired secrets using a two-step process:
- * 1. Zero ciphertext for all expired rows (data remanence mitigation, SECR-08)
- * 2. Delete the zeroed rows
+ * Bulk-expire and bulk-delete expired secrets using split logic:
+ *
+ * Step 1: Soft-expire user-owned rows — zero ciphertext and set status='expired'.
+ *         Row is preserved for dashboard history (SECR-08 for data remanence).
+ *
+ * Step 2: Zero ciphertext for anonymous expired rows (data remanence mitigation).
+ *
+ * Step 3: Hard-delete anonymous expired rows (unchanged behavior for anonymous secrets).
  *
  * Never logs secret IDs (SECR-09).
  *
- * @returns Number of deleted rows
+ * @returns Number of hard-deleted (anonymous) rows
  */
 export async function cleanExpiredSecrets(): Promise<number> {
   const now = new Date();
 
-  // Step 1: Zero ciphertext for all expired secrets (data remanence mitigation)
-  await db.update(secrets).set({ ciphertext: '0' }).where(lte(secrets.expiresAt, now));
+  // Step 1: Soft-expire user-owned rows — keep for dashboard history
+  // Zero ciphertext and set status='expired'; do NOT delete the row.
+  await db
+    .update(secrets)
+    .set({ ciphertext: '0', status: 'expired' })
+    .where(and(lte(secrets.expiresAt, now), isNotNull(secrets.userId)));
 
-  // Step 2: Delete the zeroed rows
-  const result = await db.delete(secrets).where(lte(secrets.expiresAt, now));
+  // Step 2: Zero ciphertext for anonymous expired rows (data remanence mitigation)
+  await db
+    .update(secrets)
+    .set({ ciphertext: '0' })
+    .where(and(lte(secrets.expiresAt, now), isNull(secrets.userId)));
+
+  // Step 3: Hard-delete anonymous expired rows (unchanged behavior for anonymous)
+  const result = await db
+    .delete(secrets)
+    .where(and(lte(secrets.expiresAt, now), isNull(secrets.userId)));
 
   return result.rowCount ?? 0;
 }
@@ -32,9 +49,9 @@ export async function cleanExpiredSecrets(): Promise<number> {
 /**
  * Start the expiration cleanup worker.
  *
- * Runs every 5 minutes to bulk-delete expired secrets using a two-step
- * process: zero ciphertext (data remanence mitigation, SECR-08) then
- * delete the rows. Never logs secret IDs (SECR-09).
+ * Runs every 5 minutes to expire/delete expired secrets using split logic:
+ * user-owned rows are soft-expired (status='expired', row kept);
+ * anonymous rows are hard-deleted. Never logs secret IDs (SECR-09).
  */
 export function startExpirationWorker(): void {
   task = cron.schedule('*/5 * * * *', async () => {
