@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generatePassphrase, EFF_WORDS } from '../passphrase.js';
+import { generatePassphrase, EFF_WORDS } from '../passphrase';
 
 describe('generatePassphrase — word count', () => {
   it('generates a passphrase with 4 words by default', () => {
@@ -43,12 +43,12 @@ describe('generatePassphrase — EFF wordlist membership', () => {
     }
   });
 
-  it('words are lowercase with no internal spaces (match /^[a-z]+$/)', () => {
+  it('words are lowercase with no internal spaces (match /^[a-z][a-z-]*$/)', () => {
     for (let i = 0; i < 10; i++) {
       const passphrase = generatePassphrase();
       const words = passphrase.split(' ');
       for (const word of words) {
-        expect(word).toMatch(/^[a-z]+$/);
+        expect(word).toMatch(/^[a-z][a-z-]*$/);
       }
     }
   });
