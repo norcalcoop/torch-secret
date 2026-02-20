@@ -95,6 +95,8 @@ export const verification = pgTable(
  *
  * The server never sees plaintext -- only base64-encoded ciphertext from Phase 1.
  * Secrets are atomically destroyed on first retrieval (zero-then-delete pattern).
+ * Status persistence via soft-delete: user-owned secrets update status on view/expire/delete;
+ * anonymous secrets hard-delete (unchanged).
  */
 export const secrets = pgTable(
   'secrets',
@@ -122,6 +124,19 @@ export const secrets = pgTable(
     /** Nullable FK to users.id — NULL means anonymous secret. onDelete: set null preserves
      *  already-shared links if user account is deleted. NEVER use cascade here. */
     userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+    /** Optional user-provided label for dashboard display (max 100 chars enforced at API layer) */
+    label: text('label'),
+
+    /** Per-secret email notification opt-in; off by default. Phase 26 sends the email. */
+    notify: boolean('notify').notNull().default(false),
+
+    /** Lifecycle status. 'active' = unviewed; 'viewed' = consumed; 'expired' = past expiresAt;
+     *  'deleted' = owner pre-deleted via dashboard. User-owned rows soft-delete; anonymous rows hard-delete. */
+    status: text('status').notNull().default('active'),
+
+    /** Timestamp when secret was viewed and consumed. NULL until viewed. */
+    viewedAt: timestamp('viewed_at', { withTimezone: true }),
   },
   (table) => [
     /** Partial index for dashboard queries: filter + sort by user, skip anonymous rows */
