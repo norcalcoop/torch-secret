@@ -160,7 +160,7 @@ export function focusPageHeading(): void {
  * Matches the current pathname to a page module and renders it.
  */
 function handleRoute(): void {
-  const path = window.location.pathname;
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
   const container = document.getElementById('app')!;
 
   // Clear existing content
