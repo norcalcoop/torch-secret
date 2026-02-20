@@ -10,6 +10,8 @@ import type {
   SecretResponse,
   MetaResponse,
   VerifySecretResponse,
+  DashboardListResponse,
+  DashboardDeleteResponse,
 } from '../../../shared/types/api.js';
 
 /**
@@ -31,16 +33,26 @@ export class ApiError extends Error {
  * Create a new secret on the server.
  *
  * Sends the pre-encrypted ciphertext blob. The server never sees plaintext.
+ * Authenticated users may include an optional label (max 100 chars) for
+ * dashboard display and opt into per-secret email notification.
  */
 export async function createSecret(
   ciphertext: string,
   expiresIn: '1h' | '24h' | '7d' | '30d',
   password?: string,
+  label?: string,
+  notify?: boolean,
 ): Promise<CreateSecretResponse> {
   const res = await fetch('/api/secrets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ciphertext, expiresIn, ...(password ? { password } : {}) }),
+    body: JSON.stringify({
+      ciphertext,
+      expiresIn,
+      ...(password ? { password } : {}),
+      ...(label ? { label } : {}),
+      ...(notify !== undefined ? { notify } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -103,4 +115,28 @@ export async function verifySecretPassword(
   }
 
   return res.json() as Promise<VerifySecretResponse>;
+}
+
+/**
+ * Fetch the authenticated user's secret history (metadata only).
+ * Requires an active session cookie — throws ApiError 401 if unauthenticated.
+ */
+export async function fetchDashboardSecrets(): Promise<DashboardListResponse> {
+  const res = await fetch('/api/dashboard/secrets');
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<DashboardListResponse>;
+}
+
+/**
+ * Soft-delete an Active secret from the dashboard.
+ * Returns success true, or throws ApiError 404 if not found / wrong owner / non-active.
+ */
+export async function deleteDashboardSecret(id: string): Promise<DashboardDeleteResponse> {
+  const res = await fetch(`/api/dashboard/secrets/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<DashboardDeleteResponse>;
 }
