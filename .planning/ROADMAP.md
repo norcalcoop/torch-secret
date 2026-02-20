@@ -132,7 +132,12 @@ Plans:
   2. User can click a regenerate button to get a fresh passphrase without losing their typed secret content
   3. On the confirmation page, user can copy the passphrase independently from the share link with a single click
   4. Confirmation page displays two-channel security guidance explaining that the link and passphrase should be sent via separate channels
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — TDD: EFF Diceware passphrase module (crypto/passphrase.ts + tests + barrel export)
+- [ ] 24-02-PLAN.md — Confirmation page: passphrase card, copy button, two-channel guidance
+- [ ] 24-03-PLAN.md — Create page: passphrase section, regenerate button, remove Advanced options, thread to confirmation
 
 ### Phase 25: PostHog Analytics
 **Goal**: The application tracks funnel events via PostHog without collecting any PII, secret content, or encryption keys — with URL fragment sanitization enforced at initialization so encryption keys on reveal-page URLs are never transmitted to PostHog servers
@@ -194,7 +199,7 @@ Plans:
 | 21. Schema Foundation | 3/3 | Complete    | 2026-02-19 | - |
 | 22. Authentication | 7/7 | Complete    | 2026-02-20 | - |
 | 23. Secret Dashboard | 5/5 | Complete    | 2026-02-20 | - |
-| 24. EFF Diceware Passphrase Generator | v4.0 | 0/TBD | Not started | - |
+| 24. EFF Diceware Passphrase Generator | v4.0 | 0/3 | Not started | - |
 | 25. PostHog Analytics | v4.0 | 0/TBD | Not started | - |
 | 26. Email Notifications | v4.0 | 0/TBD | Not started | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 0/TBD | Not started | - |
