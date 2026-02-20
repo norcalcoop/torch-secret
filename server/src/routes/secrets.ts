@@ -14,6 +14,8 @@ import {
   getSecretMeta,
   verifyAndRetrieve,
 } from '../services/secrets.service.js';
+import { optionalAuth } from '../middleware/optional-auth.js';
+import type { AuthUser } from '../auth.js';
 
 /**
  * Identical error response for all "not available" cases.
@@ -49,10 +51,19 @@ export function createSecretsRouter(redisClient?: Redis) {
   router.post(
     '/',
     createSecretLimiter(redisClient),
+    optionalAuth,
     validateBody(CreateSecretSchema),
     async (req, res) => {
       const body = req.body as CreateSecretRequest;
-      const secret = await createSecret(body.ciphertext, body.expiresIn, body.password);
+      const user = res.locals.user as AuthUser | undefined;
+      const userId = user?.id;
+      const secret = await createSecret(
+        body.ciphertext,
+        body.expiresIn,
+        body.password,
+        userId,
+        body.label,
+      );
 
       res.status(201).json({
         id: secret.id,

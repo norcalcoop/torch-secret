@@ -14,6 +14,7 @@ import { createSecretsRouter } from './routes/secrets.js';
 import { healthRouter } from './routes/health.js';
 import { auth } from './auth.js';
 import { meRouter } from './routes/me.js';
+import { createDashboardRouter } from './routes/dashboard.js';
 import { env } from './config/env.js';
 
 /**
@@ -76,6 +77,9 @@ export function buildApp() {
 
   // Mount /api/me route (requires auth session)
   app.use('/api/me', meRouter);
+
+  // Mount /api/dashboard routes (requires auth session)
+  app.use('/api/dashboard', createDashboardRouter());
 
   // API catch-all: return JSON 404 for any unmatched /api/* request.
   // MUST come after ALL API routes (health, secrets, me) and before the SPA catch-all
