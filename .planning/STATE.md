@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 22 of 27 (Authentication) — COMPLETE
-Plan: All 6 plans complete
-Status: Phase 22 complete — all auth requirements verified; Phase 23 (Secret Dashboard) is next
-Last activity: 2026-02-19 — Phase 22 Plan 06 complete (human-verified browser flows, NODE_ENV fix)
+Plan: All 7 plans complete (including gap-closure 07)
+Status: Phase 22 fully complete — all auth requirements verified + trailing-slash router fix; Phase 23 (Secret Dashboard) is next
+Last activity: 2026-02-20 — Phase 22 Plan 07 complete (trailing-slash normalization gap closure)
 
 Progress: [███░░░░░░░] ~21% (v4.0 — 22/31 requirements complete: AUTH-01 through AUTH-08 verified by integration tests + human verification)
 
@@ -32,6 +32,7 @@ Progress: [███░░░░░░░] ~21% (v4.0 — 22/31 requirements com
 | Phase 22 P04 | 5 | 2 tasks | 2 files |
 | Phase 22 P05 | 2 | 2 tasks | 3 files |
 | Phase 22 P06 | ~50 min | 2 tasks | 2 files |
+| Phase 22 P07 | 1 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,7 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 22-06]: drizzleAdapter with usePlural: true requires explicit verifications: schema.verification mapping — Better Auth looks for 'verifications' key but schema exports 'verification' (singular)
 - [Phase 22-06]: NODE_ENV=test in .env silently disables requireEmailVerification in dev — dev environments must use NODE_ENV=development; test runner sets its own NODE_ENV=test
 - [Phase 22-06]: Better Auth client normalizes EMAIL_NOT_VERIFIED to INVALID_EMAIL_OR_PASSWORD — intentional (prevents email enumeration); UI shows generic message for unverified sign-in attempts
+- [Phase 22]: Trailing slash normalization uses pathname.replace(/\/$/, '') || '/' — the || '/' guard is essential: ''.replace() returns '' not '/', preserving root path match
 
 ### Known Tech Debt
 
@@ -85,6 +87,6 @@ Key v4.0 architectural constraints (carry forward to every phase):
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Completed 22-06-PLAN.md — Phase 22 Authentication fully complete
+Last session: 2026-02-20
+Stopped at: Completed 22-07-PLAN.md — Phase 22 Authentication gap closure (trailing-slash normalization)
 Resume: Begin Phase 23 (Secret Dashboard) — depends on Phase 22
