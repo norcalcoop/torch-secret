@@ -23,6 +23,7 @@ import {
   LockKeyhole,
   Share2,
   Flame,
+  Eye,
   EyeOff,
   Code,
   UserX,
@@ -221,10 +222,36 @@ export function renderCreatePage(container: HTMLElement): void {
   passwordInput.maxLength = 128;
   passwordInput.autocomplete = 'new-password';
   passwordInput.className =
-    'w-full px-3 py-2 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+
+  const passwordWrapper = document.createElement('div');
+  passwordWrapper.className = 'relative';
+  passwordWrapper.appendChild(passwordInput);
+
+  const revealToggle = document.createElement('button');
+  revealToggle.type = 'button';
+  revealToggle.setAttribute('aria-label', 'Show password');
+  revealToggle.className =
+    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+
+  const eyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+  const eyeOffEl = createIcon(EyeOff, { size: 'sm', class: 'pointer-events-none hidden' });
+  revealToggle.appendChild(eyeEl);
+  revealToggle.appendChild(eyeOffEl);
+
+  let passwordVisible = false;
+  revealToggle.addEventListener('click', () => {
+    passwordVisible = !passwordVisible;
+    passwordInput.type = passwordVisible ? 'text' : 'password';
+    revealToggle.setAttribute('aria-label', passwordVisible ? 'Hide password' : 'Show password');
+    eyeEl.classList.toggle('hidden', passwordVisible);
+    eyeOffEl.classList.toggle('hidden', !passwordVisible);
+  });
+
+  passwordWrapper.appendChild(revealToggle);
 
   detailsContent.appendChild(passwordLabel);
-  detailsContent.appendChild(passwordInput);
+  detailsContent.appendChild(passwordWrapper);
   details.appendChild(summary);
   details.appendChild(detailsContent);
   form.appendChild(details);

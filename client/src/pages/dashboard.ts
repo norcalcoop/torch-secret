@@ -393,6 +393,9 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
       logoutButton.textContent = 'Logging out\u2026';
 
       await authClient.signOut();
+      // Hide the nav link immediately — Better Auth's client cache may not
+      // reflect the cleared session until the next getSession() round-trip.
+      document.getElementById('nav-dashboard-link')?.classList.add('hidden');
       navigate('/');
     })();
   });
