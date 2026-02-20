@@ -11,11 +11,14 @@ SecureShare is a zero-knowledge, one-time secret sharing web app. Users paste se
 - **Runtime:** Node.js 24.x LTS, TypeScript 5.9.x (ESM, `"type": "module"`)
 - **Backend:** Express 5.x, Drizzle ORM with PostgreSQL 17+, Pino logging
 - **Frontend:** Vanilla TypeScript (NOT React), Vite 7.x, Tailwind CSS 4.x (`@tailwindcss/vite` plugin), Lucide icons, JetBrains Mono font
+- **Auth:** Better Auth 1.x (email/password, Google + GitHub OAuth, email verification, session management)
 - **Encryption:** Web Crypto API (AES-256-GCM), no third-party crypto libraries
 - **Security:** Helmet (CSP with per-request nonce), express-rate-limit (Redis-backed or in-memory), Argon2id password hashing, HTTPS redirect
 - **Background jobs:** node-cron (expired secret cleanup worker)
-- **Testing:** Vitest 4.x (multi-project: client=happy-dom, server=node), Supertest, vitest-axe
+- **Testing:** Vitest 4.x (multi-project: client=happy-dom, server=node), Supertest, vitest-axe, Playwright (E2E + axe-core)
 - **Validation:** Zod 4.x for env vars, API request schemas, and shared type contracts
+- **Code quality:** ESLint 10.x (typescript-eslint), Prettier 3.x (prettier-plugin-tailwindcss), Husky + lint-staged
+- **Containers:** Docker + Docker Compose for local development and production
 
 ## Project Structure
 
@@ -31,21 +34,25 @@ secureshare/
 │       ├── api/client.ts       # Typed fetch wrapper for API calls
 │       ├── crypto/             # AES-256-GCM encrypt/decrypt (self-contained module)
 │       ├── components/         # UI components (layout, copy-button, share-button, toast, terminal-block, theme-toggle, icons, loading-spinner, expiration-select)
-│       └── pages/              # create, confirmation, reveal, error
+│       └── pages/              # create, confirmation, reveal, error, dashboard, login, register, forgot-password, reset-password
 ├── server/src/
 │   ├── app.ts                  # Express app factory (middleware order is critical — see comments)
 │   ├── server.ts               # HTTP server startup, graceful shutdown
 │   ├── config/env.ts           # Zod-validated env vars
 │   ├── db/
-│   │   ├── schema.ts           # Drizzle schema: secrets table
+│   │   ├── schema.ts           # Drizzle schema: secrets + Better Auth tables (users, sessions, accounts, verifications)
 │   │   ├── connection.ts       # PostgreSQL pool + Drizzle instance
 │   │   └── migrate.ts          # Migration runner script
-│   ├── routes/secrets.ts       # All 4 API endpoints
+│   ├── routes/
+│   │   ├── secrets.ts          # Secret CRUD (4 endpoints)
+│   │   ├── me.ts               # GET /api/me — current authenticated user
+│   │   └── health.ts           # GET /api/health
 │   ├── middleware/
 │   │   ├── security.ts         # CSP nonce, helmet, HTTPS redirect
 │   │   ├── rate-limit.ts       # Redis-backed rate limiters
 │   │   ├── validate.ts         # Zod request validation
 │   │   ├── logger.ts           # Pino with secret ID redaction
+│   │   ├── require-auth.ts     # Better Auth session guard middleware
 │   │   └── error-handler.ts    # Global error handler (must be last middleware)
 │   ├── services/
 │   │   ├── secrets.service.ts  # createSecret, retrieveAndDestroy, verifyAndRetrieve
@@ -82,6 +89,9 @@ Two trust boundaries define the entire security model:
 | GET    | `/api/secrets/:id`        | Retrieve + atomic delete (no password)                   |
 | GET    | `/api/secrets/:id/meta`   | Check if password required (does NOT consume secret)     |
 | POST   | `/api/secrets/:id/verify` | Password verify + retrieve + atomic delete               |
+| GET    | `/api/me`                 | Current authenticated user (null if anonymous)           |
+| GET    | `/api/health`             | Health check                                             |
+| ANY    | `/api/auth/**`            | Better Auth handler (login, register, OAuth, sessions)   |
 
 ## Development Commands
 
@@ -93,7 +103,12 @@ npm run build:client               # Production frontend build
 npm run preview:client             # Preview production build locally
 npm test                           # All tests in watch mode
 npm run test:run                   # All tests once
+npm run test:e2e                   # Playwright E2E tests (requires running app)
 npx vitest run path/to/test.ts     # Single test file
+npm run lint                       # ESLint check
+npm run lint:fix                   # ESLint auto-fix
+npm run format                     # Prettier format all files
+npm run format:check               # Prettier format check (CI)
 npm run db:generate                # Generate migration from schema changes
 npm run db:migrate                 # Apply migrations
 ```
@@ -117,7 +132,8 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 
 - **v1.0 MVP** (8 phases, 22 plans) — SHIPPED: Crypto, DB/API, security hardening, frontend, password protection, expiration worker, accessibility
 - **v2.0 UI & SEO** (6 phases, 14 plans) — SHIPPED: Visual design, glassmorphism, SEO, theme toggle
-- **v3.0 Production-Ready Delivery** (5 phases, in progress) — ESLint/Prettier, Docker, E2E tests, CI/CD, GitHub polish
+- **v3.0 Production-Ready Delivery** (6 phases, 15 plans) — SHIPPED: ESLint/Prettier, Docker, Playwright E2E, CI/CD, GitHub polish
+- **v4.0 Hybrid Anonymous + Account Model** (7 phases, in progress) — Schema foundation + Better Auth complete (Phase 22); Phase 23 (Secret Dashboard) is next
 
 ## Key Design Decisions
 
@@ -137,6 +153,11 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 - **Express 5 wildcards:** SPA catch-all uses `{*path}` (path-to-regexp v8+), not `*`.
 - **Server tsconfig:** Extends root but overrides to `NodeNext` module resolution and excludes DOM types.
 - **Middleware order in `app.ts`:** Trust proxy → HTTPS redirect → CSP nonce → Helmet → logger → JSON parser → routes → static/SPA → error handler. Order matters for correctness.
+- **Better Auth session cookie:** Must use `sameSite: 'lax'` (not `'strict'`) — OAuth callback redirects break with strict mode.
+- **Better Auth `createAuthClient()`:** Omit `baseURL` — Better Auth infers from `window.location`, which works for both Vite dev proxy and same-origin production.
+- **Better Auth `getSession()` typing:** Returns `any`; use an `isSession()` type guard to safely narrow the result and avoid `@typescript-eslint/no-unsafe-member-access` throughout the codebase.
+- **Better Auth email verification bypass:** Use `requireEmailVerification: env.NODE_ENV !== 'test'` to skip the email gate in test environments.
+- **Drizzle bug #4147:** After `db:generate`, inspect the generated SQL. If a migration adds both a new column and a FK constraint on that column in the same file, split into two separate migration files (ADD COLUMN first, then ADD CONSTRAINT). Failing to split causes the migration to fail.
 
 ## Zero-Knowledge Invariant (Hard Convention)
 
