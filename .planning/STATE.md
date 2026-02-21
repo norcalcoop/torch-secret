@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 25: PostHog Analytics
+**Current focus:** v4.0 — Phase 26: Email Notifications
 
 ## Current Position
 
-Phase: 25 of 27 (PostHog Analytics) — In Progress
-Plan: 3 of 3 complete (25-03 identity analytics — identifyUser/captureUserLoggedIn in login.ts, captureUserRegistered in register.ts, identifyUser/resetAnalyticsIdentity in dashboard.ts)
-Status: Phase 25 complete — all analytics plans shipped; Phase 26 (email notifications) is next
-Last activity: 2026-02-21 — Phase 25 Plan 03 complete
+Phase: 26 of 27 (Email Notifications) — In Progress
+Plan: 1 of 2 complete (26-01 notification service + secrets service + route notify passthrough)
+Status: Phase 26 Plan 01 complete — backend notification wired; Plan 02 (frontend toggle) is next
+Last activity: 2026-02-21 — Phase 26 Plan 01 complete
 
-Progress: [████░░░░░░] ~37% (v4.0 — 33/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03)
+Progress: [█████░░░░░] ~40% (v4.0 — 35/37 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-02 + NOTF-03)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [████░░░░░░] ~37% (v4.0 — 33/35 requirements com
 | Phase 25-posthog-analytics P01 | 2 | 2 tasks | 6 files |
 | Phase 25-posthog-analytics P02 | 2 | 2 tasks | 4 files |
 | Phase 25-posthog-analytics P03 | 8 | 2 tasks | 3 files |
+| Phase 26-email-notifications P01 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 25-03]: captureUserRegistered fires before showEmailVerificationState() but no identifyUser on registration — user cannot log in until email verified; identify deferred to first login
 - [Phase 25-03]: SessionUser interface extended with id: string; isSession() guard updated to check both id and email — type-safe userId access without unsafe member access lint errors
 - [Phase 25-03]: resetAnalyticsIdentity() placed after signOut() resolves — ensures identified session ends before PostHog reset generates new anonymous distinct ID
+- [Phase 26-01]: Fire-and-forget notification dispatch called after Drizzle transaction callback returns — Resend HTTP call never holds open a PostgreSQL connection
+- [Phase 26-01]: leftJoin(users) in secrets Step 1 SELECT resolves userId->email without a second DB round-trip; null userEmail from LEFT JOIN is safe (dispatch guards on userEmail truthiness)
+- [Phase 26-01]: Non-null assertion secretRow.passwordHash! in verifyPassword call — TypeScript cannot track narrowing through spread destructure; !secret.passwordHash guard above guarantees non-null
+- [Phase 26-01]: Anonymous safety enforced at two layers: route enforces userId ? notify : false; service checks userId !== null before dispatch — defense-in-depth
 
 ### Known Tech Debt
 
@@ -133,5 +138,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 25-posthog-analytics 25-03-PLAN.md — identity analytics wired into login.ts, register.ts, dashboard.ts; Phase 25 fully complete
-Resume: Phase 26 — email notifications
+Stopped at: Completed 26-email-notifications 26-01-PLAN.md — notification service + secrets service JOIN + route notify passthrough; Phase 26 Plan 01 complete
+Resume: Phase 26 Plan 02 — frontend notification toggle UI on create page
