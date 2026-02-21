@@ -47,7 +47,8 @@ export function createHelmetMiddleware() {
             `'nonce-${(res as unknown as Response).locals.cspNonce}'`,
         ],
         imgSrc: ["'self'"],
-        connectSrc: ["'self'"],
+        // PostHog analytics event ingestion (npm bundle approach — no script-src change needed)
+        connectSrc: ["'self'", 'https://us.i.posthog.com', 'https://us-assets.i.posthog.com'],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
