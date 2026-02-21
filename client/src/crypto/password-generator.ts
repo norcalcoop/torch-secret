@@ -85,8 +85,6 @@ const GUESSES_PER_SEC = 10_000_000_000;
  * Throws if the resulting charset is empty (conflicting filters).
  */
 function buildCharset(options: PasswordOptions): string {
-  const tier = TIER_CONFIG[options.tier];
-
   // Guard: easyToSay + omitSimilar is a conflicting combination.
   // easyToSay restricts to phonetic lowercase; omitSimilar further restricts the
   // same character domain, creating an aggressive filter combination that the UI
@@ -97,26 +95,15 @@ function buildCharset(options: PasswordOptions): string {
 
   // Determine active character classes
   // easyToSay takes precedence — forces lowercase-only phonetic mode
-  const useLowercase = true; // always include some lowercase
-  const useUppercase = options.easyToSay ? false : (options.uppercase ?? tier.uppercase);
-  const useNumbers = options.easyToSay ? false : (options.numbers ?? tier.numbers);
-  const useSymbols = options.easyToSay ? false : (options.symbols ?? tier.symbols);
+  const useUppercase = !options.easyToSay && options.uppercase;
+  const useNumbers = !options.easyToSay && options.numbers;
+  const useSymbols = !options.easyToSay && options.symbols;
 
-  // Build raw charset
-  let raw = '';
-
-  if (useLowercase) {
-    raw += options.easyToSay ? PHONETIC : LOWERCASE;
-  }
-  if (useUppercase) {
-    raw += UPPERCASE;
-  }
-  if (useNumbers) {
-    raw += NUMBERS;
-  }
-  if (useSymbols) {
-    raw += SYMBOLS;
-  }
+  // Build raw charset (lowercase always included)
+  let raw = options.easyToSay ? PHONETIC : LOWERCASE;
+  if (useUppercase) raw += UPPERCASE;
+  if (useNumbers) raw += NUMBERS;
+  if (useSymbols) raw += SYMBOLS;
 
   // Apply filters
   // easyToRead is a superset of omitSimilar — if both are set, easyToRead dominates
