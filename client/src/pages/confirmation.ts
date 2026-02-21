@@ -8,6 +8,11 @@
  * This page is rendered programmatically (state-based, not URL-based) --
  * refreshing the browser returns to the create page since the key is gone
  * from memory.
+ *
+ * Phase 27: Conversion prompts — for anonymous users, a dismissible branded
+ * accent card is rendered after the URL card on the 1st and 3rd secret creation
+ * within the same page session (promptNumber 1 or 3). Authenticated users never
+ * see prompts. The dismiss button removes the card from the DOM; no localStorage.
  */
 
 import { ShieldCheck } from 'lucide';
@@ -15,6 +20,66 @@ import { createIcon } from '../components/icons.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { createShareButton } from '../components/share-button.js';
 import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
+import {
+  captureConversionPromptShown,
+  captureConversionPromptClicked,
+} from '../analytics/posthog.js';
+
+/**
+ * Create a dismissible branded conversion prompt card for anonymous users.
+ *
+ * The card features:
+ * - A dismiss button (×) that removes the card from the DOM (no localStorage)
+ * - A headline and sub-copy describing the account benefit
+ * - A 'Sign up — it's free' CTA that navigates to /register and fires PostHog event
+ *
+ * @param headline - The main headline text (e.g. "Know when your secret is read.")
+ * @param subCopy - The supporting copy below the headline
+ * @param promptNumber - 1 or 3, used for PostHog event tracking
+ */
+function createConversionPromptCard(
+  headline: string,
+  subCopy: string,
+  promptNumber: 1 | 3,
+): HTMLElement {
+  const card = document.createElement('div');
+  card.className =
+    'relative p-4 rounded-lg border border-accent/30 bg-accent/5 backdrop-blur-md shadow-sm text-left';
+
+  // Dismiss button (×) — removes card from DOM, no localStorage
+  const dismissBtn = document.createElement('button');
+  dismissBtn.type = 'button';
+  dismissBtn.setAttribute('aria-label', 'Dismiss signup prompt');
+  dismissBtn.className =
+    'absolute top-2 right-2 p-1 text-text-muted hover:text-text-primary rounded focus:ring-2 focus:ring-accent focus:outline-hidden transition-colors cursor-pointer';
+  dismissBtn.textContent = '\u00d7'; // × character via Unicode escape (textContent only, never innerHTML)
+  dismissBtn.addEventListener('click', () => card.remove());
+
+  const headlineEl = document.createElement('p');
+  headlineEl.className = 'font-semibold text-text-primary text-sm pr-6';
+  headlineEl.textContent = headline;
+
+  const subEl = document.createElement('p');
+  subEl.className = 'text-xs text-text-secondary mt-1';
+  subEl.textContent = subCopy;
+
+  const ctaLink = document.createElement('a');
+  ctaLink.href = '/register';
+  ctaLink.className =
+    'mt-3 inline-block min-h-[36px] px-4 py-1.5 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer';
+  ctaLink.textContent = "Sign up \u2014 it's free";
+  ctaLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    captureConversionPromptClicked(promptNumber);
+    navigate('/register');
+  });
+
+  card.appendChild(dismissBtn);
+  card.appendChild(headlineEl);
+  card.appendChild(subEl);
+  card.appendChild(ctaLink);
+  return card;
+}
 
 /**
  * Render the confirmation page after successful secret creation.
@@ -26,11 +91,16 @@ import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
  * When a passphrase is provided (Phase 24), an additional passphrase card
  * and two-channel security guidance block are rendered below the URL card.
  *
+ * When promptNumber is 1 or 3 (Phase 27), a dismissible conversion prompt card
+ * is rendered below the URL card for anonymous users. Authenticated users pass
+ * null or undefined for promptNumber and never see prompts.
+ *
  * @param container - The DOM element to render into
  * @param shareUrl - The full shareable URL including the encryption key fragment
  * @param expiresAt - ISO 8601 timestamp string for when the secret expires
  * @param label - Optional label set by the authenticated user during creation
  * @param passphrase - Optional EFF diceware passphrase for two-channel delivery (Phase 24)
+ * @param promptNumber - 1 or 3 for conversion prompts; null/undefined for no prompt (Phase 27)
  */
 export function renderConfirmationPage(
   container: HTMLElement,
@@ -38,6 +108,7 @@ export function renderConfirmationPage(
   expiresAt: string,
   label?: string,
   passphrase?: string,
+  promptNumber?: 1 | 3 | null,
 ): void {
   // Update page title and announce to screen readers
   updatePageMeta({
@@ -114,6 +185,27 @@ export function renderConfirmationPage(
 
   urlCard.appendChild(buttonRow);
   wrapper.appendChild(urlCard);
+
+  // -- Conversion prompt for anonymous users (CONV-04, CONV-05) --
+  // promptNumber 1 = after first creation, 3 = after third creation.
+  // Authenticated users pass null/undefined — no prompt rendered.
+  if (promptNumber === 1) {
+    const prompt = createConversionPromptCard(
+      'Know when your secret is read.',
+      'Get a read receipt by email \u2014 free with an account.',
+      1,
+    );
+    wrapper.appendChild(prompt);
+    captureConversionPromptShown(1);
+  } else if (promptNumber === 3) {
+    const prompt = createConversionPromptCard(
+      'Your secrets, tracked.',
+      'A dashboard that shows you what\u2019s active, what\u2019s been opened, and what\u2019s expired.',
+      3,
+    );
+    wrapper.appendChild(prompt);
+    captureConversionPromptShown(3);
+  }
 
   // -- Passphrase card (Phase 24 — only rendered when passphrase is provided) --
   if (passphrase) {

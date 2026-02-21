@@ -17,15 +17,28 @@
  * Phase 24: The "Advanced options" password field has been replaced with an
  * auto-generated EFF diceware passphrase displayed in a monospace block with
  * Regenerate and Copy buttons. Every secret is now password-protected by default.
+ *
+ * Phase 27: Auth-aware expiration select — anonymous users see locked "1 hour"
+ * display; authenticated users see 1h/24h/7d select. Session-level
+ * anonymousSecretCount triggers conversion prompts at creation 1 and 3.
+ * 429 responses show an inline upsell card with countdown instead of generic error.
  */
 
 import { encrypt, generatePassphrase } from '../crypto/index.js';
-import { createSecret } from '../api/client.js';
+import { createSecret, ApiError } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
-import { captureSecretCreated } from '../analytics/posthog.js';
-import { createExpirationSelect } from '../components/expiration-select.js';
+import {
+  captureSecretCreated,
+  captureConversionPromptShown,
+  captureConversionPromptClicked,
+} from '../analytics/posthog.js';
+import {
+  createExpirationSelect,
+  type ExpirationSelectResult,
+} from '../components/expiration-select.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { renderConfirmationPage } from './confirmation.js';
+import { navigate } from '../router.js';
 import {
   ClipboardPaste,
   LockKeyhole,
@@ -40,6 +53,15 @@ import {
 import { createIcon } from '../components/icons.js';
 
 const MAX_LENGTH = 10_000;
+
+// Session-scoped anonymous creation counter.
+// Triggers conversion prompts at count 1 (after 1st secret) and count 3.
+// Resets on full page refresh — same lifecycle as the dismissed state.
+let anonymousSecretCount = 0;
+
+// Session-level auth flag: set to true when auth IIFE resolves a valid session.
+// Authenticated users never see conversion prompts on the confirmation page.
+let isAuthenticated = false;
 
 /**
  * Shape of a Better Auth session user.
@@ -138,6 +160,63 @@ function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean }
 }
 
 /**
+ * Show an inline rate-limit upsell card when POST /api/secrets returns 429.
+ *
+ * Replaces generic red error text with a branded, informational card that
+ * shows the reset countdown, benefit line, and 'Sign up — it's free' CTA.
+ * Fires captureConversionPromptShown('rate_limit') after rendering.
+ *
+ * @param container - The error area element to convert to the upsell card.
+ * @param resetTimestamp - Unix timestamp (seconds) from RateLimit-Reset header.
+ */
+function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | undefined): void {
+  container.classList.remove('hidden');
+  // Clear any previous content
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  // Replace danger styling with neutral/informational styling
+  container.className = 'px-4 py-4 rounded-lg border border-border bg-surface/80 text-sm space-y-3';
+  container.setAttribute('role', 'alert');
+
+  const headline = document.createElement('p');
+  headline.className = 'font-semibold text-text-primary';
+  headline.textContent = "You've reached the free limit for anonymous sharing.";
+  container.appendChild(headline);
+
+  if (resetTimestamp && resetTimestamp > 0) {
+    const resetMs = resetTimestamp * 1000;
+    const minutesUntilReset = Math.ceil((resetMs - Date.now()) / 60_000);
+    const resetText =
+      minutesUntilReset > 0
+        ? `Limit resets in ${minutesUntilReset} minute${minutesUntilReset === 1 ? '' : 's'}.`
+        : 'Limit resets soon.';
+    const resetLine = document.createElement('p');
+    resetLine.className = 'text-text-secondary';
+    resetLine.textContent = resetText;
+    container.appendChild(resetLine);
+  }
+
+  const benefitLine = document.createElement('p');
+  benefitLine.className = 'text-text-secondary';
+  benefitLine.textContent = 'Create a free account for 20 secrets/day and up to 7-day expiration.';
+  container.appendChild(benefitLine);
+
+  const cta = document.createElement('a');
+  cta.href = '/register';
+  cta.className =
+    'inline-block min-h-[36px] px-4 py-1.5 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer';
+  cta.textContent = "Sign up \u2014 it's free";
+  cta.addEventListener('click', (e) => {
+    e.preventDefault();
+    captureConversionPromptClicked('rate_limit');
+    navigate('/register');
+  });
+  container.appendChild(cta);
+
+  captureConversionPromptShown('rate_limit');
+}
+
+/**
  * Render the create page into the given container.
  *
  * Returns void synchronously -- the auth check for progressive label enhancement
@@ -224,6 +303,8 @@ export function renderCreatePage(container: HTMLElement): void {
   form.appendChild(textareaGroup);
 
   // -- Expiration section --
+  // Start with anonymous mode (locked "1 hour" display).
+  // Auth IIFE upgrades to authenticated select when session resolves.
   const expirationGroup = document.createElement('div');
   expirationGroup.className = 'space-y-1';
 
@@ -232,17 +313,17 @@ export function renderCreatePage(container: HTMLElement): void {
   expirationLabel.className = 'block text-sm font-medium text-text-secondary';
   expirationLabel.textContent = 'Expires after';
 
-  const expirationSelect = createExpirationSelect();
+  let expirationSelectResult: ExpirationSelectResult = createExpirationSelect(false);
 
   expirationGroup.appendChild(expirationLabel);
-  expirationGroup.appendChild(expirationSelect);
+  expirationGroup.appendChild(expirationSelectResult.element);
   form.appendChild(expirationGroup);
 
   // -- Passphrase section (Phase 24) --
   // The "Advanced options" password field has been replaced with an auto-generated
   // EFF diceware passphrase. Every secret is now password-protected by default.
   // PASS-02 invariant: Regenerate ONLY updates currentPassphrase, passphraseDisplay,
-  // and passwordInput. It NEVER touches textarea, expirationSelect, or labelInput.
+  // and passwordInput. It NEVER touches textarea, expirationSelectResult, or labelInput.
   const passphraseGroup = document.createElement('div');
   passphraseGroup.className = 'space-y-2';
 
@@ -285,7 +366,7 @@ export function renderCreatePage(container: HTMLElement): void {
 
   // Regenerate click handler
   // CRITICAL: ONLY update currentPassphrase, passphraseDisplay, and passwordInput.
-  // NEVER touch textarea.value, expirationSelect.value, or labelInput — PASS-02 invariant.
+  // NEVER touch textarea.value, expirationSelectResult, or labelInput — PASS-02 invariant.
   regenerateBtn.addEventListener('click', () => {
     currentPassphrase = generatePassphrase();
     passphraseDisplay.textContent = currentPassphrase;
@@ -334,8 +415,9 @@ export function renderCreatePage(container: HTMLElement): void {
     void (async () => {
       e.preventDefault();
 
-      // Hide previous errors
-      errorArea.classList.add('hidden');
+      // Reset error area to default danger styling (may have been replaced by upsell card)
+      errorArea.className = 'hidden px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm';
+      errorArea.setAttribute('role', 'alert');
       errorArea.textContent = '';
 
       // Validate non-empty
@@ -345,8 +427,8 @@ export function renderCreatePage(container: HTMLElement): void {
         return;
       }
 
-      // Get expiration
-      const expiresIn = expirationSelect.value as '1h' | '24h' | '7d' | '30d';
+      // Get expiration from the current select result (anonymous or authenticated)
+      const expiresIn = expirationSelectResult.getValue() as '1h' | '24h' | '7d' | '30d';
 
       // Get password (always the current passphrase — never undefined after Phase 24)
       const password = passwordInput.value || undefined;
@@ -357,7 +439,6 @@ export function renderCreatePage(container: HTMLElement): void {
       // Disable form during submission
       submitButton.disabled = true;
       textarea.disabled = true;
-      expirationSelect.disabled = true;
       if (labelInput) {
         labelInput.disabled = true;
       }
@@ -380,19 +461,43 @@ export function renderCreatePage(container: HTMLElement): void {
         // Step 3: Build share URL with key in fragment
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
-        // Step 4: Render confirmation page (state-based, not URL-based)
-        // currentPassphrase is passed as the fifth argument (Phase 24)
-        renderConfirmationPage(container, shareUrl, response.expiresAt, label, currentPassphrase);
+        // Step 4: Fire analytics before navigating away from create context
         captureSecretCreated(expiresIn, !!password);
+
+        // Step 5: Determine conversion prompt number for anonymous users.
+        // Authenticated users never see conversion prompts.
+        let promptNumber: 1 | 3 | null = null;
+        if (!isAuthenticated) {
+          anonymousSecretCount++;
+          if (anonymousSecretCount === 1) promptNumber = 1;
+          else if (anonymousSecretCount === 3) promptNumber = 3;
+        }
+
+        // Step 6: Render confirmation page (state-based, not URL-based)
+        // currentPassphrase is passed as the fifth argument (Phase 24)
+        // promptNumber is passed as the sixth argument (Phase 27)
+        renderConfirmationPage(
+          container,
+          shareUrl,
+          response.expiresAt,
+          label,
+          currentPassphrase,
+          promptNumber,
+        );
       } catch (err) {
         // Restore form state
         submitButton.disabled = false;
         textarea.disabled = false;
-        expirationSelect.disabled = false;
         if (labelInput) {
           labelInput.disabled = false;
         }
         submitButton.textContent = 'Create Secure Link';
+
+        // 429 rate-limit: show inline upsell card instead of generic error text
+        if (err instanceof ApiError && err.status === 429) {
+          showRateLimitUpsell(errorArea, err.rateLimitReset);
+          return;
+        }
 
         const message =
           err instanceof Error ? err.message : 'Something went wrong. Please try again.';
@@ -409,6 +514,7 @@ export function renderCreatePage(container: HTMLElement): void {
   container.appendChild(wrapper);
 
   // Progressive enhancement: add label field if authenticated (non-blocking)
+  // Also upgrades the expiration select from anonymous to authenticated mode.
   // This runs after the form is in the DOM so anonymous users see no delay.
   void (async () => {
     try {
@@ -417,6 +523,14 @@ export function renderCreatePage(container: HTMLElement): void {
       // assign to unknown before type-narrowing to avoid no-unsafe-assignment.
       const data: unknown = result.data as unknown;
       if (isSession(data)) {
+        // Mark authenticated for prompt suppression in submit handler
+        isAuthenticated = true;
+
+        // Upgrade expiration select to authenticated mode (1h/24h/7d options)
+        expirationSelectResult.element.remove();
+        expirationSelectResult = createExpirationSelect(true);
+        expirationGroup.appendChild(expirationSelectResult.element);
+
         const labelField = createLabelField();
         // Insert label field before the error area (stable anchor regardless of Advanced options removal)
         form.insertBefore(labelField, errorArea);

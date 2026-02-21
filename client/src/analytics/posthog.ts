@@ -179,3 +179,25 @@ export function resetAnalyticsIdentity(): void {
   if (!isInitialized()) return;
   posthog.reset();
 }
+
+/**
+ * Capture a conversion_prompt_shown event when an upsell prompt is displayed.
+ *
+ * ZERO-KNOWLEDGE INVARIANT: no userId, no secretId.
+ * prompt_number: 1 = first creation prompt, 3 = third creation prompt,
+ *   'rate_limit' = shown when anonymous user hits the 429 limit.
+ */
+export function captureConversionPromptShown(promptNumber: 1 | 3 | 'rate_limit'): void {
+  if (!isInitialized()) return;
+  posthog.capture('conversion_prompt_shown', { prompt_number: promptNumber });
+}
+
+/**
+ * Capture a conversion_prompt_clicked event when the 'Sign up — it's free' CTA is clicked.
+ *
+ * ZERO-KNOWLEDGE INVARIANT: no userId, no secretId.
+ */
+export function captureConversionPromptClicked(promptNumber: 1 | 3 | 'rate_limit'): void {
+  if (!isInitialized()) return;
+  posthog.capture('conversion_prompt_clicked', { prompt_number: promptNumber });
+}
