@@ -1,7 +1,8 @@
 import { eq, sql, desc } from 'drizzle-orm';
 import { db } from '../db/connection.js';
-import { secrets, type Secret } from '../db/schema.js';
+import { secrets, users, type Secret } from '../db/schema.js';
 import { hashPassword, verifyPassword } from './password.service.js';
+import { sendSecretViewedNotification } from './notification.service.js';
 
 /** Duration string to milliseconds mapping */
 const DURATION_MS: Record<string, number> = {
@@ -26,6 +27,8 @@ const MAX_PASSWORD_ATTEMPTS = 3;
  * If a userId is provided, the secret is linked to the user's account
  * for dashboard display. Anonymous secrets have userId = null.
  *
+ * If notify is true and userId is set, an email is sent when the secret is viewed.
+ *
  * @returns The inserted row (contains nanoid ID, expiresAt, createdAt)
  */
 export async function createSecret(
@@ -34,13 +37,21 @@ export async function createSecret(
   password?: string,
   userId?: string,
   label?: string,
+  notify?: boolean,
 ): Promise<Secret> {
   const expiresAt = new Date(Date.now() + DURATION_MS[expiresIn]);
   const passwordHash = password ? await hashPassword(password) : null;
 
   const [inserted] = await db
     .insert(secrets)
-    .values({ ciphertext, expiresAt, passwordHash, userId: userId ?? null, label: label ?? null })
+    .values({
+      ciphertext,
+      expiresAt,
+      passwordHash,
+      userId: userId ?? null,
+      label: label ?? null,
+      notify: notify ?? false,
+    })
     .returning();
 
   return inserted;
@@ -68,8 +79,25 @@ export async function createSecret(
  */
 export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
   return db.transaction(async (tx) => {
-    // Step 1: SELECT -- get the secret
-    const [secret] = await tx.select().from(secrets).where(eq(secrets.id, id));
+    // Step 1: SELECT -- get the secret with owner email via JOIN (single DB round-trip)
+    const [secret] = await tx
+      .select({
+        id: secrets.id,
+        ciphertext: secrets.ciphertext,
+        expiresAt: secrets.expiresAt,
+        passwordHash: secrets.passwordHash,
+        passwordAttempts: secrets.passwordAttempts,
+        userId: secrets.userId,
+        notify: secrets.notify,
+        status: secrets.status,
+        label: secrets.label,
+        viewedAt: secrets.viewedAt,
+        createdAt: secrets.createdAt,
+        userEmail: users.email,
+      })
+      .from(secrets)
+      .leftJoin(users, eq(secrets.userId, users.id))
+      .where(eq(secrets.id, id));
 
     if (!secret) {
       return null;
@@ -91,15 +119,18 @@ export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
       return null;
     }
 
+    // Separate userEmail from the Secret-compatible fields before any returns
+    const { userEmail, ...secretRow } = secret;
+
     // Step 2: ZERO -- overwrite ciphertext with zero characters before deletion/update
     // PostgreSQL text columns cannot contain null bytes (\x00), so we use '0'.
     // This still mitigates data remanence in PostgreSQL WAL and shared buffers.
     await tx
       .update(secrets)
-      .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+      .set({ ciphertext: '0'.repeat(secretRow.ciphertext.length) })
       .where(eq(secrets.id, id));
 
-    if (secret.userId !== null) {
+    if (secretRow.userId !== null) {
       // Step 3 (user-owned): UPDATE status='viewed', viewedAt -- preserve row for dashboard history
       await tx
         .update(secrets)
@@ -110,8 +141,15 @@ export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
       await tx.delete(secrets).where(eq(secrets.id, id));
     }
 
-    // Return the original secret (with real ciphertext from Step 1)
-    return secret;
+    // Fire-and-forget: dispatch notification after transaction resolves
+    // Only fires if the owner opted in AND the lookup returned a valid email
+    // userId !== null is defense-in-depth (anonymous secrets always have notify=false)
+    if (secretRow.notify && secretRow.userId !== null && userEmail) {
+      void sendSecretViewedNotification(userEmail, new Date());
+    }
+
+    // Return the original secret row (with real ciphertext from Step 1)
+    return secretRow;
   });
 }
 
@@ -173,8 +211,25 @@ export async function verifyAndRetrieve(
   { success: true; secret: Secret } | { success: false; attemptsRemaining: number } | null
 > {
   return db.transaction(async (tx) => {
-    // Step 1: SELECT the full secret row
-    const [secret] = await tx.select().from(secrets).where(eq(secrets.id, id));
+    // Step 1: SELECT the full secret row with owner email via JOIN (single DB round-trip)
+    const [secret] = await tx
+      .select({
+        id: secrets.id,
+        ciphertext: secrets.ciphertext,
+        expiresAt: secrets.expiresAt,
+        passwordHash: secrets.passwordHash,
+        passwordAttempts: secrets.passwordAttempts,
+        userId: secrets.userId,
+        notify: secrets.notify,
+        status: secrets.status,
+        label: secrets.label,
+        viewedAt: secrets.viewedAt,
+        createdAt: secrets.createdAt,
+        userEmail: users.email,
+      })
+      .from(secrets)
+      .leftJoin(users, eq(secrets.userId, users.id))
+      .where(eq(secrets.id, id));
 
     if (!secret) {
       return null;
@@ -196,17 +251,21 @@ export async function verifyAndRetrieve(
       return null;
     }
 
+    // Separate userEmail from the Secret-compatible fields
+    const { userEmail, ...secretRow } = secret;
+
     // Step 2: Verify password (constant-time via argon2.verify)
-    const isValid = await verifyPassword(secret.passwordHash, password);
+    // passwordHash is non-null here: the `!secret.passwordHash` guard above returned early
+    const isValid = await verifyPassword(secretRow.passwordHash!, password);
 
     if (isValid) {
       // Step 3a: Password correct -- zero ciphertext first (data remanence mitigation)
       await tx
         .update(secrets)
-        .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+        .set({ ciphertext: '0'.repeat(secretRow.ciphertext.length) })
         .where(eq(secrets.id, id));
 
-      if (secret.userId !== null) {
+      if (secretRow.userId !== null) {
         // User-owned: soft-delete (preserve row for dashboard history)
         await tx
           .update(secrets)
@@ -217,17 +276,24 @@ export async function verifyAndRetrieve(
         await tx.delete(secrets).where(eq(secrets.id, id));
       }
 
-      return { success: true, secret };
+      // Fire-and-forget: dispatch notification after transaction resolves
+      // Only fires if the owner opted in AND the lookup returned a valid email
+      // userId !== null is defense-in-depth (anonymous secrets always have notify=false)
+      if (secretRow.notify && secretRow.userId !== null && userEmail) {
+        void sendSecretViewedNotification(userEmail, new Date());
+      }
+
+      return { success: true, secret: secretRow };
     }
 
     // Step 3b: Password wrong -- atomically increment attempts
-    const newAttempts = secret.passwordAttempts + 1;
+    const newAttempts = secretRow.passwordAttempts + 1;
 
     if (newAttempts >= MAX_PASSWORD_ATTEMPTS) {
       // Auto-destroy: zero ciphertext then delete (always hard-delete on auto-destroy)
       await tx
         .update(secrets)
-        .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+        .set({ ciphertext: '0'.repeat(secretRow.ciphertext.length) })
         .where(eq(secrets.id, id));
       await tx.delete(secrets).where(eq(secrets.id, id));
       return { success: false, attemptsRemaining: 0 };
