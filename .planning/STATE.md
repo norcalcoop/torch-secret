@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 26 of 27 (Email Notifications) — Complete
-Plan: 2 of 2 complete (26-01 notification service + secrets service + route notify passthrough; 26-02 frontend notify toggle)
-Status: Phase 26 complete — backend + frontend email notification feature fully delivered; Phase 27 is next
-Last activity: 2026-02-21 — Phase 26 Plan 02 complete
+Phase: 26 of 27 (Email Notifications) — Checkpoint
+Plan: 3 of 3 — Tasks 1-2 complete, Task 3 awaiting human UAT checkpoint
+Status: Phase 26 Plan 03 at checkpoint:human-verify — tests and invariants shipped; human UAT of notify toggle UI pending
+Last activity: 2026-02-21 — Phase 26 Plan 03 tasks 1-2 complete (notification tests + INVARIANTS.md)
 
 Progress: [██████░░░░] ~45% (v4.0 — 36/37 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 + NOTF-02 + NOTF-03)
 
@@ -45,6 +45,7 @@ Progress: [██████░░░░] ~45% (v4.0 — 36/37 requirements com
 | Phase 25-posthog-analytics P03 | 8 | 2 tasks | 3 files |
 | Phase 26-email-notifications P01 | 3 | 2 tasks | 3 files |
 | Phase 26-email-notifications P02 | 2 | 1 tasks | 1 files |
+| Phase 26-email-notifications P03 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 26-01]: Anonymous safety enforced at two layers: route enforces userId ? notify : false; service checks userId !== null before dispatch — defense-in-depth
 - [Phase 26-02]: getNotifyEnabled declared as () => boolean initialized to () => false — submit handler reads live checkbox state at submit time; safe no-op default for anonymous users and auth check failures
 - [Phase 26-02]: createNotifyToggle() returns { element, getValue } — accessor pattern consistent with labelInput closure; getValue bound to checkbox.checked for live state reads
+- [Phase 26-email-notifications]: [Phase 26-03]: vi.hoisted() required for mock variables in vi.mock factory — Vitest hoists vi.mock before variable initialization; wrap shared mock vars in vi.hoisted()
+- [Phase 26-email-notifications]: [Phase 26-03]: vi.mock (not vi.spyOn) required for ESM notification dispatch interception — spyOn cannot replace live module bindings; vi.mock replaces the module registry entry
+- [Phase 26-email-notifications]: [Phase 26-03]: setImmediate flush after HTTP request needed to let fire-and-forget void notifications resolve before spy assertions
 
 ### Known Tech Debt
 
@@ -141,5 +145,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 26-email-notifications 26-02-PLAN.md — frontend notify toggle on create page; Phase 26 fully complete
-Resume: Phase 27 (next phase in roadmap)
+Stopped at: Checkpoint 26-email-notifications 26-03-PLAN.md Task 3 — human UAT of notify toggle UI and end-to-end notification flow; type "approved" to complete Phase 26
+Resume: After human approves UAT checkpoint in 26-03-PLAN.md, Phase 26 is complete and Phase 27 is next

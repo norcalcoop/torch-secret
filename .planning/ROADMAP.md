@@ -62,7 +62,7 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 - [x] **Phase 23: Secret Dashboard** - Authenticated user's secret history, labels, status display, pre-view deletion (completed 2026-02-20)
 - [x] **Phase 24: EFF Diceware Passphrase Generator** - Client-side 4-word passphrase generation with two-channel UI (completed 2026-02-21)
 - [x] **Phase 25: PostHog Analytics** - Privacy-safe funnel tracking with mandatory URL fragment sanitization (completed 2026-02-21)
-- [ ] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend
+- [x] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend (completed 2026-02-21)
 - [ ] **Phase 27: Conversion Prompts + Rate Limits + Legal Pages** - Tightened anonymous limits, inline prompts, Privacy Policy, ToS
 
 ## Phase Details
@@ -211,5 +211,5 @@ Plans:
 | 23. Secret Dashboard | 5/5 | Complete    | 2026-02-20 | - |
 | 24. EFF Diceware Passphrase Generator | 3/3 | Complete    | 2026-02-21 | - |
 | 25. PostHog Analytics | 3/3 | Complete    | 2026-02-21 | - |
-| 26. Email Notifications | 2/3 | In Progress|  | - |
+| 26. Email Notifications | 3/3 | Complete   | 2026-02-21 | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 0/TBD | Not started | - |
