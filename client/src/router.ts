@@ -9,6 +9,8 @@
  * page heading after each render.
  */
 
+import { capturePageview } from './analytics/posthog.js';
+
 export type PageRenderer = (container: HTMLElement) => void | Promise<void>;
 
 /**
@@ -256,6 +258,8 @@ function handleRoute(): void {
       .catch(() => showLoadError(container));
   }
 
+  // Capture SPA pageview (before_send in analytics module strips any URL fragment)
+  capturePageview();
   // Notify layout shell (and any other listeners) of the route change.
   // Fires on every navigation: initial load, popstate, and programmatic.
   window.dispatchEvent(new CustomEvent('routechange', { detail: { path } }));
