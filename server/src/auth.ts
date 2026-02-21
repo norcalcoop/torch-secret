@@ -114,7 +114,7 @@ export const auth = betterAuth({
       : {}),
   },
 
-  trustedOrigins: [env.BETTER_AUTH_URL],
+  trustedOrigins: [env.BETTER_AUTH_URL, ...(env.APP_URL ? [env.APP_URL] : [])],
 });
 
 export type AuthSession = typeof auth.$Infer.Session;
