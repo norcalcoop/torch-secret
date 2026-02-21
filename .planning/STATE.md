@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 27: Conversion Prompts + Rate Limits + Legal Pages — In Progress
+**Current focus:** v4.0 — Phase 27: Conversion Prompts + Rate Limits + Legal Pages — Complete
 
 ## Current Position
 
-Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — In Progress
-Plan: 3 of 3 complete
-Status: Phase 27 Plan 03 complete — Privacy Policy + Terms of Service pages, footer legal links, register consent line, INVARIANTS.md Phase 27 row
-Last activity: 2026-02-21 — Phase 27 Plan 03 complete (LEGAL-01, LEGAL-02 satisfied)
+Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — Complete
+Plan: 4 of 4 complete (3 core plans + 1 gap-closure plan)
+Status: Phase 27 Plan 04 complete (gap-closure) — rate-limit countdown arithmetic fixed; CONV-06 fully satisfied; UAT Test 7 resolved
+Last activity: 2026-02-21 — Phase 27 Plan 04 complete (CONV-06 gap closure)
 
-Progress: [████████░░] ~55% (v4.0 — 42/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 pending)
+Progress: [████████░░] ~55% (v4.0 — 43/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 pending)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [████████░░] ~55% (v4.0 — 42/44 requirements com
 | Phase 27 P01 | 7 | 3 tasks | 6 files |
 | Phase 27 P03 | ~35 | 2 auto + 1 UAT tasks | 6 files |
 | Phase 27 P02 | 8 | 2 tasks | 4 files |
+| Phase 27 P04 | 1 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,7 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 27]: [Phase 27-02]: Module-level anonymousSecretCount and isAuthenticated persist across SPA re-renders; reset only on full browser refresh — same lifecycle as dismissed prompt state
 - [Phase 27]: [Phase 27-02]: 30d expiration option absent from authenticated select — matches server-side cap from Phase 27-01; Pro-tier feature deferred to v5.0
 - [Phase 27]: [Phase 27-02]: errorArea className reset on each submit — showRateLimitUpsell mutates element className; reset restores danger styling for non-429 errors on retry
+- [Phase 27]: [Phase 27]: [Phase 27-04]: Math.ceil(resetTimestamp / 60) is the correct formula for RateLimit-Reset draft-6 delta-seconds — no epoch arithmetic needed; the header value is already seconds-remaining
 
 ### Known Tech Debt
 
@@ -159,5 +161,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-03-PLAN.md
-Resume: Phase 27 complete (3/3 plans done). Next: Phase 28 (if planned) or v4.0 wrap-up.
+Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-04-PLAN.md (gap-closure)
+Resume: Phase 27 fully complete (4/4 plans including gap-closure for UAT Test 7). v4.0 CONV-06 requirement satisfied. Next: v4.0 wrap-up or phase 28 if planned.
