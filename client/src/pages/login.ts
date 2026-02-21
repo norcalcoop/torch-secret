@@ -16,6 +16,7 @@ import { authClient } from '../api/auth-client.js';
 import { navigate } from '../router.js';
 import { Github, Eye, EyeOff } from 'lucide';
 import { createIcon } from '../components/icons.js';
+import { identifyUser, captureUserLoggedIn } from '../analytics/posthog.js';
 
 /**
  * Render the login page into the given container.
@@ -203,6 +204,21 @@ export async function renderLoginPage(container: HTMLElement): Promise<void> {
         }
 
         if (data !== null && data !== undefined) {
+          // Identify user in PostHog by internal ID (not email) — ANLT-03
+          try {
+            const sessionResult = await authClient.getSession();
+            const sessionData: unknown = sessionResult.data as unknown;
+            if (isSessionData(sessionData)) {
+              const session = sessionData as Record<string, unknown>;
+              const user = session['user'] as Record<string, unknown> | undefined;
+              if (user && typeof user['id'] === 'string') {
+                identifyUser(user['id']);
+              }
+            }
+          } catch {
+            // Session retrieval failure: analytics identify skipped silently
+          }
+          captureUserLoggedIn('email');
           navigate('/dashboard');
         } else {
           showError(errorArea, 'Sign-in failed. Please try again.');
