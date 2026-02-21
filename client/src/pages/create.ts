@@ -167,7 +167,7 @@ function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean }
  * Fires captureConversionPromptShown('rate_limit') after rendering.
  *
  * @param container - The error area element to convert to the upsell card.
- * @param resetTimestamp - Unix timestamp (seconds) from RateLimit-Reset header.
+ * @param resetTimestamp - Delta in seconds (time remaining) from RateLimit-Reset draft-6 header.
  */
 function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | undefined): void {
   container.classList.remove('hidden');
@@ -184,8 +184,7 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
   container.appendChild(headline);
 
   if (resetTimestamp && resetTimestamp > 0) {
-    const resetMs = resetTimestamp * 1000;
-    const minutesUntilReset = Math.ceil((resetMs - Date.now()) / 60_000);
+    const minutesUntilReset = Math.ceil(resetTimestamp / 60);
     const resetText =
       minutesUntilReset > 0
         ? `Limit resets in ${minutesUntilReset} minute${minutesUntilReset === 1 ? '' : 's'}.`

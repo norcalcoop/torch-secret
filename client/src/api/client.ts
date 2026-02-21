@@ -17,14 +17,14 @@ import type {
 /**
  * API error with HTTP status and response body.
  *
- * For 429 responses, rateLimitReset carries the Unix timestamp (seconds)
- * from the RateLimit-Reset header so the client can display a countdown
+ * For 429 responses, rateLimitReset carries the delta in seconds (time remaining)
+ * from the RateLimit-Reset draft-6 header so the client can display a countdown
  * on upsell prompts (CONV-06).
  */
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
-  readonly rateLimitReset?: number; // Unix timestamp (seconds) from RateLimit-Reset header
+  readonly rateLimitReset?: number; // Delta in seconds (time remaining) from RateLimit-Reset draft-6 header
 
   constructor(status: number, body: unknown, rateLimitReset?: number) {
     super(`API error ${status}`);
@@ -43,7 +43,7 @@ export class ApiError extends Error {
  * dashboard display and opt into per-secret email notification.
  *
  * On 429 Too Many Requests, throws ApiError with rateLimitReset set from
- * the RateLimit-Reset header (Unix timestamp seconds) for countdown display.
+ * the RateLimit-Reset draft-6 header (delta in seconds, time remaining) for countdown display.
  */
 export async function createSecret(
   ciphertext: string,
