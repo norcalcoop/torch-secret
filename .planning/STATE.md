@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 28 of 28 (Optional Password or Passphrase Protection with Password Generator and Masked Inputs) — In Progress
-Plan: 2 of TBD complete
-Status: Phase 28 Plan 02 complete — createProtectionPanel() factory with full password generator + passphrase UI; PROT-01 and PROT-04 satisfied
-Last activity: 2026-02-21 — Phase 28 Plan 02 complete (protection panel UI)
+Plan: 2 of TBD complete (Plan 03 in progress — awaiting UAT re-approval)
+Status: Phase 28 Plan 03 implementation complete — 4-option radio protection panel (No protection/Generate password/Custom password/Passphrase); UAT checkpoint pending re-approval after user-requested design change
+Last activity: 2026-02-21 — Phase 28 Plan 03 protection panel refactored to 4 radio options per UAT feedback
 
 Progress: [████████░░] ~60% (v4.0 — 46/44+ requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 + PROT-02 + PROT-04; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 + PROT-03 pending)
 
@@ -153,6 +153,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 28]: [Phase 28-01]: global crypto used without window.crypto prefix — available in browser (Web Crypto API) and Node 19+; consistent with passphrase.ts pattern
 - [Phase 28]: [Phase 28]: [Phase 28-02]: insertBefore(labelField, protectionPanel.element) — protection panel replaces errorArea as stable anchor for auth IIFE insertions; label+notify appear between expiration and protection panel
 - [Phase 28]: [Phase 28-02]: createProtectionPanel() factory closure pattern — all mode state lives inside factory; consumers get { element, getPassword, getPassphrase } accessors
+- [Phase 28]: [Phase 28-03]: Protection panel refactored to 4-option radio selector (fieldset+legend) per UAT feedback — No protection/Generate password/Custom password/Passphrase; replaces collapsible details+segmented control; sub-panels use hidden attribute toggled by radio change handlers
+- [Phase 28]: [Phase 28-03]: previewField div requires role=status when using aria-label — bare div with aria-label is prohibited by axe; role=status is semantically correct for live password preview output
 
 ### Roadmap Evolution
 
@@ -172,5 +174,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 28-optional-password-or-passphrase-protection-with-password-generator-and-masked-inputs 28-02-PLAN.md (protection panel UI)
-Resume: Phase 28 Plan 02 complete. createProtectionPanel() factory with full password generator + passphrase tab UI. 126 client tests pass. PROT-01 and PROT-04 satisfied. Next: Phase 28 Plan 03 (accessibility + unit tests for protection panel).
+Stopped at: Phase 28 Plan 03 awaiting UAT re-approval (checkpoint:human-verify) — implementation complete, user must re-verify revised 4-option radio protection panel
+Resume: Phase 28 Plan 03 implementation done (commit ac15a40). 128 client tests pass. UAT checkpoint re-presented to user for approval of new radio-based protection panel design.
