@@ -63,7 +63,7 @@ completed: 2026-02-21
 - **Duration:** 8 min
 - **Started:** 2026-02-21T04:05:51Z
 - **Completed:** 2026-02-21T04:13:00Z
-- **Tasks:** 2 of 3 complete (Task 3 is checkpoint:human-verify, awaiting user)
+- **Tasks:** 3 of 3 complete (Task 3 checkpoint:human-verify — approved)
 - **Files modified:** 3
 
 ## Accomplishments
@@ -78,7 +78,7 @@ Each task was committed atomically:
 
 1. **Task 1: Notification service unit tests + Phase 26 integration tests** - `2aa9b0f` (test)
 2. **Task 2: INVARIANTS.md Email (Resend) row** - `407c54a` (docs)
-3. **Task 3: Human UAT checkpoint** - awaiting user verification
+3. **Task 3: Human UAT checkpoint** - human-approved (notify toggle visible for auth users, invisible for anonymous; notify=true persists in DB when checked; fire-and-forget error path does not crash server)
 
 ## Files Created/Modified
 
@@ -124,9 +124,9 @@ None beyond the two auto-fixed deviations above.
 
 ## Next Phase Readiness
 
-- Phase 26 testing complete pending human UAT (Task 3 checkpoint:human-verify)
-- After UAT approval, Phase 27 is ready to begin
-- All NOTF requirements (NOTF-01, NOTF-02, NOTF-03) satisfied
+- Phase 26 complete: all 3 plans done, all NOTF requirements satisfied, human UAT approved
+- Phase 27 (Conversion Prompts + Rate Limits + Legal Pages) is ready to begin
+- No blockers
 
 ---
 *Phase: 26-email-notifications*

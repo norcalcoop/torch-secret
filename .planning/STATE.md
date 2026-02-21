@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 26 of 27 (Email Notifications) — Checkpoint
-Plan: 3 of 3 — Tasks 1-2 complete, Task 3 awaiting human UAT checkpoint
-Status: Phase 26 Plan 03 at checkpoint:human-verify — tests and invariants shipped; human UAT of notify toggle UI pending
-Last activity: 2026-02-21 — Phase 26 Plan 03 tasks 1-2 complete (notification tests + INVARIANTS.md)
+Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — Not started
+Plan: 0 of TBD
+Status: Phase 26 complete — all 3 plans done, human UAT approved; Phase 27 is next
+Last activity: 2026-02-21 — Phase 26 Plan 03 complete (human UAT approved)
 
-Progress: [██████░░░░] ~45% (v4.0 — 36/37 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 + NOTF-02 + NOTF-03)
+Progress: [███████░░░] ~47% (v4.0 — 36/36 NOTF requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 + NOTF-02 + NOTF-03; Phase 27 CONV/LEGAL requirements pending)
 
 ## Performance Metrics
 
@@ -145,5 +145,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Checkpoint 26-email-notifications 26-03-PLAN.md Task 3 — human UAT of notify toggle UI and end-to-end notification flow; type "approved" to complete Phase 26
-Resume: After human approves UAT checkpoint in 26-03-PLAN.md, Phase 26 is complete and Phase 27 is next
+Stopped at: Completed 26-email-notifications 26-03-PLAN.md — Phase 26 done, all NOTF requirements satisfied
+Resume: Phase 27 (Conversion Prompts + Rate Limits + Legal Pages) is next
