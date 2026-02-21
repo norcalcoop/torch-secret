@@ -1,9 +1,9 @@
 ---
-status: complete
+status: resolved
 phase: 27-conversion-prompts-rate-limits-legal-pages
 source: 27-01-SUMMARY.md, 27-02-SUMMARY.md, 27-03-SUMMARY.md
 started: 2026-02-21T00:00:00Z
-updated: 2026-02-21T15:30:00Z
+updated: 2026-02-21T18:00:00Z
 ---
 
 ## Current Test
@@ -77,7 +77,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Rate-limit upsell card shows actual countdown timer (e.g. 'Limit resets in 26 minutes')"
-  status: failed
+  status: resolved
   reason: "User reported: Upsell card appears with correct neutral styling and CTA, but countdown shows 'Limit resets soon.' instead of the actual time remaining (e.g. 'Limit resets in 26 minutes'). Timer never shows a real value."
   severity: minor
   test: 7
