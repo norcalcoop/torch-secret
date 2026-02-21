@@ -218,3 +218,15 @@ Plans:
 | 25. PostHog Analytics | 3/3 | Complete    | 2026-02-21 | - |
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | 4/4 | Complete    | 2026-02-21 | - |
+
+### Phase 28: Optional password or passphrase protection with password generator and masked inputs
+
+**Goal:** All users can choose between no protection, password generation (with tier selector, charset/filter controls, entropy display, brute force estimate, preview, and masked applied field), or EFF diceware passphrase mode when creating a secret — with the protection panel collapsed by default (opt-in), and every password/passphrase input field across the app gaining a show/hide eye-icon toggle that defaults to masked
+**Depends on:** Phase 27
+**Requirements:** PROT-01, PROT-02, PROT-03, PROT-04
+**Plans:** 3 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — TDD: password-generator.ts pure module (tiers, charset flags, filters, entropy, brute force, rejection-sampling, empty-charset guard) + barrel export
+- [ ] 28-02-PLAN.md — create.ts: replace Phase 24 passphrase section with collapsible protection panel (segmented Password|Passphrase control, full generator UI, masked inputs with eye toggles, submit handler update)
+- [ ] 28-03-PLAN.md — reveal.ts eye toggle + accessibility tests + REQUIREMENTS.md PROT requirements + human UAT
