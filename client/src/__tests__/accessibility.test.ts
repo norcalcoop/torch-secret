@@ -94,6 +94,50 @@ describe('Error page accessibility', () => {
   });
 });
 
+describe('Protection panel accessibility', () => {
+  it('segmented control has correct aria-pressed states', async () => {
+    const { renderCreatePage } = await import('../pages/create.js');
+    renderCreatePage(container);
+
+    // Find the "Add protection" details element
+    const detailsEl = container.querySelector('details');
+    // Open it to reveal the panel
+    if (detailsEl) {
+      detailsEl.open = true;
+      // Dispatch a toggle event so the panel initializes
+      detailsEl.dispatchEvent(new Event('toggle'));
+    }
+
+    // Find the segmented control
+    const segGroup = container.querySelector('[role="group"][aria-label="Protection type"]');
+    expect(segGroup).not.toBeNull();
+
+    // Password button should be aria-pressed=true by default
+    const buttons = segGroup!.querySelectorAll('button');
+    expect(buttons.length).toBe(2);
+    // Password is first button (index 0)
+    expect(buttons[0]?.getAttribute('aria-pressed')).toBe('true');
+    // Passphrase is second button (index 1)
+    expect(buttons[1]?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('protection panel has no accessibility violations when open', async () => {
+    const { renderCreatePage } = await import('../pages/create.js');
+    renderCreatePage(container);
+
+    const detailsEl = container.querySelector('details');
+    if (detailsEl) {
+      detailsEl.open = true;
+      detailsEl.dispatchEvent(new Event('toggle'));
+    }
+
+    const results = await axe(container, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results).toHaveNoViolations();
+  });
+});
+
 describe('Component accessibility', () => {
   it('loading spinner has role=status', async () => {
     const { createLoadingSpinner } = await import('../components/loading-spinner.js');

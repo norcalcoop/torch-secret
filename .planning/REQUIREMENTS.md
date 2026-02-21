@@ -59,6 +59,13 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 - [x] **LEGAL-01**: Privacy Policy page is accessible at /privacy describing what data is and is not collected
 - [x] **LEGAL-02**: Terms of Service page is accessible at /terms covering acceptable use
 
+### PROT — Protection Panel (Phase 28)
+
+- [ ] **PROT-01**: User can choose between Password, Passphrase, or no protection when creating a secret via an opt-in collapsible panel; Password tab is active by default when the panel opens; switching tabs clears the other mode's value
+- [ ] **PROT-02**: Password mode provides a generator with tier selector (Low/Medium/High/Max), character set checkboxes (Uppercase/Numbers/Symbols), filter options (Easy to say/Easy to read/Omit similar), entropy bits display, brute force time estimate, preview field with copy button, Regenerate button, and "Use this password" confirmation; settings changes auto-regenerate the preview; empty charset filter combinations display an inline error rather than looping
+- [ ] **PROT-03**: All password/passphrase input fields (create form applied-password field, create form passphrase field, reveal page password entry) are masked by default and have a show/hide eye-icon toggle
+- [ ] **PROT-04**: When no protection mode is selected (panel collapsed), no password is passed to the API and the confirmation page shows neither a passphrase card nor two-channel security guidance
+
 ## v5.0 Requirements
 
 Deferred to future milestone. Tracked but not in current roadmap.
@@ -138,12 +145,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-06 | Phase 27 | Complete |
 | LEGAL-01 | Phase 27 | Complete |
 | LEGAL-02 | Phase 27 | Complete |
+| PROT-01 | Phase 28 | In Progress |
+| PROT-02 | Phase 28 | In Progress |
+| PROT-03 | Phase 28 | In Progress |
+| PROT-04 | Phase 28 | In Progress |
 
 **Coverage:**
-- v4.0 requirements: 31 total
-- Mapped to phases: 31
+- v4.0 requirements: 35 total
+- Mapped to phases: 35
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after roadmap creation*
+*Last updated: 2026-02-21*
