@@ -162,7 +162,12 @@ Plans:
   1. Authenticated user sees a per-secret notification toggle when creating a secret — it is off by default and only available to logged-in users
   2. When an opted-in secret is viewed and destroyed, the account owner receives a transactional email via Resend within a reasonable time
   3. The notification email confirms the secret was viewed and permanently deleted without including the secret text, the encryption key, the viewer's IP address, or the secret label (unless the user explicitly opted in to label inclusion)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 26-01-PLAN.md — Backend: notification service, createSecret notify param, retrieveAndDestroy/verifyAndRetrieve JOIN + dispatch, route guard
+- [ ] 26-02-PLAN.md — Frontend: notify toggle on create page (progressive enhancement, authenticated users only)
+- [ ] 26-03-PLAN.md — Tests: notification unit tests, secrets integration tests, INVARIANTS.md update, UAT checkpoint
 
 ### Phase 27: Conversion Prompts + Rate Limits + Legal Pages
 **Goal**: Anonymous users face tightened rate limits with clear upsell copy directing them toward free accounts, authenticated users get higher limits and extended expiration, inline conversion prompts appear at three natural moments without blocking the core create flow, and Privacy Policy and Terms of Service pages are accessible at canonical URLs
