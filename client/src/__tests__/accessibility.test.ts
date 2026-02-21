@@ -95,41 +95,41 @@ describe('Error page accessibility', () => {
 });
 
 describe('Protection panel accessibility', () => {
-  it('segmented control has correct aria-pressed states', async () => {
+  it('radio group has correct structure and default selection', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
     renderCreatePage(container);
 
-    // Find the "Add protection" details element
-    const detailsEl = container.querySelector('details');
-    // Open it to reveal the panel
-    if (detailsEl) {
-      detailsEl.open = true;
-      // Dispatch a toggle event so the panel initializes
-      detailsEl.dispatchEvent(new Event('toggle'));
-    }
+    // The protection panel uses a <fieldset> with a sr-only <legend>
+    const fieldset = container.querySelector('fieldset');
+    expect(fieldset).not.toBeNull();
 
-    // Find the segmented control
-    const segGroup = container.querySelector('[role="group"][aria-label="Protection type"]');
-    expect(segGroup).not.toBeNull();
+    const legend = fieldset!.querySelector('legend');
+    expect(legend).not.toBeNull();
+    expect(legend!.textContent).toBe('Protection mode');
 
-    // Password button should be aria-pressed=true by default
-    const buttons = segGroup!.querySelectorAll('button');
-    expect(buttons.length).toBe(2);
-    // Password is first button (index 0)
-    expect(buttons[0]?.getAttribute('aria-pressed')).toBe('true');
-    // Passphrase is second button (index 1)
-    expect(buttons[1]?.getAttribute('aria-pressed')).toBe('false');
+    // 4 radio inputs: none, generate, custom, passphrase
+    const radios = fieldset!.querySelectorAll('input[type="radio"]');
+    expect(radios.length).toBe(4);
+
+    // "No protection" (value=none) is selected by default
+    const noneRadio = fieldset!.querySelector<HTMLInputElement>('input[value="none"]');
+    expect(noneRadio).not.toBeNull();
+    expect(noneRadio!.checked).toBe(true);
+
+    // All other radios are unchecked by default
+    const generateRadio = fieldset!.querySelector<HTMLInputElement>('input[value="generate"]');
+    expect(generateRadio!.checked).toBe(false);
+
+    const customRadio = fieldset!.querySelector<HTMLInputElement>('input[value="custom"]');
+    expect(customRadio!.checked).toBe(false);
+
+    const passphraseRadio = fieldset!.querySelector<HTMLInputElement>('input[value="passphrase"]');
+    expect(passphraseRadio!.checked).toBe(false);
   });
 
-  it('protection panel has no accessibility violations when open', async () => {
+  it('protection panel has no accessibility violations', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
     renderCreatePage(container);
-
-    const detailsEl = container.querySelector('details');
-    if (detailsEl) {
-      detailsEl.open = true;
-      detailsEl.dispatchEvent(new Event('toggle'));
-    }
 
     const results = await axe(container, {
       rules: { 'color-contrast': { enabled: false } },

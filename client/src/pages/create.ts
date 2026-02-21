@@ -14,15 +14,15 @@
  * Additionally, a per-secret notification toggle ('Email me when this secret is
  * viewed') is injected for authenticated users -- off by default.
  *
- * Phase 28: protection is opt-in via collapsible panel; password generator or
- * passphrase mode. When the panel is closed, no password is sent to the API.
- * When password mode is active, a full 1Password/Bitwarden-style generator is
- * shown: tier selector (Low/Medium/High/Max), charset checkboxes (Uppercase/
- * Numbers/Symbols), filter checkboxes (Easy to say/Easy to read/Omit similar),
- * entropy + brute-force estimate, Regenerate, Copy, and "Use this password"
- * to commit the generated value. When passphrase mode is active, the auto-
- * generated EFF diceware passphrase is shown in a masked input with eye toggle,
- * Regenerate, and Copy.
+ * Phase 28: protection is opt-in via 4 radio options (No protection / Generate
+ * password / Custom password / Passphrase). When "No protection" is selected
+ * (default), no password is sent to the API. "Generate password" mode shows a
+ * full 1Password/Bitwarden-style generator: tier selector (Low/Medium/High/Max),
+ * charset checkboxes (Uppercase/Numbers/Symbols), filter checkboxes (Easy to
+ * say/Easy to read/Omit similar), entropy + brute-force estimate, Regenerate,
+ * Copy, and "Use this password" to commit. "Custom password" mode shows a simple
+ * masked input with eye toggle. "Passphrase" mode shows the auto-generated EFF
+ * diceware passphrase in a masked input with eye toggle, Regenerate, and Copy.
  */
 
 import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
@@ -225,22 +225,19 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the collapsible "Add protection" panel with a segmented
- * Password | Passphrase control.
- *
- * Password tab: tier selector, charset/filter checkboxes, preview field with
- * copy button, entropy + brute-force estimate, Regenerate, "Use this password"
- * commit button, and a masked applied-password field with eye toggle.
- *
- * Passphrase tab: auto-generated EFF diceware passphrase in a masked input
- * (editable) with eye toggle, Regenerate, and Copy.
+ * Creates the protection panel with 4 radio options:
+ *   1. No protection (default)
+ *   2. Generate password — full 1Password-style generator UI
+ *   3. Custom password — masked text input with eye toggle
+ *   4. Passphrase — EFF diceware passphrase with masked input, eye toggle
  *
  * Returns the panel element and two accessors:
  *   - getPassword(): string | undefined — the value to send to the API
  *   - getPassphrase(): string | undefined — the passphrase to display on the
  *     confirmation card (only truthy when passphrase mode is active)
  *
- * Phase 28: protection is opt-in (panel collapsed = mode 'none').
+ * Phase 28 (refactored per UAT feedback): 4 radio options replace the
+ * collapsible panel + segmented control.
  */
 function createProtectionPanel(): {
   element: HTMLElement;
@@ -248,9 +245,10 @@ function createProtectionPanel(): {
   getPassphrase: () => string | undefined;
 } {
   // ---- Closure state ----
-  let protectionMode: 'none' | 'password' | 'passphrase' = 'none';
+  type ProtectionMode = 'none' | 'generate' | 'custom' | 'passphrase';
+  let protectionMode: ProtectionMode = 'none';
   let currentPassphrase: string = generatePassphrase();
-  let currentPassword: string = ''; // the APPLIED password (after "Use this password" clicked)
+  let appliedPassword: string = ''; // the APPLIED password (after "Use this password" clicked)
   let previewPassword: string = ''; // the PREVIEW from the generator (not yet applied)
 
   type PasswordTierLocal = 'low' | 'medium' | 'high' | 'max';
@@ -278,55 +276,87 @@ function createProtectionPanel(): {
     return { element: wrapper, input: checkbox };
   }
 
-  // ---- Root details element ----
-  const details = document.createElement('details');
-  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+  // ---- Root container ----
+  const root = document.createElement('div');
+  root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md overflow-hidden';
 
-  const summary = document.createElement('summary');
-  summary.className =
-    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
-  summary.textContent = 'Add protection';
-  details.appendChild(summary);
+  // ---- Fieldset with 4 radio options ----
+  const fieldset = document.createElement('fieldset');
+  fieldset.className = 'divide-y divide-white/5 border-0 p-0 m-0';
 
-  const panelContent = document.createElement('div');
-  panelContent.className = 'px-4 pb-4 space-y-4';
-  details.appendChild(panelContent);
+  const legend = document.createElement('legend');
+  legend.className = 'sr-only';
+  legend.textContent = 'Protection mode';
+  fieldset.appendChild(legend);
 
-  // ---- Segmented control: Password | Passphrase ----
-  const segControl = document.createElement('div');
-  segControl.setAttribute('role', 'group');
-  segControl.setAttribute('aria-label', 'Protection type');
-  segControl.className = 'flex gap-1 p-1 rounded-lg bg-surface-raised border border-border';
-  panelContent.appendChild(segControl);
+  // Radio option definitions
+  const options: Array<{ value: ProtectionMode; label: string; sub: string }> = [
+    { value: 'none', label: 'No protection', sub: 'Fastest sharing' },
+    { value: 'generate', label: 'Generate password', sub: 'Secure random password with options' },
+    { value: 'custom', label: 'Custom password', sub: 'Type your own password' },
+    { value: 'passphrase', label: 'Passphrase', sub: 'Memorable EFF diceware phrase' },
+  ];
 
-  const activeTabClass =
-    'flex-1 px-4 py-2 min-h-[36px] rounded-md bg-accent text-white text-sm font-semibold transition-colors cursor-pointer';
-  const inactiveTabClass =
-    'flex-1 px-4 py-2 min-h-[36px] rounded-md text-text-secondary text-sm hover:text-text-primary transition-colors cursor-pointer';
+  const radioInputs: Record<ProtectionMode, HTMLInputElement> = {} as Record<
+    ProtectionMode,
+    HTMLInputElement
+  >;
 
-  const passwordTabBtn = document.createElement('button');
-  passwordTabBtn.type = 'button';
-  passwordTabBtn.textContent = 'Password';
-  passwordTabBtn.className = activeTabClass;
-  passwordTabBtn.setAttribute('aria-pressed', 'true');
-  segControl.appendChild(passwordTabBtn);
+  for (const opt of options) {
+    const labelEl = document.createElement('label');
+    labelEl.className =
+      'flex items-center gap-3 px-4 py-3 cursor-pointer border-l-2 border-transparent select-none hover:bg-white/[0.03] has-[input:checked]:border-accent has-[input:checked]:bg-white/5 transition-colors';
 
-  const passphraseTabBtn = document.createElement('button');
-  passphraseTabBtn.type = 'button';
-  passphraseTabBtn.textContent = 'Passphrase';
-  passphraseTabBtn.className = inactiveTabClass;
-  passphraseTabBtn.setAttribute('aria-pressed', 'false');
-  segControl.appendChild(passphraseTabBtn);
+    const radioInput = document.createElement('input');
+    radioInput.type = 'radio';
+    radioInput.name = 'protection-mode';
+    radioInput.value = opt.value;
+    radioInput.className = 'sr-only';
+    if (opt.value === 'none') radioInput.checked = true;
+    radioInputs[opt.value] = radioInput;
 
-  // ---- Password section ----
-  const passwordSection = document.createElement('div');
-  passwordSection.className = 'space-y-4';
-  panelContent.appendChild(passwordSection);
+    const radioDot = document.createElement('span');
+    radioDot.setAttribute('aria-hidden', 'true');
+    radioDot.className =
+      'w-4 h-4 rounded-full border border-white/30 flex-shrink-0 flex items-center justify-center';
+
+    const optionText = document.createElement('span');
+    optionText.className = 'flex flex-col';
+
+    const optionLabel = document.createElement('span');
+    optionLabel.className =
+      'font-mono text-sm font-medium text-[color-mix(in_oklch,white_90%,transparent)]';
+    optionLabel.textContent = opt.label;
+
+    const optionSub = document.createElement('span');
+    optionSub.className =
+      'font-mono text-xs text-[color-mix(in_oklch,white_40%,transparent)] mt-0.5 block';
+    optionSub.textContent = opt.sub;
+
+    optionText.appendChild(optionLabel);
+    optionText.appendChild(optionSub);
+    labelEl.appendChild(radioInput);
+    labelEl.appendChild(radioDot);
+    labelEl.appendChild(optionText);
+    fieldset.appendChild(labelEl);
+  }
+
+  root.appendChild(fieldset);
+
+  // ---- Sub-panels container (sits below fieldset, separated by thin rule) ----
+  const subPanelsContainer = document.createElement('div');
+  subPanelsContainer.className = 'border-t border-white/10';
+  root.appendChild(subPanelsContainer);
+
+  // ---- Generate password section ----
+  const generateSection = document.createElement('div');
+  generateSection.className = 'hidden px-4 py-4 space-y-4';
+  subPanelsContainer.appendChild(generateSection);
 
   // a) Preview row
   const previewRow = document.createElement('div');
   previewRow.className = 'space-y-1';
-  passwordSection.appendChild(previewRow);
+  generateSection.appendChild(previewRow);
 
   const previewLabel = document.createElement('p');
   previewLabel.className = 'text-xs text-text-muted';
@@ -338,6 +368,7 @@ function createProtectionPanel(): {
   previewRow.appendChild(previewContainer);
 
   const previewField = document.createElement('div');
+  previewField.setAttribute('role', 'status');
   previewField.setAttribute('aria-live', 'polite');
   previewField.setAttribute('aria-label', 'Generated password');
   previewField.className =
@@ -398,7 +429,7 @@ function createProtectionPanel(): {
   // b) Tier selector
   const tierRow = document.createElement('div');
   tierRow.className = 'space-y-1';
-  passwordSection.appendChild(tierRow);
+  generateSection.appendChild(tierRow);
 
   const tierLabel = document.createElement('p');
   tierLabel.className = 'text-xs font-medium text-text-secondary';
@@ -443,7 +474,7 @@ function createProtectionPanel(): {
   // c) Charset checkboxes
   const charsetRow = document.createElement('div');
   charsetRow.className = 'space-y-1';
-  passwordSection.appendChild(charsetRow);
+  generateSection.appendChild(charsetRow);
 
   const charsetLabel = document.createElement('p');
   charsetLabel.className = 'text-xs font-medium text-text-secondary';
@@ -464,7 +495,7 @@ function createProtectionPanel(): {
   // d) Filter checkboxes
   const filterRow = document.createElement('div');
   filterRow.className = 'space-y-1';
-  passwordSection.appendChild(filterRow);
+  generateSection.appendChild(filterRow);
 
   const filterLabel = document.createElement('p');
   filterLabel.className = 'text-xs font-medium text-text-secondary';
@@ -489,12 +520,12 @@ function createProtectionPanel(): {
   genError.id = 'gen-error';
   genError.textContent =
     'These filter settings are incompatible \u2014 please adjust your settings.';
-  passwordSection.appendChild(genError);
+  generateSection.appendChild(genError);
 
   // f) Action row
   const passwordActionRow = document.createElement('div');
   passwordActionRow.className = 'flex items-center justify-between gap-3 flex-wrap';
-  passwordSection.appendChild(passwordActionRow);
+  generateSection.appendChild(passwordActionRow);
 
   const regenerateBtn = document.createElement('button');
   regenerateBtn.type = 'button';
@@ -520,7 +551,7 @@ function createProtectionPanel(): {
   // g) Applied password field (hidden until "Use this password" clicked)
   const appliedPasswordGroup = document.createElement('div');
   appliedPasswordGroup.className = 'hidden space-y-1';
-  passwordSection.appendChild(appliedPasswordGroup);
+  generateSection.appendChild(appliedPasswordGroup);
 
   const appliedPasswordLabel = document.createElement('label');
   appliedPasswordLabel.htmlFor = 'applied-password';
@@ -565,10 +596,58 @@ function createProtectionPanel(): {
   });
   appliedPasswordWrapper.appendChild(appliedRevealToggle);
 
+  // ---- Custom password section (hidden by default) ----
+  const customSection = document.createElement('div');
+  customSection.className = 'hidden px-4 py-4 space-y-2';
+  subPanelsContainer.appendChild(customSection);
+
+  const customPasswordLabel = document.createElement('label');
+  customPasswordLabel.htmlFor = 'custom-password';
+  customPasswordLabel.className = 'block text-sm font-medium text-text-secondary';
+  customPasswordLabel.textContent = 'Password';
+  customSection.appendChild(customPasswordLabel);
+
+  const customPasswordWrapper = document.createElement('div');
+  customPasswordWrapper.className = 'relative';
+  customSection.appendChild(customPasswordWrapper);
+
+  const customPasswordInput = document.createElement('input');
+  customPasswordInput.type = 'password';
+  customPasswordInput.id = 'custom-password';
+  customPasswordInput.placeholder = 'Enter your password';
+  customPasswordInput.className =
+    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
+  customPasswordWrapper.appendChild(customPasswordInput);
+
+  const customRevealToggle = document.createElement('button');
+  customRevealToggle.type = 'button';
+  customRevealToggle.setAttribute('aria-label', 'Show password');
+  customRevealToggle.className =
+    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  const customEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+  const customEyeOffEl = createIcon(EyeOff, {
+    size: 'sm',
+    class: 'pointer-events-none hidden',
+  });
+  customRevealToggle.appendChild(customEyeEl);
+  customRevealToggle.appendChild(customEyeOffEl);
+  let customPasswordVisible = false;
+  customRevealToggle.addEventListener('click', () => {
+    customPasswordVisible = !customPasswordVisible;
+    customPasswordInput.type = customPasswordVisible ? 'text' : 'password';
+    customRevealToggle.setAttribute(
+      'aria-label',
+      customPasswordVisible ? 'Hide password' : 'Show password',
+    );
+    customEyeEl.classList.toggle('hidden', customPasswordVisible);
+    customEyeOffEl.classList.toggle('hidden', !customPasswordVisible);
+  });
+  customPasswordWrapper.appendChild(customRevealToggle);
+
   // ---- Passphrase section (hidden by default) ----
   const passphraseSection = document.createElement('div');
-  passphraseSection.className = 'hidden space-y-3';
-  panelContent.appendChild(passphraseSection);
+  passphraseSection.className = 'hidden px-4 py-4 space-y-3';
+  subPanelsContainer.appendChild(passphraseSection);
 
   const passphraseSectionLabel = document.createElement('p');
   passphraseSectionLabel.className = 'text-xs font-medium text-text-secondary';
@@ -689,8 +768,8 @@ function createProtectionPanel(): {
   // ---- Apply password ----
   function applyPassword(): void {
     if (!previewPassword) return;
-    currentPassword = previewPassword;
-    appliedPasswordInput.value = currentPassword;
+    appliedPassword = previewPassword;
+    appliedPasswordInput.value = appliedPassword;
     appliedPasswordGroup.classList.remove('hidden');
   }
 
@@ -744,75 +823,50 @@ function createProtectionPanel(): {
     passphraseInput.value = currentPassphrase;
   });
 
-  // ---- Tab switching logic ----
-  function switchToPassword(): void {
-    protectionMode = 'password';
-    passphraseSection.classList.add('hidden');
-    passwordSection.classList.remove('hidden');
-    passwordTabBtn.className = activeTabClass;
-    passwordTabBtn.setAttribute('aria-pressed', 'true');
-    passphraseTabBtn.className = inactiveTabClass;
-    passphraseTabBtn.setAttribute('aria-pressed', 'false');
-    // Clear any previously applied passphrase
-    // currentPassphrase remains for when user returns to passphrase tab
-    regenerate();
+  // ---- Show/hide sub-panels based on mode ----
+  function showSubPanel(mode: ProtectionMode): void {
+    generateSection.classList.toggle('hidden', mode !== 'generate');
+    customSection.classList.toggle('hidden', mode !== 'custom');
+    passphraseSection.classList.toggle('hidden', mode !== 'passphrase');
+    // Show the sub-panels container only when a mode with sub-panel is active
+    subPanelsContainer.classList.toggle('hidden', mode === 'none');
   }
 
-  function switchToPassphrase(): void {
-    protectionMode = 'passphrase';
-    passwordSection.classList.add('hidden');
-    passphraseSection.classList.remove('hidden');
-    passphraseTabBtn.className = activeTabClass;
-    passphraseTabBtn.setAttribute('aria-pressed', 'true');
-    passwordTabBtn.className = inactiveTabClass;
-    passwordTabBtn.setAttribute('aria-pressed', 'false');
-    // Clear applied password when switching away from password mode
-    currentPassword = '';
-    appliedPasswordInput.value = '';
-    appliedPasswordGroup.classList.add('hidden');
+  // ---- Wire radio change handlers ----
+  for (const opt of options) {
+    radioInputs[opt.value].addEventListener('change', () => {
+      const previousMode = protectionMode;
+      protectionMode = opt.value;
+
+      // Clear cross-mode state on switch
+      if (previousMode === 'generate' && opt.value !== 'generate') {
+        appliedPassword = '';
+        appliedPasswordInput.value = '';
+        appliedPasswordGroup.classList.add('hidden');
+      }
+      if (previousMode === 'passphrase' && opt.value !== 'passphrase') {
+        currentPassphrase = generatePassphrase();
+        passphraseInput.value = currentPassphrase;
+      }
+
+      // Trigger regenerate when switching TO generate mode
+      if (opt.value === 'generate') {
+        regenerate();
+      }
+
+      showSubPanel(opt.value);
+    });
   }
 
-  passwordTabBtn.addEventListener('click', () => {
-    if (protectionMode === 'password') return;
-    switchToPassword();
-  });
-
-  passphraseTabBtn.addEventListener('click', () => {
-    if (protectionMode === 'passphrase') return;
-    switchToPassphrase();
-  });
-
-  // ---- Details toggle: open = password mode, close = none ----
-  details.addEventListener('toggle', () => {
-    if (details.open) {
-      // Default to password mode when panel opens
-      protectionMode = 'password';
-      // Ensure password tab is active (it always is on first open,
-      // but also on re-open after close)
-      passwordSection.classList.remove('hidden');
-      passphraseSection.classList.add('hidden');
-      passwordTabBtn.className = activeTabClass;
-      passwordTabBtn.setAttribute('aria-pressed', 'true');
-      passphraseTabBtn.className = inactiveTabClass;
-      passphraseTabBtn.setAttribute('aria-pressed', 'false');
-      regenerate();
-    } else {
-      // Panel closed — clear all state
-      protectionMode = 'none';
-      currentPassword = '';
-      appliedPasswordInput.value = '';
-      appliedPasswordGroup.classList.add('hidden');
-      // Reset passphrase to a fresh one so re-opening shows a new one
-      currentPassphrase = generatePassphrase();
-      passphraseInput.value = currentPassphrase;
-    }
-  });
+  // Initialize sub-panel visibility (none selected by default)
+  showSubPanel('none');
 
   // ---- Accessors ----
   return {
-    element: details,
+    element: root,
     getPassword: (): string | undefined => {
-      if (protectionMode === 'password') return currentPassword || undefined;
+      if (protectionMode === 'generate') return appliedPassword || undefined;
+      if (protectionMode === 'custom') return customPasswordInput.value || undefined;
       if (protectionMode === 'passphrase') return currentPassphrase || undefined;
       return undefined;
     },
@@ -834,9 +888,9 @@ function createProtectionPanel(): {
  * runs as a fire-and-forget IIFE (void async pattern) after the form is painted.
  * PageRenderer in router.ts accepts void | Promise<void> so this is compatible.
  *
- * Phase 28: protection is opt-in via collapsible panel; password generator or
- * passphrase mode. Submit handler reads from protectionPanel.getPassword()
- * (undefined when no protection selected). renderConfirmationPage receives
+ * Phase 28: protection is opt-in via 4 radio options (No protection default).
+ * Submit handler reads from protectionPanel.getPassword() (undefined when no
+ * protection selected). renderConfirmationPage receives
  * protectionPanel.getPassphrase() as the 5th argument (undefined when password
  * mode or no protection).
  */
@@ -932,7 +986,7 @@ export function renderCreatePage(container: HTMLElement): void {
   form.appendChild(expirationGroup);
 
   // -- Protection panel (Phase 28) --
-  // Collapsed by default (protectionMode = 'none').
+  // 4 radio options: No protection (default) / Generate password / Custom password / Passphrase.
   // DOM order: textarea → expiration → [label — injected by auth IIFE] →
   //   [notify toggle — injected by auth IIFE] → protection panel → error area → submit.
   const protectionPanel = createProtectionPanel();
