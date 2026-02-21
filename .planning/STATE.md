@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 26: Email Notifications — COMPLETE
+**Current focus:** v4.0 — Phase 27: Conversion Prompts + Rate Limits + Legal Pages — In Progress
 
 ## Current Position
 
-Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — Not started
-Plan: 0 of TBD
-Status: Phase 26 complete — all 3 plans done, human UAT approved; Phase 27 is next
-Last activity: 2026-02-21 — Phase 26 Plan 03 complete (human UAT approved)
+Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — In Progress
+Plan: 1 of 3 complete
+Status: Phase 27 Plan 01 complete — auth-aware rate limits + expiresIn caps + ApiError.rateLimitReset
+Last activity: 2026-02-21 — Phase 27 Plan 01 complete (CONV-01, CONV-02, CONV-03, CONV-06 satisfied)
 
-Progress: [███████░░░] ~47% (v4.0 — 36/36 NOTF requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 + NOTF-02 + NOTF-03; Phase 27 CONV/LEGAL requirements pending)
+Progress: [███████░░░] ~50% (v4.0 — 40/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06; CONV-04/CONV-05 + LEGAL-01 through LEGAL-04 pending)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [███████░░░] ~47% (v4.0 — 36/36 NOTF requirement
 | Phase 26-email-notifications P01 | 3 | 2 tasks | 3 files |
 | Phase 26-email-notifications P02 | 2 | 1 tasks | 1 files |
 | Phase 26-email-notifications P03 | 4 | 2 tasks | 3 files |
+| Phase 27 P01 | 7 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 26-email-notifications]: [Phase 26-03]: vi.hoisted() required for mock variables in vi.mock factory — Vitest hoists vi.mock before variable initialization; wrap shared mock vars in vi.hoisted()
 - [Phase 26-email-notifications]: [Phase 26-03]: vi.mock (not vi.spyOn) required for ESM notification dispatch interception — spyOn cannot replace live module bindings; vi.mock replaces the module registry entry
 - [Phase 26-email-notifications]: [Phase 26-03]: setImmediate flush after HTTP request needed to let fire-and-forget void notifications resolve before spy assertions
+- [Phase 27]: [Phase 27-01]: standardHeaders: 'draft-6' on createAnonHourlyLimiter — draft-7 embeds reset in combined RateLimit header; draft-6 emits standalone RateLimit-Reset the client reads for countdown display (CONV-06)
+- [Phase 27]: [Phase 27-01]: createAuthedDailyLimiter keyGenerator uses userId not req.ip — avoids shared-IP false positives for authenticated users on NAT/corporate networks
+- [Phase 27]: [Phase 27-01]: optionalAuth must precede all rate limiters in POST / middleware chain — skip callbacks read res.locals.user which optionalAuth populates
+- [Phase 27]: [Phase 27-01]: expiresIn caps enforced in handler (not Zod schema) — Zod enum allows all values; server-side tier guard applied after rate limiters
 
 ### Known Tech Debt
 
@@ -145,5 +150,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 26-email-notifications 26-03-PLAN.md — Phase 26 done, all NOTF requirements satisfied
-Resume: Phase 27 (Conversion Prompts + Rate Limits + Legal Pages) is next
+Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-01-PLAN.md
+Resume: Phase 27 Plan 02 (conversion prompts UI) is next
