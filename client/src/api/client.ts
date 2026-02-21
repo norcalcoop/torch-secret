@@ -16,16 +16,22 @@ import type {
 
 /**
  * API error with HTTP status and response body.
+ *
+ * For 429 responses, rateLimitReset carries the Unix timestamp (seconds)
+ * from the RateLimit-Reset header so the client can display a countdown
+ * on upsell prompts (CONV-06).
  */
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
+  readonly rateLimitReset?: number; // Unix timestamp (seconds) from RateLimit-Reset header
 
-  constructor(status: number, body: unknown) {
+  constructor(status: number, body: unknown, rateLimitReset?: number) {
     super(`API error ${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.body = body;
+    this.rateLimitReset = rateLimitReset;
   }
 }
 
@@ -35,6 +41,9 @@ export class ApiError extends Error {
  * Sends the pre-encrypted ciphertext blob. The server never sees plaintext.
  * Authenticated users may include an optional label (max 100 chars) for
  * dashboard display and opt into per-secret email notification.
+ *
+ * On 429 Too Many Requests, throws ApiError with rateLimitReset set from
+ * the RateLimit-Reset header (Unix timestamp seconds) for countdown display.
  */
 export async function createSecret(
   ciphertext: string,
@@ -56,7 +65,13 @@ export async function createSecret(
   });
 
   if (!res.ok) {
-    throw new ApiError(res.status, await res.json());
+    const body = (await res.json()) as unknown;
+    if (res.status === 429) {
+      const resetHeader = res.headers.get('RateLimit-Reset');
+      const rateLimitReset = resetHeader ? parseInt(resetHeader, 10) : undefined;
+      throw new ApiError(res.status, body, rateLimitReset);
+    }
+    throw new ApiError(res.status, body);
   }
 
   return res.json() as Promise<CreateSecretResponse>;
