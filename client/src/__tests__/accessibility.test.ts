@@ -95,36 +95,53 @@ describe('Error page accessibility', () => {
 });
 
 describe('Protection panel accessibility', () => {
-  it('radio group has correct structure and default selection', async () => {
+  it('tab strip has correct structure and default selection', async () => {
     const { renderCreatePage } = await import('../pages/create.js');
     renderCreatePage(container);
 
-    // The protection panel uses a <fieldset> with a sr-only <legend>
-    const fieldset = container.querySelector('fieldset');
-    expect(fieldset).not.toBeNull();
+    // The protection panel uses a tablist with aria-label
+    const tabList = container.querySelector('[role="tablist"]');
+    expect(tabList).not.toBeNull();
+    expect(tabList!.getAttribute('aria-label')).toBe('Protection mode');
 
-    const legend = fieldset!.querySelector('legend');
-    expect(legend).not.toBeNull();
-    expect(legend!.textContent).toBe('Protection mode');
+    // 4 tab buttons: none, generate, custom, passphrase
+    const tabs = tabList!.querySelectorAll('[role="tab"]');
+    expect(tabs.length).toBe(4);
 
-    // 4 radio inputs: none, generate, custom, passphrase
-    const radios = fieldset!.querySelectorAll('input[type="radio"]');
-    expect(radios.length).toBe(4);
+    // "No protection" tab is selected by default
+    const noneTab = container.querySelector<HTMLButtonElement>('#tab-btn-none');
+    expect(noneTab).not.toBeNull();
+    expect(noneTab!.getAttribute('aria-selected')).toBe('true');
 
-    // "No protection" (value=none) is selected by default
-    const noneRadio = fieldset!.querySelector<HTMLInputElement>('input[value="none"]');
-    expect(noneRadio).not.toBeNull();
-    expect(noneRadio!.checked).toBe(true);
+    // All other tabs are not selected by default
+    const generateTab = container.querySelector<HTMLButtonElement>('#tab-btn-generate');
+    expect(generateTab!.getAttribute('aria-selected')).toBe('false');
 
-    // All other radios are unchecked by default
-    const generateRadio = fieldset!.querySelector<HTMLInputElement>('input[value="generate"]');
-    expect(generateRadio!.checked).toBe(false);
+    const customTab = container.querySelector<HTMLButtonElement>('#tab-btn-custom');
+    expect(customTab!.getAttribute('aria-selected')).toBe('false');
 
-    const customRadio = fieldset!.querySelector<HTMLInputElement>('input[value="custom"]');
-    expect(customRadio!.checked).toBe(false);
+    const passphraseTab = container.querySelector<HTMLButtonElement>('#tab-btn-passphrase');
+    expect(passphraseTab!.getAttribute('aria-selected')).toBe('false');
+  });
 
-    const passphraseRadio = fieldset!.querySelector<HTMLInputElement>('input[value="passphrase"]');
-    expect(passphraseRadio!.checked).toBe(false);
+  it('tab panels have correct ARIA linkage', async () => {
+    const { renderCreatePage } = await import('../pages/create.js');
+    renderCreatePage(container);
+
+    // Each tabpanel is labelled by its corresponding tab button
+    const tabIds: string[] = ['none', 'generate', 'custom', 'passphrase'];
+    for (const id of tabIds) {
+      const panel = container.querySelector(`[role="tabpanel"]#tab-${id}`);
+      expect(panel).not.toBeNull();
+      expect(panel!.getAttribute('aria-labelledby')).toBe(`tab-btn-${id}`);
+    }
+
+    // Only the "none" panel is visible by default
+    const nonePanel = container.querySelector('#tab-none');
+    expect((nonePanel as HTMLElement).hidden).toBe(false);
+
+    const generatePanel = container.querySelector('#tab-generate');
+    expect((generatePanel as HTMLElement).hidden).toBe(true);
   });
 
   it('protection panel has no accessibility violations', async () => {

@@ -14,15 +14,16 @@
  * Additionally, a per-secret notification toggle ('Email me when this secret is
  * viewed') is injected for authenticated users -- off by default.
  *
- * Phase 28: protection is opt-in via 4 radio options (No protection / Generate
- * password / Custom password / Passphrase). When "No protection" is selected
- * (default), no password is sent to the API. "Generate password" mode shows a
- * full 1Password/Bitwarden-style generator: tier selector (Low/Medium/High/Max),
- * charset checkboxes (Uppercase/Numbers/Symbols), filter checkboxes (Easy to
- * say/Easy to read/Omit similar), entropy + brute-force estimate, Regenerate,
- * Copy, and "Use this password" to commit. "Custom password" mode shows a simple
- * masked input with eye toggle. "Passphrase" mode shows the auto-generated EFF
- * diceware passphrase in a masked input with eye toggle, Regenerate, and Copy.
+ * Phase 28: protection is opt-in via a horizontal 4-tab design (No protection /
+ * Generate password / Custom password / Passphrase). When "No protection" is
+ * selected (default), no password is sent to the API. "Generate password" tab
+ * shows a full 1Password/Bitwarden-style generator: tier selector
+ * (Low/Medium/High/Max), charset checkboxes (Uppercase/Numbers/Symbols), filter
+ * checkboxes (Easy to say/Easy to read/Omit similar), entropy + brute-force
+ * estimate, Regenerate, and "Use this password" to confirm into a combined
+ * masked input. "Custom password" tab shows a simple masked input with eye
+ * toggle. "Passphrase" tab shows the auto-generated EFF diceware passphrase in
+ * a masked input with eye toggle and New passphrase button.
  */
 
 import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
@@ -37,7 +38,6 @@ import {
   createExpirationSelect,
   type ExpirationSelectResult,
 } from '../components/expiration-select.js';
-import { createCopyButton } from '../components/copy-button.js';
 import { renderConfirmationPage } from './confirmation.js';
 import { navigate } from '../router.js';
 import {
@@ -51,6 +51,7 @@ import {
   UserX,
   ShieldCheck,
   Dices,
+  RefreshCw,
   Copy,
   Check,
 } from 'lucide';
@@ -225,8 +226,8 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the protection panel with 4 radio options:
- *   1. No protection (default)
+ * Creates the protection panel with a horizontal 4-tab design:
+ *   1. No protection (default active)
  *   2. Generate password — full 1Password-style generator UI
  *   3. Custom password — masked text input with eye toggle
  *   4. Passphrase — EFF diceware passphrase with masked input, eye toggle
@@ -236,8 +237,8 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
  *   - getPassphrase(): string | undefined — the passphrase to display on the
  *     confirmation card (only truthy when passphrase mode is active)
  *
- * Phase 28 (refactored per UAT feedback): 4 radio options replace the
- * collapsible panel + segmented control.
+ * Phase 28 (refactored per second UAT iteration): horizontal tab strip with
+ * ARIA tablist/tab/tabpanel pattern replaces the radio button vertical list.
  */
 function createProtectionPanel(): {
   element: HTMLElement;
@@ -245,11 +246,13 @@ function createProtectionPanel(): {
   getPassphrase: () => string | undefined;
 } {
   // ---- Closure state ----
-  type ProtectionMode = 'none' | 'generate' | 'custom' | 'passphrase';
-  let protectionMode: ProtectionMode = 'none';
-  let currentPassphrase: string = generatePassphrase();
-  let appliedPassword: string = ''; // the APPLIED password (after "Use this password" clicked)
-  let previewPassword: string = ''; // the PREVIEW from the generator (not yet applied)
+  type ActiveTab = 'none' | 'generate' | 'custom' | 'passphrase';
+  let activeTab: ActiveTab = 'none';
+  let currentPassphrase: string = '';
+  type GenerateState = 'preview' | 'confirmed';
+  let generateState: GenerateState = 'preview';
+  let generatedPassword = '';
+  let confirmedPassword = '';
 
   type PasswordTierLocal = 'low' | 'medium' | 'high' | 'max';
   let activeTier: PasswordTierLocal = 'high';
@@ -269,7 +272,7 @@ function createProtectionPanel(): {
     checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
     const label = document.createElement('label');
     label.htmlFor = id;
-    label.className = 'text-sm text-text-secondary cursor-pointer select-none';
+    label.className = 'text-xs font-mono text-white/60 cursor-pointer select-none';
     label.textContent = labelText;
     wrapper.appendChild(checkbox);
     wrapper.appendChild(label);
@@ -280,159 +283,92 @@ function createProtectionPanel(): {
   const root = document.createElement('div');
   root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md overflow-hidden';
 
-  // ---- Fieldset with 4 radio options ----
-  const fieldset = document.createElement('fieldset');
-  fieldset.className = 'divide-y divide-white/5 border-0 p-0 m-0';
+  // ---- Tab strip ----
+  const tabList = document.createElement('div');
+  tabList.setAttribute('role', 'tablist');
+  tabList.setAttribute('aria-label', 'Protection mode');
+  tabList.className = 'flex border-b border-white/10';
+  root.appendChild(tabList);
 
-  const legend = document.createElement('legend');
-  legend.className = 'sr-only';
-  legend.textContent = 'Protection mode';
-  fieldset.appendChild(legend);
-
-  // Radio option definitions
-  const options: Array<{ value: ProtectionMode; label: string; sub: string }> = [
-    { value: 'none', label: 'No protection', sub: 'Fastest sharing' },
-    { value: 'generate', label: 'Generate password', sub: 'Secure random password with options' },
-    { value: 'custom', label: 'Custom password', sub: 'Type your own password' },
-    { value: 'passphrase', label: 'Passphrase', sub: 'Memorable EFF diceware phrase' },
+  const tabDefs: Array<{ id: ActiveTab; label: string }> = [
+    { id: 'none', label: 'No protection' },
+    { id: 'generate', label: 'Generate password' },
+    { id: 'custom', label: 'Custom password' },
+    { id: 'passphrase', label: 'Passphrase' },
   ];
 
-  const radioInputs: Record<ProtectionMode, HTMLInputElement> = {} as Record<
-    ProtectionMode,
-    HTMLInputElement
+  const tabInactiveCls =
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white/40 border-b-2 border-transparent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+  const tabActiveCls =
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white border-b-2 border-b-accent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+
+  const tabButtons: Record<ActiveTab, HTMLButtonElement> = {} as Record<
+    ActiveTab,
+    HTMLButtonElement
   >;
 
-  for (const opt of options) {
-    const labelEl = document.createElement('label');
-    labelEl.className =
-      'flex items-center gap-3 px-4 py-3 cursor-pointer border-l-2 border-transparent select-none hover:bg-white/[0.03] has-[input:checked]:border-accent has-[input:checked]:bg-white/5 transition-colors';
-
-    const radioInput = document.createElement('input');
-    radioInput.type = 'radio';
-    radioInput.name = 'protection-mode';
-    radioInput.value = opt.value;
-    radioInput.className = 'sr-only';
-    if (opt.value === 'none') radioInput.checked = true;
-    radioInputs[opt.value] = radioInput;
-
-    const radioDot = document.createElement('span');
-    radioDot.setAttribute('aria-hidden', 'true');
-    radioDot.className =
-      'w-4 h-4 rounded-full border border-white/30 flex-shrink-0 flex items-center justify-center';
-
-    const optionText = document.createElement('span');
-    optionText.className = 'flex flex-col';
-
-    const optionLabel = document.createElement('span');
-    optionLabel.className =
-      'font-mono text-sm font-medium text-[color-mix(in_oklch,white_90%,transparent)]';
-    optionLabel.textContent = opt.label;
-
-    const optionSub = document.createElement('span');
-    optionSub.className =
-      'font-mono text-xs text-[color-mix(in_oklch,white_40%,transparent)] mt-0.5 block';
-    optionSub.textContent = opt.sub;
-
-    optionText.appendChild(optionLabel);
-    optionText.appendChild(optionSub);
-    labelEl.appendChild(radioInput);
-    labelEl.appendChild(radioDot);
-    labelEl.appendChild(optionText);
-    fieldset.appendChild(labelEl);
+  for (const def of tabDefs) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.role = 'tab';
+    btn.id = `tab-btn-${def.id}`;
+    btn.setAttribute('aria-controls', `tab-${def.id}`);
+    btn.setAttribute('aria-selected', def.id === 'none' ? 'true' : 'false');
+    btn.className = def.id === 'none' ? tabActiveCls : tabInactiveCls;
+    btn.textContent = def.label;
+    tabButtons[def.id] = btn;
+    tabList.appendChild(btn);
   }
 
-  root.appendChild(fieldset);
-
-  // ---- Sub-panels container (sits below fieldset, separated by thin rule) ----
-  const subPanelsContainer = document.createElement('div');
-  subPanelsContainer.className = 'border-t border-white/10';
-  root.appendChild(subPanelsContainer);
-
-  // ---- Generate password section ----
-  const generateSection = document.createElement('div');
-  generateSection.className = 'hidden px-4 py-4 space-y-4';
-  subPanelsContainer.appendChild(generateSection);
-
-  // a) Preview row
-  const previewRow = document.createElement('div');
-  previewRow.className = 'space-y-1';
-  generateSection.appendChild(previewRow);
-
-  const previewLabel = document.createElement('p');
-  previewLabel.className = 'text-xs text-text-muted';
-  previewLabel.textContent = 'Generated password';
-  previewRow.appendChild(previewLabel);
-
-  const previewContainer = document.createElement('div');
-  previewContainer.className = 'relative';
-  previewRow.appendChild(previewContainer);
-
-  const previewField = document.createElement('div');
-  previewField.setAttribute('role', 'status');
-  previewField.setAttribute('aria-live', 'polite');
-  previewField.setAttribute('aria-label', 'Generated password');
-  previewField.className =
-    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface/60 text-text-primary font-mono text-sm flex items-center break-all';
-  previewField.addEventListener('click', () => {
-    const selection = window.getSelection();
-    if (selection && previewField.firstChild) {
-      const range = document.createRange();
-      range.selectNodeContents(previewField);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+  // Arrow key navigation between tabs
+  tabList.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const tabOrder: ActiveTab[] = ['none', 'generate', 'custom', 'passphrase'];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const nextIndex =
+      e.key === 'ArrowRight'
+        ? (currentIndex + 1) % tabOrder.length
+        : (currentIndex - 1 + tabOrder.length) % tabOrder.length;
+    const nextTab = tabOrder[nextIndex];
+    activateTab(nextTab);
+    tabButtons[nextTab].focus();
   });
-  previewContainer.appendChild(previewField);
 
-  // Copy preview button (absolutely positioned inside container)
-  const copyPreviewBtn = document.createElement('button');
-  copyPreviewBtn.type = 'button';
-  copyPreviewBtn.setAttribute('aria-label', 'Copy generated password');
-  copyPreviewBtn.className =
-    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
-  const copyPreviewIconSpan = document.createElement('span');
-  copyPreviewIconSpan.className = 'inline-flex';
-  copyPreviewIconSpan.appendChild(createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }));
-  copyPreviewBtn.appendChild(copyPreviewIconSpan);
-  copyPreviewBtn.addEventListener('click', () => {
-    if (!previewPassword) return;
-    void (async () => {
-      try {
-        await navigator.clipboard.writeText(previewPassword);
-        showToast('Copied to clipboard');
-        // Flash check icon
-        while (copyPreviewIconSpan.firstChild)
-          copyPreviewIconSpan.removeChild(copyPreviewIconSpan.firstChild);
-        copyPreviewIconSpan.appendChild(
-          createIcon(Check, { size: 'sm', class: 'pointer-events-none' }),
-        );
-        setTimeout(() => {
-          while (copyPreviewIconSpan.firstChild)
-            copyPreviewIconSpan.removeChild(copyPreviewIconSpan.firstChild);
-          copyPreviewIconSpan.appendChild(
-            createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
-          );
-        }, 1500);
-      } catch {
-        showToast('Failed to copy');
-      }
-    })();
-  });
-  previewContainer.appendChild(copyPreviewBtn);
+  // ---- Tab panels ----
+  const panelsContainer = document.createElement('div');
+  root.appendChild(panelsContainer);
 
-  // Entropy/brute force line
-  const entropyLine = document.createElement('p');
-  entropyLine.className = 'text-xs text-text-muted';
-  entropyLine.setAttribute('aria-live', 'polite');
-  previewRow.appendChild(entropyLine);
+  // Helper: create a tabpanel wrapper
+  function createTabPanel(id: ActiveTab): HTMLDivElement {
+    const panel = document.createElement('div');
+    panel.setAttribute('role', 'tabpanel');
+    panel.id = `tab-${id}`;
+    panel.setAttribute('aria-labelledby', `tab-btn-${id}`);
+    panel.className = 'px-4 py-4 space-y-3';
+    if (id !== 'none') panel.hidden = true;
+    return panel;
+  }
 
-  // b) Tier selector
+  // ---- Panel 1: No protection ----
+  const nonePanel = createTabPanel('none');
+  const noneNote = document.createElement('p');
+  noneNote.className = 'text-xs font-mono text-white/40';
+  noneNote.textContent = 'Secret will be accessible to anyone with the link.';
+  nonePanel.appendChild(noneNote);
+  panelsContainer.appendChild(nonePanel);
+
+  // ---- Panel 2: Generate password ----
+  const generatePanel = createTabPanel('generate');
+  panelsContainer.appendChild(generatePanel);
+
+  // a) Tier selector
   const tierRow = document.createElement('div');
   tierRow.className = 'space-y-1';
-  generateSection.appendChild(tierRow);
+  generatePanel.appendChild(tierRow);
 
   const tierLabel = document.createElement('p');
-  tierLabel.className = 'text-xs font-medium text-text-secondary';
+  tierLabel.className = 'text-xs font-medium text-white/60';
   tierLabel.textContent = 'Strength';
   tierRow.appendChild(tierLabel);
 
@@ -442,9 +378,9 @@ function createProtectionPanel(): {
   tierControl.className = 'flex gap-1 p-1 rounded-lg bg-surface-raised border border-border';
   tierRow.appendChild(tierControl);
 
-  const tierActiveCls =
+  const tierActiveBtnCls =
     'flex-1 px-2 py-1.5 min-h-[32px] rounded-md bg-accent text-white text-xs font-semibold transition-colors cursor-pointer';
-  const tierInactiveCls =
+  const tierInactiveBtnCls =
     'flex-1 px-2 py-1.5 min-h-[32px] rounded-md text-text-secondary text-xs hover:text-text-primary transition-colors cursor-pointer';
 
   const tierButtons: Record<PasswordTierLocal, HTMLButtonElement> = {
@@ -466,45 +402,27 @@ function createProtectionPanel(): {
     const btn = tierButtons[tier];
     btn.type = 'button';
     btn.textContent = tierLabels[tier];
-    btn.className = tier === 'high' ? tierActiveCls : tierInactiveCls;
+    btn.className = tier === 'high' ? tierActiveBtnCls : tierInactiveBtnCls;
     btn.setAttribute('aria-pressed', tier === 'high' ? 'true' : 'false');
     tierControl.appendChild(btn);
   }
 
-  // c) Charset checkboxes
-  const charsetRow = document.createElement('div');
-  charsetRow.className = 'space-y-1';
-  generateSection.appendChild(charsetRow);
-
-  const charsetLabel = document.createElement('p');
-  charsetLabel.className = 'text-xs font-medium text-text-secondary';
-  charsetLabel.textContent = 'Character set';
-  charsetRow.appendChild(charsetLabel);
-
+  // b) Charset checkboxes
   const charsetBoxes = document.createElement('div');
   charsetBoxes.className = 'flex flex-wrap gap-x-6 gap-y-2';
-  charsetRow.appendChild(charsetBoxes);
+  generatePanel.appendChild(charsetBoxes);
 
-  const uppercaseCb = createCheckbox('gen-uppercase', 'Uppercase', true); // high tier default
+  const uppercaseCb = createCheckbox('gen-uppercase', 'Uppercase', true);
   const numbersCb = createCheckbox('gen-numbers', 'Numbers', true);
   const symbolsCb = createCheckbox('gen-symbols', 'Symbols', true);
   charsetBoxes.appendChild(uppercaseCb.element);
   charsetBoxes.appendChild(numbersCb.element);
   charsetBoxes.appendChild(symbolsCb.element);
 
-  // d) Filter checkboxes
-  const filterRow = document.createElement('div');
-  filterRow.className = 'space-y-1';
-  generateSection.appendChild(filterRow);
-
-  const filterLabel = document.createElement('p');
-  filterLabel.className = 'text-xs font-medium text-text-secondary';
-  filterLabel.textContent = 'Filters';
-  filterRow.appendChild(filterLabel);
-
+  // c) Filter checkboxes
   const filterBoxes = document.createElement('div');
   filterBoxes.className = 'flex flex-wrap gap-x-6 gap-y-2';
-  filterRow.appendChild(filterBoxes);
+  generatePanel.appendChild(filterBoxes);
 
   const easyToSayCb = createCheckbox('gen-easy-to-say', 'Easy to say', false);
   const easyToReadCb = createCheckbox('gen-easy-to-read', 'Easy to read', false);
@@ -513,6 +431,12 @@ function createProtectionPanel(): {
   filterBoxes.appendChild(easyToReadCb.element);
   filterBoxes.appendChild(omitSimilarCb.element);
 
+  // d) Entropy line
+  const entropyLine = document.createElement('p');
+  entropyLine.className = 'text-xs font-mono text-white/40';
+  entropyLine.setAttribute('aria-live', 'polite');
+  generatePanel.appendChild(entropyLine);
+
   // e) Error line
   const genError = document.createElement('p');
   genError.className = 'hidden text-xs text-danger';
@@ -520,12 +444,12 @@ function createProtectionPanel(): {
   genError.id = 'gen-error';
   genError.textContent =
     'These filter settings are incompatible \u2014 please adjust your settings.';
-  generateSection.appendChild(genError);
+  generatePanel.appendChild(genError);
 
-  // f) Action row
-  const passwordActionRow = document.createElement('div');
-  passwordActionRow.className = 'flex items-center justify-between gap-3 flex-wrap';
-  generateSection.appendChild(passwordActionRow);
+  // f) Action row: Regenerate + Use this password
+  const genActionRow = document.createElement('div');
+  genActionRow.className = 'flex gap-2';
+  generatePanel.appendChild(genActionRow);
 
   const regenerateBtn = document.createElement('button');
   regenerateBtn.type = 'button';
@@ -536,99 +460,135 @@ function createProtectionPanel(): {
   const regenLabelSpan = document.createElement('span');
   regenLabelSpan.textContent = 'Regenerate';
   regenerateBtn.appendChild(regenLabelSpan);
-  passwordActionRow.appendChild(regenerateBtn);
+  genActionRow.appendChild(regenerateBtn);
 
   const usePasswordBtn = document.createElement('button');
   usePasswordBtn.type = 'button';
   usePasswordBtn.className =
     'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
   usePasswordBtn.appendChild(createIcon(Check, { size: 'sm' }));
-  const usePasswordLabel = document.createElement('span');
-  usePasswordLabel.textContent = 'Use this password';
-  usePasswordBtn.appendChild(usePasswordLabel);
-  passwordActionRow.appendChild(usePasswordBtn);
+  const usePasswordLabelSpan = document.createElement('span');
+  usePasswordLabelSpan.textContent = 'Use this password';
+  usePasswordBtn.appendChild(usePasswordLabelSpan);
+  genActionRow.appendChild(usePasswordBtn);
 
-  // g) Applied password field (hidden until "Use this password" clicked)
-  const appliedPasswordGroup = document.createElement('div');
-  appliedPasswordGroup.className = 'hidden space-y-1';
-  generateSection.appendChild(appliedPasswordGroup);
+  // g) Combined password field (preview + confirmed state)
+  const combinedFieldGroup = document.createElement('div');
+  combinedFieldGroup.className = 'space-y-1';
+  generatePanel.appendChild(combinedFieldGroup);
 
-  const appliedPasswordLabel = document.createElement('label');
-  appliedPasswordLabel.htmlFor = 'applied-password';
-  appliedPasswordLabel.className = 'block text-sm font-medium text-text-secondary';
-  appliedPasswordLabel.textContent = 'Password';
-  appliedPasswordGroup.appendChild(appliedPasswordLabel);
+  const combinedFieldLabel = document.createElement('label');
+  combinedFieldLabel.htmlFor = 'gen-combined-password';
+  combinedFieldLabel.className = 'block text-sm font-medium text-text-secondary';
+  combinedFieldLabel.textContent = 'Password';
+  combinedFieldGroup.appendChild(combinedFieldLabel);
 
-  const appliedPasswordWrapper = document.createElement('div');
-  appliedPasswordWrapper.className = 'relative';
-  appliedPasswordGroup.appendChild(appliedPasswordWrapper);
+  const combinedPasswordWrapper = document.createElement('div');
+  combinedPasswordWrapper.className = 'relative';
+  combinedFieldGroup.appendChild(combinedPasswordWrapper);
 
-  const appliedPasswordInput = document.createElement('input');
-  appliedPasswordInput.type = 'password';
-  appliedPasswordInput.id = 'applied-password';
-  appliedPasswordInput.readOnly = true;
-  appliedPasswordInput.className =
-    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
-  appliedPasswordWrapper.appendChild(appliedPasswordInput);
+  const combinedPasswordInput = document.createElement('input');
+  combinedPasswordInput.type = 'password';
+  combinedPasswordInput.id = 'gen-combined-password';
+  combinedPasswordInput.readOnly = true;
+  combinedPasswordInput.className =
+    'w-full px-3 py-2 pr-16 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary font-mono text-sm focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+  combinedPasswordWrapper.appendChild(combinedPasswordInput);
 
-  const appliedRevealToggle = document.createElement('button');
-  appliedRevealToggle.type = 'button';
-  appliedRevealToggle.setAttribute('aria-label', 'Show password');
-  appliedRevealToggle.className =
-    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
-  const appliedEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
-  const appliedEyeOffEl = createIcon(EyeOff, {
-    size: 'sm',
-    class: 'pointer-events-none hidden',
-  });
-  appliedRevealToggle.appendChild(appliedEyeEl);
-  appliedRevealToggle.appendChild(appliedEyeOffEl);
-  let appliedPasswordVisible = false;
-  appliedRevealToggle.addEventListener('click', () => {
-    appliedPasswordVisible = !appliedPasswordVisible;
-    appliedPasswordInput.type = appliedPasswordVisible ? 'text' : 'password';
-    appliedRevealToggle.setAttribute(
+  // Eye/EyeOff toggle — absolute right-8
+  const genRevealToggle = document.createElement('button');
+  genRevealToggle.type = 'button';
+  genRevealToggle.setAttribute('aria-label', 'Show password');
+  genRevealToggle.className =
+    'absolute inset-y-0 right-8 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none transition-colors cursor-pointer';
+  const genEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+  const genEyeOffEl = createIcon(EyeOff, { size: 'sm', class: 'pointer-events-none hidden' });
+  genRevealToggle.appendChild(genEyeEl);
+  genRevealToggle.appendChild(genEyeOffEl);
+  let genPasswordVisible = false;
+  genRevealToggle.addEventListener('click', () => {
+    genPasswordVisible = !genPasswordVisible;
+    combinedPasswordInput.type = genPasswordVisible ? 'text' : 'password';
+    genRevealToggle.setAttribute(
       'aria-label',
-      appliedPasswordVisible ? 'Hide password' : 'Show password',
+      genPasswordVisible ? 'Hide password' : 'Show password',
     );
-    appliedEyeEl.classList.toggle('hidden', appliedPasswordVisible);
-    appliedEyeOffEl.classList.toggle('hidden', !appliedPasswordVisible);
+    genEyeEl.classList.toggle('hidden', genPasswordVisible);
+    genEyeOffEl.classList.toggle('hidden', !genPasswordVisible);
   });
-  appliedPasswordWrapper.appendChild(appliedRevealToggle);
+  combinedPasswordWrapper.appendChild(genRevealToggle);
 
-  // ---- Custom password section (hidden by default) ----
-  const customSection = document.createElement('div');
-  customSection.className = 'hidden px-4 py-4 space-y-2';
-  subPanelsContainer.appendChild(customSection);
+  // Copy button — absolute right-2
+  const genCopyIconSpan = document.createElement('span');
+  genCopyIconSpan.className = 'inline-flex';
+  genCopyIconSpan.appendChild(createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }));
+
+  const genCopyBtn = document.createElement('button');
+  genCopyBtn.type = 'button';
+  genCopyBtn.setAttribute('aria-label', 'Copy password');
+  genCopyBtn.className =
+    'absolute inset-y-0 right-0 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  genCopyBtn.appendChild(genCopyIconSpan);
+  genCopyBtn.addEventListener('click', () => {
+    const val = combinedPasswordInput.value;
+    if (!val) return;
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(val);
+        showToast('Copied to clipboard');
+        while (genCopyIconSpan.firstChild) genCopyIconSpan.removeChild(genCopyIconSpan.firstChild);
+        genCopyIconSpan.appendChild(
+          createIcon(Check, { size: 'sm', class: 'pointer-events-none' }),
+        );
+        setTimeout(() => {
+          while (genCopyIconSpan.firstChild)
+            genCopyIconSpan.removeChild(genCopyIconSpan.firstChild);
+          genCopyIconSpan.appendChild(
+            createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
+          );
+        }, 1500);
+      } catch {
+        showToast('Failed to copy');
+      }
+    })();
+  });
+  combinedPasswordWrapper.appendChild(genCopyBtn);
+
+  // State label below field
+  const genStateLabel = document.createElement('p');
+  genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+  genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
+  combinedFieldGroup.appendChild(genStateLabel);
+
+  // ---- Panel 3: Custom password ----
+  const customPanel = createTabPanel('custom');
+  panelsContainer.appendChild(customPanel);
 
   const customPasswordLabel = document.createElement('label');
   customPasswordLabel.htmlFor = 'custom-password';
   customPasswordLabel.className = 'block text-sm font-medium text-text-secondary';
   customPasswordLabel.textContent = 'Password';
-  customSection.appendChild(customPasswordLabel);
+  customPanel.appendChild(customPasswordLabel);
 
   const customPasswordWrapper = document.createElement('div');
   customPasswordWrapper.className = 'relative';
-  customSection.appendChild(customPasswordWrapper);
+  customPanel.appendChild(customPasswordWrapper);
 
   const customPasswordInput = document.createElement('input');
   customPasswordInput.type = 'password';
   customPasswordInput.id = 'custom-password';
   customPasswordInput.placeholder = 'Enter your password';
   customPasswordInput.className =
-    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
+    'w-full px-3 py-2 pr-16 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
   customPasswordWrapper.appendChild(customPasswordInput);
 
   const customRevealToggle = document.createElement('button');
   customRevealToggle.type = 'button';
   customRevealToggle.setAttribute('aria-label', 'Show password');
   customRevealToggle.className =
-    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+    'absolute inset-y-0 right-8 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none transition-colors cursor-pointer';
   const customEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
-  const customEyeOffEl = createIcon(EyeOff, {
-    size: 'sm',
-    class: 'pointer-events-none hidden',
-  });
+  const customEyeOffEl = createIcon(EyeOff, { size: 'sm', class: 'pointer-events-none hidden' });
   customRevealToggle.appendChild(customEyeEl);
   customRevealToggle.appendChild(customEyeOffEl);
   let customPasswordVisible = false;
@@ -644,32 +604,62 @@ function createProtectionPanel(): {
   });
   customPasswordWrapper.appendChild(customRevealToggle);
 
-  // ---- Passphrase section (hidden by default) ----
-  const passphraseSection = document.createElement('div');
-  passphraseSection.className = 'hidden px-4 py-4 space-y-3';
-  subPanelsContainer.appendChild(passphraseSection);
+  // Custom copy button
+  const customCopyIconSpan = document.createElement('span');
+  customCopyIconSpan.className = 'inline-flex';
+  customCopyIconSpan.appendChild(createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }));
+  const customCopyBtn = document.createElement('button');
+  customCopyBtn.type = 'button';
+  customCopyBtn.setAttribute('aria-label', 'Copy password');
+  customCopyBtn.className =
+    'absolute inset-y-0 right-0 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  customCopyBtn.appendChild(customCopyIconSpan);
+  customCopyBtn.addEventListener('click', () => {
+    const val = customPasswordInput.value;
+    if (!val) return;
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(val);
+        showToast('Copied to clipboard');
+        while (customCopyIconSpan.firstChild)
+          customCopyIconSpan.removeChild(customCopyIconSpan.firstChild);
+        customCopyIconSpan.appendChild(
+          createIcon(Check, { size: 'sm', class: 'pointer-events-none' }),
+        );
+        setTimeout(() => {
+          while (customCopyIconSpan.firstChild)
+            customCopyIconSpan.removeChild(customCopyIconSpan.firstChild);
+          customCopyIconSpan.appendChild(
+            createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
+          );
+        }, 1500);
+      } catch {
+        showToast('Failed to copy');
+      }
+    })();
+  });
+  customPasswordWrapper.appendChild(customCopyBtn);
 
-  const passphraseSectionLabel = document.createElement('p');
-  passphraseSectionLabel.className = 'text-xs font-medium text-text-secondary';
-  passphraseSectionLabel.textContent = 'Passphrase';
-  passphraseSection.appendChild(passphraseSectionLabel);
+  // ---- Panel 4: Passphrase ----
+  const passphrasePanel = createTabPanel('passphrase');
+  panelsContainer.appendChild(passphrasePanel);
 
-  const passphraseHint = document.createElement('p');
-  passphraseHint.className = 'text-xs text-text-muted';
-  passphraseHint.textContent = 'Auto-generated. Recipients will need this to view your secret.';
-  passphraseSection.appendChild(passphraseHint);
+  const passphraseLabelEl = document.createElement('label');
+  passphraseLabelEl.htmlFor = 'passphrase-input';
+  passphraseLabelEl.className = 'block text-sm font-medium text-text-secondary';
+  passphraseLabelEl.textContent = 'Passphrase';
+  passphrasePanel.appendChild(passphraseLabelEl);
 
   const passphraseWrapper = document.createElement('div');
   passphraseWrapper.className = 'relative';
-  passphraseSection.appendChild(passphraseWrapper);
+  passphrasePanel.appendChild(passphraseWrapper);
 
   const passphraseInput = document.createElement('input');
   passphraseInput.type = 'password';
-  passphraseInput.setAttribute('aria-label', 'Passphrase');
-  passphraseInput.value = currentPassphrase;
+  passphraseInput.id = 'passphrase-input';
   passphraseInput.readOnly = false;
   passphraseInput.className =
-    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
+    'w-full px-3 py-2 pr-16 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
   passphraseInput.addEventListener('input', () => {
     currentPassphrase = passphraseInput.value;
   });
@@ -679,7 +669,7 @@ function createProtectionPanel(): {
   passphraseRevealToggle.type = 'button';
   passphraseRevealToggle.setAttribute('aria-label', 'Show passphrase');
   passphraseRevealToggle.className =
-    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+    'absolute inset-y-0 right-8 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none transition-colors cursor-pointer';
   const passphraseEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
   const passphraseEyeOffEl = createIcon(EyeOff, {
     size: 'sm',
@@ -700,23 +690,59 @@ function createProtectionPanel(): {
   });
   passphraseWrapper.appendChild(passphraseRevealToggle);
 
+  // Passphrase copy button
+  const passphraseCopyIconSpan = document.createElement('span');
+  passphraseCopyIconSpan.className = 'inline-flex';
+  passphraseCopyIconSpan.appendChild(
+    createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
+  );
+  const passphraseCopyBtn = document.createElement('button');
+  passphraseCopyBtn.type = 'button';
+  passphraseCopyBtn.setAttribute('aria-label', 'Copy passphrase');
+  passphraseCopyBtn.className =
+    'absolute inset-y-0 right-0 flex items-center px-2 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  passphraseCopyBtn.appendChild(passphraseCopyIconSpan);
+  passphraseCopyBtn.addEventListener('click', () => {
+    const val = passphraseInput.value;
+    if (!val) return;
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(val);
+        showToast('Copied to clipboard');
+        while (passphraseCopyIconSpan.firstChild)
+          passphraseCopyIconSpan.removeChild(passphraseCopyIconSpan.firstChild);
+        passphraseCopyIconSpan.appendChild(
+          createIcon(Check, { size: 'sm', class: 'pointer-events-none' }),
+        );
+        setTimeout(() => {
+          while (passphraseCopyIconSpan.firstChild)
+            passphraseCopyIconSpan.removeChild(passphraseCopyIconSpan.firstChild);
+          passphraseCopyIconSpan.appendChild(
+            createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
+          );
+        }, 1500);
+      } catch {
+        showToast('Failed to copy');
+      }
+    })();
+  });
+  passphraseWrapper.appendChild(passphraseCopyBtn);
+
+  // New passphrase button row
   const passphraseActionRow = document.createElement('div');
-  passphraseActionRow.className = 'flex items-center gap-3 flex-wrap';
-  passphraseSection.appendChild(passphraseActionRow);
+  passphraseActionRow.className = 'flex items-center gap-2';
+  passphrasePanel.appendChild(passphraseActionRow);
 
   const newPassphraseBtn = document.createElement('button');
   newPassphraseBtn.type = 'button';
   newPassphraseBtn.setAttribute('aria-label', 'Generate a new passphrase');
   newPassphraseBtn.className =
     'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
-  newPassphraseBtn.appendChild(createIcon(Dices, { size: 'sm' }));
+  newPassphraseBtn.appendChild(createIcon(RefreshCw, { size: 'sm' }));
   const newPassphraseLabelSpan = document.createElement('span');
   newPassphraseLabelSpan.textContent = 'New passphrase';
   newPassphraseBtn.appendChild(newPassphraseLabelSpan);
   passphraseActionRow.appendChild(newPassphraseBtn);
-
-  const copyPassphraseBtn = createCopyButton(() => currentPassphrase, 'Copy');
-  passphraseActionRow.appendChild(copyPassphraseBtn);
 
   // ---- Internal: helpers for tier default checkboxes ----
   function applyTierDefaults(tier: PasswordTierLocal): void {
@@ -740,6 +766,21 @@ function createProtectionPanel(): {
     }
   }
 
+  // ---- Refresh combined field display (generate tab) ----
+  function refreshCombinedField(): void {
+    const displayValue = generateState === 'confirmed' ? confirmedPassword : generatedPassword;
+    combinedPasswordInput.value = displayValue;
+    if (generateState === 'confirmed') {
+      genStateLabel.textContent = '\u2713 Confirmed';
+      genStateLabel.className = 'text-xs font-mono text-accent mt-1';
+      combinedPasswordWrapper.classList.add('ring-1', 'ring-accent/50');
+    } else {
+      genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
+      genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+      combinedPasswordWrapper.classList.remove('ring-1', 'ring-accent/50');
+    }
+  }
+
   // ---- Regenerate function ----
   function regenerate(): void {
     try {
@@ -752,25 +793,22 @@ function createProtectionPanel(): {
         easyToRead: easyToReadCb.input.checked,
         omitSimilar: omitSimilarCb.input.checked,
       });
-      previewPassword = result.password;
-      previewField.textContent = previewPassword;
+      generatedPassword = result.password;
       const tierLabelStr = activeTier.charAt(0).toUpperCase() + activeTier.slice(1);
-      entropyLine.textContent = `${tierLabelStr} \u00b7 ~${Math.round(result.entropyBits)} bits \u00b7 ${result.bruteForceEstimate}`;
+      entropyLine.textContent = `${tierLabelStr} \u00b7 ${Math.round(result.entropyBits)} bits \u00b7 ${result.bruteForceEstimate}`;
       genError.classList.add('hidden');
+      // Reset to preview state on regenerate
+      generateState = 'preview';
+      confirmedPassword = '';
+      refreshCombinedField();
     } catch {
       genError.classList.remove('hidden');
-      previewField.textContent = '';
-      previewPassword = '';
+      generatedPassword = '';
       entropyLine.textContent = '';
+      generateState = 'preview';
+      confirmedPassword = '';
+      refreshCombinedField();
     }
-  }
-
-  // ---- Apply password ----
-  function applyPassword(): void {
-    if (!previewPassword) return;
-    appliedPassword = previewPassword;
-    appliedPasswordInput.value = appliedPassword;
-    appliedPasswordGroup.classList.remove('hidden');
   }
 
   // ---- Wire tier buttons ----
@@ -779,7 +817,7 @@ function createProtectionPanel(): {
       if (activeTier === tier) return;
       activeTier = tier;
       for (const t of tierNames) {
-        tierButtons[t].className = t === tier ? tierActiveCls : tierInactiveCls;
+        tierButtons[t].className = t === tier ? tierActiveBtnCls : tierInactiveBtnCls;
         tierButtons[t].setAttribute('aria-pressed', t === tier ? 'true' : 'false');
       }
       applyTierDefaults(tier);
@@ -794,7 +832,6 @@ function createProtectionPanel(): {
 
   easyToSayCb.input.addEventListener('change', () => {
     if (easyToSayCb.input.checked) {
-      // easyToSay overrides charset — visually disable and uncheck Uppercase/Numbers/Symbols
       uppercaseCb.input.checked = false;
       uppercaseCb.input.disabled = true;
       numbersCb.input.checked = false;
@@ -805,7 +842,6 @@ function createProtectionPanel(): {
       uppercaseCb.input.disabled = false;
       numbersCb.input.disabled = false;
       symbolsCb.input.disabled = false;
-      // Restore tier defaults on uncheck
       applyTierDefaults(activeTier);
     }
     regenerate();
@@ -815,65 +851,84 @@ function createProtectionPanel(): {
   omitSimilarCb.input.addEventListener('change', regenerate);
 
   // ---- Wire action buttons ----
-  regenerateBtn.addEventListener('click', regenerate);
-  usePasswordBtn.addEventListener('click', applyPassword);
+  regenerateBtn.addEventListener('click', () => {
+    generateState = 'preview';
+    confirmedPassword = '';
+    regenerate();
+  });
+
+  usePasswordBtn.addEventListener('click', () => {
+    if (!generatedPassword) return;
+    generateState = 'confirmed';
+    confirmedPassword = generatedPassword;
+    refreshCombinedField();
+  });
 
   newPassphraseBtn.addEventListener('click', () => {
     currentPassphrase = generatePassphrase();
     passphraseInput.value = currentPassphrase;
   });
 
-  // ---- Show/hide sub-panels based on mode ----
-  function showSubPanel(mode: ProtectionMode): void {
-    generateSection.classList.toggle('hidden', mode !== 'generate');
-    customSection.classList.toggle('hidden', mode !== 'custom');
-    passphraseSection.classList.toggle('hidden', mode !== 'passphrase');
-    // Show the sub-panels container only when a mode with sub-panel is active
-    subPanelsContainer.classList.toggle('hidden', mode === 'none');
+  // ---- Tab activation ----
+  function activateTab(tab: ActiveTab): void {
+    const previousTab = activeTab;
+    activeTab = tab;
+
+    // Update tab button ARIA + styling
+    for (const def of tabDefs) {
+      const isActive = def.id === tab;
+      tabButtons[def.id].setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tabButtons[def.id].className = isActive ? tabActiveCls : tabInactiveCls;
+    }
+
+    // Show/hide panels
+    nonePanel.hidden = tab !== 'none';
+    generatePanel.hidden = tab !== 'generate';
+    customPanel.hidden = tab !== 'custom';
+    passphrasePanel.hidden = tab !== 'passphrase';
+
+    // State resets on tab switch
+    if (previousTab === 'generate' && tab !== 'generate') {
+      generateState = 'preview';
+      confirmedPassword = '';
+      refreshCombinedField();
+    }
+    if (previousTab === 'passphrase' && tab !== 'passphrase') {
+      currentPassphrase = '';
+    }
+
+    // Initialise data on switch TO a tab
+    if (tab === 'generate') {
+      regenerate();
+    }
+    if (tab === 'passphrase' && !currentPassphrase) {
+      currentPassphrase = generatePassphrase();
+      passphraseInput.value = currentPassphrase;
+    }
   }
 
-  // ---- Wire radio change handlers ----
-  for (const opt of options) {
-    radioInputs[opt.value].addEventListener('change', () => {
-      const previousMode = protectionMode;
-      protectionMode = opt.value;
-
-      // Clear cross-mode state on switch
-      if (previousMode === 'generate' && opt.value !== 'generate') {
-        appliedPassword = '';
-        appliedPasswordInput.value = '';
-        appliedPasswordGroup.classList.add('hidden');
-      }
-      if (previousMode === 'passphrase' && opt.value !== 'passphrase') {
-        currentPassphrase = generatePassphrase();
-        passphraseInput.value = currentPassphrase;
-      }
-
-      // Trigger regenerate when switching TO generate mode
-      if (opt.value === 'generate') {
-        regenerate();
-      }
-
-      showSubPanel(opt.value);
+  // ---- Wire tab button clicks ----
+  for (const def of tabDefs) {
+    tabButtons[def.id].addEventListener('click', () => {
+      activateTab(def.id);
     });
   }
 
-  // Initialize sub-panel visibility (none selected by default)
-  showSubPanel('none');
-
   // ---- Accessors ----
+  function getPassword(): string | undefined {
+    if (activeTab === 'generate') return confirmedPassword || undefined;
+    if (activeTab === 'custom') return customPasswordInput.value.trim() || undefined;
+    return undefined;
+  }
+
+  function getPassphrase(): string | undefined {
+    return activeTab === 'passphrase' ? currentPassphrase || undefined : undefined;
+  }
+
   return {
     element: root,
-    getPassword: (): string | undefined => {
-      if (protectionMode === 'generate') return appliedPassword || undefined;
-      if (protectionMode === 'custom') return customPasswordInput.value || undefined;
-      if (protectionMode === 'passphrase') return currentPassphrase || undefined;
-      return undefined;
-    },
-    getPassphrase: (): string | undefined => {
-      if (protectionMode === 'passphrase') return currentPassphrase || undefined;
-      return undefined;
-    },
+    getPassword,
+    getPassphrase,
   };
 }
 
@@ -888,9 +943,9 @@ function createProtectionPanel(): {
  * runs as a fire-and-forget IIFE (void async pattern) after the form is painted.
  * PageRenderer in router.ts accepts void | Promise<void> so this is compatible.
  *
- * Phase 28: protection is opt-in via 4 radio options (No protection default).
- * Submit handler reads from protectionPanel.getPassword() (undefined when no
- * protection selected). renderConfirmationPage receives
+ * Phase 28: protection is opt-in via a horizontal 4-tab design (No protection
+ * default). Submit handler reads from protectionPanel.getPassword() (undefined
+ * when no protection selected). renderConfirmationPage receives
  * protectionPanel.getPassphrase() as the 5th argument (undefined when password
  * mode or no protection).
  */
