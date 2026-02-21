@@ -13,6 +13,7 @@ import { fetchDashboardSecrets, deleteDashboardSecret } from '../api/client.js';
 import { createIcon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
 import { navigate } from '../router.js';
+import { identifyUser, resetAnalyticsIdentity } from '../analytics/posthog.js';
 import type { DashboardSecretItem } from '../../../shared/types/api.js';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,7 @@ import type { DashboardSecretItem } from '../../../shared/types/api.js';
  * Typed explicitly to avoid unsafe `any` member access on the library return value.
  */
 interface SessionUser {
+  id: string;
   name?: string | null;
   email: string;
 }
@@ -43,7 +45,7 @@ function isSession(value: unknown): value is Session {
   const obj = value as Record<string, unknown>;
   if (typeof obj['user'] !== 'object' || obj['user'] === null) return false;
   const user = obj['user'] as Record<string, unknown>;
-  return typeof user['email'] === 'string';
+  return typeof user['id'] === 'string' && typeof user['email'] === 'string';
 }
 
 // ---------------------------------------------------------------------------
@@ -346,6 +348,12 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
     return;
   }
 
+  // Identify the authenticated user in PostHog by internal DB user ID only — ANLT-03.
+  // Called on every dashboard load: covers email login returns AND OAuth callbacks
+  // (callbackURL: '/dashboard'). PostHog deduplicates when distinct ID is unchanged.
+  // Never pass email, name, or secretId — zero-knowledge invariant.
+  identifyUser(session.user.id);
+
   // --- Page wrapper ---
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
@@ -393,6 +401,9 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
       logoutButton.textContent = 'Logging out\u2026';
 
       await authClient.signOut();
+      // Reset PostHog identity so the next anonymous session gets a fresh distinct ID.
+      // Must be called after signOut() resolves to ensure the identified session ends first.
+      resetAnalyticsIdentity();
       // Hide the nav link immediately — Better Auth's client cache may not
       // reflect the cleared session until the next getSession() round-trip.
       document.getElementById('nav-dashboard-link')?.classList.add('hidden');

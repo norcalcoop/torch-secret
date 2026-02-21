@@ -16,6 +16,7 @@ import { authClient } from '../api/auth-client.js';
 import { navigate } from '../router.js';
 import { Github, Mail } from 'lucide';
 import { createIcon } from '../components/icons.js';
+import { captureUserRegistered } from '../analytics/posthog.js';
 
 /**
  * Render the register page into the given container.
@@ -203,7 +204,10 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
         }
 
         if (data !== null && data !== undefined) {
-          // Email verification required — show success state instead of redirecting
+          // Email verification required — show success state instead of redirecting.
+          // Capture registration event before showing verification UI — ANLT-03.
+          // identifyUser is NOT called here: the user cannot log in until email is verified.
+          captureUserRegistered('email');
           showEmailVerificationState(card, email);
         } else {
           showError(errorArea, 'Registration failed. Please try again.');
