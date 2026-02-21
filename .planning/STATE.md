@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 28 of 28 (Optional Password or Passphrase Protection with Password Generator and Masked Inputs) — In Progress
-Plan: 1 of TBD complete
-Status: Phase 28 Plan 01 complete — password-generator.ts TDD module with 15 passing tests; PROT-02 satisfied
-Last activity: 2026-02-21 — Phase 28 Plan 01 complete (password generator module)
+Plan: 2 of TBD complete
+Status: Phase 28 Plan 02 complete — createProtectionPanel() factory with full password generator + passphrase UI; PROT-01 and PROT-04 satisfied
+Last activity: 2026-02-21 — Phase 28 Plan 02 complete (protection panel UI)
 
-Progress: [████████░░] ~57% (v4.0 — 44/44+ requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 + PROT-01/PROT-03/PROT-04 pending)
+Progress: [████████░░] ~60% (v4.0 — 46/44+ requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 + PROT-02 + PROT-04; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 + PROT-03 pending)
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [████████░░] ~57% (v4.0 — 44/44+ requirements co
 | Phase 27 P02 | 8 | 2 tasks | 4 files |
 | Phase 27 P04 | 1 | 1 tasks | 2 files |
 | Phase 28 P01 | 6 | 3 TDD phases | 3 files |
+| Phase 28 P02 | 5 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 28]: [Phase 28-01]: easyToSay+omitSimilar throws 'No characters available with current filter combination' — explicit guard per plan spec; UI in Phase 28-02 should prevent this pairing
 - [Phase 28]: [Phase 28-01]: PHONETIC = 'abcdefghjkmnprstuvwyz' omits e,i,l,o,q,x — phonetically ambiguous chars excluded at definition time, not filtered at runtime
 - [Phase 28]: [Phase 28-01]: global crypto used without window.crypto prefix — available in browser (Web Crypto API) and Node 19+; consistent with passphrase.ts pattern
+- [Phase 28]: [Phase 28]: [Phase 28-02]: insertBefore(labelField, protectionPanel.element) — protection panel replaces errorArea as stable anchor for auth IIFE insertions; label+notify appear between expiration and protection panel
+- [Phase 28]: [Phase 28-02]: createProtectionPanel() factory closure pattern — all mode state lives inside factory; consumers get { element, getPassword, getPassphrase } accessors
 
 ### Roadmap Evolution
 
@@ -169,5 +172,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 28-optional-password-or-passphrase-protection-with-password-generator-and-masked-inputs 28-01-PLAN.md (TDD: password generator module)
-Resume: Phase 28 Plan 01 complete. password-generator.ts fully tested (15 tests, 0 regressions). PROT-02 satisfied. Next: Phase 28 Plan 02 (protection panel UI).
+Stopped at: Completed 28-optional-password-or-passphrase-protection-with-password-generator-and-masked-inputs 28-02-PLAN.md (protection panel UI)
+Resume: Phase 28 Plan 02 complete. createProtectionPanel() factory with full password generator + passphrase tab UI. 126 client tests pass. PROT-01 and PROT-04 satisfied. Next: Phase 28 Plan 03 (accessibility + unit tests for protection panel).

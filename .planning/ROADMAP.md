@@ -224,7 +224,7 @@ Plans:
 **Goal:** All users can choose between no protection, password generation (with tier selector, charset/filter controls, entropy display, brute force estimate, preview, and masked applied field), or EFF diceware passphrase mode when creating a secret — with the protection panel collapsed by default (opt-in), and every password/passphrase input field across the app gaining a show/hide eye-icon toggle that defaults to masked
 **Depends on:** Phase 27
 **Requirements:** PROT-01, PROT-02, PROT-03, PROT-04
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 28-01-PLAN.md — TDD: password-generator.ts pure module (tiers, charset flags, filters, entropy, brute force, rejection-sampling, empty-charset guard) + barrel export
