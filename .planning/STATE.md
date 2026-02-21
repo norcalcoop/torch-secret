@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 24 of 27 (EFF Diceware Passphrase Generator) — IN PROGRESS
-Plan: 3 of 4 complete (24-03 Create Page Passphrase UI — Task 1 done, awaiting human verify checkpoint)
-Status: Phase 24 Plan 03 Task 1 complete — passphrase section on create page, Advanced options removed, currentPassphrase threaded to confirmation; 111 client tests pass
-Last activity: 2026-02-21 — Phase 24 Plan 03 committed (create page passphrase section)
+Phase: 24 of 27 (EFF Diceware Passphrase Generator) — COMPLETE
+Plan: 3 of 3 complete (24-03 Create Page Passphrase UI — human verification approved)
+Status: Phase 24 complete — EFF Diceware passphrase module + confirmation card + create page UI all shipped; every new secret has automatic two-channel passphrase protection
+Last activity: 2026-02-21 — Phase 24 Plan 03 complete (human verification approved)
 
 Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04)
 
@@ -117,5 +117,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 24 Plan 03 Task 1 complete — paused at checkpoint:human-verify (Task 2)
-Resume: Phase 24 Plan 03 awaiting human verification — run dev servers and verify full create→confirmation passphrase flow (8 steps in plan)
+Stopped at: Completed Phase 24 Plan 03 — EFF Diceware Passphrase Generator phase complete
+Resume: Phase 25 (next phase per ROADMAP.md)
