@@ -61,7 +61,7 @@ describe('POST /api/secrets', () => {
   test('creates secret and returns 21-char nanoid with 201 status', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     expect(res.body.id).toBeDefined();
@@ -73,7 +73,7 @@ describe('POST /api/secrets', () => {
 
   // Success Criterion 1b: Validation
   test('rejects missing ciphertext with 400', async () => {
-    const res = await request(app).post('/api/secrets').send({ expiresIn: '24h' }).expect(400);
+    const res = await request(app).post('/api/secrets').send({ expiresIn: '1h' }).expect(400);
 
     expect(res.body.error).toBe('validation_error');
   });
@@ -90,21 +90,19 @@ describe('POST /api/secrets', () => {
   test('rejects empty ciphertext with 400', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: '', expiresIn: '24h' })
+      .send({ ciphertext: '', expiresIn: '1h' })
       .expect(400);
 
     expect(res.body.error).toBe('validation_error');
   });
 
-  test('accepts all valid expiresIn options', async () => {
-    for (const expiresIn of ['1h', '24h', '7d', '30d']) {
-      const res = await request(app)
-        .post('/api/secrets')
-        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn })
-        .expect(201);
+  test('accepts expiresIn 1h for anonymous user (only valid anonymous option)', async () => {
+    const res = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+      .expect(201);
 
-      expect(res.body.id).toHaveLength(21);
-    }
+    expect(res.body.id).toHaveLength(21);
   });
 });
 
@@ -116,7 +114,7 @@ describe('GET /api/secrets/:id', () => {
     // Create a secret
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -132,7 +130,7 @@ describe('GET /api/secrets/:id', () => {
     // Create a secret
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -159,7 +157,7 @@ describe('anti-enumeration', () => {
     // Create and consume a secret
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -190,7 +188,7 @@ describe('data destruction', () => {
     // Create a secret
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -243,7 +241,7 @@ describe('POST /api/secrets with password', () => {
   test('creates password-protected secret and returns 201 with same shape as non-password secret', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'test-password-123' })
       .expect(201);
 
     expect(res.body.id).toBeDefined();
@@ -255,7 +253,7 @@ describe('POST /api/secrets with password', () => {
   test('stores password hash in database, not plaintext', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'test-password-123' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -275,7 +273,7 @@ describe('POST /api/secrets with password', () => {
     const longPassword = 'a'.repeat(129);
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: longPassword })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: longPassword })
       .expect(400);
 
     expect(res.body.error).toBe('validation_error');
@@ -289,7 +287,7 @@ describe('GET /api/secrets/:id/meta', () => {
   test('returns requiresPassword true for password-protected secret', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'test-password-123' })
       .expect(201);
 
     const res = await request(app).get(`/api/secrets/${createRes.body.id}/meta`).expect(200);
@@ -303,7 +301,7 @@ describe('GET /api/secrets/:id/meta', () => {
   test('returns requiresPassword false for non-password secret', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const res = await request(app).get(`/api/secrets/${createRes.body.id}/meta`).expect(200);
@@ -326,7 +324,7 @@ describe('GET /api/secrets/:id/meta', () => {
   test('does not consume the secret (can be called multiple times)', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -349,7 +347,7 @@ describe('GET /api/secrets/:id bypass prevention', () => {
   test('returns 404 for password-protected secret (cannot bypass password)', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'test-password-123' })
       .expect(201);
 
     await request(app).get(`/api/secrets/${createRes.body.id}`).expect(404);
@@ -358,7 +356,7 @@ describe('GET /api/secrets/:id bypass prevention', () => {
   test('404 response for password-protected secret is identical to nonexistent secret', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'test-password-123' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'test-password-123' })
       .expect(201);
 
     // Password-bypass attempt
@@ -379,7 +377,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('returns ciphertext on correct password with 200', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const verifyRes = await request(app)
@@ -395,7 +393,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('destroys secret after successful verification (one-time use)', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     // First verify -- should succeed
@@ -414,7 +412,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('returns 403 with attemptsRemaining on wrong password', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const verifyRes = await request(app)
@@ -431,7 +429,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('decrements attemptsRemaining on each wrong attempt', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -458,7 +456,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('auto-destroys secret after 3 wrong attempts', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -486,7 +484,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('correct password still works after 2 wrong attempts', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -523,7 +521,7 @@ describe('POST /api/secrets/:id/verify', () => {
   test('returns 400 for missing password in body', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const res = await request(app)
@@ -615,7 +613,7 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
     const createRes = await request(notifyTestApp)
       .post('/api/secrets')
       .set('Cookie', notifyUserSessionCookie)
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', notify: true })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', notify: true })
       .expect(201);
 
     const { id } = createRes.body;
@@ -634,7 +632,7 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
     // POST without auth cookie, body includes notify:true
     const createRes = await request(notifyTestApp)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', notify: true })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', notify: true })
       .expect(201);
 
     const { id } = createRes.body;
@@ -717,13 +715,156 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Phase 27-01: Anonymous rate limits (CONV-01)
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets — anonymous rate limits', () => {
+  let rateLimitApp: Express;
+
+  beforeEach(() => {
+    // Fresh app per test — each buildApp() creates a new MemoryStore so
+    // rate limit counters do not bleed between tests.
+    rateLimitApp = buildApp();
+  });
+
+  test('anonymous user is limited to 3 secrets per hour', async () => {
+    // First 3 requests should succeed
+    for (let i = 0; i < 3; i++) {
+      await request(rateLimitApp)
+        .post('/api/secrets')
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+        .expect(201);
+    }
+
+    // 4th request should be rate limited
+    const limitedRes = await request(rateLimitApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+      .expect(429);
+
+    expect(limitedRes.body.error).toBe('rate_limited');
+    // RateLimit-Reset header must be a numeric string (Unix timestamp)
+    const resetHeader = limitedRes.headers['ratelimit-reset'];
+    expect(resetHeader).toBeDefined();
+    expect(Number.isFinite(parseInt(resetHeader, 10))).toBe(true);
+  });
+
+  test('authenticated user is not subject to hourly anonymous limit', async () => {
+    // Sign up and sign in to get a session cookie
+    const email = `rl-authed-test-${Date.now()}@test.secureshare.dev`;
+    const password = 'password-for-rl-test-123';
+    const { sessionCookie } = await createUserAndSignIn(
+      rateLimitApp,
+      email,
+      password,
+      'RL Test User',
+    );
+
+    try {
+      // Send 4 POST requests with session cookie — authenticated users bypass the 3/hour anon limit
+      for (let i = 0; i < 4; i++) {
+        await request(rateLimitApp)
+          .post('/api/secrets')
+          .set('Cookie', sessionCookie)
+          .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+          .expect(201);
+      }
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 27-01: expiresIn tier enforcement (CONV-02, CONV-03)
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets — expiresIn tier enforcement', () => {
+  let tierApp: Express;
+
+  beforeEach(() => {
+    tierApp = buildApp();
+  });
+
+  test('anonymous user cannot set expiresIn to 24h', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .expect(400);
+
+    expect(res.body.error).toBe('validation_error');
+  });
+
+  test('anonymous user cannot set expiresIn to 7d', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '7d' })
+      .expect(400);
+
+    expect(res.body.error).toBe('validation_error');
+  });
+
+  test('anonymous user cannot set expiresIn to 30d', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '30d' })
+      .expect(400);
+
+    expect(res.body.error).toBe('validation_error');
+  });
+
+  test('anonymous user can set expiresIn to 1h', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+      .expect(201);
+
+    expect(res.body.id).toHaveLength(21);
+  });
+
+  test('authenticated user can set expiresIn to 7d', async () => {
+    const email = `tier-7d-test-${Date.now()}@test.secureshare.dev`;
+    const password = 'password-for-tier-test-123';
+    const { sessionCookie } = await createUserAndSignIn(tierApp, email, password, 'Tier Test User');
+
+    try {
+      const res = await request(tierApp)
+        .post('/api/secrets')
+        .set('Cookie', sessionCookie)
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '7d' })
+        .expect(201);
+
+      expect(res.body.id).toHaveLength(21);
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+
+  test('authenticated user cannot set expiresIn to 30d', async () => {
+    const email = `tier-30d-test-${Date.now()}@test.secureshare.dev`;
+    const password = 'password-for-tier-test-123';
+    const { sessionCookie } = await createUserAndSignIn(tierApp, email, password, 'Tier Test User');
+
+    try {
+      const res = await request(tierApp)
+        .post('/api/secrets')
+        .set('Cookie', sessionCookie)
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '30d' })
+        .expect(400);
+
+      expect(res.body.error).toBe('validation_error');
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Phase 5: Anti-enumeration (password)
 // ---------------------------------------------------------------------------
 describe('anti-enumeration (password)', () => {
   test('destroyed secret response is identical to nonexistent secret response', async () => {
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', password: 'correct-password' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
       .expect(201);
 
     const { id } = createRes.body;

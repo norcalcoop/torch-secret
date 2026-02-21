@@ -86,7 +86,7 @@ describe('GET /api/secrets/:id expiration', () => {
     // Create via normal API flow (future expiration)
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const getRes = await request(app).get(`/api/secrets/${createRes.body.id}`).expect(200);

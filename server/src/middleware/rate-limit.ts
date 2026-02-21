@@ -26,8 +26,10 @@ function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
  * Allows max 3 creations per IP per hour for anonymous (unauthenticated) users.
  * Authenticated users are skipped via the `skip` callback (res.locals.user truthy).
  *
- * standardHeaders: 'draft-7' emits RateLimit-* headers so the client can read
- * RateLimit-Reset for countdown display on upsell prompts.
+ * standardHeaders: 'draft-6' emits separate RateLimit-Limit, RateLimit-Remaining, and
+ * RateLimit-Reset headers. draft-7 uses a combined header that does NOT include a
+ * standalone RateLimit-Reset — the client reads RateLimit-Reset individually for
+ * countdown display on upsell prompts (CONV-06), so draft-6 is required here.
  *
  * Applied as route-level middleware on POST /api/secrets AFTER optionalAuth so that
  * res.locals.user is populated before the skip callback fires.
@@ -36,7 +38,7 @@ export function createAnonHourlyLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     limit: isE2E ? 1000 : 3, // 3 creations per hour for anonymous users (1000 in E2E)
-    standardHeaders: 'draft-7', // RateLimit-* headers (IETF draft-7); client reads RateLimit-Reset
+    standardHeaders: 'draft-6', // Emits separate RateLimit-Reset header the client reads for countdown
     legacyHeaders: false, // No X-RateLimit-* headers
     statusCode: 429,
     message: {
@@ -58,8 +60,8 @@ export function createAnonHourlyLimiter(redisClient?: Redis) {
  * Authenticated users are skipped via the `skip` callback (res.locals.user truthy).
  *
  * standardHeaders: false — CRITICAL: prevents this daily limiter from overwriting
- * the RateLimit-* headers emitted by the hourly limiter. The hourly limiter's
- * RateLimit-Reset is what the client uses for countdown display on upsell prompts.
+ * the RateLimit-Reset header emitted by the hourly limiter (draft-6). The hourly
+ * limiter's RateLimit-Reset is what the client reads for countdown display (CONV-06).
  *
  * Applied as route-level middleware on POST /api/secrets AFTER optionalAuth.
  */
