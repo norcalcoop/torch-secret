@@ -10,7 +10,7 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 ### PASS — Passphrase Generation
 
 - [x] **PASS-01**: User can generate a 4-word EFF Diceware passphrase when creating a secret (generated client-side via crypto.getRandomValues, enabled by default)
-- [ ] **PASS-02**: User can regenerate the passphrase with a single click before submitting the form
+- [x] **PASS-02**: User can regenerate the passphrase with a single click before submitting the form
 - [x] **PASS-03**: User can copy the passphrase independently from the share link on the confirmation page
 - [x] **PASS-04**: Confirmation page displays two-channel security guidance (share link via one channel, passphrase via another)
 
@@ -108,7 +108,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PASS-01 | Phase 24 | Complete |
-| PASS-02 | Phase 24 | Pending |
+| PASS-02 | Phase 24 | Complete |
 | PASS-03 | Phase 24 | Complete |
 | PASS-04 | Phase 24 | Complete |
 | AUTH-01 | Phase 22 | Complete |

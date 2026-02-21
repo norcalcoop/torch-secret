@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 24 of 27 (EFF Diceware Passphrase Generator) — IN PROGRESS
-Plan: 2 of 4 complete (24-02 Confirmation Page Passphrase UI — all tasks done)
-Status: Phase 24 Plan 02 complete — passphrase card + two-channel guidance on confirmation page; 111 client tests pass
-Last activity: 2026-02-20 — Phase 24 Plan 02 committed (confirmation page passphrase card + guidance)
+Plan: 3 of 4 complete (24-03 Create Page Passphrase UI — Task 1 done, awaiting human verify checkpoint)
+Status: Phase 24 Plan 03 Task 1 complete — passphrase section on create page, Advanced options removed, currentPassphrase threaded to confirmation; 111 client tests pass
+Last activity: 2026-02-21 — Phase 24 Plan 03 committed (create page passphrase section)
 
 Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04)
 
@@ -39,6 +39,7 @@ Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements com
 | Phase 23 P05 | 8 | 1 tasks | 2 files |
 | Phase 24-eff-diceware-passphrase-generator P01 | 3 | 2 tasks | 4 files |
 | Phase 24-eff-diceware-passphrase-generator P02 | 3 | 2 tasks | 1 files |
+| Phase 24-eff-diceware-passphrase-generator P03 | 3 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 24-eff-diceware-passphrase-generator]: Added no-unsafe-call: off to ESLint test file override — importing unresolved modules during TDD RED phase causes false positives
 - [Phase 24-02]: Two separate if (passphrase) blocks in confirmation.ts — matches existing if (label) pattern; separate blocks improve readability over merging
 - [Phase 24-02]: Passphrase card uses same glassmorphism styling (bg-surface/80 backdrop-blur-md) as urlCard — visual parity signals equal importance of link and passphrase
+- [Phase 24-03]: Hidden passwordInput placed after passphraseGroup in DOM — always synced with currentPassphrase; no visible UI needed (Phase 24-03)
+- [Phase 24-03]: Progressive label enhancement insertBefore(labelField, errorArea) — errorArea is stable anchor after Advanced options removal (Phase 24-03)
 
 ### Known Tech Debt
 
@@ -113,6 +116,6 @@ Key v4.0 architectural constraints (carry forward to every phase):
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 24-02-PLAN.md — confirmation page passphrase card + two-channel guidance
-Resume: Phase 24 Plan 02 complete — continue with Phase 24 Plan 03 (create page passphrase UI)
+Last session: 2026-02-21
+Stopped at: Phase 24 Plan 03 Task 1 complete — paused at checkpoint:human-verify (Task 2)
+Resume: Phase 24 Plan 03 awaiting human verification — run dev servers and verify full create→confirmation passphrase flow (8 steps in plan)
