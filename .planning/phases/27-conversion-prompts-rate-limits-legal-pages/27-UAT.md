@@ -3,7 +3,7 @@ status: resolved
 phase: 27-conversion-prompts-rate-limits-legal-pages
 source: 27-01-SUMMARY.md, 27-02-SUMMARY.md, 27-03-SUMMARY.md
 started: 2026-02-21T00:00:00Z
-updated: 2026-02-21T18:00:00Z
+updated: 2026-02-21T19:00:00Z
 ---
 
 ## Current Test
@@ -38,9 +38,8 @@ result: pass
 
 ### 7. Rate-limit upsell appears after 3 anonymous creations
 expected: After creating 3 secrets as a logged-out user, attempting to create a 4th shows an inline upsell card — not a red error message. The card shows a countdown timer, a benefit line, and a "Sign up — it's free" CTA. It should not be styled in danger/red.
-result: issue
-reported: "Upsell card appears with correct neutral styling and CTA, but countdown shows 'Limit resets soon.' instead of the actual time remaining (e.g. 'Limit resets in 26 minutes'). Timer never shows a real value."
-severity: minor
+result: pass
+verified: "Upsell card shows 'Limit resets in 60 minutes.' with correct neutral styling and 'Sign up — it's free' CTA. Countdown displays actual time remaining (fixed by plan 27-04)."
 
 ### 8. Server rejects >1h expiration for anonymous users
 expected: In the browser Network tab (or via curl), a POST to /api/secrets with expiresIn "24h" while unauthenticated returns HTTP 400. A POST with expiresIn "1h" returns 201.
@@ -69,8 +68,8 @@ result: pass
 ## Summary
 
 total: 13
-passed: 12
-issues: 1
+passed: 13
+issues: 0
 pending: 0
 skipped: 0
 
