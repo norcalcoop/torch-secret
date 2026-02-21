@@ -21,32 +21,95 @@ function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
 }
 
 /**
- * Create a rate limiter for POST /api/secrets.
+ * Create a rate limiter for anonymous secret creation — hourly window.
  *
- * Returns a fresh middleware instance. Uses RedisStore when a Redis
- * client is provided (multi-instance deployments), otherwise falls
- * back to MemoryStore (default). passOnStoreError ensures requests
- * are allowed through if Redis is temporarily unavailable.
+ * Allows max 3 creations per IP per hour for anonymous (unauthenticated) users.
+ * Authenticated users are skipped via the `skip` callback (res.locals.user truthy).
  *
- * Allows max 10 secret creations per IP per hour.
- * Applied as route-level middleware (NOT global) so that
- * GET /api/secrets/:id remains unrestricted -- retrieving
- * a secret is a one-time operation, not abuse-prone.
+ * standardHeaders: 'draft-7' emits RateLimit-* headers so the client can read
+ * RateLimit-Reset for countdown display on upsell prompts.
+ *
+ * Applied as route-level middleware on POST /api/secrets AFTER optionalAuth so that
+ * res.locals.user is populated before the skip callback fires.
  */
-export function createSecretLimiter(redisClient?: Redis) {
+export function createAnonHourlyLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    limit: isE2E ? 1000 : 10, // 10 requests per window per IP (1000 in test)
-    standardHeaders: 'draft-7', // RateLimit-* headers (IETF draft-7)
+    limit: isE2E ? 1000 : 3, // 3 creations per hour for anonymous users (1000 in E2E)
+    standardHeaders: 'draft-7', // RateLimit-* headers (IETF draft-7); client reads RateLimit-Reset
     legacyHeaders: false, // No X-RateLimit-* headers
     statusCode: 429,
     message: {
       error: 'rate_limited',
-      message: 'Too many secrets created. Please try again later.',
+      message: 'Too many secrets created. Create a free account for higher limits.',
     },
-    store: createStore(redisClient, 'rl:create:'),
+    store: createStore(redisClient, 'rl:anon:h:'),
     passOnStoreError: true,
+    // Skip authenticated users — they have their own daily limiter
+    skip: (_req, res) => !!(res.locals.user as unknown),
     // Default keyGenerator uses req.ip, which works correctly with trust proxy
+  });
+}
+
+/**
+ * Create a rate limiter for anonymous secret creation — daily window.
+ *
+ * Allows max 10 creations per IP per day for anonymous (unauthenticated) users.
+ * Authenticated users are skipped via the `skip` callback (res.locals.user truthy).
+ *
+ * standardHeaders: false — CRITICAL: prevents this daily limiter from overwriting
+ * the RateLimit-* headers emitted by the hourly limiter. The hourly limiter's
+ * RateLimit-Reset is what the client uses for countdown display on upsell prompts.
+ *
+ * Applied as route-level middleware on POST /api/secrets AFTER optionalAuth.
+ */
+export function createAnonDailyLimiter(redisClient?: Redis) {
+  return rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    limit: isE2E ? 1000 : 10, // 10 creations per day for anonymous users (1000 in E2E)
+    standardHeaders: false, // Do NOT overwrite hourly RateLimit-* headers the client depends on
+    legacyHeaders: false,
+    statusCode: 429,
+    message: {
+      error: 'rate_limited',
+      message:
+        'Daily limit reached for anonymous sharing. Create a free account for higher limits.',
+    },
+    store: createStore(redisClient, 'rl:anon:d:'),
+    passOnStoreError: true,
+    // Skip authenticated users — they have their own daily limiter
+    skip: (_req, res) => !!(res.locals.user as unknown),
+  });
+}
+
+/**
+ * Create a rate limiter for authenticated secret creation — daily window.
+ *
+ * Allows max 20 creations per user per day for authenticated users.
+ * Anonymous users (res.locals.user falsy) are skipped.
+ *
+ * keyGenerator uses the authenticated user's ID (not req.ip) to avoid
+ * shared-IP false positives for authenticated users on NAT/corporate networks.
+ *
+ * Applied as route-level middleware on POST /api/secrets AFTER optionalAuth.
+ */
+export function createAuthedDailyLimiter(redisClient?: Redis) {
+  return rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    limit: isE2E ? 1000 : 20, // 20 creations per day for authenticated users (1000 in E2E)
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    statusCode: 429,
+    message: {
+      error: 'rate_limited',
+      message: 'Daily limit reached. You can create 20 secrets per day.',
+    },
+    store: createStore(redisClient, 'rl:authed:d:'),
+    passOnStoreError: true,
+    // Skip anonymous users — they use the anon hourly/daily limiters
+    skip: (_req, res) => !(res.locals.user as unknown),
+    // Per-user counter keyed on userId, not IP — avoids shared-IP false positives
+    keyGenerator: (_req, res) => (res.locals.user as { id: string }).id,
   });
 }
 
