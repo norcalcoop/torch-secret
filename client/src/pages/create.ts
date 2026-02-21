@@ -2,8 +2,8 @@
  * Create secret page.
  *
  * Renders the complete secret creation form: textarea with character counter,
- * expiration selector, auto-generated EFF diceware passphrase section (Phase 24),
- * and submit button that encrypts in the browser and posts to the API.
+ * expiration selector, optional collapsible protection panel (Phase 28), and
+ * submit button that encrypts in the browser and posts to the API.
  *
  * After successful creation, renders the confirmation page in the same container
  * (state-based transition, not URL-based).
@@ -14,17 +14,18 @@
  * Additionally, a per-secret notification toggle ('Email me when this secret is
  * viewed') is injected for authenticated users -- off by default.
  *
- * Phase 24: The "Advanced options" password field has been replaced with an
- * auto-generated EFF diceware passphrase displayed in a monospace block with
- * Regenerate and Copy buttons. Every secret is now password-protected by default.
- *
- * Phase 27: Auth-aware expiration select — anonymous users see locked "1 hour"
- * display; authenticated users see 1h/24h/7d select. Session-level
- * anonymousSecretCount triggers conversion prompts at creation 1 and 3.
- * 429 responses show an inline upsell card with countdown instead of generic error.
+ * Phase 28: protection is opt-in via collapsible panel; password generator or
+ * passphrase mode. When the panel is closed, no password is sent to the API.
+ * When password mode is active, a full 1Password/Bitwarden-style generator is
+ * shown: tier selector (Low/Medium/High/Max), charset checkboxes (Uppercase/
+ * Numbers/Symbols), filter checkboxes (Easy to say/Easy to read/Omit similar),
+ * entropy + brute-force estimate, Regenerate, Copy, and "Use this password"
+ * to commit the generated value. When passphrase mode is active, the auto-
+ * generated EFF diceware passphrase is shown in a masked input with eye toggle,
+ * Regenerate, and Copy.
  */
 
-import { encrypt, generatePassphrase } from '../crypto/index.js';
+import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
 import { createSecret, ApiError } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
 import {
@@ -44,13 +45,17 @@ import {
   LockKeyhole,
   Share2,
   Flame,
+  Eye,
   EyeOff,
   Code,
   UserX,
   ShieldCheck,
-  RefreshCw,
+  Dices,
+  Copy,
+  Check,
 } from 'lucide';
 import { createIcon } from '../components/icons.js';
+import { showToast } from '../components/toast.js';
 
 const MAX_LENGTH = 10_000;
 
@@ -215,19 +220,627 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
   captureConversionPromptShown('rate_limit');
 }
 
+// ---------------------------------------------------------------------------
+// Protection panel
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates the collapsible "Add protection" panel with a segmented
+ * Password | Passphrase control.
+ *
+ * Password tab: tier selector, charset/filter checkboxes, preview field with
+ * copy button, entropy + brute-force estimate, Regenerate, "Use this password"
+ * commit button, and a masked applied-password field with eye toggle.
+ *
+ * Passphrase tab: auto-generated EFF diceware passphrase in a masked input
+ * (editable) with eye toggle, Regenerate, and Copy.
+ *
+ * Returns the panel element and two accessors:
+ *   - getPassword(): string | undefined — the value to send to the API
+ *   - getPassphrase(): string | undefined — the passphrase to display on the
+ *     confirmation card (only truthy when passphrase mode is active)
+ *
+ * Phase 28: protection is opt-in (panel collapsed = mode 'none').
+ */
+function createProtectionPanel(): {
+  element: HTMLElement;
+  getPassword: () => string | undefined;
+  getPassphrase: () => string | undefined;
+} {
+  // ---- Closure state ----
+  let protectionMode: 'none' | 'password' | 'passphrase' = 'none';
+  let currentPassphrase: string = generatePassphrase();
+  let currentPassword: string = ''; // the APPLIED password (after "Use this password" clicked)
+  let previewPassword: string = ''; // the PREVIEW from the generator (not yet applied)
+
+  type PasswordTierLocal = 'low' | 'medium' | 'high' | 'max';
+  let activeTier: PasswordTierLocal = 'high';
+
+  // ---- Helper: create a labelled checkbox ----
+  function createCheckbox(
+    id: string,
+    labelText: string,
+    checked: boolean,
+  ): { element: HTMLElement; input: HTMLInputElement } {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-center gap-2';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = id;
+    checkbox.checked = checked;
+    checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.className = 'text-sm text-text-secondary cursor-pointer select-none';
+    label.textContent = labelText;
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(label);
+    return { element: wrapper, input: checkbox };
+  }
+
+  // ---- Root details element ----
+  const details = document.createElement('details');
+  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+
+  const summary = document.createElement('summary');
+  summary.className =
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
+  summary.textContent = 'Add protection';
+  details.appendChild(summary);
+
+  const panelContent = document.createElement('div');
+  panelContent.className = 'px-4 pb-4 space-y-4';
+  details.appendChild(panelContent);
+
+  // ---- Segmented control: Password | Passphrase ----
+  const segControl = document.createElement('div');
+  segControl.setAttribute('role', 'group');
+  segControl.setAttribute('aria-label', 'Protection type');
+  segControl.className = 'flex gap-1 p-1 rounded-lg bg-surface-raised border border-border';
+  panelContent.appendChild(segControl);
+
+  const activeTabClass =
+    'flex-1 px-4 py-2 min-h-[36px] rounded-md bg-accent text-white text-sm font-semibold transition-colors cursor-pointer';
+  const inactiveTabClass =
+    'flex-1 px-4 py-2 min-h-[36px] rounded-md text-text-secondary text-sm hover:text-text-primary transition-colors cursor-pointer';
+
+  const passwordTabBtn = document.createElement('button');
+  passwordTabBtn.type = 'button';
+  passwordTabBtn.textContent = 'Password';
+  passwordTabBtn.className = activeTabClass;
+  passwordTabBtn.setAttribute('aria-pressed', 'true');
+  segControl.appendChild(passwordTabBtn);
+
+  const passphraseTabBtn = document.createElement('button');
+  passphraseTabBtn.type = 'button';
+  passphraseTabBtn.textContent = 'Passphrase';
+  passphraseTabBtn.className = inactiveTabClass;
+  passphraseTabBtn.setAttribute('aria-pressed', 'false');
+  segControl.appendChild(passphraseTabBtn);
+
+  // ---- Password section ----
+  const passwordSection = document.createElement('div');
+  passwordSection.className = 'space-y-4';
+  panelContent.appendChild(passwordSection);
+
+  // a) Preview row
+  const previewRow = document.createElement('div');
+  previewRow.className = 'space-y-1';
+  passwordSection.appendChild(previewRow);
+
+  const previewLabel = document.createElement('p');
+  previewLabel.className = 'text-xs text-text-muted';
+  previewLabel.textContent = 'Generated password';
+  previewRow.appendChild(previewLabel);
+
+  const previewContainer = document.createElement('div');
+  previewContainer.className = 'relative';
+  previewRow.appendChild(previewContainer);
+
+  const previewField = document.createElement('div');
+  previewField.setAttribute('aria-live', 'polite');
+  previewField.setAttribute('aria-label', 'Generated password');
+  previewField.className =
+    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface/60 text-text-primary font-mono text-sm flex items-center break-all';
+  previewField.addEventListener('click', () => {
+    const selection = window.getSelection();
+    if (selection && previewField.firstChild) {
+      const range = document.createRange();
+      range.selectNodeContents(previewField);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+  previewContainer.appendChild(previewField);
+
+  // Copy preview button (absolutely positioned inside container)
+  const copyPreviewBtn = document.createElement('button');
+  copyPreviewBtn.type = 'button';
+  copyPreviewBtn.setAttribute('aria-label', 'Copy generated password');
+  copyPreviewBtn.className =
+    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  const copyPreviewIconSpan = document.createElement('span');
+  copyPreviewIconSpan.className = 'inline-flex';
+  copyPreviewIconSpan.appendChild(createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }));
+  copyPreviewBtn.appendChild(copyPreviewIconSpan);
+  copyPreviewBtn.addEventListener('click', () => {
+    if (!previewPassword) return;
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(previewPassword);
+        showToast('Copied to clipboard');
+        // Flash check icon
+        while (copyPreviewIconSpan.firstChild)
+          copyPreviewIconSpan.removeChild(copyPreviewIconSpan.firstChild);
+        copyPreviewIconSpan.appendChild(
+          createIcon(Check, { size: 'sm', class: 'pointer-events-none' }),
+        );
+        setTimeout(() => {
+          while (copyPreviewIconSpan.firstChild)
+            copyPreviewIconSpan.removeChild(copyPreviewIconSpan.firstChild);
+          copyPreviewIconSpan.appendChild(
+            createIcon(Copy, { size: 'sm', class: 'pointer-events-none' }),
+          );
+        }, 1500);
+      } catch {
+        showToast('Failed to copy');
+      }
+    })();
+  });
+  previewContainer.appendChild(copyPreviewBtn);
+
+  // Entropy/brute force line
+  const entropyLine = document.createElement('p');
+  entropyLine.className = 'text-xs text-text-muted';
+  entropyLine.setAttribute('aria-live', 'polite');
+  previewRow.appendChild(entropyLine);
+
+  // b) Tier selector
+  const tierRow = document.createElement('div');
+  tierRow.className = 'space-y-1';
+  passwordSection.appendChild(tierRow);
+
+  const tierLabel = document.createElement('p');
+  tierLabel.className = 'text-xs font-medium text-text-secondary';
+  tierLabel.textContent = 'Strength';
+  tierRow.appendChild(tierLabel);
+
+  const tierControl = document.createElement('div');
+  tierControl.setAttribute('role', 'group');
+  tierControl.setAttribute('aria-label', 'Password strength');
+  tierControl.className = 'flex gap-1 p-1 rounded-lg bg-surface-raised border border-border';
+  tierRow.appendChild(tierControl);
+
+  const tierActiveCls =
+    'flex-1 px-2 py-1.5 min-h-[32px] rounded-md bg-accent text-white text-xs font-semibold transition-colors cursor-pointer';
+  const tierInactiveCls =
+    'flex-1 px-2 py-1.5 min-h-[32px] rounded-md text-text-secondary text-xs hover:text-text-primary transition-colors cursor-pointer';
+
+  const tierButtons: Record<PasswordTierLocal, HTMLButtonElement> = {
+    low: document.createElement('button'),
+    medium: document.createElement('button'),
+    high: document.createElement('button'),
+    max: document.createElement('button'),
+  };
+
+  const tierNames: PasswordTierLocal[] = ['low', 'medium', 'high', 'max'];
+  const tierLabels: Record<PasswordTierLocal, string> = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    max: 'Max',
+  };
+
+  for (const tier of tierNames) {
+    const btn = tierButtons[tier];
+    btn.type = 'button';
+    btn.textContent = tierLabels[tier];
+    btn.className = tier === 'high' ? tierActiveCls : tierInactiveCls;
+    btn.setAttribute('aria-pressed', tier === 'high' ? 'true' : 'false');
+    tierControl.appendChild(btn);
+  }
+
+  // c) Charset checkboxes
+  const charsetRow = document.createElement('div');
+  charsetRow.className = 'space-y-1';
+  passwordSection.appendChild(charsetRow);
+
+  const charsetLabel = document.createElement('p');
+  charsetLabel.className = 'text-xs font-medium text-text-secondary';
+  charsetLabel.textContent = 'Character set';
+  charsetRow.appendChild(charsetLabel);
+
+  const charsetBoxes = document.createElement('div');
+  charsetBoxes.className = 'flex flex-wrap gap-x-6 gap-y-2';
+  charsetRow.appendChild(charsetBoxes);
+
+  const uppercaseCb = createCheckbox('gen-uppercase', 'Uppercase', true); // high tier default
+  const numbersCb = createCheckbox('gen-numbers', 'Numbers', true);
+  const symbolsCb = createCheckbox('gen-symbols', 'Symbols', true);
+  charsetBoxes.appendChild(uppercaseCb.element);
+  charsetBoxes.appendChild(numbersCb.element);
+  charsetBoxes.appendChild(symbolsCb.element);
+
+  // d) Filter checkboxes
+  const filterRow = document.createElement('div');
+  filterRow.className = 'space-y-1';
+  passwordSection.appendChild(filterRow);
+
+  const filterLabel = document.createElement('p');
+  filterLabel.className = 'text-xs font-medium text-text-secondary';
+  filterLabel.textContent = 'Filters';
+  filterRow.appendChild(filterLabel);
+
+  const filterBoxes = document.createElement('div');
+  filterBoxes.className = 'flex flex-wrap gap-x-6 gap-y-2';
+  filterRow.appendChild(filterBoxes);
+
+  const easyToSayCb = createCheckbox('gen-easy-to-say', 'Easy to say', false);
+  const easyToReadCb = createCheckbox('gen-easy-to-read', 'Easy to read', false);
+  const omitSimilarCb = createCheckbox('gen-omit-similar', 'Omit similar', false);
+  filterBoxes.appendChild(easyToSayCb.element);
+  filterBoxes.appendChild(easyToReadCb.element);
+  filterBoxes.appendChild(omitSimilarCb.element);
+
+  // e) Error line
+  const genError = document.createElement('p');
+  genError.className = 'hidden text-xs text-danger';
+  genError.setAttribute('role', 'alert');
+  genError.id = 'gen-error';
+  genError.textContent =
+    'These filter settings are incompatible \u2014 please adjust your settings.';
+  passwordSection.appendChild(genError);
+
+  // f) Action row
+  const passwordActionRow = document.createElement('div');
+  passwordActionRow.className = 'flex items-center justify-between gap-3 flex-wrap';
+  passwordSection.appendChild(passwordActionRow);
+
+  const regenerateBtn = document.createElement('button');
+  regenerateBtn.type = 'button';
+  regenerateBtn.setAttribute('aria-label', 'Generate a new password');
+  regenerateBtn.className =
+    'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
+  regenerateBtn.appendChild(createIcon(Dices, { size: 'sm' }));
+  const regenLabelSpan = document.createElement('span');
+  regenLabelSpan.textContent = 'Regenerate';
+  regenerateBtn.appendChild(regenLabelSpan);
+  passwordActionRow.appendChild(regenerateBtn);
+
+  const usePasswordBtn = document.createElement('button');
+  usePasswordBtn.type = 'button';
+  usePasswordBtn.className =
+    'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
+  usePasswordBtn.appendChild(createIcon(Check, { size: 'sm' }));
+  const usePasswordLabel = document.createElement('span');
+  usePasswordLabel.textContent = 'Use this password';
+  usePasswordBtn.appendChild(usePasswordLabel);
+  passwordActionRow.appendChild(usePasswordBtn);
+
+  // g) Applied password field (hidden until "Use this password" clicked)
+  const appliedPasswordGroup = document.createElement('div');
+  appliedPasswordGroup.className = 'hidden space-y-1';
+  passwordSection.appendChild(appliedPasswordGroup);
+
+  const appliedPasswordLabel = document.createElement('label');
+  appliedPasswordLabel.htmlFor = 'applied-password';
+  appliedPasswordLabel.className = 'block text-sm font-medium text-text-secondary';
+  appliedPasswordLabel.textContent = 'Password';
+  appliedPasswordGroup.appendChild(appliedPasswordLabel);
+
+  const appliedPasswordWrapper = document.createElement('div');
+  appliedPasswordWrapper.className = 'relative';
+  appliedPasswordGroup.appendChild(appliedPasswordWrapper);
+
+  const appliedPasswordInput = document.createElement('input');
+  appliedPasswordInput.type = 'password';
+  appliedPasswordInput.id = 'applied-password';
+  appliedPasswordInput.readOnly = true;
+  appliedPasswordInput.className =
+    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
+  appliedPasswordWrapper.appendChild(appliedPasswordInput);
+
+  const appliedRevealToggle = document.createElement('button');
+  appliedRevealToggle.type = 'button';
+  appliedRevealToggle.setAttribute('aria-label', 'Show password');
+  appliedRevealToggle.className =
+    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  const appliedEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+  const appliedEyeOffEl = createIcon(EyeOff, {
+    size: 'sm',
+    class: 'pointer-events-none hidden',
+  });
+  appliedRevealToggle.appendChild(appliedEyeEl);
+  appliedRevealToggle.appendChild(appliedEyeOffEl);
+  let appliedPasswordVisible = false;
+  appliedRevealToggle.addEventListener('click', () => {
+    appliedPasswordVisible = !appliedPasswordVisible;
+    appliedPasswordInput.type = appliedPasswordVisible ? 'text' : 'password';
+    appliedRevealToggle.setAttribute(
+      'aria-label',
+      appliedPasswordVisible ? 'Hide password' : 'Show password',
+    );
+    appliedEyeEl.classList.toggle('hidden', appliedPasswordVisible);
+    appliedEyeOffEl.classList.toggle('hidden', !appliedPasswordVisible);
+  });
+  appliedPasswordWrapper.appendChild(appliedRevealToggle);
+
+  // ---- Passphrase section (hidden by default) ----
+  const passphraseSection = document.createElement('div');
+  passphraseSection.className = 'hidden space-y-3';
+  panelContent.appendChild(passphraseSection);
+
+  const passphraseSectionLabel = document.createElement('p');
+  passphraseSectionLabel.className = 'text-xs font-medium text-text-secondary';
+  passphraseSectionLabel.textContent = 'Passphrase';
+  passphraseSection.appendChild(passphraseSectionLabel);
+
+  const passphraseHint = document.createElement('p');
+  passphraseHint.className = 'text-xs text-text-muted';
+  passphraseHint.textContent = 'Auto-generated. Recipients will need this to view your secret.';
+  passphraseSection.appendChild(passphraseHint);
+
+  const passphraseWrapper = document.createElement('div');
+  passphraseWrapper.className = 'relative';
+  passphraseSection.appendChild(passphraseWrapper);
+
+  const passphraseInput = document.createElement('input');
+  passphraseInput.type = 'password';
+  passphraseInput.setAttribute('aria-label', 'Passphrase');
+  passphraseInput.value = currentPassphrase;
+  passphraseInput.readOnly = false;
+  passphraseInput.className =
+    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden font-mono text-sm';
+  passphraseInput.addEventListener('input', () => {
+    currentPassphrase = passphraseInput.value;
+  });
+  passphraseWrapper.appendChild(passphraseInput);
+
+  const passphraseRevealToggle = document.createElement('button');
+  passphraseRevealToggle.type = 'button';
+  passphraseRevealToggle.setAttribute('aria-label', 'Show passphrase');
+  passphraseRevealToggle.className =
+    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  const passphraseEyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+  const passphraseEyeOffEl = createIcon(EyeOff, {
+    size: 'sm',
+    class: 'pointer-events-none hidden',
+  });
+  passphraseRevealToggle.appendChild(passphraseEyeEl);
+  passphraseRevealToggle.appendChild(passphraseEyeOffEl);
+  let passphraseVisible = false;
+  passphraseRevealToggle.addEventListener('click', () => {
+    passphraseVisible = !passphraseVisible;
+    passphraseInput.type = passphraseVisible ? 'text' : 'password';
+    passphraseRevealToggle.setAttribute(
+      'aria-label',
+      passphraseVisible ? 'Hide passphrase' : 'Show passphrase',
+    );
+    passphraseEyeEl.classList.toggle('hidden', passphraseVisible);
+    passphraseEyeOffEl.classList.toggle('hidden', !passphraseVisible);
+  });
+  passphraseWrapper.appendChild(passphraseRevealToggle);
+
+  const passphraseActionRow = document.createElement('div');
+  passphraseActionRow.className = 'flex items-center gap-3 flex-wrap';
+  passphraseSection.appendChild(passphraseActionRow);
+
+  const newPassphraseBtn = document.createElement('button');
+  newPassphraseBtn.type = 'button';
+  newPassphraseBtn.setAttribute('aria-label', 'Generate a new passphrase');
+  newPassphraseBtn.className =
+    'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
+  newPassphraseBtn.appendChild(createIcon(Dices, { size: 'sm' }));
+  const newPassphraseLabelSpan = document.createElement('span');
+  newPassphraseLabelSpan.textContent = 'New passphrase';
+  newPassphraseBtn.appendChild(newPassphraseLabelSpan);
+  passphraseActionRow.appendChild(newPassphraseBtn);
+
+  const copyPassphraseBtn = createCopyButton(() => currentPassphrase, 'Copy');
+  passphraseActionRow.appendChild(copyPassphraseBtn);
+
+  // ---- Internal: helpers for tier default checkboxes ----
+  function applyTierDefaults(tier: PasswordTierLocal): void {
+    switch (tier) {
+      case 'low':
+        uppercaseCb.input.checked = false;
+        numbersCb.input.checked = false;
+        symbolsCb.input.checked = false;
+        break;
+      case 'medium':
+        uppercaseCb.input.checked = true;
+        numbersCb.input.checked = true;
+        symbolsCb.input.checked = false;
+        break;
+      case 'high':
+      case 'max':
+        uppercaseCb.input.checked = true;
+        numbersCb.input.checked = true;
+        symbolsCb.input.checked = true;
+        break;
+    }
+  }
+
+  // ---- Regenerate function ----
+  function regenerate(): void {
+    try {
+      const result = generatePassword({
+        tier: activeTier,
+        uppercase: uppercaseCb.input.checked,
+        numbers: numbersCb.input.checked,
+        symbols: symbolsCb.input.checked,
+        easyToSay: easyToSayCb.input.checked,
+        easyToRead: easyToReadCb.input.checked,
+        omitSimilar: omitSimilarCb.input.checked,
+      });
+      previewPassword = result.password;
+      previewField.textContent = previewPassword;
+      const tierLabelStr = activeTier.charAt(0).toUpperCase() + activeTier.slice(1);
+      entropyLine.textContent = `${tierLabelStr} \u00b7 ~${Math.round(result.entropyBits)} bits \u00b7 ${result.bruteForceEstimate}`;
+      genError.classList.add('hidden');
+    } catch {
+      genError.classList.remove('hidden');
+      previewField.textContent = '';
+      previewPassword = '';
+      entropyLine.textContent = '';
+    }
+  }
+
+  // ---- Apply password ----
+  function applyPassword(): void {
+    if (!previewPassword) return;
+    currentPassword = previewPassword;
+    appliedPasswordInput.value = currentPassword;
+    appliedPasswordGroup.classList.remove('hidden');
+  }
+
+  // ---- Wire tier buttons ----
+  for (const tier of tierNames) {
+    tierButtons[tier].addEventListener('click', () => {
+      if (activeTier === tier) return;
+      activeTier = tier;
+      for (const t of tierNames) {
+        tierButtons[t].className = t === tier ? tierActiveCls : tierInactiveCls;
+        tierButtons[t].setAttribute('aria-pressed', t === tier ? 'true' : 'false');
+      }
+      applyTierDefaults(tier);
+      regenerate();
+    });
+  }
+
+  // ---- Wire charset/filter checkboxes ----
+  for (const cb of [uppercaseCb, numbersCb, symbolsCb]) {
+    cb.input.addEventListener('change', regenerate);
+  }
+
+  easyToSayCb.input.addEventListener('change', () => {
+    if (easyToSayCb.input.checked) {
+      // easyToSay overrides charset — visually disable and uncheck Uppercase/Numbers/Symbols
+      uppercaseCb.input.checked = false;
+      uppercaseCb.input.disabled = true;
+      numbersCb.input.checked = false;
+      numbersCb.input.disabled = true;
+      symbolsCb.input.checked = false;
+      symbolsCb.input.disabled = true;
+    } else {
+      uppercaseCb.input.disabled = false;
+      numbersCb.input.disabled = false;
+      symbolsCb.input.disabled = false;
+      // Restore tier defaults on uncheck
+      applyTierDefaults(activeTier);
+    }
+    regenerate();
+  });
+
+  easyToReadCb.input.addEventListener('change', regenerate);
+  omitSimilarCb.input.addEventListener('change', regenerate);
+
+  // ---- Wire action buttons ----
+  regenerateBtn.addEventListener('click', regenerate);
+  usePasswordBtn.addEventListener('click', applyPassword);
+
+  newPassphraseBtn.addEventListener('click', () => {
+    currentPassphrase = generatePassphrase();
+    passphraseInput.value = currentPassphrase;
+  });
+
+  // ---- Tab switching logic ----
+  function switchToPassword(): void {
+    protectionMode = 'password';
+    passphraseSection.classList.add('hidden');
+    passwordSection.classList.remove('hidden');
+    passwordTabBtn.className = activeTabClass;
+    passwordTabBtn.setAttribute('aria-pressed', 'true');
+    passphraseTabBtn.className = inactiveTabClass;
+    passphraseTabBtn.setAttribute('aria-pressed', 'false');
+    // Clear any previously applied passphrase
+    // currentPassphrase remains for when user returns to passphrase tab
+    regenerate();
+  }
+
+  function switchToPassphrase(): void {
+    protectionMode = 'passphrase';
+    passwordSection.classList.add('hidden');
+    passphraseSection.classList.remove('hidden');
+    passphraseTabBtn.className = activeTabClass;
+    passphraseTabBtn.setAttribute('aria-pressed', 'true');
+    passwordTabBtn.className = inactiveTabClass;
+    passwordTabBtn.setAttribute('aria-pressed', 'false');
+    // Clear applied password when switching away from password mode
+    currentPassword = '';
+    appliedPasswordInput.value = '';
+    appliedPasswordGroup.classList.add('hidden');
+  }
+
+  passwordTabBtn.addEventListener('click', () => {
+    if (protectionMode === 'password') return;
+    switchToPassword();
+  });
+
+  passphraseTabBtn.addEventListener('click', () => {
+    if (protectionMode === 'passphrase') return;
+    switchToPassphrase();
+  });
+
+  // ---- Details toggle: open = password mode, close = none ----
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      // Default to password mode when panel opens
+      protectionMode = 'password';
+      // Ensure password tab is active (it always is on first open,
+      // but also on re-open after close)
+      passwordSection.classList.remove('hidden');
+      passphraseSection.classList.add('hidden');
+      passwordTabBtn.className = activeTabClass;
+      passwordTabBtn.setAttribute('aria-pressed', 'true');
+      passphraseTabBtn.className = inactiveTabClass;
+      passphraseTabBtn.setAttribute('aria-pressed', 'false');
+      regenerate();
+    } else {
+      // Panel closed — clear all state
+      protectionMode = 'none';
+      currentPassword = '';
+      appliedPasswordInput.value = '';
+      appliedPasswordGroup.classList.add('hidden');
+      // Reset passphrase to a fresh one so re-opening shows a new one
+      currentPassphrase = generatePassphrase();
+      passphraseInput.value = currentPassphrase;
+    }
+  });
+
+  // ---- Accessors ----
+  return {
+    element: details,
+    getPassword: (): string | undefined => {
+      if (protectionMode === 'password') return currentPassword || undefined;
+      if (protectionMode === 'passphrase') return currentPassphrase || undefined;
+      return undefined;
+    },
+    getPassphrase: (): string | undefined => {
+      if (protectionMode === 'passphrase') return currentPassphrase || undefined;
+      return undefined;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Main page renderer
+// ---------------------------------------------------------------------------
+
 /**
  * Render the create page into the given container.
  *
  * Returns void synchronously -- the auth check for progressive label enhancement
  * runs as a fire-and-forget IIFE (void async pattern) after the form is painted.
  * PageRenderer in router.ts accepts void | Promise<void> so this is compatible.
+ *
+ * Phase 28: protection is opt-in via collapsible panel; password generator or
+ * passphrase mode. Submit handler reads from protectionPanel.getPassword()
+ * (undefined when no protection selected). renderConfirmationPage receives
+ * protectionPanel.getPassphrase() as the 5th argument (undefined when password
+ * mode or no protection).
  */
 export function renderCreatePage(container: HTMLElement): void {
-  // -- Passphrase state (Phase 24) --
-  // Initialized on mount; updated on each Regenerate click.
-  // Always synced with hidden passwordInput.value.
-  let currentPassphrase = generatePassphrase();
-
   // -- Page wrapper --
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
@@ -318,76 +931,12 @@ export function renderCreatePage(container: HTMLElement): void {
   expirationGroup.appendChild(expirationSelectResult.element);
   form.appendChild(expirationGroup);
 
-  // -- Passphrase section (Phase 24) --
-  // The "Advanced options" password field has been replaced with an auto-generated
-  // EFF diceware passphrase. Every secret is now password-protected by default.
-  // PASS-02 invariant: Regenerate ONLY updates currentPassphrase, passphraseDisplay,
-  // and passwordInput. It NEVER touches textarea, expirationSelectResult, or labelInput.
-  const passphraseGroup = document.createElement('div');
-  passphraseGroup.className = 'space-y-2';
-
-  const passphraseSectionLabel = document.createElement('label');
-  passphraseSectionLabel.htmlFor = 'passphrase-display';
-  passphraseSectionLabel.className = 'block text-sm font-medium text-text-secondary';
-  passphraseSectionLabel.textContent = 'Access passphrase';
-
-  const passphraseDisplay = document.createElement('div');
-  passphraseDisplay.id = 'passphrase-display';
-  passphraseDisplay.className =
-    'w-full px-3 py-3 rounded-lg bg-surface-raised text-text-primary font-mono text-sm select-all border border-border';
-  passphraseDisplay.setAttribute('aria-live', 'polite');
-  passphraseDisplay.setAttribute('aria-label', 'Generated passphrase');
-  passphraseDisplay.textContent = currentPassphrase; // textContent only — never innerHTML
-
-  const passphraseHint = document.createElement('p');
-  passphraseHint.className = 'text-xs text-text-muted';
-  passphraseHint.textContent =
-    'Auto-generated passphrase. Recipients will need this to view your secret.';
-
-  // Button row: Regenerate + Copy
-  const passphraseButtonRow = document.createElement('div');
-  passphraseButtonRow.className = 'flex items-center gap-3 flex-wrap';
-
-  // Regenerate button
-  const regenerateBtn = document.createElement('button');
-  regenerateBtn.type = 'button';
-  regenerateBtn.className =
-    'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
-  regenerateBtn.setAttribute('aria-label', 'Generate a new passphrase');
-  const regenIcon = createIcon(RefreshCw, { size: 'sm' });
-  const regenLabel = document.createElement('span');
-  regenLabel.textContent = 'New passphrase';
-  regenerateBtn.appendChild(regenIcon);
-  regenerateBtn.appendChild(regenLabel);
-
-  // Copy passphrase button
-  const copyPassphraseBtn = createCopyButton(() => currentPassphrase, 'Copy');
-
-  // Regenerate click handler
-  // CRITICAL: ONLY update currentPassphrase, passphraseDisplay, and passwordInput.
-  // NEVER touch textarea.value, expirationSelectResult, or labelInput — PASS-02 invariant.
-  regenerateBtn.addEventListener('click', () => {
-    currentPassphrase = generatePassphrase();
-    passphraseDisplay.textContent = currentPassphrase;
-    passwordInput.value = currentPassphrase;
-  });
-
-  passphraseButtonRow.appendChild(regenerateBtn);
-  passphraseButtonRow.appendChild(copyPassphraseBtn);
-
-  passphraseGroup.appendChild(passphraseSectionLabel);
-  passphraseGroup.appendChild(passphraseDisplay);
-  passphraseGroup.appendChild(passphraseHint);
-  passphraseGroup.appendChild(passphraseButtonRow);
-  form.appendChild(passphraseGroup);
-
-  // -- Hidden password input (synced with currentPassphrase at all times) --
-  // Replaces the old visible password input from "Advanced options".
-  // The submit handler reads passwordInput.value — always set to currentPassphrase.
-  const passwordInput = document.createElement('input');
-  passwordInput.type = 'hidden';
-  passwordInput.value = currentPassphrase; // Sync on init
-  form.appendChild(passwordInput);
+  // -- Protection panel (Phase 28) --
+  // Collapsed by default (protectionMode = 'none').
+  // DOM order: textarea → expiration → [label — injected by auth IIFE] →
+  //   [notify toggle — injected by auth IIFE] → protection panel → error area → submit.
+  const protectionPanel = createProtectionPanel();
+  form.appendChild(protectionPanel.element);
 
   // -- Error display area --
   const errorArea = document.createElement('div');
@@ -429,8 +978,8 @@ export function renderCreatePage(container: HTMLElement): void {
       // Get expiration from the current select result (anonymous or authenticated)
       const expiresIn = expirationSelectResult.getValue() as '1h' | '24h' | '7d' | '30d';
 
-      // Get password (always the current passphrase — never undefined after Phase 24)
-      const password = passwordInput.value || undefined;
+      // Get password from protection panel (undefined when no protection selected)
+      const password = protectionPanel.getPassword();
 
       // Get optional label (only present for authenticated users)
       const label = labelInput?.value.trim() || undefined;
@@ -472,15 +1021,15 @@ export function renderCreatePage(container: HTMLElement): void {
           else if (anonymousSecretCount === 3) promptNumber = 3;
         }
 
-        // Step 6: Render confirmation page (state-based, not URL-based)
-        // currentPassphrase is passed as the fifth argument (Phase 24)
-        // promptNumber is passed as the sixth argument (Phase 27)
+        // Step 6: Render confirmation page (state-based, not URL-based).
+        // protectionPanel.getPassphrase() returns the passphrase only when passphrase
+        // mode is active — undefined for password mode or no protection (Phase 28).
         renderConfirmationPage(
           container,
           shareUrl,
           response.expiresAt,
           label,
-          currentPassphrase,
+          protectionPanel.getPassphrase(),
           promptNumber,
         );
       } catch (err) {
@@ -515,6 +1064,7 @@ export function renderCreatePage(container: HTMLElement): void {
   // Progressive enhancement: add label field if authenticated (non-blocking)
   // Also upgrades the expiration select from anonymous to authenticated mode.
   // This runs after the form is in the DOM so anonymous users see no delay.
+  // Label and notify toggle are inserted before errorArea (stable anchor).
   void (async () => {
     try {
       const result = await authClient.getSession();
@@ -531,11 +1081,11 @@ export function renderCreatePage(container: HTMLElement): void {
         expirationGroup.appendChild(expirationSelectResult.element);
 
         const labelField = createLabelField();
-        // Insert label field before the error area (stable anchor regardless of Advanced options removal)
-        form.insertBefore(labelField, errorArea);
+        // Insert label field before the protection panel (stable anchor)
+        form.insertBefore(labelField, protectionPanel.element);
         labelInput = labelField.querySelector('#secret-label') as HTMLInputElement;
         const notifyToggle = createNotifyToggle();
-        form.insertBefore(notifyToggle.element, errorArea);
+        form.insertBefore(notifyToggle.element, protectionPanel.element);
         getNotifyEnabled = notifyToggle.getValue;
       }
     } catch {
