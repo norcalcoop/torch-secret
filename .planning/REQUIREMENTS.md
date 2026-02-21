@@ -41,9 +41,9 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 
 ### ANLT — Analytics
 
-- [ ] **ANLT-01**: Application tracks funnel events via PostHog without collecting PII, secret content, or encryption keys
-- [ ] **ANLT-02**: URL fragment (#encryption-key) is stripped from all captured event properties before PostHog transmission (sanitize_properties configuration is mandatory)
-- [ ] **ANLT-03**: Authenticated users are identified in PostHog by user ID (not email or other PII) after login
+- [x] **ANLT-01**: Application tracks funnel events via PostHog without collecting PII, secret content, or encryption keys
+- [x] **ANLT-02**: URL fragment (#encryption-key) is stripped from all captured event properties before PostHog transmission (sanitize_properties configuration is mandatory)
+- [x] **ANLT-03**: Authenticated users are identified in PostHog by user ID (not email or other PII) after login
 
 ### CONV — Conversion & Rate Limits
 
@@ -127,9 +127,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTF-01 | Phase 26 | Pending |
 | NOTF-02 | Phase 26 | Pending |
 | NOTF-03 | Phase 26 | Pending |
-| ANLT-01 | Phase 25 | Pending |
-| ANLT-02 | Phase 25 | Pending |
-| ANLT-03 | Phase 25 | Pending |
+| ANLT-01 | Phase 25 | Complete |
+| ANLT-02 | Phase 25 | Complete |
+| ANLT-03 | Phase 25 | Complete |
 | CONV-01 | Phase 27 | Pending |
 | CONV-02 | Phase 27 | Pending |
 | CONV-03 | Phase 27 | Pending |

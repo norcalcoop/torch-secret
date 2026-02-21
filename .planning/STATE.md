@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 24: EFF Diceware Passphrase Generator
+**Current focus:** v4.0 — Phase 25: PostHog Analytics
 
 ## Current Position
 
-Phase: 24 of 27 (EFF Diceware Passphrase Generator) — COMPLETE
-Plan: 3 of 3 complete (24-03 Create Page Passphrase UI — human verification approved)
-Status: Phase 24 complete — EFF Diceware passphrase module + confirmation card + create page UI all shipped; every new secret has automatic two-channel passphrase protection
-Last activity: 2026-02-21 — Phase 24 Plan 03 complete (human verification approved)
+Phase: 25 of 27 (PostHog Analytics) — In Progress
+Plan: 1 of 3 complete (25-01 PostHog analytics foundation — module created, CSP updated)
+Status: Phase 25 in progress — PostHog analytics module with before_send sanitizer + CSP connect-src shipped; Plans 02-03 remaining (wiring into app.ts/router.ts + page-level events)
+Last activity: 2026-02-21 — Phase 25 Plan 01 complete
 
-Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04)
+Progress: [████░░░░░░] ~37% (v4.0 — 33/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03)
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements com
 | Phase 24-eff-diceware-passphrase-generator P01 | 3 | 2 tasks | 4 files |
 | Phase 24-eff-diceware-passphrase-generator P02 | 3 | 2 tasks | 1 files |
 | Phase 24-eff-diceware-passphrase-generator P03 | 3 | 1 tasks | 1 files |
+| Phase 25-posthog-analytics P01 | 2 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -50,7 +51,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 Key v4.0 architectural constraints (carry forward to every phase):
 - Zero-knowledge invariant: no log, DB record, or analytics event may contain both userId and secretId in the same record — ever
 - Stripe webhook route must mount before express.json() in app.ts (not applicable v4.0, noted for v5.0 Pro tier)
-- PostHog sanitize_properties stripping URL fragments is mandatory — misconfiguration leaks AES-256-GCM keys permanently
+- PostHog before_send hook stripping URL fragments is mandatory — before_send is the current API (sanitize_properties is legacy/nonexistent); misconfiguration leaks AES-256-GCM keys permanently
 - Drizzle bug #4147: inspect generated SQL after db:generate; split FK + column additions into two migration steps if needed
 - Better Auth requires sameSite: 'lax' on session cookie (not 'strict') for OAuth callback redirects to work
 - [Phase 21]: INVARIANTS.md placed in .planning/ as canonical source for zero-knowledge invariant with three-way cross-reference lock (schema.ts + INVARIANTS.md + CLAUDE.md)
@@ -102,6 +103,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 24-02]: Passphrase card uses same glassmorphism styling (bg-surface/80 backdrop-blur-md) as urlCard — visual parity signals equal importance of link and passphrase
 - [Phase 24-03]: Hidden passwordInput placed after passphraseGroup in DOM — always synced with currentPassphrase; no visible UI needed (Phase 24-03)
 - [Phase 24-03]: Progressive label enhancement insertBefore(labelField, errorArea) — errorArea is stable anchor after Advanced options removal (Phase 24-03)
+- [Phase 25-posthog-analytics]: posthog-js npm import (not CDN snippet) — bundled via Vite; no script-src CSP changes needed, only connect-src
+- [Phase 25-posthog-analytics]: before_send (not sanitize_properties) — sanitize_properties is legacy name, before_send is current posthog-js API; wrong name silently fails
+- [Phase 25-posthog-analytics]: capture_pageview: false + manual capturePageview() — prevents race with reveal-page fragment stripping; before_send is belt-and-suspenders
+- [Phase 25-posthog-analytics]: autocapture: false — passive DOM capture would record plaintext from create-page textarea before encryption
 
 ### Known Tech Debt
 
@@ -117,5 +122,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed Phase 24 Plan 03 — EFF Diceware Passphrase Generator phase complete
-Resume: Phase 25 (next phase per ROADMAP.md)
+Stopped at: Completed 25-posthog-analytics 25-01-PLAN.md — PostHog analytics foundation (module + CSP) shipped
+Resume: Phase 25 Plan 02 — wire initAnalytics() into app.ts and capturePageview() into router.ts
