@@ -63,6 +63,7 @@ export function createSecretsRouter(redisClient?: Redis) {
         body.password,
         userId,
         body.label,
+        userId ? (body.notify ?? false) : false,
       );
 
       res.status(201).json({
