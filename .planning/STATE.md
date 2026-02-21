@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 26: Email Notifications
+**Current focus:** v4.0 — Phase 26: Email Notifications — COMPLETE
 
 ## Current Position
 
-Phase: 26 of 27 (Email Notifications) — In Progress
-Plan: 1 of 2 complete (26-01 notification service + secrets service + route notify passthrough)
-Status: Phase 26 Plan 01 complete — backend notification wired; Plan 02 (frontend toggle) is next
-Last activity: 2026-02-21 — Phase 26 Plan 01 complete
+Phase: 26 of 27 (Email Notifications) — Complete
+Plan: 2 of 2 complete (26-01 notification service + secrets service + route notify passthrough; 26-02 frontend notify toggle)
+Status: Phase 26 complete — backend + frontend email notification feature fully delivered; Phase 27 is next
+Last activity: 2026-02-21 — Phase 26 Plan 02 complete
 
-Progress: [█████░░░░░] ~40% (v4.0 — 35/37 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-02 + NOTF-03)
+Progress: [██████░░░░] ~45% (v4.0 — 36/37 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 + NOTF-02 + NOTF-03)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [█████░░░░░] ~40% (v4.0 — 35/37 requirements com
 | Phase 25-posthog-analytics P02 | 2 | 2 tasks | 4 files |
 | Phase 25-posthog-analytics P03 | 8 | 2 tasks | 3 files |
 | Phase 26-email-notifications P01 | 3 | 2 tasks | 3 files |
+| Phase 26-email-notifications P02 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 26-01]: leftJoin(users) in secrets Step 1 SELECT resolves userId->email without a second DB round-trip; null userEmail from LEFT JOIN is safe (dispatch guards on userEmail truthiness)
 - [Phase 26-01]: Non-null assertion secretRow.passwordHash! in verifyPassword call — TypeScript cannot track narrowing through spread destructure; !secret.passwordHash guard above guarantees non-null
 - [Phase 26-01]: Anonymous safety enforced at two layers: route enforces userId ? notify : false; service checks userId !== null before dispatch — defense-in-depth
+- [Phase 26-02]: getNotifyEnabled declared as () => boolean initialized to () => false — submit handler reads live checkbox state at submit time; safe no-op default for anonymous users and auth check failures
+- [Phase 26-02]: createNotifyToggle() returns { element, getValue } — accessor pattern consistent with labelInput closure; getValue bound to checkbox.checked for live state reads
 
 ### Known Tech Debt
 
@@ -138,5 +141,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 26-email-notifications 26-01-PLAN.md — notification service + secrets service JOIN + route notify passthrough; Phase 26 Plan 01 complete
-Resume: Phase 26 Plan 02 — frontend notification toggle UI on create page
+Stopped at: Completed 26-email-notifications 26-02-PLAN.md — frontend notify toggle on create page; Phase 26 fully complete
+Resume: Phase 27 (next phase in roadmap)

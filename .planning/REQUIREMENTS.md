@@ -35,7 +35,7 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 
 ### NOTF — Email Notifications
 
-- [ ] **NOTF-01**: Authenticated user can opt in to email notification when a specific secret is viewed (per-secret toggle at creation, off by default)
+- [x] **NOTF-01**: Authenticated user can opt in to email notification when a specific secret is viewed (per-secret toggle at creation, off by default)
 - [x] **NOTF-02**: User receives a transactional email (via Resend) when an opted-in secret is viewed and destroyed
 - [x] **NOTF-03**: Notification email confirms permanent deletion without including secret content, recipient IP, or encryption key
 
@@ -124,7 +124,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-03 | Phase 23 | Complete |
 | DASH-04 | Phase 23 | Complete |
 | DASH-05 | Phase 23 | Complete |
-| NOTF-01 | Phase 26 | Pending |
+| NOTF-01 | Phase 26 | Complete |
 | NOTF-02 | Phase 26 | Complete |
 | NOTF-03 | Phase 26 | Complete |
 | ANLT-01 | Phase 25 | Complete |
