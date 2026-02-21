@@ -180,7 +180,12 @@ Plans:
   4. After their third secret creation, anonymous users see a benefit-focused upsell prompt on the confirmation page highlighting dashboard, notifications, and higher limits
   5. When an anonymous user hits the rate limit, the 429 response includes inline upsell copy and a link to create a free account — not just a generic error message
   6. Privacy Policy is accessible at `/privacy` and Terms of Service is accessible at `/terms`, both with correct noindex meta tags
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 27-01-PLAN.md — Server rate limits: three auth-aware limiter factories, expiresIn tier enforcement, ApiError rateLimitReset, integration tests
+- [ ] 27-02-PLAN.md — Client conversion prompts: auth-aware expiration select, session counter, confirmation page prompt cards, 429 inline upsell, PostHog events
+- [ ] 27-03-PLAN.md — Legal pages + footer + register consent + INVARIANTS.md update, human UAT
 
 ## Progress
 
