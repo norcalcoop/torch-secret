@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 23: Secret Dashboard
+**Current focus:** v4.0 — Phase 24: EFF Diceware Passphrase Generator
 
 ## Current Position
 
-Phase: 23 of 27 (Secret Dashboard) — COMPLETE
-Plan: 5 of 5 complete (23-05 Tests — all tasks done)
-Status: Phase 23 fully complete — all 5 plans shipped (schema, backend API, create page, dashboard UI, integration tests); 109 server tests pass
-Last activity: 2026-02-20 — Phase 23 Plan 05 committed (dashboard + expiration worker integration tests)
+Phase: 24 of 27 (EFF Diceware Passphrase Generator) — IN PROGRESS
+Plan: 2 of 4 complete (24-02 Confirmation Page Passphrase UI — all tasks done)
+Status: Phase 24 Plan 02 complete — passphrase card + two-channel guidance on confirmation page; 111 client tests pass
+Last activity: 2026-02-20 — Phase 24 Plan 02 committed (confirmation page passphrase card + guidance)
 
-Progress: [████░░░░░░] ~29% (v4.0 — 28/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05)
+Progress: [████░░░░░░] ~34% (v4.0 — 30/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04)
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [████░░░░░░] ~29% (v4.0 — 28/35 requirements com
 | Phase 23 P03 | 8 min | 2 tasks | 3 files |
 | Phase 23 P05 | 8 | 1 tasks | 2 files |
 | Phase 24-eff-diceware-passphrase-generator P01 | 3 | 2 tasks | 4 files |
+| Phase 24-eff-diceware-passphrase-generator P02 | 3 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 24-eff-diceware-passphrase-generator]: EFF_WORDS exported from passphrase.ts for test membership verification — private would require weaker tests
 - [Phase 24-eff-diceware-passphrase-generator]: Rejection sampling cutoff 4294964736 for n=7776 eliminates modulo bias; rejection probability ~0.0000006 per word
 - [Phase 24-eff-diceware-passphrase-generator]: Added no-unsafe-call: off to ESLint test file override — importing unresolved modules during TDD RED phase causes false positives
+- [Phase 24-02]: Two separate if (passphrase) blocks in confirmation.ts — matches existing if (label) pattern; separate blocks improve readability over merging
+- [Phase 24-02]: Passphrase card uses same glassmorphism styling (bg-surface/80 backdrop-blur-md) as urlCard — visual parity signals equal importance of link and passphrase
 
 ### Known Tech Debt
 
@@ -111,5 +114,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 24-01-PLAN.md — EFF Diceware passphrase module (passphrase.ts, 7776 words, 10 tests passing)
-Resume: Phase 24 Plan 01 complete — continue with Phase 24 Plan 02 (create page passphrase UI)
+Stopped at: Completed 24-02-PLAN.md — confirmation page passphrase card + two-channel guidance
+Resume: Phase 24 Plan 02 complete — continue with Phase 24 Plan 03 (create page passphrase UI)
