@@ -11,6 +11,8 @@
  * Progressive enhancement: for authenticated users, an optional collapsible
  * "Add label" field is appended after the form renders (non-blocking async auth
  * check). Anonymous users see no label field -- it is absent from the DOM.
+ * Additionally, a per-secret notification toggle ('Email me when this secret is
+ * viewed') is injected for authenticated users -- off by default.
  *
  * Phase 24: The "Advanced options" password field has been replaced with an
  * auto-generated EFF diceware passphrase displayed in a monospace block with
@@ -106,6 +108,33 @@ function createLabelField(): HTMLElement {
   details.appendChild(summary);
   details.appendChild(content);
   return details;
+}
+
+/**
+ * Creates the email notification checkbox for authenticated users.
+ * Only injected into the DOM for logged-in users (progressive enhancement).
+ * Returns element and a getValue() accessor bound to the checkbox state.
+ */
+function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean } {
+  const wrapper = document.createElement('div');
+  wrapper.className =
+    'flex items-center gap-3 border border-border rounded-lg bg-surface/80 backdrop-blur-md px-4 py-3';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = 'notify-on-view';
+  checkbox.name = 'notify-on-view';
+  checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
+
+  const label = document.createElement('label');
+  label.htmlFor = 'notify-on-view';
+  label.className = 'text-sm text-text-secondary cursor-pointer select-none';
+  label.textContent = 'Email me when this secret is viewed';
+
+  wrapper.appendChild(checkbox);
+  wrapper.appendChild(label);
+
+  return { element: wrapper, getValue: () => checkbox.checked };
 }
 
 /**
@@ -297,6 +326,9 @@ export function renderCreatePage(container: HTMLElement): void {
   // -- Label field reference (set async by progressive enhancement below) --
   let labelInput: HTMLInputElement | null = null;
 
+  // -- Notify toggle getValue accessor (set async by progressive enhancement) --
+  let getNotifyEnabled: () => boolean = () => false;
+
   // -- Submit handler --
   form.addEventListener('submit', (e) => {
     void (async () => {
@@ -337,7 +369,13 @@ export function renderCreatePage(container: HTMLElement): void {
 
         // Step 2: Send to API (include optional fields only if provided)
         submitButton.textContent = 'Sending...';
-        const response = await createSecret(result.payload.ciphertext, expiresIn, password, label);
+        const response = await createSecret(
+          result.payload.ciphertext,
+          expiresIn,
+          password,
+          label,
+          getNotifyEnabled(),
+        );
 
         // Step 3: Build share URL with key in fragment
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
@@ -383,6 +421,9 @@ export function renderCreatePage(container: HTMLElement): void {
         // Insert label field before the error area (stable anchor regardless of Advanced options removal)
         form.insertBefore(labelField, errorArea);
         labelInput = labelField.querySelector('#secret-label') as HTMLInputElement;
+        const notifyToggle = createNotifyToggle();
+        form.insertBefore(notifyToggle.element, errorArea);
+        getNotifyEnabled = notifyToggle.getValue;
       }
     } catch {
       // Auth check failure: label field simply not shown (silent degradation)
