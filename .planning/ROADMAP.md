@@ -147,7 +147,12 @@ Plans:
   1. Funnel events (secret created, secret viewed, user registered, prompt shown, account created) are captured in PostHog and visible in the project dashboard
   2. The `$current_url` and `$referrer` properties in every PostHog event have the URL fragment (`#...`) stripped — verified by inspecting a reveal-page event in the PostHog event explorer showing no key material in any property
   3. Authenticated users are identified in PostHog by their internal user ID (not email, name, or any other PII) after login, enabling funnel analysis across anonymous and authenticated sessions
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 25-01-PLAN.md — Analytics module foundation: posthog.ts, vite-env.d.ts, CSP update, .env.example
+- [ ] 25-02-PLAN.md — Wire funnel events: initAnalytics in app.ts, capturePageview in router.ts, captureSecretCreated in create.ts, captureSecretViewed in reveal.ts
+- [ ] 25-03-PLAN.md — Wire identity events: identifyUser + captureUserLoggedIn in login.ts, captureUserRegistered in register.ts, identifyUser + resetAnalyticsIdentity in dashboard.ts
 
 ### Phase 26: Email Notifications
 **Goal**: Authenticated users can opt in to receive a transactional email via Resend when a specific secret is viewed and destroyed — the notification confirms permanent deletion without including secret content, the recipient's IP address, or the encryption key
