@@ -48,6 +48,7 @@ Progress: [████████░░] ~55% (v4.0 — 42/44 requirements com
 | Phase 26-email-notifications P03 | 4 | 2 tasks | 3 files |
 | Phase 27 P01 | 7 | 3 tasks | 6 files |
 | Phase 27 P03 | ~35 | 2 auto + 1 UAT tasks | 6 files |
+| Phase 27 P02 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 27]: [Phase 27-03]: Legal pages use [Company Name] / [Contact Email] / [Jurisdiction] placeholder tokens — substituted at production deployment, not hardcoded
 - [Phase 27]: [Phase 27-03]: Both /privacy and /terms marked noindex: true — legal pages should not appear in search results (same treatment as error/secret routes)
 - [Phase 27]: [Phase 27-03]: Consent line in register.ts composed with createTextNode + anchor elements (no innerHTML) — XSS-safe DOM construction convention
+- [Phase 27]: [Phase 27-02]: ExpirationSelectResult accessor interface { element, getValue } enables anonymous/authenticated select swap in auth IIFE without DOM selector coupling
+- [Phase 27]: [Phase 27-02]: Module-level anonymousSecretCount and isAuthenticated persist across SPA re-renders; reset only on full browser refresh — same lifecycle as dismissed prompt state
+- [Phase 27]: [Phase 27-02]: 30d expiration option absent from authenticated select — matches server-side cap from Phase 27-01; Pro-tier feature deferred to v5.0
+- [Phase 27]: [Phase 27-02]: errorArea className reset on each submit — showRateLimitUpsell mutates element className; reset restores danger styling for non-429 errors on retry
 
 ### Known Tech Debt
 

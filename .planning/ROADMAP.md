@@ -63,7 +63,7 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 - [x] **Phase 24: EFF Diceware Passphrase Generator** - Client-side 4-word passphrase generation with two-channel UI (completed 2026-02-21)
 - [x] **Phase 25: PostHog Analytics** - Privacy-safe funnel tracking with mandatory URL fragment sanitization (completed 2026-02-21)
 - [x] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend (completed 2026-02-21)
-- [ ] **Phase 27: Conversion Prompts + Rate Limits + Legal Pages** - Tightened anonymous limits, inline prompts, Privacy Policy, ToS
+- [x] **Phase 27: Conversion Prompts + Rate Limits + Legal Pages** - Tightened anonymous limits, inline prompts, Privacy Policy, ToS (completed 2026-02-21)
 
 ## Phase Details
 
@@ -217,4 +217,4 @@ Plans:
 | 24. EFF Diceware Passphrase Generator | 3/3 | Complete    | 2026-02-21 | - |
 | 25. PostHog Analytics | 3/3 | Complete    | 2026-02-21 | - |
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
-| 27. Conversion Prompts + Rate Limits + Legal Pages | 2/3 | In Progress|  | - |
+| 27. Conversion Prompts + Rate Limits + Legal Pages | 3/3 | Complete   | 2026-02-21 | - |

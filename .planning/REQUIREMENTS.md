@@ -50,8 +50,8 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 - [x] **CONV-01**: Anonymous users are rate-limited to 3 secrets/hour and 10 secrets/day (tightened from current 10/hour)
 - [x] **CONV-02**: Anonymous users can set expiration up to 1 hour maximum (restricted from current 1h/24h/7d/30d options)
 - [x] **CONV-03**: Authenticated users have higher limits: 20 secrets/day and expiration up to 7 days
-- [ ] **CONV-04**: Anonymous users see an inline, non-blocking prompt after their first secret creation
-- [ ] **CONV-05**: Anonymous users see a benefit-focused upsell prompt after their third secret creation
+- [x] **CONV-04**: Anonymous users see an inline, non-blocking prompt after their first secret creation
+- [x] **CONV-05**: Anonymous users see a benefit-focused upsell prompt after their third secret creation
 - [x] **CONV-06**: Anonymous users who hit the rate limit see an inline prompt to create a free account
 
 ### LEGAL — Legal Pages
@@ -133,8 +133,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-01 | Phase 27 | Complete |
 | CONV-02 | Phase 27 | Complete |
 | CONV-03 | Phase 27 | Complete |
-| CONV-04 | Phase 27 | Pending |
-| CONV-05 | Phase 27 | Pending |
+| CONV-04 | Phase 27 | Complete |
+| CONV-05 | Phase 27 | Complete |
 | CONV-06 | Phase 27 | Complete |
 | LEGAL-01 | Phase 27 | Complete |
 | LEGAL-02 | Phase 27 | Complete |
