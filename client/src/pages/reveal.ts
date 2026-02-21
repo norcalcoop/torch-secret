@@ -20,7 +20,7 @@ import { decrypt } from '../crypto/index.js';
 import { getSecret, getSecretMeta, verifySecretPassword, ApiError } from '../api/client.js';
 import { captureSecretViewed } from '../analytics/posthog.js';
 import { createTerminalBlock } from '../components/terminal-block.js';
-import { Shield, Lock, CircleCheck } from 'lucide';
+import { Shield, Lock, CircleCheck, Eye, EyeOff } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { renderErrorPage } from './error.js';
@@ -193,12 +193,13 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
     // Heading
     const heading = document.createElement('h1');
     heading.className = 'text-2xl sm:text-3xl font-heading font-semibold text-text-primary mb-3';
-    heading.textContent = 'Password Required';
+    heading.textContent = 'Protection Required';
 
     // Subtext
     const subtext = document.createElement('p');
     subtext.className = 'text-text-muted mb-6 max-w-md';
-    subtext.textContent = 'This secret is password protected. Enter the password to reveal it.';
+    subtext.textContent =
+      'This secret is protected. Enter the passphrase or password to reveal it.';
 
     // Attempt counter
     const attemptText = document.createElement('p');
@@ -218,20 +219,46 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
     const passwordLabel = document.createElement('label');
     passwordLabel.htmlFor = 'reveal-password';
     passwordLabel.className = 'block text-sm font-medium text-text-secondary';
-    passwordLabel.textContent = 'Password';
+    passwordLabel.textContent = 'Passphrase or password';
 
     const passwordInput = document.createElement('input');
     passwordInput.type = 'password';
     passwordInput.id = 'reveal-password';
-    passwordInput.placeholder = 'Enter password';
+    passwordInput.placeholder = 'Enter passphrase or password';
     passwordInput.maxLength = 128;
     passwordInput.required = true;
     passwordInput.autocomplete = 'current-password';
     passwordInput.className =
-      'w-full px-3 py-2 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+      'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+
+    const passwordWrapper = document.createElement('div');
+    passwordWrapper.className = 'relative';
+    passwordWrapper.appendChild(passwordInput);
+
+    const revealToggle = document.createElement('button');
+    revealToggle.type = 'button';
+    revealToggle.setAttribute('aria-label', 'Show password');
+    revealToggle.className =
+      'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+
+    const eyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
+    const eyeOffEl = createIcon(EyeOff, { size: 'sm', class: 'pointer-events-none hidden' });
+    revealToggle.appendChild(eyeEl);
+    revealToggle.appendChild(eyeOffEl);
+
+    let passwordVisible = false;
+    revealToggle.addEventListener('click', () => {
+      passwordVisible = !passwordVisible;
+      passwordInput.type = passwordVisible ? 'text' : 'password';
+      revealToggle.setAttribute('aria-label', passwordVisible ? 'Hide password' : 'Show password');
+      eyeEl.classList.toggle('hidden', passwordVisible);
+      eyeOffEl.classList.toggle('hidden', !passwordVisible);
+    });
+
+    passwordWrapper.appendChild(revealToggle);
 
     inputGroup.appendChild(passwordLabel);
-    inputGroup.appendChild(passwordInput);
+    inputGroup.appendChild(passwordWrapper);
     form.appendChild(inputGroup);
 
     // Error message area (hidden initially)
