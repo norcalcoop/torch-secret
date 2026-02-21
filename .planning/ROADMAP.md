@@ -217,4 +217,4 @@ Plans:
 | 24. EFF Diceware Passphrase Generator | 3/3 | Complete    | 2026-02-21 | - |
 | 25. PostHog Analytics | 3/3 | Complete    | 2026-02-21 | - |
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
-| 27. Conversion Prompts + Rate Limits + Legal Pages | 3/3 | Complete   | 2026-02-21 | - |
+| 27. Conversion Prompts + Rate Limits + Legal Pages | 3/3 | Complete    | 2026-02-21 | - |
