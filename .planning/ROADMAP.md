@@ -205,6 +205,6 @@ Plans:
 | 22. Authentication | 7/7 | Complete    | 2026-02-20 | - |
 | 23. Secret Dashboard | 5/5 | Complete    | 2026-02-20 | - |
 | 24. EFF Diceware Passphrase Generator | 3/3 | Complete    | 2026-02-21 | - |
-| 25. PostHog Analytics | 1/3 | In Progress|  | - |
+| 25. PostHog Analytics | 2/3 | In Progress|  | - |
 | 26. Email Notifications | v4.0 | 0/TBD | Not started | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 0/TBD | Not started | - |

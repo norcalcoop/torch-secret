@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 25 of 27 (PostHog Analytics) — In Progress
-Plan: 1 of 3 complete (25-01 PostHog analytics foundation — module created, CSP updated)
-Status: Phase 25 in progress — PostHog analytics module with before_send sanitizer + CSP connect-src shipped; Plans 02-03 remaining (wiring into app.ts/router.ts + page-level events)
-Last activity: 2026-02-21 — Phase 25 Plan 01 complete
+Plan: 2 of 3 complete (25-02 analytics wiring — initAnalytics/capturePageview/captureSecretCreated/captureSecretViewed wired)
+Status: Phase 25 in progress — funnel-tracking analytics wiring shipped; Plan 03 remaining (auth event wiring in login/register pages)
+Last activity: 2026-02-21 — Phase 25 Plan 02 complete
 
 Progress: [████░░░░░░] ~37% (v4.0 — 33/35 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03)
 
@@ -41,6 +41,7 @@ Progress: [████░░░░░░] ~37% (v4.0 — 33/35 requirements com
 | Phase 24-eff-diceware-passphrase-generator P02 | 3 | 2 tasks | 1 files |
 | Phase 24-eff-diceware-passphrase-generator P03 | 3 | 1 tasks | 1 files |
 | Phase 25-posthog-analytics P01 | 2 | 2 tasks | 6 files |
+| Phase 25-posthog-analytics P02 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 25-posthog-analytics]: before_send (not sanitize_properties) — sanitize_properties is legacy name, before_send is current posthog-js API; wrong name silently fails
 - [Phase 25-posthog-analytics]: capture_pageview: false + manual capturePageview() — prevents race with reveal-page fragment stripping; before_send is belt-and-suspenders
 - [Phase 25-posthog-analytics]: autocapture: false — passive DOM capture would record plaintext from create-page textarea before encryption
+- [Phase 25-02]: initAnalytics() placed before initThemeListener() in DOMContentLoaded — ensures PostHog ready before router fires any route events
+- [Phase 25-02]: capturePageview() placed before routechange dispatch (not inside each route branch) — single unconditional call covers all routes; before_send handles fragment stripping
+- [Phase 25-02]: captureSecretCreated receives expiresIn and !!password only — zero-knowledge invariant: no secretId, no shareUrl, no label, no userId
+- [Phase 25-02]: captureSecretViewed fires after container.appendChild(wrapper) — event fires only after plaintext confirmed in DOM
 
 ### Known Tech Debt
 
@@ -122,5 +127,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 25-posthog-analytics 25-01-PLAN.md — PostHog analytics foundation (module + CSP) shipped
-Resume: Phase 25 Plan 02 — wire initAnalytics() into app.ts and capturePageview() into router.ts
+Stopped at: Completed 25-posthog-analytics 25-02-PLAN.md — analytics wiring into app.ts, router.ts, create.ts, reveal.ts shipped
+Resume: Phase 25 Plan 03 — wire captureUserRegistered() and captureUserLoggedIn() into login/register pages; wire identifyUser() and resetAnalyticsIdentity() into auth flow
