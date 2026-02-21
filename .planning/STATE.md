@@ -147,6 +147,10 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 27]: [Phase 27-02]: errorArea className reset on each submit — showRateLimitUpsell mutates element className; reset restores danger styling for non-429 errors on retry
 - [Phase 27]: [Phase 27]: [Phase 27-04]: Math.ceil(resetTimestamp / 60) is the correct formula for RateLimit-Reset draft-6 delta-seconds — no epoch arithmetic needed; the header value is already seconds-remaining
 
+### Roadmap Evolution
+
+- Phase 28 added: Optional password or passphrase protection with password generator and masked inputs
+
 ### Known Tech Debt
 
 - Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
