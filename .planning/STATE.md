@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 ## Current Position
 
 Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — In Progress
-Plan: 1 of 3 complete
-Status: Phase 27 Plan 01 complete — auth-aware rate limits + expiresIn caps + ApiError.rateLimitReset
-Last activity: 2026-02-21 — Phase 27 Plan 01 complete (CONV-01, CONV-02, CONV-03, CONV-06 satisfied)
+Plan: 3 of 3 complete
+Status: Phase 27 Plan 03 complete — Privacy Policy + Terms of Service pages, footer legal links, register consent line, INVARIANTS.md Phase 27 row
+Last activity: 2026-02-21 — Phase 27 Plan 03 complete (LEGAL-01, LEGAL-02 satisfied)
 
-Progress: [███████░░░] ~50% (v4.0 — 40/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06; CONV-04/CONV-05 + LEGAL-01 through LEGAL-04 pending)
+Progress: [████████░░] ~55% (v4.0 — 42/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 pending)
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [███████░░░] ~50% (v4.0 — 40/44 requirements com
 | Phase 26-email-notifications P02 | 2 | 1 tasks | 1 files |
 | Phase 26-email-notifications P03 | 4 | 2 tasks | 3 files |
 | Phase 27 P01 | 7 | 3 tasks | 6 files |
+| Phase 27 P03 | ~35 | 2 auto + 1 UAT tasks | 6 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 27]: [Phase 27-01]: createAuthedDailyLimiter keyGenerator uses userId not req.ip — avoids shared-IP false positives for authenticated users on NAT/corporate networks
 - [Phase 27]: [Phase 27-01]: optionalAuth must precede all rate limiters in POST / middleware chain — skip callbacks read res.locals.user which optionalAuth populates
 - [Phase 27]: [Phase 27-01]: expiresIn caps enforced in handler (not Zod schema) — Zod enum allows all values; server-side tier guard applied after rate limiters
+- [Phase 27]: [Phase 27-03]: Legal pages use [Company Name] / [Contact Email] / [Jurisdiction] placeholder tokens — substituted at production deployment, not hardcoded
+- [Phase 27]: [Phase 27-03]: Both /privacy and /terms marked noindex: true — legal pages should not appear in search results (same treatment as error/secret routes)
+- [Phase 27]: [Phase 27-03]: Consent line in register.ts composed with createTextNode + anchor elements (no innerHTML) — XSS-safe DOM construction convention
 
 ### Known Tech Debt
 
@@ -150,5 +154,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-01-PLAN.md
-Resume: Phase 27 Plan 02 (conversion prompts UI) is next
+Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-03-PLAN.md
+Resume: Phase 27 complete (3/3 plans done). Next: Phase 28 (if planned) or v4.0 wrap-up.

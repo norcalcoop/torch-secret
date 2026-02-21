@@ -56,8 +56,8 @@ Requirements for the Hybrid Anonymous + Account Model milestone. Each maps to ro
 
 ### LEGAL — Legal Pages
 
-- [ ] **LEGAL-01**: Privacy Policy page is accessible at /privacy describing what data is and is not collected
-- [ ] **LEGAL-02**: Terms of Service page is accessible at /terms covering acceptable use
+- [x] **LEGAL-01**: Privacy Policy page is accessible at /privacy describing what data is and is not collected
+- [x] **LEGAL-02**: Terms of Service page is accessible at /terms covering acceptable use
 
 ## v5.0 Requirements
 
@@ -136,8 +136,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-04 | Phase 27 | Pending |
 | CONV-05 | Phase 27 | Pending |
 | CONV-06 | Phase 27 | Complete |
-| LEGAL-01 | Phase 27 | Pending |
-| LEGAL-02 | Phase 27 | Pending |
+| LEGAL-01 | Phase 27 | Complete |
+| LEGAL-02 | Phase 27 | Complete |
 
 **Coverage:**
 - v4.0 requirements: 31 total
