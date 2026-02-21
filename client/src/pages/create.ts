@@ -20,6 +20,7 @@
 import { encrypt, generatePassphrase } from '../crypto/index.js';
 import { createSecret } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
+import { captureSecretCreated } from '../analytics/posthog.js';
 import { createExpirationSelect } from '../components/expiration-select.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { renderConfirmationPage } from './confirmation.js';
@@ -344,6 +345,7 @@ export function renderCreatePage(container: HTMLElement): void {
         // Step 4: Render confirmation page (state-based, not URL-based)
         // currentPassphrase is passed as the fifth argument (Phase 24)
         renderConfirmationPage(container, shareUrl, response.expiresAt, label, currentPassphrase);
+        captureSecretCreated(expiresIn, !!password);
       } catch (err) {
         // Restore form state
         submitButton.disabled = false;

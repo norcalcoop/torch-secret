@@ -18,6 +18,7 @@
 
 import { decrypt } from '../crypto/index.js';
 import { getSecret, getSecretMeta, verifySecretPassword, ApiError } from '../api/client.js';
+import { captureSecretViewed } from '../analytics/posthog.js';
 import { createTerminalBlock } from '../components/terminal-block.js';
 import { Shield, Lock, CircleCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
@@ -391,6 +392,7 @@ function renderRevealedSecret(container: HTMLElement, plaintext: string): void {
   wrapper.appendChild(terminal);
   wrapper.appendChild(actions);
   container.appendChild(wrapper);
+  captureSecretViewed();
 }
 
 /**
