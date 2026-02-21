@@ -246,6 +246,26 @@ function handleRoute(): void {
       .then((mod) => mod.renderDashboardPage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
+  } else if (path === '/privacy') {
+    updatePageMeta({
+      title: 'Privacy Policy',
+      description: 'How SecureShare handles your data — zero-knowledge architecture explained.',
+      noindex: true,
+    });
+    import('./pages/privacy.js')
+      .then((mod) => mod.renderPrivacyPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/terms') {
+    updatePageMeta({
+      title: 'Terms of Service',
+      description: 'Terms of Service for SecureShare — acceptable use and service limitations.',
+      noindex: true,
+    });
+    import('./pages/terms.js')
+      .then((mod) => mod.renderTermsPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
   } else {
     updatePageMeta({
       title: 'Page Not Found',
