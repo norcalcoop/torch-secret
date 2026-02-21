@@ -160,6 +160,24 @@ function createFooter(): HTMLElement {
     inner.appendChild(span);
   }
 
+  // Legal links
+  const legalLinks = [
+    { text: 'Privacy Policy', path: '/privacy' },
+    { text: 'Terms of Service', path: '/terms' },
+  ];
+
+  for (const { text, path } of legalLinks) {
+    const a = document.createElement('a');
+    a.href = path;
+    a.textContent = text;
+    a.className = 'hover:text-text-secondary transition-colors underline-offset-2 hover:underline';
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(path);
+    });
+    inner.appendChild(a);
+  }
+
   footer.appendChild(inner);
   return footer;
 }

@@ -151,6 +151,43 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
   submitButton.textContent = 'Create Account';
   form.appendChild(submitButton);
 
+  // Consent line (LEGAL-01, LEGAL-02) — inserted after submit button
+  const consentLine = document.createElement('p');
+  consentLine.className = 'text-xs text-text-muted text-center';
+
+  const consentPrefix = document.createTextNode('By creating an account, you agree to our ');
+
+  const termsLink = document.createElement('a');
+  termsLink.href = '/terms';
+  termsLink.className =
+    'underline hover:text-text-secondary focus:outline-hidden focus:ring-2 focus:ring-accent rounded';
+  termsLink.textContent = 'Terms of Service';
+  termsLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigate('/terms');
+  });
+
+  const andText = document.createTextNode(' and ');
+
+  const privacyLink = document.createElement('a');
+  privacyLink.href = '/privacy';
+  privacyLink.className =
+    'underline hover:text-text-secondary focus:outline-hidden focus:ring-2 focus:ring-accent rounded';
+  privacyLink.textContent = 'Privacy Policy';
+  privacyLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigate('/privacy');
+  });
+
+  const periodText = document.createTextNode('.');
+
+  consentLine.appendChild(consentPrefix);
+  consentLine.appendChild(termsLink);
+  consentLine.appendChild(andText);
+  consentLine.appendChild(privacyLink);
+  consentLine.appendChild(periodText);
+  form.appendChild(consentLine);
+
   // Submit handler
   form.addEventListener('submit', (e) => {
     void (async () => {

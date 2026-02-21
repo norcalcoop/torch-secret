@@ -45,6 +45,7 @@ This invariant applies to:
 | **Analytics** | PostHog client (Phase 25) | `sanitize_properties` must strip URL fragments (`#...`) from `$current_url` and `$referrer` before any event is sent. AES-256-GCM keys and secret IDs embedded in URL fragments must never reach PostHog servers. | Phase 25 |
 | **Logger — dashboard route** | `server/src/middleware/logger.ts` `redactUrl` | Pino HTTP logger redaction regex extended to cover `/api/dashboard/secrets/:id` paths. Secret IDs in dashboard DELETE URLs are redacted before any log line is written. | Phase 23 |
 | **Email (Resend)** | `server/src/services/notification.service.ts` | Notification email body contains only: viewed-at timestamp and generic "secret was viewed" message. No `secretId`, no `label`, no ciphertext, no viewer IP address in the body or subject. Resend delivery record logs recipient email + subject — no secretId. Error log line emits only `error.message` with no identifying fields. | Phase 26 |
+| **Rate limits + conversion prompts** | `server/src/middleware/rate-limit.ts`, `client/src/analytics/posthog.ts` | 429 responses for anonymous users contain no `userId` (anonymous by definition) and no `secretId` (POST /api/secrets URL contains no secret ID). Conversion prompt analytics events (`conversion_prompt_shown`, `conversion_prompt_clicked`) contain only `prompt_number` — no `userId`, no `secretId`. Legal pages contain no user-identifiable or secret-identifiable data. | Phase 27 |
 
 ### Extension Protocol
 
@@ -64,4 +65,4 @@ Both references must remain current.
 ---
 
 *Document created: Phase 21 (Schema Foundation)*
-*Last updated: Phase 26*
+*Last updated: Phase 27*
