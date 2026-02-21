@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 27: Conversion Prompts + Rate Limits + Legal Pages — Complete
+**Current focus:** v4.0 — Phase 28: Optional Password or Passphrase Protection with Password Generator and Masked Inputs — In Progress
 
 ## Current Position
 
-Phase: 27 of 27 (Conversion Prompts + Rate Limits + Legal Pages) — Complete
-Plan: 4 of 4 complete (3 core plans + 1 gap-closure plan)
-Status: Phase 27 Plan 04 complete (gap-closure) — rate-limit countdown arithmetic fixed; CONV-06 fully satisfied; UAT Test 7 resolved
-Last activity: 2026-02-21 — Phase 27 Plan 04 complete (CONV-06 gap closure)
+Phase: 28 of 28 (Optional Password or Passphrase Protection with Password Generator and Masked Inputs) — In Progress
+Plan: 1 of TBD complete
+Status: Phase 28 Plan 01 complete — password-generator.ts TDD module with 15 passing tests; PROT-02 satisfied
+Last activity: 2026-02-21 — Phase 28 Plan 01 complete (password generator module)
 
-Progress: [████████░░] ~55% (v4.0 — 43/44 requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 pending)
+Progress: [████████░░] ~57% (v4.0 — 44/44+ requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-02; CONV-04/CONV-05 + LEGAL-03/LEGAL-04 + PROT-01/PROT-03/PROT-04 pending)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: [████████░░] ~55% (v4.0 — 43/44 requirements com
 | Phase 27 P03 | ~35 | 2 auto + 1 UAT tasks | 6 files |
 | Phase 27 P02 | 8 | 2 tasks | 4 files |
 | Phase 27 P04 | 1 | 1 tasks | 2 files |
+| Phase 28 P01 | 6 | 3 TDD phases | 3 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 27]: [Phase 27-02]: 30d expiration option absent from authenticated select — matches server-side cap from Phase 27-01; Pro-tier feature deferred to v5.0
 - [Phase 27]: [Phase 27-02]: errorArea className reset on each submit — showRateLimitUpsell mutates element className; reset restores danger styling for non-429 errors on retry
 - [Phase 27]: [Phase 27]: [Phase 27-04]: Math.ceil(resetTimestamp / 60) is the correct formula for RateLimit-Reset draft-6 delta-seconds — no epoch arithmetic needed; the header value is already seconds-remaining
+- [Phase 28]: [Phase 28-01]: easyToSay+omitSimilar throws 'No characters available with current filter combination' — explicit guard per plan spec; UI in Phase 28-02 should prevent this pairing
+- [Phase 28]: [Phase 28-01]: PHONETIC = 'abcdefghjkmnprstuvwyz' omits e,i,l,o,q,x — phonetically ambiguous chars excluded at definition time, not filtered at runtime
+- [Phase 28]: [Phase 28-01]: global crypto used without window.crypto prefix — available in browser (Web Crypto API) and Node 19+; consistent with passphrase.ts pattern
 
 ### Roadmap Evolution
 
@@ -165,5 +169,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 27-conversion-prompts-rate-limits-legal-pages 27-04-PLAN.md (gap-closure)
-Resume: Phase 27 fully complete (4/4 plans including gap-closure for UAT Test 7). v4.0 CONV-06 requirement satisfied. Next: v4.0 wrap-up or phase 28 if planned.
+Stopped at: Completed 28-optional-password-or-passphrase-protection-with-password-generator-and-masked-inputs 28-01-PLAN.md (TDD: password generator module)
+Resume: Phase 28 Plan 01 complete. password-generator.ts fully tested (15 tests, 0 regressions). PROT-02 satisfied. Next: Phase 28 Plan 02 (protection panel UI).
