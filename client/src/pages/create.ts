@@ -2,8 +2,8 @@
  * Create secret page.
  *
  * Renders the complete secret creation form: textarea with character counter,
- * expiration selector, optional password field, and submit button that encrypts
- * in the browser and posts to the API.
+ * expiration selector, auto-generated EFF diceware passphrase section (Phase 24),
+ * and submit button that encrypts in the browser and posts to the API.
  *
  * After successful creation, renders the confirmation page in the same container
  * (state-based transition, not URL-based).
@@ -11,23 +11,28 @@
  * Progressive enhancement: for authenticated users, an optional collapsible
  * "Add label" field is appended after the form renders (non-blocking async auth
  * check). Anonymous users see no label field -- it is absent from the DOM.
+ *
+ * Phase 24: The "Advanced options" password field has been replaced with an
+ * auto-generated EFF diceware passphrase displayed in a monospace block with
+ * Regenerate and Copy buttons. Every secret is now password-protected by default.
  */
 
-import { encrypt } from '../crypto/index.js';
+import { encrypt, generatePassphrase } from '../crypto/index.js';
 import { createSecret } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
 import { createExpirationSelect } from '../components/expiration-select.js';
+import { createCopyButton } from '../components/copy-button.js';
 import { renderConfirmationPage } from './confirmation.js';
 import {
   ClipboardPaste,
   LockKeyhole,
   Share2,
   Flame,
-  Eye,
   EyeOff,
   Code,
   UserX,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide';
 import { createIcon } from '../components/icons.js';
 
@@ -62,7 +67,7 @@ function isSession(value: unknown): value is Session {
 
 /**
  * Creates the collapsible label field for authenticated users.
- * Uses details/summary pattern matching the existing "Advanced options" section.
+ * Uses details/summary pattern.
  */
 function createLabelField(): HTMLElement {
   const details = document.createElement('details');
@@ -110,6 +115,11 @@ function createLabelField(): HTMLElement {
  * PageRenderer in router.ts accepts void | Promise<void> so this is compatible.
  */
 export function renderCreatePage(container: HTMLElement): void {
+  // -- Passphrase state (Phase 24) --
+  // Initialized on mount; updated on each Regenerate click.
+  // Always synced with hidden passwordInput.value.
+  let currentPassphrase = generatePassphrase();
+
   // -- Page wrapper --
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
@@ -198,63 +208,76 @@ export function renderCreatePage(container: HTMLElement): void {
   expirationGroup.appendChild(expirationSelect);
   form.appendChild(expirationGroup);
 
-  // -- Advanced options (password protection) --
-  const details = document.createElement('details');
-  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+  // -- Passphrase section (Phase 24) --
+  // The "Advanced options" password field has been replaced with an auto-generated
+  // EFF diceware passphrase. Every secret is now password-protected by default.
+  // PASS-02 invariant: Regenerate ONLY updates currentPassphrase, passphraseDisplay,
+  // and passwordInput. It NEVER touches textarea, expirationSelect, or labelInput.
+  const passphraseGroup = document.createElement('div');
+  passphraseGroup.className = 'space-y-2';
 
-  const summary = document.createElement('summary');
-  summary.className =
-    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
-  summary.textContent = 'Advanced options';
+  const passphraseSectionLabel = document.createElement('label');
+  passphraseSectionLabel.htmlFor = 'passphrase-display';
+  passphraseSectionLabel.className = 'block text-sm font-medium text-text-secondary';
+  passphraseSectionLabel.textContent = 'Access passphrase';
 
-  const detailsContent = document.createElement('div');
-  detailsContent.className = 'px-4 pb-4 space-y-1';
+  const passphraseDisplay = document.createElement('div');
+  passphraseDisplay.id = 'passphrase-display';
+  passphraseDisplay.className =
+    'w-full px-3 py-3 rounded-lg bg-surface-raised text-text-primary font-mono text-sm select-all border border-border';
+  passphraseDisplay.setAttribute('aria-live', 'polite');
+  passphraseDisplay.setAttribute('aria-label', 'Generated passphrase');
+  passphraseDisplay.textContent = currentPassphrase; // textContent only — never innerHTML
 
-  const passwordLabel = document.createElement('label');
-  passwordLabel.htmlFor = 'password';
-  passwordLabel.className = 'block text-sm font-medium text-text-secondary';
-  passwordLabel.textContent = 'Password protection';
+  const passphraseHint = document.createElement('p');
+  passphraseHint.className = 'text-xs text-text-muted';
+  passphraseHint.textContent =
+    'Auto-generated passphrase. Recipients will need this to view your secret.';
 
-  const passwordInput = document.createElement('input');
-  passwordInput.type = 'password';
-  passwordInput.id = 'password';
-  passwordInput.placeholder = 'Optional password';
-  passwordInput.maxLength = 128;
-  passwordInput.autocomplete = 'new-password';
-  passwordInput.className =
-    'w-full px-3 py-2 pr-10 min-h-[44px] border border-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden';
+  // Button row: Regenerate + Copy
+  const passphraseButtonRow = document.createElement('div');
+  passphraseButtonRow.className = 'flex items-center gap-3 flex-wrap';
 
-  const passwordWrapper = document.createElement('div');
-  passwordWrapper.className = 'relative';
-  passwordWrapper.appendChild(passwordInput);
+  // Regenerate button
+  const regenerateBtn = document.createElement('button');
+  regenerateBtn.type = 'button';
+  regenerateBtn.className =
+    'inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg border border-border bg-surface text-text-secondary text-sm hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors cursor-pointer';
+  regenerateBtn.setAttribute('aria-label', 'Generate a new passphrase');
+  const regenIcon = createIcon(RefreshCw, { size: 'sm' });
+  const regenLabel = document.createElement('span');
+  regenLabel.textContent = 'New passphrase';
+  regenerateBtn.appendChild(regenIcon);
+  regenerateBtn.appendChild(regenLabel);
 
-  const revealToggle = document.createElement('button');
-  revealToggle.type = 'button';
-  revealToggle.setAttribute('aria-label', 'Show password');
-  revealToggle.className =
-    'absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-secondary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset focus:outline-none rounded-r-lg transition-colors cursor-pointer';
+  // Copy passphrase button
+  const copyPassphraseBtn = createCopyButton(() => currentPassphrase, 'Copy');
 
-  const eyeEl = createIcon(Eye, { size: 'sm', class: 'pointer-events-none' });
-  const eyeOffEl = createIcon(EyeOff, { size: 'sm', class: 'pointer-events-none hidden' });
-  revealToggle.appendChild(eyeEl);
-  revealToggle.appendChild(eyeOffEl);
-
-  let passwordVisible = false;
-  revealToggle.addEventListener('click', () => {
-    passwordVisible = !passwordVisible;
-    passwordInput.type = passwordVisible ? 'text' : 'password';
-    revealToggle.setAttribute('aria-label', passwordVisible ? 'Hide password' : 'Show password');
-    eyeEl.classList.toggle('hidden', passwordVisible);
-    eyeOffEl.classList.toggle('hidden', !passwordVisible);
+  // Regenerate click handler
+  // CRITICAL: ONLY update currentPassphrase, passphraseDisplay, and passwordInput.
+  // NEVER touch textarea.value, expirationSelect.value, or labelInput — PASS-02 invariant.
+  regenerateBtn.addEventListener('click', () => {
+    currentPassphrase = generatePassphrase();
+    passphraseDisplay.textContent = currentPassphrase;
+    passwordInput.value = currentPassphrase;
   });
 
-  passwordWrapper.appendChild(revealToggle);
+  passphraseButtonRow.appendChild(regenerateBtn);
+  passphraseButtonRow.appendChild(copyPassphraseBtn);
 
-  detailsContent.appendChild(passwordLabel);
-  detailsContent.appendChild(passwordWrapper);
-  details.appendChild(summary);
-  details.appendChild(detailsContent);
-  form.appendChild(details);
+  passphraseGroup.appendChild(passphraseSectionLabel);
+  passphraseGroup.appendChild(passphraseDisplay);
+  passphraseGroup.appendChild(passphraseHint);
+  passphraseGroup.appendChild(passphraseButtonRow);
+  form.appendChild(passphraseGroup);
+
+  // -- Hidden password input (synced with currentPassphrase at all times) --
+  // Replaces the old visible password input from "Advanced options".
+  // The submit handler reads passwordInput.value — always set to currentPassphrase.
+  const passwordInput = document.createElement('input');
+  passwordInput.type = 'hidden';
+  passwordInput.value = currentPassphrase; // Sync on init
+  form.appendChild(passwordInput);
 
   // -- Error display area --
   const errorArea = document.createElement('div');
@@ -292,7 +315,7 @@ export function renderCreatePage(container: HTMLElement): void {
       // Get expiration
       const expiresIn = expirationSelect.value as '1h' | '24h' | '7d' | '30d';
 
-      // Get optional password
+      // Get password (always the current passphrase — never undefined after Phase 24)
       const password = passwordInput.value || undefined;
 
       // Get optional label (only present for authenticated users)
@@ -302,7 +325,6 @@ export function renderCreatePage(container: HTMLElement): void {
       submitButton.disabled = true;
       textarea.disabled = true;
       expirationSelect.disabled = true;
-      passwordInput.disabled = true;
       if (labelInput) {
         labelInput.disabled = true;
       }
@@ -320,13 +342,13 @@ export function renderCreatePage(container: HTMLElement): void {
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
         // Step 4: Render confirmation page (state-based, not URL-based)
-        renderConfirmationPage(container, shareUrl, response.expiresAt, label);
+        // currentPassphrase is passed as the fifth argument (Phase 24)
+        renderConfirmationPage(container, shareUrl, response.expiresAt, label, currentPassphrase);
       } catch (err) {
         // Restore form state
         submitButton.disabled = false;
         textarea.disabled = false;
         expirationSelect.disabled = false;
-        passwordInput.disabled = false;
         if (labelInput) {
           labelInput.disabled = false;
         }
@@ -356,11 +378,8 @@ export function renderCreatePage(container: HTMLElement): void {
       const data: unknown = result.data as unknown;
       if (isSession(data)) {
         const labelField = createLabelField();
-        // Insert after the "Advanced options" details element
-        const advancedDetails = form.querySelector('details');
-        if (advancedDetails) {
-          form.insertBefore(labelField, advancedDetails.nextSibling);
-        }
+        // Insert label field before the error area (stable anchor regardless of Advanced options removal)
+        form.insertBefore(labelField, errorArea);
         labelInput = labelField.querySelector('#secret-label') as HTMLInputElement;
       }
     } catch {
