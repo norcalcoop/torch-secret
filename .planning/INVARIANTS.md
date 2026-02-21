@@ -44,6 +44,7 @@ This invariant applies to:
 | **Logger** | `server/src/middleware/logger.ts` | Pino HTTP logger redacts secret IDs from URL paths via regex before any log line is written. Secret IDs must never appear in log output even as part of a URL. | Phase 2 |
 | **Analytics** | PostHog client (Phase 25) | `sanitize_properties` must strip URL fragments (`#...`) from `$current_url` and `$referrer` before any event is sent. AES-256-GCM keys and secret IDs embedded in URL fragments must never reach PostHog servers. | Phase 25 |
 | **Logger — dashboard route** | `server/src/middleware/logger.ts` `redactUrl` | Pino HTTP logger redaction regex extended to cover `/api/dashboard/secrets/:id` paths. Secret IDs in dashboard DELETE URLs are redacted before any log line is written. | Phase 23 |
+| **Email (Resend)** | `server/src/services/notification.service.ts` | Notification email body contains only: viewed-at timestamp and generic "secret was viewed" message. No `secretId`, no `label`, no ciphertext, no viewer IP address in the body or subject. Resend delivery record logs recipient email + subject — no secretId. Error log line emits only `error.message` with no identifying fields. | Phase 26 |
 
 ### Extension Protocol
 
@@ -63,4 +64,4 @@ Both references must remain current.
 ---
 
 *Document created: Phase 21 (Schema Foundation)*
-*Last updated: Phase 23*
+*Last updated: Phase 26*
