@@ -1,12 +1,22 @@
-import { describe, test, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterAll, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import type { Express } from 'express';
 import { buildApp } from '../../app.js';
 import { db } from '../../db/connection.js';
 import { pool } from '../../db/connection.js';
-import { secrets } from '../../db/schema.js';
-import { sql } from 'drizzle-orm';
+import { secrets, users } from '../../db/schema.js';
+import { sql, eq } from 'drizzle-orm';
 import { redactUrl } from '../../middleware/logger.js';
+import { nanoid } from 'nanoid';
+
+// ---------------------------------------------------------------------------
+// Phase 26: Mock notification service to avoid real Resend HTTP calls
+// ---------------------------------------------------------------------------
+vi.mock('../../services/notification.service.js', () => ({
+  sendSecretViewedNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { sendSecretViewedNotification } from '../../services/notification.service.js';
 
 // Valid base64-encoded ciphertext for tests
 const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';
@@ -522,6 +532,187 @@ describe('POST /api/secrets/:id/verify', () => {
       .expect(400);
 
     expect(res.body.error).toBe('validation_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 26: notify persistence and notification dispatch
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper: register + sign in to get a session cookie.
+ * Returns { sessionCookie, userId } for the created user.
+ * Mirrors the same helper pattern from dashboard.test.ts.
+ */
+async function createUserAndSignIn(
+  appInstance: Express,
+  email: string,
+  password: string,
+  name: string,
+): Promise<{ sessionCookie: string; userId: string }> {
+  await request(appInstance)
+    .post('/api/auth/sign-up/email')
+    .send({ email, password, name })
+    .expect(200);
+
+  const signInRes = await request(appInstance)
+    .post('/api/auth/sign-in/email')
+    .send({ email, password })
+    .expect(200);
+
+  const rawCookiesHeader = signInRes.headers['set-cookie'] as unknown;
+  const rawCookies: string[] = Array.isArray(rawCookiesHeader)
+    ? (rawCookiesHeader as string[])
+    : typeof rawCookiesHeader === 'string'
+      ? [rawCookiesHeader]
+      : [];
+  const sessionCookie = rawCookies
+    .map((c) => c.split(';')[0])
+    .find((c) => c.startsWith('better-auth.session_token='));
+  if (!sessionCookie) {
+    throw new Error('No session cookie found in sign-in response');
+  }
+
+  const userId = signInRes.body.user?.id as string;
+  if (!userId) {
+    throw new Error('No userId found in sign-in response body');
+  }
+
+  return { sessionCookie, userId };
+}
+
+describe('Phase 26: notify persistence and notification dispatch', () => {
+  let notifyTestApp: Express;
+  let notifyUserSessionCookie: string;
+  let notifyUserId: string;
+
+  const NOTIFY_TEST_EMAIL = 'notify-test-user@test.secureshare.dev';
+  const NOTIFY_TEST_PASSWORD = 'password-for-notify-test-123';
+
+  beforeAll(async () => {
+    notifyTestApp = buildApp();
+
+    const result = await createUserAndSignIn(
+      notifyTestApp,
+      NOTIFY_TEST_EMAIL,
+      NOTIFY_TEST_PASSWORD,
+      'Notify Test User',
+    );
+    notifyUserSessionCookie = result.sessionCookie;
+    notifyUserId = result.userId;
+  });
+
+  afterAll(async () => {
+    await db.delete(users).where(eq(users.email, NOTIFY_TEST_EMAIL));
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(sendSecretViewedNotification).mockResolvedValue(undefined);
+  });
+
+  test('createSecret persists notify=true when userId provided', async () => {
+    const createRes = await request(notifyTestApp)
+      .post('/api/secrets')
+      .set('Cookie', notifyUserSessionCookie)
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', notify: true })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Verify DB row has notify=true and userId set
+    const [row] = await db
+      .select()
+      .from(secrets)
+      .where(sql`${secrets.id} = ${id}`);
+    expect(row).toBeDefined();
+    expect(row.notify).toBe(true);
+    expect(row.userId).toBe(notifyUserId);
+  });
+
+  test('createSecret stores notify=false for anonymous secrets even if client sends notify:true', async () => {
+    // POST without auth cookie, body includes notify:true
+    const createRes = await request(notifyTestApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h', notify: true })
+      .expect(201);
+
+    const { id } = createRes.body;
+
+    // Route guard enforces notify=false for anonymous users
+    const [row] = await db
+      .select()
+      .from(secrets)
+      .where(sql`${secrets.id} = ${id}`);
+    expect(row).toBeDefined();
+    expect(row.notify).toBe(false);
+    expect(row.userId).toBeNull();
+  });
+
+  test('retrieveAndDestroy dispatches notification when notify=true and userId set', async () => {
+    // Insert a user-owned secret with notify=true directly via DB
+    const secretId = nanoid();
+    await db.insert(secrets).values({
+      id: secretId,
+      ciphertext: VALID_CIPHERTEXT,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      userId: notifyUserId,
+      notify: true,
+      status: 'active',
+    });
+
+    // GET /api/secrets/:id triggers retrieveAndDestroy
+    const getRes = await request(notifyTestApp).get(`/api/secrets/${secretId}`).expect(200);
+
+    expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
+
+    // Allow fire-and-forget to resolve
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // sendSecretViewedNotification should have been called with an email string and a Date
+    expect(sendSecretViewedNotification).toHaveBeenCalledOnce();
+    const [emailArg, dateArg] = vi.mocked(sendSecretViewedNotification).mock.calls[0];
+    expect(typeof emailArg).toBe('string');
+    expect(emailArg).toBe(NOTIFY_TEST_EMAIL);
+    expect(dateArg).toBeInstanceOf(Date);
+  });
+
+  test('retrieveAndDestroy does not dispatch notification when notify=false', async () => {
+    // Insert a user-owned secret with notify=false
+    const secretId = nanoid();
+    await db.insert(secrets).values({
+      id: secretId,
+      ciphertext: VALID_CIPHERTEXT,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      userId: notifyUserId,
+      notify: false,
+      status: 'active',
+    });
+
+    await request(notifyTestApp).get(`/api/secrets/${secretId}`).expect(200);
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(sendSecretViewedNotification).not.toHaveBeenCalled();
+  });
+
+  test('retrieveAndDestroy does not dispatch notification for anonymous secrets (no userId)', async () => {
+    // Insert anonymous secret (userId=null, notify=false enforced by route)
+    const secretId = nanoid();
+    await db.insert(secrets).values({
+      id: secretId,
+      ciphertext: VALID_CIPHERTEXT,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      userId: null,
+      notify: false,
+      status: 'active',
+    });
+
+    await request(notifyTestApp).get(`/api/secrets/${secretId}`).expect(200);
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(sendSecretViewedNotification).not.toHaveBeenCalled();
   });
 });
 
