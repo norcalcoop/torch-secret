@@ -67,7 +67,7 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 - [ ] **TECH-01**: CI workflow includes placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) to prevent integration test failures
 - [ ] **TECH-02**: `/privacy` and `/terms` added to `NOINDEX_PREFIXES` in `app.ts` for server-side `X-Robots-Tag` header
-- [ ] **TECH-03**: `schema.ts` zero-knowledge inline comment updated to match canonical 6-point list in `INVARIANTS.md`
+- [ ] **TECH-03**: `schema.ts` zero-knowledge inline comment updated to match canonical 7-point list in `INVARIANTS.md`
 
 ### Feedback Links (FBCK)
 

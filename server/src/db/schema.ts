@@ -13,9 +13,13 @@ import { nanoid } from 'nanoid';
  * violating the zero-knowledge security model.
  *
  * Current enforcement points (update .planning/INVARIANTS.md when adding new systems):
- *   DB:        secrets.user_id is nullable; secrets.id is never stored in users or sessions rows
- *   Logger:    server/src/middleware/logger.ts redacts secret IDs from URL paths via regex
- *   Analytics: PostHog events must strip URL fragments (sanitize_properties) — Phase 25
+ *   DB — secrets table:       secrets.user_id is nullable FK; secrets.id is never stored in users, sessions, or accounts rows
+ *   DB — users table:         No secret_id or last_secret_id column. User rows contain no secret identifiers.
+ *   Logger:                   server/src/middleware/logger.ts redacts secret IDs from URL paths via regex
+ *   Analytics:                PostHog sanitize_properties must strip URL fragments before any event fires — Phase 25
+ *   Logger — dashboard route: redactUrl regex extended to cover /api/dashboard/secrets/:id paths — Phase 23
+ *   Email (Resend):           notification email body contains only viewed-at timestamp; no secretId, label, or ciphertext — Phase 26
+ *   Rate limits + prompts:    429 responses and conversion prompt events contain no userId or secretId — Phase 27
  *
  * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
  */
