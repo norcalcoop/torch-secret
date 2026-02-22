@@ -262,5 +262,5 @@ Plans:
 **Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 30-01-PLAN.md — Update render.yaml (all v4.0 env vars + sync: false), docker-compose.yml (auth placeholders), and Dockerfile (VITE_ ARG declarations)
+- [x] 30-01-PLAN.md — Update render.yaml (all v4.0 env vars + sync: false), docker-compose.yml (auth placeholders), and Dockerfile (VITE_ ARG declarations)
 - [ ] 30-02-PLAN.md — Bump package.json to 4.0.0 and add docker-build CI job

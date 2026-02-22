@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 30 of 30 (Docker and Render Deployment Fixes) — Plans 01, 02 complete
-Plan: 2 of 3 complete
-Status: Phase 30 Plans 01 and 02 complete — Dockerfile VITE_ ARG declarations (Plan 01), package.json version 4.0.0 bump and docker-build CI job (Plan 02)
-Last activity: 2026-02-22 — Phase 30 Plan 02 complete; package.json bumped to 4.0.0; docker-build CI job added to catch Dockerfile regressions before Render deploy
+Phase: 30 of 30 (Docker and Render Deployment Fixes) — Plan 01 complete
+Plan: 1 of 2 complete
+Status: Phase 30 Plan 01 complete — render.yaml updated with 10 v4.0 env vars (sync: false), docker-compose.yml has auth placeholder vars, Dockerfile Stage 2 has VITE_ build ARGs
+Last activity: 2026-02-22 — Phase 30 Plan 01 complete; render.yaml, docker-compose.yml, Dockerfile all updated to support v4.0 auth and PostHog analytics
 
 Progress: [██████████] 100% (v4.0 — all requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 through PROT-04)
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100% (v4.0 — all requirements compl
 | Phase 29-v4-tech-debt-cleanup P03 | 2 | 1 tasks | 1 files |
 | Phase 29 P04 | 8 | 1 tasks | 1 files |
 | Phase 29 P05 | 3 | 1 tasks | 1 files |
+| Phase 30-docker-and-render-deployment-fixes P01 | 2 | 2 tasks | 3 files |
 | Phase 30-docker-and-render-deployment-fixes P02 | 1 | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -175,6 +176,11 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 29-01]: requirements-completed field added to 27-01-SUMMARY.md frontmatter only — no implementation changes; CONV-01 was already implemented in Phase 27 (documentation gap closure only)
 - [Phase 29]: [Phase 29-05]: form > :scope > [role='alert'] scoped selector required in test because protection panel contains nested #gen-error role=alert element that precedes form errorArea in DOM order
 - [Phase 29]: [Phase 29-05]: importOriginal factory in vi.mock preserves real ApiError class for instanceof check while replacing createSecret; eslint-disable-next-line no-unsafe-return needed because vi.fn() returns any and test override omits that rule
+- [Phase 30-01]: 10 secret vars in render.yaml use sync: false — Render prompts deployer at Blueprint creation; values never committed to source control
+- [Phase 30-01]: BETTER_AUTH_SECRET placeholder 'local-development-secret-must-be-at-least-32-chars' satisfies z.string().min(32) in Zod schema; allows docker compose up without crash
+- [Phase 30-01]: ARG VITE_POSTHOG_KEY placed in Stage 2 (build) only — not Stage 1 (deps) or Stage 3 (production); only needed where Vite runs
+- [Phase 30-01]: APP_URL not added to render.yaml — optional var, production no-op is correct (BETTER_AUTH_URL serves as app URL)
+- [Phase 30-01]: PORT not added to render.yaml — Render injects PORT=10000 automatically; hardcoding 3000 would break Render routing
 - [Phase 30-02]: docker-build CI job uses needs: [lint] (not needs: [test, e2e]) — runs in parallel with test/e2e after lint, does not extend critical path
 - [Phase 30-02]: VITE_POSTHOG_KEY="" and VITE_POSTHOG_HOST="" as empty build args in CI satisfy ARG declarations from Plan 01; PostHog disabled in CI is correct default (graceful no-op)
 - [Phase 30-02]: --no-cache in docker-build CI job ensures build reflects actual Dockerfile content, not stale BuildKit layer cache
@@ -198,5 +204,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 30-02-PLAN.md; Phase 30 Plans 01 and 02 complete
-Resume: Phase 30 (Docker & Render deployment fixes) in progress — Plans 01 and 02 done. Plan 03 (render.yaml + docker-compose.yml env var additions) is next. No active blockers.
+Stopped at: Completed 30-01-PLAN.md; Phase 30 Plan 01 complete
+Resume: Phase 30 (Docker & Render deployment fixes) in progress — Plan 01 done (render.yaml, docker-compose.yml, Dockerfile updated). Plan 02 (package.json version bump + docker-build CI job) is next. No active blockers.
