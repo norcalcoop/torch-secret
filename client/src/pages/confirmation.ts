@@ -178,7 +178,7 @@ export function renderConfirmationPage(
   );
   buttonRow.appendChild(copyButton);
 
-  const shareBtn = createShareButton(shareUrl, 'SecureShare - Your secure link');
+  const shareBtn = createShareButton(shareUrl, 'Torch Secret - Your secure link');
   if (shareBtn) {
     buttonRow.appendChild(shareBtn);
   }

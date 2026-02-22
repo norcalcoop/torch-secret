@@ -1,7 +1,7 @@
 /**
  * Privacy Policy page.
  *
- * Renders a full Privacy Policy describing the SecureShare zero-knowledge
+ * Renders a full Privacy Policy describing the Torch Secret zero-knowledge
  * architecture in plain English. Uses createElement/textContent only — no innerHTML.
  *
  * Satisfies LEGAL-01: /privacy route with noindex meta.
@@ -39,7 +39,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
     {
       heading: 'Who We Are',
       paragraphs: [
-        '[Company Name] operates SecureShare, a zero-knowledge one-time secret sharing service. Contact us at [Contact Email].',
+        '[Company Name] operates Torch Secret, a zero-knowledge one-time secret sharing service. Contact us at [Contact Email].',
       ],
     },
     {

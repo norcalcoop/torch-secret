@@ -64,7 +64,7 @@ export function initRouter(): void {
  */
 export function updatePageMeta(meta: PageMeta): void {
   // 1. Document title
-  document.title = `${meta.title} - SecureShare`;
+  document.title = `${meta.title} - Torch Secret`;
 
   // 2. Meta description (create or update)
   let descEl = document.querySelector<HTMLMetaElement>('meta[name="description"]');
@@ -128,17 +128,17 @@ function updateOgTags(isNoindex: boolean): void {
 
   if (isNoindex) {
     // Generic branding -- no indication a secret exists at this URL
-    if (ogTitle) ogTitle.content = 'SecureShare';
+    if (ogTitle) ogTitle.content = 'Torch Secret';
     if (ogDesc) ogDesc.content = 'Zero-knowledge secret sharing';
     if (ogUrl) ogUrl.content = `${window.location.origin}/`;
-    if (twTitle) twTitle.content = 'SecureShare';
+    if (twTitle) twTitle.content = 'Torch Secret';
     if (twDesc) twDesc.content = 'Zero-knowledge secret sharing';
   } else {
     // Restore homepage OG values
-    if (ogTitle) ogTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (ogTitle) ogTitle.content = 'Torch Secret - Zero-Knowledge Secret Sharing';
     if (ogDesc) ogDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
     if (ogUrl) ogUrl.content = `${window.location.origin}/`;
-    if (twTitle) twTitle.content = 'SecureShare - Zero-Knowledge Secret Sharing';
+    if (twTitle) twTitle.content = 'Torch Secret - Zero-Knowledge Secret Sharing';
     if (twDesc) twDesc.content = 'End-to-end encrypted. One-time view. No accounts.';
   }
 }
@@ -199,7 +199,7 @@ function handleRoute(): void {
   } else if (path === '/login') {
     updatePageMeta({
       title: 'Sign In',
-      description: 'Sign in to your SecureShare account.',
+      description: 'Sign in to your Torch Secret account.',
       noindex: true,
     });
     import('./pages/login.js')
@@ -209,7 +209,7 @@ function handleRoute(): void {
   } else if (path === '/register') {
     updatePageMeta({
       title: 'Create Account',
-      description: 'Create a free SecureShare account.',
+      description: 'Create a free Torch Secret account.',
       noindex: true,
     });
     import('./pages/register.js')
@@ -219,7 +219,7 @@ function handleRoute(): void {
   } else if (path === '/forgot-password') {
     updatePageMeta({
       title: 'Reset Password',
-      description: 'Request a password reset for your SecureShare account.',
+      description: 'Request a password reset for your Torch Secret account.',
       noindex: true,
     });
     import('./pages/forgot-password.js')
@@ -229,7 +229,7 @@ function handleRoute(): void {
   } else if (path === '/reset-password') {
     updatePageMeta({
       title: 'Set New Password',
-      description: 'Set a new password for your SecureShare account.',
+      description: 'Set a new password for your Torch Secret account.',
       noindex: true,
     });
     import('./pages/reset-password.js')
@@ -239,7 +239,7 @@ function handleRoute(): void {
   } else if (path === '/dashboard') {
     updatePageMeta({
       title: 'Dashboard',
-      description: 'Your SecureShare dashboard.',
+      description: 'Your Torch Secret dashboard.',
       noindex: true,
     });
     import('./pages/dashboard.js')
@@ -249,7 +249,7 @@ function handleRoute(): void {
   } else if (path === '/privacy') {
     updatePageMeta({
       title: 'Privacy Policy',
-      description: 'How SecureShare handles your data — zero-knowledge architecture explained.',
+      description: 'How Torch Secret handles your data — zero-knowledge architecture explained.',
       noindex: true,
     });
     import('./pages/privacy.js')
@@ -259,7 +259,7 @@ function handleRoute(): void {
   } else if (path === '/terms') {
     updatePageMeta({
       title: 'Terms of Service',
-      description: 'Terms of Service for SecureShare — acceptable use and service limitations.',
+      description: 'Terms of Service for Torch Secret — acceptable use and service limitations.',
       noindex: true,
     });
     import('./pages/terms.js')
@@ -289,6 +289,6 @@ function handleRoute(): void {
  * Fallback error display when a page chunk fails to load.
  */
 function showLoadError(container: HTMLElement): void {
-  document.title = 'Error - SecureShare';
+  document.title = 'Error - Torch Secret';
   container.textContent = 'Something went wrong. Please refresh the page.';
 }

@@ -50,7 +50,7 @@ function createHeader(): HTMLElement {
   const inner = document.createElement('div');
   inner.className = 'max-w-2xl mx-auto px-4 h-14 flex items-center justify-between';
 
-  // Brand mark: shield icon + "SecureShare" wordmark
+  // Brand mark: shield icon + "Torch Secret" wordmark
   const brand = document.createElement('a');
   brand.href = '/';
   brand.className = 'flex items-center gap-2 text-text-primary no-underline';
@@ -62,7 +62,7 @@ function createHeader(): HTMLElement {
   const shieldIcon = createIcon(Shield, { size: 'sm', class: 'text-accent' });
   const wordmark = document.createElement('span');
   wordmark.className = 'font-heading font-semibold text-lg';
-  wordmark.textContent = 'SecureShare';
+  wordmark.textContent = 'Torch Secret';
 
   brand.appendChild(shieldIcon);
   brand.appendChild(wordmark);

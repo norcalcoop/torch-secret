@@ -1,6 +1,6 @@
 {
-  "name": "SecureShare",
-  "short_name": "SecureShare",
+  "name": "Torch Secret",
+  "short_name": "Torch Secret",
   "description": "Share secrets securely with zero-knowledge, one-time encrypted links",
   "start_url": "/",
   "display": "browser",
