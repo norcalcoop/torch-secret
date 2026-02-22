@@ -96,8 +96,12 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
   2. All canonical URLs, sitemap entries, JSON-LD `@id`/`url` fields, and OG image URLs use the `torchsecret.com` domain — `secureshare.example.com` does not appear in any served HTML or sitemap
   3. CI workflow passes with placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) included so integration tests do not fail in CI due to missing secrets
   4. GET requests to `/privacy` and `/terms` return an `X-Robots-Tag: noindex` response header (server-side enforcement, not just client-side meta)
-  5. The zero-knowledge inline comment in `schema.ts` lists all 6 enforcement points matching the canonical list in `INVARIANTS.md`
-**Plans**: TBD
+  5. The zero-knowledge inline comment in `schema.ts` lists all 7 enforcement points matching the canonical list in `INVARIANTS.md`
+**Plans**: 3 plans
+Plans:
+- [ ] 31-01-PLAN.md — User-facing brand rename (client src, server src, static files, planning docs)
+- [ ] 31-02-PLAN.md — Infrastructure rename + CI env vars + Lucide upgrade + README refresh
+- [ ] 31-03-PLAN.md — Server-side tech debt (NOINDEX headers, schema.ts comment, planning doc fixes)
 
 ### Phase 32: Marketing Homepage + /create Split
 **Goal**: Users arrive at `/` and see a marketing landing page that explains Torch Secret's zero-knowledge model; the create-secret form lives at `/create` and is unaffected in functionality
@@ -214,7 +218,7 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
-| 31. Rebrand + Tech Debt | v5.0 | 0/TBD | Not started | - |
+| 31. Rebrand + Tech Debt | v5.0 | 0/3 | Not started | - |
 | 32. Marketing Homepage + /create Split | v5.0 | 0/TBD | Not started | - |
 | 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
