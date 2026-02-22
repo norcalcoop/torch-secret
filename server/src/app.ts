@@ -115,6 +115,8 @@ export function buildApp() {
         '/forgot-password',
         '/reset-password',
         '/dashboard',
+        '/privacy',
+        '/terms',
       ];
       if (NOINDEX_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
         res.setHeader('X-Robots-Tag', 'noindex, nofollow');
