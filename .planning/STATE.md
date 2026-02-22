@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 29 of 29 (v4 Tech Debt Cleanup — gap closure plans) — Plans 01, 02, 03 complete
-Plan: 3 of 3 complete (Plan 02 backfilled 2026-02-22)
-Status: Phase 29 Plans 01-03 complete — milestone audit, OAuth analytics events, accessibility test coverage all closed
-Last activity: 2026-02-22 — Phase 29 Plan 02 backfilled; sessionStorage flags + dashboard OAuth analytics (ANLT-01 gap closed)
+Phase: 29 of 29 (v4 Tech Debt Cleanup — gap closure plans) — Plans 01, 02, 03, 04 complete
+Plan: 4 of 4 complete
+Status: Phase 29 Plans 01-04 complete — milestone audit, OAuth analytics events, accessibility test coverage, E2E rate-limit and expiration cap tests all closed
+Last activity: 2026-02-21 — Phase 29 Plan 04 complete; e2e/specs/rate-limits.spec.ts created with 5 tests for anonymous expiration cap and rate-limit countdown (skip-guarded)
 
 Progress: [██████████] 100% (v4.0 — all requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 through PROT-04)
 
@@ -53,6 +53,8 @@ Progress: [██████████] 100% (v4.0 — all requirements compl
 | Phase 28 P01 | 6 | 3 TDD phases | 3 files |
 | Phase 28 P02 | 5 | 2 tasks | 1 files |
 | Phase 28 P03 | ~15 | 3 tasks + UAT | 3 files |
+| Phase 29-v4-tech-debt-cleanup P01 | 2 | 2 tasks | 3 files |
+| Phase 29-v4-tech-debt-cleanup P02 | 2 | 2 tasks | 3 files |
 | Phase 29-v4-tech-debt-cleanup P03 | 2 | 1 tasks | 1 files |
 | Phase 29 P04 | 8 | 1 tasks | 1 files |
 
@@ -162,6 +164,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 28]: [Phase 28-03]: Reveal page heading updated to "Protection Required" (from "Password Required") — mode-agnostic wording covers both passphrase and password protection modes without naming a specific mode; subtext + placeholder + label updated to "Passphrase or password" for same reason
 - [Phase 28]: [Phase 28-03]: previewField div requires role=status with aria-label — bare div with aria-label violates axe prohibited-attr rule; role=status is semantically correct for live password preview output
 - [Phase 29]: Rate-limit countdown test uses test.skip(E2E_TEST === 'true') — E2E mode raises anon hourly limit to 1000 making 429 unreachable; countdown UI covered by unit/integration tests
+- [Phase 29-02]: sessionStorage chosen for pre-OAuth-redirect flag over localStorage — sessionStorage is tab-scoped and cleared when tab closes; correct lifetime for a one-time post-redirect analytics flag
+- [Phase 29-02]: Read-remove-fire atomic pattern: removeItem before captureUserLoggedIn — ensures flag is gone even if capture throws, preventing duplicate events on retry
+- [Phase 29-02]: sessionStorage handoff pattern: login.ts/register.ts setItem before signIn.social(); dashboard.ts reads flag after identifyUser() on first render after redirect
 - [Phase 29]: Anonymous expiration select test checks select.count() before asserting — anonymous users get a div, authenticated users get a select; defensive branching handles both DOM variants
 
 ### Roadmap Evolution
@@ -182,5 +187,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 29-v4-tech-debt-cleanup-03-PLAN.md
-Resume: Phase 29 Plan 03 complete. Accessibility test gaps closed — 5 new tests added (incompatible filter error state axe + PROT-02 brute-force label integration). All 260 tests pass. No active blockers.
+Stopped at: Completed 29-01-PLAN.md (backfilled — plan 01 was the last remaining gap-closure plan)
+Resume: Phase 29 fully complete. All 4 plans (01-04) executed. Server-side noindex extended to auth/dashboard routes; 27-01-SUMMARY.md patched with CONV-01 traceability; getPassword() annotated with two-channel design rationale. No active blockers.
