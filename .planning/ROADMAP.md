@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-02-15)
 - ✅ **v2.0 Developer-Grade UI & SEO** — Phases 9-14 (shipped 2026-02-16)
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
-- 🚧 **v4.0 Hybrid Anonymous + Account Model** — Phases 21-27 (in progress)
+- 🚧 **v4.0 Hybrid Anonymous + Account Model** — Phases 21-29 (in progress)
 
 ## Phases
 
@@ -64,6 +64,8 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 - [x] **Phase 25: PostHog Analytics** - Privacy-safe funnel tracking with mandatory URL fragment sanitization (completed 2026-02-21)
 - [x] **Phase 26: Email Notifications** - Per-secret opt-in viewed notifications via Resend (completed 2026-02-21)
 - [x] **Phase 27: Conversion Prompts + Rate Limits + Legal Pages** - Tightened anonymous limits, inline prompts, Privacy Policy, ToS (completed 2026-02-21)
+- [x] **Phase 28: Optional Password or Passphrase Protection** - 4-tab protection panel, password generator, masked inputs, eye toggles (completed 2026-02-21)
+- [ ] **Phase 29: v4.0 Tech Debt Cleanup** - Close audit gaps: OAuth analytics events, server-side noindex, missing E2E and accessibility tests, documentation fixes
 
 ## Phase Details
 
@@ -218,6 +220,8 @@ Plans:
 | 25. PostHog Analytics | 3/3 | Complete    | 2026-02-21 | - |
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | 4/4 | Complete    | 2026-02-21 | - |
+| 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
+| 29. v4.0 Tech Debt Cleanup | v4.0 | 0/4 | In Progress | - |
 
 ### Phase 28: Optional password or passphrase protection with password generator and masked inputs
 
@@ -227,6 +231,25 @@ Plans:
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 28-01-PLAN.md — TDD: password-generator.ts pure module (tiers, charset flags, filters, entropy, brute force, rejection-sampling, empty-charset guard) + barrel export
-- [ ] 28-02-PLAN.md — create.ts: replace Phase 24 passphrase section with collapsible protection panel (segmented Password|Passphrase control, full generator UI, masked inputs with eye toggles, submit handler update)
-- [ ] 28-03-PLAN.md — reveal.ts eye toggle + accessibility tests + REQUIREMENTS.md PROT requirements + human UAT
+- [x] 28-01-PLAN.md — TDD: password-generator.ts pure module (tiers, charset flags, filters, entropy, brute force, rejection-sampling, empty-charset guard) + barrel export
+- [x] 28-02-PLAN.md — create.ts: replace Phase 24 passphrase section with collapsible protection panel (segmented Password|Passphrase control, full generator UI, masked inputs with eye toggles, submit handler update)
+- [x] 28-03-PLAN.md — reveal.ts eye toggle + accessibility tests + REQUIREMENTS.md PROT requirements + human UAT
+
+### Phase 29: v4.0 Tech Debt Cleanup
+
+**Goal:** All technical debt items from the v4.0 milestone audit are resolved — OAuth analytics events fire correctly for login and registration, auth pages receive a server-side `X-Robots-Tag: noindex` header, missing Playwright E2E tests cover rate-limit countdown and expiration enforcement, accessibility tests cover the protection panel's incompatible filter error state, and all documentation gaps are patched
+**Depends on:** Phase 28
+**Requirements:** (none — gap closure only)
+**Success Criteria** (what must be TRUE):
+  1. `captureUserLoggedIn` and `captureUserRegistered` analytics events fire for users who authenticate via Google or GitHub OAuth
+  2. Auth pages (`/login`, `/register`, `/forgot-password`, `/reset-password`) return `X-Robots-Tag: noindex` as an HTTP response header (server-side, not client-side only)
+  3. Playwright E2E tests verify the anonymous rate-limit countdown displays correctly and the 1-hour expiration cap is enforced
+  4. Axe accessibility test covers the incompatible filter error state in the protection panel; unit/integration test covers PROT-02 brute-force label output
+  5. Documentation gaps closed: `27-01-SUMMARY.md` has `requirements-completed: [CONV-01]`; passphrase tab `getPassword() → undefined` behavior has an explanatory code comment
+**Plans:** 4 plans
+
+Plans:
+- [ ] 29-01-PLAN.md — Server-side noindex for auth routes + 27-01-SUMMARY.md CONV-01 fix + create.ts passphrase tab design comment
+- [ ] 29-02-PLAN.md — OAuth analytics: sessionStorage flags in login.ts/register.ts, fire captureUserLoggedIn/Registered in dashboard.ts
+- [ ] 29-03-PLAN.md — Accessibility + integration tests: incompatible filter error state axe test, PROT-02 brute-force label tests
+- [ ] 29-04-PLAN.md — E2E tests: anonymous rate-limit countdown display and 1-hour expiration cap enforcement
