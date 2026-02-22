@@ -66,8 +66,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 ### Tech Debt (TECH)
 
 - [ ] **TECH-01**: CI workflow includes placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) to prevent integration test failures
-- [ ] **TECH-02**: `/privacy` and `/terms` added to `NOINDEX_PREFIXES` in `app.ts` for server-side `X-Robots-Tag` header
-- [ ] **TECH-03**: `schema.ts` zero-knowledge inline comment updated to match canonical 7-point list in `INVARIANTS.md`
+- [x] **TECH-02**: `/privacy` and `/terms` added to `NOINDEX_PREFIXES` in `app.ts` for server-side `X-Robots-Tag` header
+- [x] **TECH-03**: `schema.ts` zero-knowledge inline comment updated to match canonical 7-point list in `INVARIANTS.md`
 
 ### Feedback Links (FBCK)
 
@@ -126,8 +126,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRAND-03 | Phase 31 | Pending |
 | BRAND-04 | Phase 31 | Pending |
 | TECH-01 | Phase 31 | Pending |
-| TECH-02 | Phase 31 | Pending |
-| TECH-03 | Phase 31 | Pending |
+| TECH-02 | Phase 31 | Complete |
+| TECH-03 | Phase 31 | Complete |
 | HOME-01 | Phase 32 | Pending |
 | HOME-02 | Phase 32 | Pending |
 | HOME-03 | Phase 32 | Pending |
