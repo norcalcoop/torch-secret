@@ -246,10 +246,11 @@ Plans:
   3. Playwright E2E tests verify the anonymous rate-limit countdown displays correctly and the 1-hour expiration cap is enforced
   4. Axe accessibility test covers the incompatible filter error state in the protection panel; unit/integration test covers PROT-02 brute-force label output
   5. Documentation gaps closed: `27-01-SUMMARY.md` has `requirements-completed: [CONV-01]`; passphrase tab `getPassword() → undefined` behavior has an explanatory code comment
-**Plans:** 4/4 plans complete
+**Plans:** 5 plans (4 complete + 1 gap closure)
 
 Plans:
 - [ ] 29-01-PLAN.md — Server-side noindex for auth routes + 27-01-SUMMARY.md CONV-01 fix + create.ts passphrase tab design comment
 - [ ] 29-02-PLAN.md — OAuth analytics: sessionStorage flags in login.ts/register.ts, fire captureUserLoggedIn/Registered in dashboard.ts
 - [ ] 29-03-PLAN.md — Accessibility + integration tests: incompatible filter error state axe test, PROT-02 brute-force label tests
 - [ ] 29-04-PLAN.md — E2E tests: anonymous rate-limit countdown display and 1-hour expiration cap enforcement
+- [ ] 29-05-PLAN.md — Vitest unit tests for showRateLimitUpsell() countdown rendering (SC-3 gap closure)
