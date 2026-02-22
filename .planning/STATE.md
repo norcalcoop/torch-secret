@@ -190,5 +190,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 29-01-PLAN.md (backfilled — plan 01 was the last remaining gap-closure plan)
-Resume: Phase 29 fully complete. All 4 plans (01-04) executed. Server-side noindex extended to auth/dashboard routes; 27-01-SUMMARY.md patched with CONV-01 traceability; getPassword() annotated with two-channel design rationale. No active blockers.
+Stopped at: Completed 29-02-PLAN.md (backfilled); Phase 29 Plans 01-04 all complete
+Resume: v4.0 complete. Phase 29 all plans done. ANLT-01 OAuth analytics gap closed (Plan 02). No active blockers.
