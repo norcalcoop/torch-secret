@@ -28,6 +28,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 
 *v5.0 velocity tracking begins after first plan completes*
 | Phase 31 P02 | 247 | 2 tasks | 7 files |
+| Phase 31 P01 | 8 | 3 tasks | 32 files |
 
 ## Accumulated Context
 

@@ -9,8 +9,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Brand (BRAND)
 
-- [ ] **BRAND-01**: App name displays as "Torch Secret" in all user-facing locations (HTML `<title>`, OG tags, header, email sender)
-- [ ] **BRAND-02**: All canonical URLs, sitemap entries, JSON-LD `@id`/`url`, and OG tags use `torchsecret.com` domain (replacing `secureshare.example.com`)
+- [x] **BRAND-01**: App name displays as "Torch Secret" in all user-facing locations (HTML `<title>`, OG tags, header, email sender)
+- [x] **BRAND-02**: All canonical URLs, sitemap entries, JSON-LD `@id`/`url`, and OG tags use `torchsecret.com` domain (replacing `secureshare.example.com`)
 - [x] **BRAND-03**: README updated with "Torch Secret" name and link to `torchsecret.com` as the live hosted version
 - [x] **BRAND-04**: CI workflow, Docker Compose, and `package.json` name field updated to reflect new product name
 
@@ -121,8 +121,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRAND-01 | Phase 31 | Pending |
-| BRAND-02 | Phase 31 | Pending |
+| BRAND-01 | Phase 31 | Complete |
+| BRAND-02 | Phase 31 | Complete |
 | BRAND-03 | Phase 31 | Complete |
 | BRAND-04 | Phase 31 | Complete |
 | TECH-01 | Phase 31 | Complete |
