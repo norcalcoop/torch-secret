@@ -272,7 +272,7 @@ function createProtectionPanel(): {
     checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
     const label = document.createElement('label');
     label.htmlFor = id;
-    label.className = 'text-xs font-mono text-white/60 cursor-pointer select-none';
+    label.className = 'text-xs font-mono text-text-secondary cursor-pointer select-none';
     label.textContent = labelText;
     wrapper.appendChild(checkbox);
     wrapper.appendChild(label);
@@ -287,7 +287,7 @@ function createProtectionPanel(): {
   const tabList = document.createElement('div');
   tabList.setAttribute('role', 'tablist');
   tabList.setAttribute('aria-label', 'Protection mode');
-  tabList.className = 'flex border-b border-white/10';
+  tabList.className = 'flex border-b border-border';
   root.appendChild(tabList);
 
   const tabDefs: Array<{ id: ActiveTab; label: string }> = [
@@ -298,9 +298,9 @@ function createProtectionPanel(): {
   ];
 
   const tabInactiveCls =
-    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white/40 border-b-2 border-transparent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-text-muted border-b-2 border-transparent -mb-px transition-colors duration-150 cursor-pointer hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
   const tabActiveCls =
-    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white border-b-2 border-b-accent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-text-primary border-b-2 border-b-accent -mb-px transition-colors duration-150 cursor-pointer hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
 
   const tabButtons: Record<ActiveTab, HTMLButtonElement> = {} as Record<
     ActiveTab,
@@ -353,7 +353,7 @@ function createProtectionPanel(): {
   // ---- Panel 1: No protection ----
   const nonePanel = createTabPanel('none');
   const noneNote = document.createElement('p');
-  noneNote.className = 'text-xs font-mono text-white/40';
+  noneNote.className = 'text-xs font-mono text-text-muted';
   noneNote.textContent = 'Secret will be accessible to anyone with the link.';
   nonePanel.appendChild(noneNote);
   panelsContainer.appendChild(nonePanel);
@@ -368,7 +368,7 @@ function createProtectionPanel(): {
   generatePanel.appendChild(tierRow);
 
   const tierLabel = document.createElement('p');
-  tierLabel.className = 'text-xs font-medium text-white/60';
+  tierLabel.className = 'text-xs font-medium text-text-secondary';
   tierLabel.textContent = 'Strength';
   tierRow.appendChild(tierLabel);
 
@@ -433,7 +433,7 @@ function createProtectionPanel(): {
 
   // d) Entropy line
   const entropyLine = document.createElement('p');
-  entropyLine.className = 'text-xs font-mono text-white/40';
+  entropyLine.className = 'text-xs font-mono text-text-muted';
   entropyLine.setAttribute('aria-live', 'polite');
   generatePanel.appendChild(entropyLine);
 
@@ -556,7 +556,7 @@ function createProtectionPanel(): {
 
   // State label below field
   const genStateLabel = document.createElement('p');
-  genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+  genStateLabel.className = 'text-xs font-mono text-text-muted mt-1';
   genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
   combinedFieldGroup.appendChild(genStateLabel);
 
@@ -776,7 +776,7 @@ function createProtectionPanel(): {
       combinedPasswordWrapper.classList.add('ring-1', 'ring-accent/50');
     } else {
       genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
-      genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+      genStateLabel.className = 'text-xs font-mono text-text-muted mt-1';
       combinedPasswordWrapper.classList.remove('ring-1', 'ring-accent/50');
     }
   }
