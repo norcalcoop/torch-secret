@@ -2,19 +2,18 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
+See: .planning/PROJECT.md (updated 2026-02-22 after v4.0 milestone)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** Docker and Render deployment fixes — Phase 30: Docker & Render Deployment Fixes
+**Current focus:** Planning next milestone (v5.0 Pro Tier)
 
 ## Current Position
 
-Phase: 30 of 30 (Docker and Render Deployment Fixes) — Plan 01 complete
-Plan: 1 of 2 complete
-Status: Phase 30 Plan 01 complete — render.yaml updated with 10 v4.0 env vars (sync: false), docker-compose.yml has auth placeholder vars, Dockerfile Stage 2 has VITE_ build ARGs
-Last activity: 2026-02-22 — Phase 30 Plan 01 complete; render.yaml, docker-compose.yml, Dockerfile all updated to support v4.0 auth and PostHog analytics
+Phase: v4.0 milestone complete — all 30 phases shipped
+Status: Milestone archived to .planning/milestones/v4.0-*
+Last activity: 2026-02-22 — v4.0 milestone archived (10 phases, 38 plans, 35/35 requirements)
 
-Progress: [██████████] 100% (v4.0 — all requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 through PROT-04)
+Progress: [██████████] 100% v4.0 complete
 
 ## Performance Metrics
 
@@ -23,8 +22,8 @@ Progress: [██████████] 100% (v4.0 — all requirements compl
 | v1.0 MVP | 8 | 22 | 2 days |
 | v2.0 UI & SEO | 6 | 14 | 3 days |
 | v3.0 Production-Ready | 6 | 15 | 2 days |
-| **Total shipped** | **20** | **51** | **~7 days** |
-| v4.0 in progress | 7 planned | TBD | — |
+| v4.0 Hybrid Anonymous + Account | 10 | 38 | 4 days |
+| **Total shipped** | **30** | **89** | **~11 days** |
 | Phase 21 P03 | 1 | 2 tasks | 2 files |
 | Phase 21 P02 | 6 | 1 tasks | 4 files |
 | Phase 22 P01 | 4 min | 2 tasks | 6 files |
@@ -194,15 +193,16 @@ Key v4.0 architectural constraints (carry forward to every phase):
 
 - Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
 - Lucide ESM workaround via Vite resolve.alias (upstream bug)
-- Playwright webServer 30s timeout risk on slow CI runners (pre-build client in CI e2e job)
-- Codecov badge shows "unknown" until CODECOV_TOKEN added to GitHub repo secrets
+- CI test/e2e jobs missing BETTER_AUTH_SECRET et al. — recommended fix: add placeholder env vars to ci.yml
+- /privacy and /terms not in NOINDEX_PREFIXES (X-Robots-Tag gap; low severity)
+- schema.ts inline zero-knowledge comment lists 3 enforcement points; INVARIANTS.md canonical has 6
 
 ### Blockers/Concerns
 
-(None — v3.0 clean ship, v4.0 roadmap complete)
+(None — v4.0 clean ship)
 
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 30-01-PLAN.md; Phase 30 Plan 01 complete
-Resume: Phase 30 (Docker & Render deployment fixes) in progress — Plan 01 done (render.yaml, docker-compose.yml, Dockerfile updated). Plan 02 (package.json version bump + docker-build CI job) is next. No active blockers.
+Stopped at: v4.0 milestone complete and archived
+Resume: Start v5.0 planning with `/gsd:new-milestone`
