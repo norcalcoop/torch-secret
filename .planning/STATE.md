@@ -168,6 +168,9 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 29-02]: Read-remove-fire atomic pattern: removeItem before captureUserLoggedIn — ensures flag is gone even if capture throws, preventing duplicate events on retry
 - [Phase 29-02]: sessionStorage handoff pattern: login.ts/register.ts setItem before signIn.social(); dashboard.ts reads flag after identifyUser() on first render after redirect
 - [Phase 29]: Anonymous expiration select test checks select.count() before asserting — anonymous users get a div, authenticated users get a select; defensive branching handles both DOM variants
+- [Phase 29-01]: NOINDEX_PREFIXES array (not individual startsWith checks) chosen for X-Robots-Tag guard in app.ts — extensible pattern: future auth routes need a single array entry
+- [Phase 29-01]: /dashboard included in NOINDEX_PREFIXES even though auth-gated — defense-in-depth; belt-and-suspenders against crawlers that bypass authentication
+- [Phase 29-01]: requirements-completed field added to 27-01-SUMMARY.md frontmatter only — no implementation changes; CONV-01 was already implemented in Phase 27 (documentation gap closure only)
 
 ### Roadmap Evolution
 
