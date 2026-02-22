@@ -1,4 +1,4 @@
-# Roadmap: SecureShare
+# Roadmap: Torch Secret
 
 ## Milestones
 
@@ -6,6 +6,7 @@
 - ✅ **v2.0 Developer-Grade UI & SEO** — Phases 9-14 (shipped 2026-02-16)
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
 - ✅ **v4.0 Hybrid Anonymous + Account Model** — Phases 21-30 (shipped 2026-02-22)
+- 🚧 **v5.0 Product Launch Checklist** — Phases 31-38 (in progress)
 
 ## Phases
 
@@ -71,6 +72,114 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 
 </details>
 
+### 🚧 v5.0 Product Launch Checklist (In Progress)
+
+**Milestone Goal:** Ship everything needed to publicly launch Torch Secret — rebrand, marketing homepage, pricing + Pro billing, SEO content pages, email onboarding, and pre-launch infrastructure.
+
+- [ ] **Phase 31: Rebrand + Tech Debt** — Rename SecureShare to Torch Secret and torchsecret.com throughout all code; clear four known tech debt items
+- [ ] **Phase 32: Marketing Homepage + /create Split** — Move create-secret form to /create; build marketing landing page at /
+- [ ] **Phase 33: Pricing Page** — Static /pricing page with Free vs Pro tier cards, billing toggle, FAQ, and FAQPage JSON-LD
+- [ ] **Phase 34: Stripe Pro Billing** — Checkout, webhook lifecycle handler, Pro feature unlock (30-day expiration), Customer Portal
+- [ ] **Phase 35: SEO Content Pages (Express SSR)** — Server-rendered /vs/*, /alternatives/*, /use/* pages with JSON-LD visible to AI crawlers
+- [ ] **Phase 36: Email Capture** — GDPR-compliant homepage email list capture backed by Resend Audiences, with double opt-in
+- [ ] **Phase 37: Email Onboarding Sequence** — 3-email Loops.so sequence triggered on registration (welcome, key features, upgrade prompt)
+- [ ] **Phase 38: Feedback Links** — Tally.so feedback link on confirmation and post-reveal pages
+
+## Phase Details
+
+### Phase 31: Rebrand + Tech Debt
+**Goal**: The product is publicly named Torch Secret with torchsecret.com throughout every user-facing surface, and four known tech debt items are cleared before any new feature code is written
+**Depends on**: Phase 30 (v4.0 complete)
+**Requirements**: BRAND-01, BRAND-02, BRAND-03, BRAND-04, TECH-01, TECH-02, TECH-03
+**Success Criteria** (what must be TRUE):
+  1. Every HTML `<title>`, OG tag, email sender name, header logo text, and README heading reads "Torch Secret" — no occurrence of "SecureShare" remains in user-facing output
+  2. All canonical URLs, sitemap entries, JSON-LD `@id`/`url` fields, and OG image URLs use the `torchsecret.com` domain — `secureshare.example.com` does not appear in any served HTML or sitemap
+  3. CI workflow passes with placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) included so integration tests do not fail in CI due to missing secrets
+  4. GET requests to `/privacy` and `/terms` return an `X-Robots-Tag: noindex` response header (server-side enforcement, not just client-side meta)
+  5. The zero-knowledge inline comment in `schema.ts` lists all 6 enforcement points matching the canonical list in `INVARIANTS.md`
+**Plans**: TBD
+
+### Phase 32: Marketing Homepage + /create Split
+**Goal**: Users arrive at `/` and see a marketing landing page that explains Torch Secret's zero-knowledge model; the create-secret form lives at `/create` and is unaffected in functionality
+**Depends on**: Phase 31
+**Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05
+**Success Criteria** (what must be TRUE):
+  1. Navigating to `/` shows a hero section with headline, subhead, and CTA button — no secret creation textarea is present on the homepage
+  2. Navigating to `/create` shows the fully functional secret creation form (same behavior as the former `/` page)
+  3. The header navigation includes links to `/create`, `/pricing`, and `/dashboard` and these links work from every SPA route
+  4. The homepage includes an email capture form widget (UI visible; submission wired in Phase 36)
+  5. Viewing page source or curl output for `/` includes a `WebApplication` JSON-LD script block in the `<head>`
+**Plans**: TBD
+
+### Phase 33: Pricing Page
+**Goal**: Users can evaluate Free vs Pro tiers, understand pricing, and get answers to common billing questions — all from a single static page at `/pricing`
+**Depends on**: Phase 32
+**Requirements**: PRICE-01, PRICE-02, PRICE-03, PRICE-04, PRICE-05
+**Success Criteria** (what must be TRUE):
+  1. Navigating to `/pricing` shows side-by-side Free and Pro tier cards with a complete feature list for each tier
+  2. A monthly/annual billing toggle is visible with annual selected by default and displays a "22% savings" label when toggled
+  3. The Pro tier card is visually distinct with a "Recommended" badge
+  4. A FAQ accordion section with 6-8 questions (covering cancellation, refunds, billing cycle, trial, and payment methods) is visible below the pricing cards
+  5. Viewing page source or curl output for `/pricing` includes a `FAQPage` JSON-LD script block in the `<head>`
+**Plans**: TBD
+
+### Phase 34: Stripe Pro Billing
+**Goal**: Authenticated users can subscribe to Pro, manage their subscription, and immediately receive the 30-day expiration unlock; the subscription lifecycle is kept accurate by webhook events
+**Depends on**: Phase 33
+**Requirements**: BILL-01, BILL-02, BILL-03, BILL-04, BILL-05, BILL-06
+**Success Criteria** (what must be TRUE):
+  1. An authenticated user clicking the Pro upgrade CTA is redirected to Stripe Checkout and, on completing payment, is returned to a success page that confirms their active subscription (verified via direct Stripe API query, not reliant on webhook timing)
+  2. A Pro subscriber sees a "30 days" option in the expiration dropdown when creating secrets; a Free user does not see this option
+  3. An authenticated Pro user clicking "Manage Subscription" is redirected to the Stripe Customer Portal where they can cancel or update payment
+  4. Cancelling a subscription (simulated via webhook `customer.subscription.deleted` event) removes Pro access within one billing cycle — the 30-day expiration option disappears for the now-Free user
+  5. INVARIANTS.md contains a Stripe/billing row documenting that no webhook handler payload logs both `customerId` and `userId` together, added before any webhook handler code is written
+**Plans**: TBD
+
+### Phase 35: SEO Content Pages (Express SSR)
+**Goal**: Competitor comparison, alternative, and use-case pages are fully server-rendered so their content is visible to AI crawlers and indexes on Google without a JavaScript rendering delay
+**Depends on**: Phase 31
+**Requirements**: SEO-01, SEO-02, SEO-03, SEO-04, SEO-05, SEO-06
+**Success Criteria** (what must be TRUE):
+  1. Running `curl https://torchsecret.com/vs/onetimesecret | grep '<h1>'` (and equivalents for `/vs/pwpush`, `/vs/privnote`) returns the page's H1 heading — content is present in the initial HTTP response, not injected by JavaScript
+  2. Running `curl https://torchsecret.com/alternatives/onetimesecret | grep '<h1>'` (and equivalents for pwpush, privnote) returns the page H1 in the initial response
+  3. Navigating to `/use/` shows a hub page linking to all published use-case pages
+  4. Navigating to any published `/use/[slug]` page shows substantive content with a visible H1 and a HowTo JSON-LD block in `<head>`
+  5. Running `curl -I https://torchsecret.com/vs/onetimesecret | grep X-Robots` returns no `noindex` header — SEO pages are indexable
+  6. All new SEO routes (`/vs/*`, `/alternatives/*`, `/use/*`) appear in `sitemap.xml`
+**Plans**: TBD
+
+### Phase 36: Email Capture
+**Goal**: Users can join the Torch Secret mailing list from the homepage with informed GDPR consent, receive a confirmation email, and unsubscribe at any time via a link
+**Depends on**: Phase 32
+**Requirements**: ECAP-01, ECAP-02, ECAP-03, ECAP-04, ECAP-05
+**Success Criteria** (what must be TRUE):
+  1. Submitting the homepage email capture form with a valid email address and the consent checkbox checked returns a success message — no error is shown
+  2. The consent checkbox is unchecked by default and displays clear consent language; form submission is blocked if the checkbox is unchecked
+  3. After submitting, the user receives a confirmation email with a link to complete double opt-in before being added to the active subscriber list
+  4. Clicking the unsubscribe link in any marketing email (or navigating to `GET /unsubscribe?token=`) shows a confirmation that the user has been unsubscribed
+  5. The `marketing_subscribers` table stores consent timestamp, consent text snapshot, and IP hash for each subscriber — no plain-text IP addresses are stored
+**Plans**: TBD
+
+### Phase 37: Email Onboarding Sequence
+**Goal**: Every new account holder automatically receives a timed 3-email sequence that introduces Torch Secret, highlights key features, and (with marketing consent) prompts upgrade to Pro
+**Depends on**: Phase 34, Phase 36
+**Requirements**: ESEQ-01, ESEQ-02, ESEQ-03, ESEQ-04
+**Success Criteria** (what must be TRUE):
+  1. A user who registers a new account receives a welcome email within minutes of signing up — no manual trigger required
+  2. A user who opted in to marketing during registration receives a key features email on day 3 and an upgrade prompt email on day 7 — users who did not opt in receive only the welcome email
+  3. The upgrade prompt email (day 7) links to a live Stripe Checkout session that correctly initiates a Pro subscription
+  4. The registration form includes a marketing consent opt-in checkbox (unchecked by default) with clear language, and checking it is stored in the database before any marketing email is sent
+**Plans**: TBD
+
+### Phase 38: Feedback Links
+**Goal**: Users who have just created or just viewed a secret can reach a feedback form with one click, giving the team a direct signal channel at the highest-intent moments
+**Depends on**: Phase 31
+**Requirements**: FBCK-01, FBCK-02
+**Success Criteria** (what must be TRUE):
+  1. After creating a secret, the confirmation page shows a visible feedback link that opens the Tally.so form in a new tab
+  2. After viewing (revealing) a secret, the post-reveal page shows a visible feedback link that opens the Tally.so form in a new tab
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -105,3 +214,11 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
+| 31. Rebrand + Tech Debt | v5.0 | 0/TBD | Not started | - |
+| 32. Marketing Homepage + /create Split | v5.0 | 0/TBD | Not started | - |
+| 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
+| 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
+| 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
+| 36. Email Capture | v5.0 | 0/TBD | Not started | - |
+| 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
+| 38. Feedback Links | v5.0 | 0/TBD | Not started | - |

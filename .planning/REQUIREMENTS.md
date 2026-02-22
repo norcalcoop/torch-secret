@@ -163,10 +163,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FBCK-02 | Phase 38 | Pending |
 
 **Coverage:**
-- v5.0 requirements: 36 total
-- Mapped to phases: 36
+- v5.0 requirements: 40 total
+- Mapped to phases: 40
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after initial definition*
+*Last updated: 2026-02-22 after roadmap creation*
