@@ -1,687 +1,372 @@
-# Pitfalls Research: Auth, Payments, and Analytics on a Zero-Knowledge App
+# Pitfalls Research: Product Launch (Stripe Billing, Marketing SEO, Email)
 
-**Domain:** Adding OAuth authentication, Stripe subscriptions, and PostHog analytics to an existing zero-knowledge anonymous-first secret sharing application
-**Researched:** 2026-02-18
-**Confidence:** HIGH for OAuth/session pitfalls, Stripe webhook pitfalls, CSP/PostHog integration; MEDIUM for zero-knowledge erosion patterns, anonymous-to-account transition, schema migration strategies
-**Scope:** Pitfalls specific to ADDING accounts, payments, and analytics to SecureShare -- an existing Express 5 + Vanilla TS SPA with strict nonce-based CSP, zero-knowledge AES-256-GCM encryption, Drizzle ORM + PostgreSQL, Redis rate limiting, and a production anonymity guarantee
+**Domain:** Adding Stripe Pro billing, marketing homepage, programmatic SEO pages, schema markup, and email capture to an existing zero-knowledge Express 5 + Vanilla TS SPA
+**Researched:** 2026-02-22
+**Confidence:** HIGH for Stripe CSP, raw body ordering, SEO crawler limitations, JSON-LD in SPAs; MEDIUM for GDPR email classification boundaries, Stripe billing ZK invariant surface, programmatic page SEO risk
+**Scope:** Pitfalls specific to ADDING v5.0 features to Torch Secret — an existing app with a per-request nonce-based CSP, zero-knowledge AES-256-GCM encryption, Better Auth sessions, PostHog analytics, and the hard invariant that no system may store both userId and secretId together. Previous pitfalls for v4.0 (OAuth, Stripe webhooks basics, PostHog URL fragment capture) are documented in milestones/v4.0-phases/. This file covers net-new v5.0 integration pitfalls only.
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that violate the zero-knowledge guarantee, create security vulnerabilities, or require rewrites.
+Mistakes that violate the zero-knowledge guarantee, silently break production, or require rewrites.
 
-### Pitfall 1: Missing or Improperly Validated OAuth State Parameter Enables Account Hijacking
+### Pitfall 1: Stripe Billing Creates a userId + Payment Data Association That Needs Careful Scoping
 
 **What goes wrong:**
-When the OAuth callback (`/auth/callback`) does not validate that the returned `state` parameter matches the value stored before the authorization redirect, attackers can forge authentication requests. The attack: an attacker initiates an OAuth flow with their own account, captures the authorization code, tricks a victim's browser into completing the callback with the attacker's code, and links the attacker's OAuth account to the victim's application session. The victim then unknowingly operates inside the attacker's account context.
+Stripe requires creating a `Customer` object to track subscriptions. The natural implementation stores `stripeCustomerId` on the `users` row. This is correct and safe — a `stripeCustomerId` on a `users` row creates no user-secret association.
 
-This is not a theoretical concern. Slack disclosed a real vulnerability on HackerOne where the state parameter was missing on Google OAuth, allowing session hijacking. RFC 9700 (OAuth 2.0 Security Best Current Practice, January 2025) mandates one-time CSRF tokens in state, securely bound to the user agent.
+The dangerous variation: adding `stripeCustomerId` or any billing metadata to a row that also contains a `secretId`, or logging both `userId` and any Stripe `customer` property in the same log line. A second danger: storing the user's email address in Stripe Customer metadata labeled in a way that could be cross-referenced with secret creation. Stripe's own privacy policy confirms it shares device and activity data with advertising partners — any metadata you attach to a Stripe Customer object is shared under those same terms.
+
+The third danger is the most subtle: the webhook handler for `checkout.session.completed` receives a `customer` object containing the customer's email. If the webhook logs this email alongside any request context that could be correlated with a secretId, the ZK invariant is violated via the log system rather than the DB.
 
 **Why it happens:**
-- Tutorials show the minimum viable OAuth flow and omit state validation
-- The callback "works" without state validation -- the failure mode is invisible until attacked
-- Developers conflate PKCE (which protects code interception) with CSRF protection (which state provides) -- they are NOT interchangeable
+- Standard webhook logging includes full event objects for debugging
+- Developers assume the ZK invariant only applies to the DB schema, not logs or Stripe metadata
+- The `@better-auth/stripe` plugin auto-creates Stripe Customers from the Better Auth user object, which includes the user's email — this is expected behavior but developers must ensure the email does not flow into any system that co-locates it with secretIds
 
 **How to avoid:**
-Generate a cryptographically secure random value before the authorization redirect, store it in a server-side session (not a cookie that JavaScript can read), include it as `state` in the authorization URL, and validate it on callback before processing the tokens:
+Apply the ZK invariant explicitly to the Stripe integration:
+
+1. `stripeCustomerId` on the `users` table: SAFE — no secretId in the same row
+2. Webhook log lines: emit only `{ event_type, customer_id }` — never email, userId, and secretId in the same log line
+3. Stripe Customer metadata: store only the internal `userId` (opaque DB ID, not email, not username) so Stripe can route webhooks back to the right user
+4. Extend `INVARIANTS.md` before shipping the Stripe phase to add a row for the webhook handler
 
 ```typescript
-// In GET /auth/:provider -- before redirect
-const stateToken = crypto.randomBytes(32).toString('hex');
-req.session.oauthState = stateToken; // server-side session only
-const authUrl = buildOAuthUrl({ state: stateToken });
-res.redirect(authUrl);
+// SAFE webhook log — no email, no secretId
+logger.info({ stripeEventType: event.type, stripeCustomerId: event.data.object.customer }, 'Stripe webhook received');
 
-// In GET /auth/callback -- before accepting tokens
-if (!req.query.state || req.query.state !== req.session.oauthState) {
-  res.status(403).json({ error: 'invalid_state' });
-  return;
-}
-delete req.session.oauthState; // one-time use
+// DANGEROUS webhook log — email co-located with user activity
+logger.info({ userId, email, stripeEventType: event.type }, 'Subscription activated');
 ```
 
-Use `express-session` with a strong `secret` stored in an environment variable. Never store state in `localStorage` (writable by XSS) or in a query parameter (visible in logs and referrers).
-
 **Warning signs:**
-- OAuth callback does not check `req.query.state`
-- State is stored in a cookie without `HttpOnly` flag
-- State is a predictable value (timestamp, user ID)
+- Webhook handler logs `email` or `user.email` alongside any user-identifiable field
+- Stripe Customer metadata contains more than an opaque userId
+- Any log line that contains both `customerId` and a path that could include a secretId
 
-**Phase to address:** Auth foundation phase
+**Phase to address:** Stripe billing phase (before webhook handler is written)
 
 ---
 
-### Pitfall 2: Storing Session Tokens in localStorage Exposes Them to XSS
+### Pitfall 2: Stripe Checkout Hosted Redirect Still Requires CSP Changes — But Different Ones Than Expected
 
 **What goes wrong:**
-Storing session tokens, JWTs, or OAuth access tokens in `localStorage` or `sessionStorage` makes them readable by any JavaScript executing on the page. If a third-party script (analytics, ads, injected via a compromised CDN) runs in the same origin, it can exfiltrate all stored tokens. For SecureShare, which handles sensitive secrets, this is especially damaging: a compromised token means an attacker can act as an authenticated user and create/view secrets associated with their account.
+The existing plan uses Stripe hosted Checkout (server-side redirect to `checkout.stripe.com`). This is the correct choice — it means `js.stripe.com` does NOT need to be in `script-src`, because the merchant page never loads Stripe.js. However, the existing CSP will still reject Stripe traffic for a different reason: the browser's redirect to `checkout.stripe.com` and the return redirect from Stripe fire requests that touch Stripe's telemetry domains.
 
-OWASP explicitly states: "Do not store session identifiers in local storage as the data is always accessible by JavaScript. Cookies can mitigate this risk using the httpOnly flag."
+More specifically: when Stripe's Checkout success page returns the user to your `success_url`, some browsers make a pre-flight or reporting request to `q.stripe.com` (Stripe's telemetry endpoint). If `connect-src` does not include this domain, a CSP violation is logged but the user flow is NOT blocked — it is a silent telemetry failure, not a broken payment flow. However, it generates CSP violation noise in production monitoring that can obscure real violations.
+
+Additionally: the Customer Portal (`/api/billing/portal`) also redirects to `billing.stripe.com`. If the app ever adds an embedded billing widget rather than a redirect, `frame-src` for `js.stripe.com` and `hooks.stripe.com` would become required — this is not needed for the current redirect-only architecture but is a common mis-step during future upgrades.
 
 **Why it happens:**
-- `localStorage` is simple, synchronous, and works without server coordination
-- JWT tutorials commonly use `localStorage.setItem('token', jwt)` as the simplest implementation
-- Developers incorrectly believe that because SecureShare has a tight CSP, XSS is impossible -- but CSP failures (misconfigured nonce, injected inline styles loading scripts) can still occur
+- Documentation for Stripe Checkout (hosted/redirect) and Stripe Checkout (embedded) uses the same examples
+- Developers add all CSP domains from Stripe docs without distinguishing redirect vs. embedded mode
+- The `q.stripe.com` telemetry domain is not prominently documented
 
 **How to avoid:**
-Use `HttpOnly; Secure; SameSite=Strict` cookies for session tokens:
+For the redirect-only architecture (current plan), the minimal CSP changes are:
 
 ```typescript
-res.cookie('session', sessionId, {
-  httpOnly: true,   // not readable by JavaScript
-  secure: true,     // HTTPS only
-  sameSite: 'strict', // no cross-origin sending -- also provides CSRF protection
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  path: '/',
-});
+// In createHelmetMiddleware() — additions for Stripe hosted Checkout + Customer Portal
+connectSrc: [
+  "'self'",
+  'https://us.i.posthog.com',
+  'https://us-assets.i.posthog.com',
+  // Stripe: NOT needed for redirect Checkout, but add if billing widget is ever embedded
+  // 'https://api.stripe.com',
+  // 'https://q.stripe.com',  // Stripe telemetry (silent CSP violation if omitted)
+],
+// frame-src NOT required for redirect-only Checkout
+// script-src NOT required for redirect-only Checkout (no js.stripe.com on merchant page)
 ```
 
-`SameSite=Strict` provides CSRF protection for same-domain requests. If cross-domain requests are needed (unlikely for SecureShare), use `SameSite=Lax` combined with a synchronizer token pattern.
+If Stripe.js is ever added to the merchant page (e.g., for embedded Checkout or Payment Element), the required additions are:
+- `script-src`: `https://js.stripe.com`
+- `frame-src`: `https://js.stripe.com`, `https://hooks.stripe.com`
+- `connect-src`: `https://api.stripe.com`
+- `worker-src`: `blob:` (for Stripe's internal web workers)
+- `img-src`: `https://*.stripe.com`
 
-Store session data server-side (Redis or PostgreSQL). The cookie carries only an opaque session ID, never the actual user data.
+Do NOT add `unsafe-eval`. Stripe.js does not require it and the existing CSP must not be weakened.
 
 **Warning signs:**
-- `localStorage.setItem('token', ...)` anywhere in the codebase
-- JWT decoded and stored client-side
-- Auth state persisted via `window.sessionStorage`
+- CSP violation reports containing `q.stripe.com` or `js.stripe.com` in production
+- Code that imports `@stripe/stripe-js` (the client-side library) when only the server-side `stripe` package is needed
+- `frame-src` containing Stripe domains despite using hosted redirect Checkout
 
-**Phase to address:** Auth foundation phase
+**Phase to address:** Stripe billing phase (CSP changes in `security.ts` before Checkout session creation is wired up)
 
 ---
 
-### Pitfall 3: Zero-Knowledge Erosion via User-Secret Association Logging
+### Pitfall 3: Express JSON Middleware Ordering Breaks Stripe Webhook Signature Verification
 
 **What goes wrong:**
-When user accounts are added, application logs, analytics events, or database audit trails may accidentally record which user ID created which secret ID. This directly violates the zero-knowledge guarantee: a server-side log entry of `userId=abc123 created secretId=xyz789` means the server now knows which user is associated with each secret, and by extension, which user sent what to whom.
+This is documented in v4.0 pitfalls but is worth a specific call-out for v5.0 because the existing `app.ts` already has a precedent that makes this easy to get wrong: Better Auth's handler is registered BEFORE `express.json()` to avoid body-stream consumption. The Stripe webhook handler must follow the same pattern for a different reason — signature verification requires the raw byte Buffer, not a parsed object.
 
-The current logger already redacts secret IDs from URL paths. But when auth is added, new log patterns emerge:
-
-```typescript
-// DANGEROUS: Associates user with secret in logs
-logger.info({ userId: req.user.id, secretId: secret.id }, 'Secret created');
-
-// DANGEROUS: PostHog event with both user identity and secret creation
-posthog.capture({ distinctId: userId, event: 'secret_created', properties: { secretId } });
-
-// DANGEROUS: Database audit table linking users to secrets
-// INSERT INTO audit_log (user_id, action, resource_id) VALUES (?, 'create_secret', ?)
-```
-
-Once this association exists anywhere -- logs, analytics, database -- it cannot be "un-leaked." The zero-knowledge guarantee is permanently broken for all secrets created while the logging existed.
+The current `app.ts` comment in step 6 says "auth handler must be before express.json()". When the Stripe webhook route is added, it must be inserted at the same position (before `express.json()`), not after step 7. If a developer reads the comments and concludes "only auth needs to be first", they will add the Stripe route after `express.json()` and get a signature mismatch error in production that is very hard to debug.
 
 **Why it happens:**
-- Standard "good practice" logging includes user context with every action
-- Analytics tools capture both user identity and action properties by default
-- Audit tables for compliance seem like a good idea but conflict with zero-knowledge
-- The association only becomes a problem later (subpoena, breach) -- developers do not see immediate harm
+- The comment in `app.ts` documents auth ordering but does not mention Stripe
+- `stripe.webhooks.constructEvent` error message ("No signatures found matching the expected signature") does not say "the body was pre-parsed"
+- Stripe CLI local testing generates valid signatures, masking the ordering bug until a production deploy
 
 **How to avoid:**
-Establish a hard rule: **no system log, analytics event, or database record may contain both a user identifier AND a secret identifier in the same record.** Enforce this through code review and automated testing:
+Register the Stripe webhook route between the auth handler and `express.json()` in `app.ts`. Update the comment block to document this:
 
 ```typescript
-// SAFE: Log the action category, never the specific secret ID
-logger.info({ userId: req.user.id }, 'Secret created'); // no secretId
+// Step 6a: Better Auth handler -- before express.json() (body-stream ordering)
+app.all('/api/auth/{*splat}', toNodeHandler(auth));
 
-// SAFE: Track event count without secret ID
-posthog.capture({ distinctId: userId, event: 'secret_created' }); // no secretId property
-
-// SAFE: Anonymous aggregate statistics only
-// UPDATE user_stats SET secrets_created = secrets_created + 1 WHERE user_id = ?
-```
-
-Add a lint rule or test that scans for any code path that reads both `req.user.id` and `secret.id` in the same scope and logs or stores both.
-
-The `secrets` table should NOT have a `created_by_user_id` column. This is the central zero-knowledge invariant for the accounts feature.
-
-**Warning signs:**
-- Log lines that contain both user context and secret path
-- PostHog events with `secretId` in properties
-- Database columns like `secrets.created_by` or `secrets.owner_id`
-- Any JOIN between `users` and `secrets` tables that is persisted
-
-**Phase to address:** Auth foundation phase (establish the invariant before any auth code is written)
-
----
-
-### Pitfall 4: Analytics Scripts Capture the Encryption Key from the URL Fragment
-
-**What goes wrong:**
-SecureShare's encryption key lives in the URL fragment: `https://example.com/secret/xyz#AES-KEY-HERE`. The URL fragment is NOT sent to servers by HTTP spec, which is the entire basis of the zero-knowledge model. However, client-side analytics libraries (PostHog, Google Analytics, Mixpanel) running in the browser CAN read `window.location.href` which includes the fragment.
-
-PostHog's JavaScript library captures `$current_url` as a property of every event by default. Without configuration, `posthog.capture('page_view')` sends the full URL including the `#AES-KEY-HERE` fragment to PostHog's servers. This completely destroys the zero-knowledge guarantee for every user whose secret reveal URL is captured.
-
-Research confirmed: PostHog does capture `$current_url` including hash fragments by default. The `sanitize_properties` option exists specifically for this scenario (PostHog GitHub issue #7118 documents the masking approach).
-
-**Why it happens:**
-- Analytics documentation shows `posthog.init(key, { api_host })` with no mention of URL sanitization
-- URL fragment exclusion from server requests gives a false sense of security -- it only protects against HTTP, not JavaScript
-- The encryption key is Base64 and looks like a typical hash fragment to developers reviewing analytics configs
-
-**How to avoid:**
-Configure PostHog to strip the URL fragment from ALL captured properties at initialization:
-
-```typescript
-posthog.init(POSTHOG_KEY, {
-  api_host: 'https://app.posthog.com',
-  sanitize_properties: (properties) => {
-    // Strip URL fragment (contains encryption key on /secret/:id pages)
-    if (properties.$current_url) {
-      properties.$current_url = (properties.$current_url as string).split('#')[0];
-    }
-    if (properties.$referrer) {
-      properties.$referrer = (properties.$referrer as string).split('#')[0];
-    }
-    if (properties.$pathname) {
-      // Also strip secret IDs from path
-      properties.$pathname = (properties.$pathname as string).replace(
-        /\/secret\/[A-Za-z0-9_-]+/,
-        '/secret/[redacted]',
-      );
-    }
-    return properties;
-  },
-  capture_pageview: false, // Manually capture pageviews after sanitization
-  autocapture: false,      // Prevent autocapture from leaking DOM text/attributes
-});
-```
-
-Additionally, set `autocapture: false` because PostHog's autocapture can capture text content, input values, and element attributes that may contain sensitive data.
-
-**Warning signs:**
-- PostHog initialized without `sanitize_properties`
-- PostHog events visible in browser DevTools Network tab showing `$current_url` with `#` fragment
-- `autocapture: true` (the default) on any page that handles encryption keys
-
-**Phase to address:** Analytics integration phase
-
----
-
-### Pitfall 5: CSP Violations When Adding Analytics Scripts
-
-**What goes wrong:**
-SecureShare's CSP is strict: `script-src 'self' 'nonce-<random>'`. There is no `'unsafe-inline'`, no `'unsafe-eval'`, and no external domains in `connect-src`. Adding PostHog requires:
-1. Loading the PostHog script (needs a `<script>` with the nonce OR needs the domain in `script-src`)
-2. PostHog making XHR/fetch requests to `app.posthog.com` (needs `connect-src`)
-3. PostHog loading styles for its toolbar (needs `style-src` for `*.posthog.com`)
-
-If any of these are not added to the CSP, PostHog silently fails -- no events are captured, no error is shown to the user, no JavaScript exception is thrown. The analytics integration appears to work in development (where CSP is often disabled) but fails silently in production.
-
-Additionally, PostHog's toolbar feature historically used dynamic code evaluation, which requires `unsafe-eval` and is blocked by the strict CSP. As of PostHog's fix for issue #1918, event reporting works without `unsafe-eval` -- only the toolbar fails to load. Do NOT add `unsafe-eval` to the CSP to accommodate the toolbar.
-
-**Why it happens:**
-- The CSP was designed before analytics was in scope
-- Analytics SDKs are typically added to apps with permissive CSPs
-- Silent failures mean the misconfiguration is not caught until a review of analytics dashboards shows no data
-- Vite's dev server does not enforce CSP in development
-
-**How to avoid:**
-Add PostHog domains to the helmet CSP configuration:
-
-```typescript
-// In createHelmetMiddleware():
-contentSecurityPolicy: {
-  directives: {
-    scriptSrc: [
-      "'self'",
-      (_req, res) => `'nonce-${(res as Response).locals.cspNonce}'`,
-      'https://app.posthog.com',  // PostHog script (remove if self-hosting)
-    ],
-    connectSrc: [
-      "'self'",
-      'https://app.posthog.com',  // PostHog event ingestion
-    ],
-    styleSrc: [
-      "'self'",
-      (_req, res) => `'nonce-${(res as Response).locals.cspNonce}'`,
-      'https://app.posthog.com',  // PostHog toolbar styles
-    ],
-  },
-}
-```
-
-Write a test that verifies PostHog events are received after initialization with the production CSP active. Use the PostHog `loaded` callback to confirm initialization succeeded.
-
-Consider self-hosting PostHog (`https://analytics.yourdomain.com`) to keep all analytics traffic under `'self'`, eliminating the need for external domains in CSP.
-
-**Warning signs:**
-- Browser DevTools shows CSP violation for `app.posthog.com`
-- PostHog dashboard shows zero events despite the SDK being initialized
-- `connect-src` does not include PostHog's ingestion endpoint
-
-**Phase to address:** Analytics integration phase
-
----
-
-### Pitfall 6: Stripe Webhook Handler Without Idempotency Causes Double-Provisioning
-
-**What goes wrong:**
-Stripe retries webhook delivery for up to 3 days with exponential backoff when the endpoint does not return a 2xx. If the webhook handler succeeds in provisioning a subscription (granting premium access) but then crashes before returning 200, Stripe retries and the handler runs again -- provisioning the subscription a second time. This can result in duplicate credits, duplicate welcome emails, or access being granted even after a subscription lapses because the cancel event was processed twice with conflicting results.
-
-The 5-minute signature verification window compounds this: you cannot buffer all webhooks, process them later, and verify signatures -- signature verification must happen immediately, so a persist-then-process approach does not work.
-
-**Why it happens:**
-- Stripe's documentation mentions idempotency but does not make it a required step in quickstart examples
-- The failure mode only manifests under network instability or server restarts during processing
-- Developers test with Stripe CLI's webhook forwarding, which delivers each event exactly once
-
-**How to avoid:**
-Store processed Stripe event IDs in the database and skip re-processing:
-
-```typescript
-// In the webhook handler, after signature verification:
-const event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-
-// Check if already processed
-const existing = await db
-  .select()
-  .from(stripeEvents)
-  .where(eq(stripeEvents.stripeEventId, event.id));
-
-if (existing.length > 0) {
-  res.status(200).json({ received: true }); // idempotent -- already handled
-  return;
-}
-
-// Mark as processing before handling (prevents concurrent duplicates)
-await db.insert(stripeEvents).values({
-  stripeEventId: event.id,
-  type: event.type,
-  processedAt: new Date(),
-});
-
-// Now process the event
-await handleStripeEvent(event);
-```
-
-Also handle out-of-order delivery: Stripe does not guarantee event order. `customer.subscription.updated` can arrive before `customer.subscription.created`. Query Stripe's API directly for the current subscription state rather than applying state transitions based solely on event order.
-
-**Warning signs:**
-- Webhook handler does not check for previously processed event IDs
-- User subscriptions show as active after cancellation (or cancelled after payment)
-- Duplicate emails sent on subscription creation
-
-**Phase to address:** Payments/Stripe integration phase
-
----
-
-### Pitfall 7: Not Verifying Stripe Webhook Signatures Opens the Endpoint to Forgery
-
-**What goes wrong:**
-The Stripe webhook endpoint (`POST /webhooks/stripe`) must grant premium access, revoke access, or process refunds based on incoming events. Without signature verification, anyone who knows the URL can send a forged `checkout.session.completed` event to grant themselves premium access for free.
-
-Stripe provides a webhook signing secret (`whsec_...`) for each endpoint. Verification requires the raw request body -- if Express's JSON middleware runs first and parses the body, the raw bytes are gone and signature verification fails with a cryptic error about the signature not matching.
-
-**Why it happens:**
-- Most Express tutorials apply `express.json()` globally before all routes
-- The error from mismatched signatures ("No signatures found matching the expected signature for payload") does not explain that the body was pre-parsed
-- Developers test with Stripe CLI locally, which generates valid signatures, but production endpoints skip verification
-
-**How to avoid:**
-Register the webhook route BEFORE the global JSON middleware, using `express.raw()` for that specific route:
-
-```typescript
-// In app.ts -- BEFORE app.use(express.json())
+// Step 6b: Stripe webhook -- before express.json() (raw body required for signature verification)
+// express.raw() reads the full body as a Buffer WITHOUT parsing it as JSON.
+// constructEvent() hashes the raw Buffer; any JSON pre-parsing invalidates the HMAC signature.
 app.post(
-  '/webhooks/stripe',
-  express.raw({ type: 'application/json' }), // raw body for signature verification
+  '/api/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
   stripeWebhookHandler,
 );
 
-// AFTER the webhook route
-app.use(express.json()); // global JSON parsing for all other routes
+// Step 7: JSON parser (for all other routes)
+app.use(express.json({ limit: '100kb' }));
+```
 
-// In the webhook handler:
-export async function stripeWebhookHandler(req: Request, res: Response): Promise<void> {
-  const sig = req.headers['stripe-signature'];
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,                      // raw Buffer, not parsed JSON
-      sig as string,
-      env.STRIPE_WEBHOOK_SECRET,
-    );
-  } catch (err) {
-    res.status(400).json({ error: 'Webhook signature verification failed' });
-    return;
+**Warning signs:**
+- `stripe.webhooks.constructEvent` throws in production but works with Stripe CLI locally
+- The Stripe webhook route is registered after `app.use(express.json())`
+- The `app.ts` comment block for middleware ordering does not mention the webhook
+
+**Phase to address:** Stripe billing phase (first task: wire up the route, verifying ordering against existing app.ts comment)
+
+---
+
+### Pitfall 4: SPA SEO Pages Are Invisible to AI Crawlers and Slow to Index for Google
+
+**What goes wrong:**
+The v5.0 SEO plan includes competitor comparison pages (`/vs/onetimesecret`), alternative pages (`/alternatives/pwpush`), and programmatic use-case pages (`/use/[slug]`). These are currently planned as SPA routes rendered client-side by Vanilla TS. This is the wrong architecture for SEO-critical content.
+
+Google Googlebot executes JavaScript and CAN eventually index JS-rendered content, but in two waves: (1) an initial crawl of the raw HTML (which for this SPA is just a shell `index.html` with no meaningful content), then (2) a deferred rendering queue that can take days to weeks, especially for new domains. The content is not guaranteed to appear in search results at all during launch.
+
+AI crawlers (GPTBot, ClaudeBot, PerplexityBot, which affect AI search citations) cannot execute JavaScript at all. They see the empty HTML shell and extract zero content. JSON-LD structured data injected by JS is also invisible to these crawlers.
+
+For a launch strategy built around SEO content pages, this means the competitor comparison pages — the ones designed to capture users searching "onetimesecret alternative" — will be invisible to the very crawlers they target at launch.
+
+**Why it happens:**
+- The app is an SPA and the natural implementation adds new routes to the SPA router
+- Googlebot's deferred rendering gives a false sense of security — content eventually gets indexed, so developers assume it "works"
+- AI crawlers are a relatively new concern not on most developers' radar
+
+**How to avoid:**
+Serve SEO content pages as static HTML from the Express server, not as SPA routes. The correct approach for this stack:
+
+1. Create server-rendered HTML templates for each SEO page (`/vs/:competitor`, `/use/:slug`, `/alternatives/:competitor`) that Express serves directly with `res.send(fullHtml)` — fully-formed HTML including `<head>`, meta tags, and body content
+2. These server-rendered HTML pages include all content in the initial HTTP response — no JS execution required for Googlebot or AI crawlers to read the full content
+3. The SPA router in `client/src/router.ts` does NOT need to handle these routes — the server handles them directly
+4. JSON-LD schema blocks go in the `<head>` of the server-rendered HTML as static `<script type="application/ld+json">` tags — not injected by JS
+5. Apply the same CSP nonce injection that already exists for `index.html` to these server-rendered pages
+
+Alternative approach (if full server-render is too complex): pre-build static HTML files at deploy time using a script that renders each page's content into a full HTML template, then serve them as static assets. This is simpler than true SSR and achieves the same crawler result.
+
+**Warning signs:**
+- SEO page routes (e.g. `/vs/onetimesecret`) are handled by the SPA router in `client/src/router.ts`
+- The Express server's `{*path}` SPA catch-all handles SEO page requests and serves the empty `index.html` shell
+- Running `curl -L https://torchsecret.com/vs/onetimesecret` returns a near-empty HTML body
+
+**Phase to address:** SEO content pages phase (before any page content is written — architecture decision first)
+
+---
+
+### Pitfall 5: JSON-LD Schema Markup Injected by JavaScript Is Invisible to AI Crawlers
+
+**What goes wrong:**
+The SPA already has JSON-LD for `WebApplication` schema in `index.html`. For v5.0, additional schemas are planned: `FAQPage`, `HowTo`, and `WebApplication` on the marketing homepage and pricing page. If these are injected by the SPA router's JS (as the current pattern does for per-route meta tags), Googlebot will eventually parse them but AI crawlers (GPTBot, ClaudeBot, PerplexityBot) will not.
+
+Google explicitly states JSON-LD can be dynamically injected by JS and Google will process it — but only for traditional Googlebot. For AI overview features, speed of rendering matters: Google's AI Overviews prefer readily available structured data over deferred JS rendering.
+
+The current SPA router pattern of updating `<head>` content via JS works for human-facing meta tags where latency in Google indexing is acceptable. It is NOT adequate for structured data on launch-day SEO pages where AI search citations are a goal.
+
+**Why it happens:**
+- The existing router already injects `<title>`, `<meta description>`, and OG tags via JS — structured data follows the same pattern
+- Developers conflate "Google can process JS-injected JSON-LD" with "all crawlers process JS-injected JSON-LD"
+- No explicit signal that JS-injected structured data fails for AI crawlers
+
+**How to avoid:**
+Embed JSON-LD as static `<script type="application/ld+json">` tags directly in the HTML served by the server for each SEO page. For the SPA's existing `index.html` (marketing homepage and pricing if they remain SPA routes), move the JSON-LD block from JS injection into the static `index.html` template — it is simpler and more reliable:
+
+```html
+<!-- In the server-rendered HTML for /vs/onetimesecret — static, not JS-injected -->
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Torch Secret vs OneTimeSecret",
+    "description": "Zero-knowledge comparison...",
+    "mainEntity": {
+      "@type": "ItemList",
+      ...
+    }
   }
-  // handle event...
-}
+  </script>
+</head>
 ```
 
-**Warning signs:**
-- `stripe.webhooks.constructEvent` throws "No signatures found"
-- `express.json()` middleware registered globally before the webhook route
-- `STRIPE_WEBHOOK_SECRET` not in `.env.example`
+For the marketing homepage and pricing page (which remain as SPA routes served from `index.html`), add the `WebApplication` and `FAQPage` JSON-LD blocks directly to `client/index.html` as static tags rather than injecting them via the router. The only downside is that all SPA routes share this JSON-LD — use `sameAs` and broad schema types that are accurate for the homepage.
 
-**Phase to address:** Payments/Stripe integration phase
+**Warning signs:**
+- JSON-LD for SEO pages is written in a JS file (`router.ts`, a page module, or a helper) rather than in HTML
+- Running `curl https://torchsecret.com/vs/onetimesecret | grep 'application/ld+json'` returns nothing
+- Google Rich Results Test shows "item could not be detected" even after indexing
+
+**Phase to address:** SEO content pages phase (same phase as Pitfall 4 — both address the static-vs-SPA architecture decision)
 
 ---
 
-### Pitfall 8: Race Condition Between Stripe Checkout Return and Webhook Delivery
+### Pitfall 6: Email Onboarding Sequence May Cross the GDPR Transactional/Marketing Boundary
 
 **What goes wrong:**
-When a user completes Stripe Checkout and is redirected to the success page (`/billing?success=true`), the application immediately queries its own database to show subscription status. However, the Stripe webhook (`checkout.session.completed`) arrives asynchronously 1-5 seconds after the redirect. The database shows the user has no subscription, the success page displays a confusing "no active plan" state, and the user assumes payment failed even though they were charged.
+The v5.0 plan includes a 3-email onboarding sequence: welcome, key features, upgrade prompt. Under GDPR, the classification of these emails determines whether explicit prior consent is required:
+
+- **Transactional emails:** Triggered by user action (registration, purchase), reasonably expected by the recipient. No explicit marketing consent required. No unsubscribe link legally required (though good practice).
+- **Marketing emails:** Promotional content sent to a user for business benefit. Explicit prior opt-in consent required. Unsubscribe link mandatory.
+
+The welcome email (email 1) is clearly transactional — it is triggered by account registration. The "key features" email (email 2) is borderline — it educates the user about the product but could be seen as promotional. The "upgrade prompt" email (email 3) is marketing — it explicitly promotes a paid tier.
+
+If emails 2 and 3 are sent via Resend to all newly registered users without an explicit marketing consent checkbox on the registration form, this violates GDPR for EU users. The fact that the app already has a privacy-first positioning ("zero-knowledge", "GDPR-oriented") makes this violation more visible and more damaging to trust.
 
 **Why it happens:**
-- The HTTP redirect from Stripe and the webhook delivery are independent asynchronous events
-- Developers design the success page to query local state, not Stripe's API
-- The race condition only manifests under normal operation -- it is not a bug state
+- "Welcome onboarding" emails are intuitively associated with account setup (transactional), but the upgrade prompt is promotional
+- Resend sends all emails regardless of classification — the developer must enforce the boundary
+- Registration forms commonly omit marketing consent checkboxes as an intentional UX choice, leaving the boundary enforcement undefined
 
 **How to avoid:**
-On the checkout success redirect, fetch subscription status directly from Stripe's API (not the local database) and immediately update the database synchronously before rendering the success page:
+Classify each email before building:
 
-```typescript
-// GET /billing?session_id=cs_...
-if (req.query.session_id) {
-  const session = await stripe.checkout.sessions.retrieve(req.query.session_id as string, {
-    expand: ['subscription'],
-  });
-  if (session.payment_status === 'paid' && session.subscription) {
-    // Immediately sync to database -- don't wait for webhook
-    await syncSubscriptionToDatabase(session.subscription as Stripe.Subscription, req.user.id);
-  }
-}
-```
+| Email | Classification | Consent Required | Unsubscribe Required |
+|-------|---------------|-----------------|---------------------|
+| Welcome (email 1) | Transactional | No | No (good practice) |
+| Key features (email 2) | Transactional if focused on product use, Marketing if promotional | No / Yes | No / Yes |
+| Upgrade prompt (email 3) | Marketing (promotes paid tier) | YES | YES |
 
-Use a polling fallback: if direct sync fails (Stripe API unavailable), poll the local database for up to 10 seconds before showing a "processing" state with a manual refresh option.
+For GDPR compliance, either:
+- **Option A:** Add a marketing consent checkbox to the registration form ("Send me product tips and upgrade news"), store the consent flag, and only send emails 2 and 3 to users who opted in
+- **Option B:** Limit the onboarding sequence to email 1 only (unambiguously transactional), defer the upgrade prompt to in-app UI only
+
+For EU users specifically, "legitimate interest" does NOT cover promotional upgrade emails — explicit consent is required. Given that Torch Secret explicitly positions itself as privacy-respecting and GDPR-oriented, Option A with a clear unchecked opt-in checkbox is the defensible implementation.
+
+Also required for any marketing email via Resend: a one-click unsubscribe link that actually removes the user from the marketing list (not just marks them as "unsubscribed" in a way that requires them to email support).
 
 **Warning signs:**
-- Success page queries only the local database
-- No `session_id` query parameter handling on the return URL
-- User reports showing "no subscription" immediately after successful checkout
+- Registration form has no marketing consent checkbox and still sends 3 emails to all new users
+- Emails 2 or 3 contain promotional copy ("upgrade to Pro") with no unsubscribe link
+- Resend audience list includes all registered users without a consent flag filter
+- "GDPR" is in the privacy policy but the email consent flow does not reflect it
 
-**Phase to address:** Payments/Stripe integration phase
+**Phase to address:** Email onboarding phase (consent model defined before Resend sequence is built)
 
 ---
 
-### Pitfall 9: Subscription Lapse Silent Failure -- No `invoice.payment_failed` Handler
+### Pitfall 7: Marketing Email Capture Form on Homepage Stores Email Addresses Without GDPR Consent Flow
 
 **What goes wrong:**
-Stripe does not automatically cancel subscriptions on the first failed payment. Instead, it sends `invoice.payment_failed` and retries over several days per the Dunning schedule. If the application has no handler for this event, subscriptions stay active in the local database long after Stripe considers them delinquent (`past_due` status). Users who stopped paying continue to have premium access for days or weeks.
+The marketing homepage redesign includes an email capture form for pre-launch or launch interest. This form collects email addresses for marketing purposes — it is unambiguously a marketing list, not transactional. Storing these addresses without:
+1. An explicit, unchecked opt-in checkbox with clear description of what subscribers will receive
+2. A documented consent record (timestamp, source, what they agreed to)
+3. A working unsubscribe mechanism
 
-When the subscription eventually reaches `canceled` status and `customer.subscription.deleted` fires, access is revoked suddenly and without warning -- frustrating users who may have updated their payment method during the retry period.
+...is a GDPR violation. The fine is up to 4% of annual global revenue or €20M, whichever is higher. More pragmatically, if a user complains, the regulator will check whether the consent record exists.
+
+The second failure mode: storing these email addresses in the same database table that stores user accounts, without separating the "prospective subscriber" record from the "registered user" record. If a subscriber later registers, the marketing consent status should carry through — but the two should be separate systems during the pre-registration phase.
 
 **Why it happens:**
-- Most tutorials show only the "happy path" (`checkout.session.completed`)
-- The unhappy path (`invoice.payment_failed`) requires more UI (dunning emails, payment update flow)
-- Payment failures are rare in development testing
+- Email capture forms feel lightweight ("just an email address") so developers skip the consent infrastructure
+- The form is built in the marketing phase before the privacy policy is finalized
+- The backend "just stores it in a table" without thinking about the legal consent requirements
 
 **How to avoid:**
-Handle all subscription lifecycle events explicitly. The minimum required set:
+Treat the email capture form as a GDPR consent capture:
 
-```typescript
-switch (event.type) {
-  case 'checkout.session.completed':
-    await activateSubscription(event.data.object);
-    break;
-  case 'invoice.paid':
-    await renewSubscription(event.data.object);
-    break;
-  case 'invoice.payment_failed':
-    await markSubscriptionPastDue(event.data.object);
-    await sendPaymentFailedEmail(event.data.object.customer_email ?? '');
-    break;
-  case 'customer.subscription.updated':
-    await syncSubscriptionStatus(event.data.object);
-    break;
-  case 'customer.subscription.deleted':
-    await deactivateSubscription(event.data.object);
-    break;
-  default:
-    logger.warn({ type: event.type }, 'Unhandled Stripe webhook event');
-}
-```
+1. Checkbox (unchecked by default): "I agree to receive product updates and launch announcements from Torch Secret. You can unsubscribe at any time."
+2. Store alongside the email: `{ email, consented_at, consent_source: 'homepage_capture', ip_hash }` — use a hash of the IP, not the raw IP, to avoid storing PII unnecessarily
+3. Confirmation email (double opt-in recommended): a brief email confirming subscription with a one-click unsubscribe link
+4. Unsubscribe endpoint: `GET /unsubscribe?token=...` that sets `unsubscribed_at` on the record
+5. Never use the email addresses from this list for transactional emails or share them with third parties
+
+Store the email capture list in a separate table (`marketing_subscribers`) from the `users` table. These are different populations with different consent bases.
 
 **Warning signs:**
-- Webhook handler only handles `checkout.session.completed`
-- No `invoice.payment_failed` or `customer.subscription.deleted` handling
-- Users with `past_due` Stripe subscriptions still have premium access
+- Email capture form has no checkbox — just an email field and a submit button
+- The captured emails are stored in the `users` table or mixed with user account data
+- No double opt-in confirmation email is sent
+- No unsubscribe endpoint exists
 
-**Phase to address:** Payments/Stripe integration phase
+**Phase to address:** Marketing homepage phase (consent flow designed before the form is built)
 
 ---
 
-### Pitfall 10: Rate Limit Reduction Breaks Legitimate Existing Usage Patterns
+### Pitfall 8: Programmatic SEO Pages Risk Thin Content Penalties
 
 **What goes wrong:**
-The current anonymous rate limit is 10 secrets/hour per IP. If v4.0 tightens this for anonymous users (e.g., to 3/hour) while giving account users higher limits, legitimate workflows that rely on the current limit break silently. Examples: CI/CD pipelines that rotate secrets hourly, developers who share 5-6 credentials at a time during onboarding, or teams that use SecureShare for daily secret distribution.
+The plan includes 8+ programmatic use-case pages (`/use/[slug]`) plus 3 competitor comparison pages and 3 alternative pages. If these pages are generated from a shared template with only the company/use-case name swapped in, Google's algorithms classify them as "thin content" — pages that provide little value beyond keyword targeting. Post-2025 Google core updates heavily penalize thin programmatic content.
 
-Since rate limits are enforced per IP via Redis with a 1-hour rolling window, existing counters persist after deployment. A user who has already created 7 secrets in the current window suddenly gets a 429 on request 4 under the new limit, with no explanation for why the limit changed.
+The failure mode is not immediate — the pages may initially index and even rank. But at the next core update, traffic drops sharply and Google may de-index them. This is particularly dangerous for a new domain (torchsecret.com) where the domain authority is low: thin content will be filtered out faster than on established domains.
+
+A secondary risk: if the competitor comparison pages (`/vs/onetimesecret`) simply repeat the competitor's marketing copy with superficial differences, the page fails user intent (users want a real comparison, not a sales pitch) AND may trigger a manual quality review.
 
 **Why it happens:**
-- Rate limit changes take effect immediately without a grace period
-- Existing Redis counters from the old limit remain in place
-- The current error message ("Too many secrets created") does not indicate the new limit
+- Programmatic SEO is attractive: build the template once, generate many pages, capture many keywords
+- The initial template looks complete (it has a heading, paragraphs, CTAs) but the content is thin
+- Developers confuse "more pages" with "more SEO value"
 
 **How to avoid:**
-Do not lower the anonymous rate limit without a plan:
+Each SEO page must have unique, substantive content that genuinely serves user intent:
 
-1. **Staged rollout:** Keep anonymous limit at 10/hour for 30 days after account launch, then reduce to 3/hour. Announce the change in the UI.
-2. **Transparent error messages:** Include the new limit in the 429 response:
+- **Competitor comparison pages (`/vs/onetimesecret`):** Include a factual feature comparison table, genuine pro/con analysis based on actual product testing, specific differentiators with evidence (e.g., "OneTimeSecret stores server-side; Torch Secret uses client-side AES-256-GCM — here's how to verify this"). Minimum ~800 words of original content per page.
+- **Alternative pages (`/alternatives/pwpush`):** Similar depth — explain the competitor's actual model, where it falls short for specific use cases, and why Torch Secret addresses those gaps.
+- **Use case pages (`/use/[slug]`):** Each page should include a use-case-specific workflow, a concrete example, and possibly a snippet showing the specific flow. Different from a feature-list page.
 
-```typescript
-message: {
-  error: 'rate_limited',
-  message: 'Anonymous users can create 3 secrets per hour. Sign in for higher limits.',
-  limit: 3,
-  upgrade_url: '/login',
-},
-```
-
-3. **Version the Redis key prefix when changing limits:** Use `rl:create:v2:{ip}` instead of `rl:create:{ip}`. Old keys with the v1 prefix expire naturally, preventing users from being double-counted against old and new limits simultaneously.
-
-4. **Never lower limits in a breaking way without a deprecation notice**, even for an anonymous-only feature.
+Consider shipping 3 high-quality comparison pages rather than 8 thin use-case pages at launch. Thin pages damage domain authority for ALL pages on the domain.
 
 **Warning signs:**
-- Rate limit changes deploy simultaneously with account launch
-- No UI indication that anonymous limits changed
-- Redis keys use same prefix as old limits (no version isolation)
+- The use-case page template has only 2-3 paragraphs that change between slugs
+- Comparison pages are generated from a JSON data file with no original prose
+- Pages pass Lighthouse but a human reading them would learn nothing new about the products
 
-**Phase to address:** Auth foundation phase (define new rate limit strategy) and rate limiting phase
+**Phase to address:** SEO content pages phase (content quality gate before publishing any programmatic page)
 
 ---
 
-### Pitfall 11: Anonymous-to-Account Transition Creates Implicit Secret Association
+### Pitfall 9: Pro Feature Gate Checked at Request Time Against Stale Subscription Status
 
 **What goes wrong:**
-If the application allows users to "claim" their previously anonymous secrets after creating an account, this creates exactly the kind of user-secret association that violates the zero-knowledge model. To claim a secret, the application must know which secrets the user previously created. The only way to know this is to have recorded it at creation time -- which requires logging user identity (IP address, session, fingerprint) alongside the secret, contradicting anonymous-first design.
+The `requirePlan` middleware (or equivalent) for v5.0 gates the 30-day expiration feature behind Pro status. The middleware checks subscription status from the local database. Two failure modes:
 
-Even a "soft" solution -- storing a local-storage token at creation time that maps to secrets -- creates a server-side association record when the claim is made: `userId + secretId` in the same database write.
+**Mode A — Stale "active" after cancellation:** A user cancels their Stripe subscription. The `customer.subscription.deleted` webhook is delayed or fails to deliver. The database still shows `status: 'active'`. The user continues to create 30-day secrets after their billing period ends. This is a revenue leak.
 
-**Why it happens:**
-- The feature seems user-friendly: "Don't lose your history when you sign up"
-- Developers implement the obvious solution (store a token client-side, send it on claim) without recognizing it creates the forbidden association server-side
-- Product requirements often ask for this feature without recognizing the privacy implication
+**Mode B — Stale "inactive" after payment:** A user upgrades. The `checkout.session.completed` webhook has not yet arrived (1-5 second delay). The user is redirected to the success page. The feature gate middleware checks the database and finds no active subscription. The 30-day expiration option does not appear. The user thinks their upgrade failed.
 
-**How to avoid:**
-**Do not implement "claim anonymous secrets" for v4.0.** The correct zero-knowledge-preserving design is:
-
-1. Secrets created while anonymous remain anonymous forever. There is no retroactive association.
-2. After account creation, new secrets are tracked under the account by incrementing a counter, NOT by storing secret IDs.
-3. No migration of pre-account secrets into the account view.
-
-If account holders want a "my secrets" dashboard, it shows only secrets created after account creation, and even then, only the creation timestamp and expiration -- never the secret ID, which would allow server-side association with plaintext.
-
-Document this as a deliberate design decision in the UI: "Secrets you created before signing in remain private. We have no way to associate them with your account, and that's by design."
-
-**Warning signs:**
-- Any feature that allows looking up secrets by user identity
-- `secrets` table gains a `created_by_user_id` column
-- "Import anonymous secrets" or "claim history" feature in the roadmap
-
-**Phase to address:** Auth foundation phase (architecture review before coding)
-
----
-
-### Pitfall 12: OAuth Redirect URI Validation Too Permissive Enables Token Theft
-
-**What goes wrong:**
-OAuth providers (Google, GitHub) validate that the redirect URI in the authorization request exactly matches a pre-registered URI. If the application registers `https://app.example.com/auth/callback` but passes query parameters in the redirect URI (e.g., `?next=/dashboard`), provider validation fails because the URI with query params no longer matches the registered URI exactly. Developers then either register multiple URIs or relax validation, creating attack surface.
-
-GitHub performs exact match. Google performs exact match. Neither accepts partial path or query parameter wildcards for server-side apps. An attacker who can modify the redirect URI in transit can redirect the authorization code to an attacker-controlled endpoint.
+Both modes stem from the same root cause: trusting the local database as the source of truth for subscription status, when the actual source of truth is Stripe.
 
 **Why it happens:**
-- Developers add `?next=...` to `redirect_uri` to preserve post-login destination
-- The `next` or `state` parameter is conflated: state is used for both CSRF protection AND destination URL
-- Provider documentation does not make it obvious that query parameters break exact match
+- Checking the local database is fast (microseconds) vs. calling Stripe's API (50-200ms)
+- The v4.0 pitfalls research documented Mode B (race condition) — but Mode A is equally important and less intuitive
+- Developers trust webhook reliability ("Stripe retries for 3 days") without accounting for the window between cancellation and webhook delivery
 
 **How to avoid:**
-Register the exact callback URI with NO query parameters: `https://app.example.com/auth/callback`. Store the post-login destination separately in the session state, not in the redirect URI:
+For the feature gate middleware, use a cache-aside pattern with a short TTL:
 
-```typescript
-// Store destination in session, not in redirect_uri
-req.session.postLoginRedirect = req.query.next as string || '/dashboard';
-const authUrl = buildOAuthUrl({
-  redirect_uri: 'https://app.example.com/auth/callback', // exact, no query params
-  state: stateToken,
-});
+1. On webhook events (`customer.subscription.updated`, `customer.subscription.deleted`): immediately update the local DB AND clear/update the Redis subscription cache for that user
+2. In `requirePlan` middleware: check Redis cache first (fast), fall back to DB if cache miss, cache result with a 5-minute TTL
+3. On the success page return (with `session_id` query param): call Stripe API directly to get current subscription state, update DB and cache synchronously before showing the success UI — this handles Mode B explicitly
 
-// In callback: read destination from session after validating state
-const destination = req.session.postLoginRedirect || '/dashboard';
-delete req.session.postLoginRedirect;
-// Validate destination is internal before redirecting
-if (!destination.startsWith('/')) {
-  res.redirect('/dashboard'); // block open redirect
-  return;
-}
-res.redirect(destination);
-```
-
-Validate the post-login redirect destination against an allowlist of internal paths to prevent open redirect vulnerabilities.
+For Mode A (stale active after cancellation), add a secondary check: when a user creates a secret with `expiresIn: '30d'`, verify that `subscription.current_period_end > now()` in the DB before honoring the 30-day expiration. If the period has ended, cap the expiration at 7 days (the max for free accounts) and return a `402` response instructing the user to renew. Do NOT silently create a 30-day secret for a cancelled subscriber.
 
 **Warning signs:**
-- `redirect_uri` includes query parameters or dynamic path segments
-- Post-login destination URL passed via `redirect_uri` rather than session
-- Multiple provider callback URLs registered including query-parameter variants
+- `requirePlan` middleware reads only from the local database without a cache or TTL
+- No `current_period_end` check in the secret creation handler
+- Success page shows subscription status without querying Stripe API directly on `session_id` param
 
-**Phase to address:** Auth foundation phase
-
----
-
-### Pitfall 13: Session Fixation on Login -- Old Session ID Persists After Authentication
-
-**What goes wrong:**
-If the application does not regenerate the session ID when a user authenticates, an attacker who obtained a pre-authentication session ID (via a different vector) can "fix" that session ID in the victim's browser, then wait for the victim to log in. After authentication, the session is now valid (associated with the authenticated user) and the attacker uses the pre-known session ID to access the victim's account.
-
-`express-session` does NOT automatically regenerate the session on login. The developer must call `req.session.regenerate()` explicitly.
-
-**Why it happens:**
-- Session regeneration is not automatic in Express -- it is an easy-to-miss one-liner
-- Developers test authentication but do not test the pre/post-auth session ID change
-- The vulnerability requires an existing session ID leak to exploit -- which makes it seem unlikely but is a defense-in-depth requirement
-
-**How to avoid:**
-Always call `req.session.regenerate()` before setting authenticated user data on the session:
-
-```typescript
-// In the OAuth callback, after validating state and exchanging code for tokens:
-await new Promise<void>((resolve, reject) => {
-  req.session.regenerate((err) => {  // creates a new session ID
-    if (err) reject(err);
-    else resolve();
-  });
-});
-// Now safe to set user data on the new session
-req.session.userId = user.id;
-req.session.authenticated = true;
-```
-
-**Warning signs:**
-- `req.session.regenerate()` not called anywhere in the auth callback handler
-- Session ID is the same before and after login (check browser cookies in DevTools)
-
-**Phase to address:** Auth foundation phase
-
----
-
-### Pitfall 14: Timing Attack Reveals Valid Email Addresses During Login
-
-**What goes wrong:**
-If the login endpoint responds faster for non-existent email addresses than for existing ones (because it skips the Argon2id hash comparison), an attacker can probe the endpoint with thousands of email addresses and identify which ones are registered by measuring response time differences. Argon2id with OWASP parameters takes ~300-500ms, while a "user not found" short-circuit returns in ~1ms -- a timing difference easily detectable over the network.
-
-The existing `verifyPassword` implementation uses Argon2id, which is timing-safe for the comparison itself. The vulnerability is in whether the comparison is ALWAYS performed.
-
-**Why it happens:**
-- Early-return on "user not found" is a natural performance optimization
-- The timing gap is not apparent from reading the code -- it only manifests under measurement
-- CVE-2025-22234 shows that even authentication frameworks designed to prevent this can introduce timing regressions through patches
-
-**How to avoid:**
-Always perform the Argon2id comparison even when the user does not exist, using a dummy hash:
-
-```typescript
-// Pre-computed dummy hash for non-existent user comparison
-const DUMMY_HASH = await argon2.hash('dummy-comparison-value');
-
-export async function loginHandler(req: Request, res: Response): Promise<void> {
-  const { email, password } = req.body;
-  const user = await getUserByEmail(email);
-
-  // Always compare against SOME hash -- prevents timing oracle
-  const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
-  const isValid = await argon2.verify(hashToCompare, password);
-
-  if (!user || !isValid) {
-    // Identical response for both "user not found" and "wrong password"
-    res.status(401).json({ error: 'invalid_credentials' });
-    return;
-  }
-  // ... proceed with login
-}
-```
-
-Use a single generic error message for both "user not found" and "wrong password" -- identical response body AND identical response time.
-
-**Warning signs:**
-- Login handler has an early return before the hash comparison when user is not found
-- Different error messages for "user not found" vs. "wrong password"
-- No dummy hash comparison for the not-found path
-
-**Phase to address:** Auth foundation phase
-
----
-
-### Pitfall 15: Drizzle ORM Bug Generates Invalid Migration When Adding FK Column
-
-**What goes wrong:**
-Drizzle Kit has a documented bug (#4147): when adding a new column that also has a foreign key constraint in the same schema change, the generated migration SQL may be invalid -- it attempts to add the FK constraint referencing the column before the column exists. This causes the migration to fail with a PostgreSQL error on a live production database.
-
-For v4.0, adding `userId` relationships to any existing table triggers this exact scenario: new nullable column + FK constraint in one `ALTER TABLE` operation.
-
-**Why it happens:**
-- Drizzle's `generate` command analyzes the schema diff and bundles column + constraint in one statement
-- The ordering of DDL statements within the migration is incorrect under this bug
-- The bug is in the migration generator, not the ORM itself -- it only manifests when running migrations
-
-**How to avoid:**
-After running `drizzle-kit generate`, ALWAYS review the generated SQL before applying it to production:
-
-```bash
-npm run db:generate
-# Review the generated file in drizzle/ before applying
-cat drizzle/<timestamp>_migration.sql
-```
-
-If the migration contains both `ADD COLUMN` and `ADD CONSTRAINT FOREIGN KEY` for the same column in a single statement, split them into two migrations manually:
-
-```sql
--- Migration 1: Add nullable column (safe, additive, no downtime)
-ALTER TABLE "subscriptions" ADD COLUMN "user_id" text;
-
--- Migration 2 (separate file, run after Migration 1): Add FK constraint
-ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_user_id_fk"
-  FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL;
-```
-
-For live PostgreSQL tables with significant data, adding a non-null FK column requires a three-step process to avoid table locks: add nullable column, backfill data, then add NOT NULL constraint.
-
-**Warning signs:**
-- Generated migration contains `FOREIGN KEY` constraint referencing a column being added in the same file
-- Migration fails with "column does not exist" during FK constraint creation
-- Schema diff includes both column addition and FK in one `ALTER TABLE`
-
-**Phase to address:** Schema/database phase (before any schema changes)
+**Phase to address:** Stripe billing phase (both the middleware implementation and the success page race condition handler)
 
 ---
 
@@ -691,38 +376,37 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Skip `sanitize_properties` on PostHog init | Faster analytics setup | Encryption keys sent to PostHog -- zero-knowledge violated permanently | Never |
-| Store session tokens in localStorage | Simpler client-side auth | Vulnerable to XSS token theft; OWASP explicitly warns against | Never |
-| Skip OAuth state parameter | Simpler callback handler | Account hijacking via CSRF; violates RFC 9700 | Never |
-| Use `secrets.created_by_user_id` column | Easy "my secrets" dashboard | User-secret association in database breaks zero-knowledge model | Never |
-| Only handle `checkout.session.completed` webhook | Faster payment integration | Users who cancel or fail payment retain access indefinitely | Never for production |
-| Skip webhook idempotency check | Simpler webhook handler | Double-provisioning on retry -- users credited twice | Never |
-| Register Stripe webhook without signature verification | Avoids body parser debugging | Webhook endpoint spoofable in production -- free subscription grants | Never |
-| Tighten anonymous rate limit without notice | Reduces abuse immediately | Breaks legitimate existing users, no notice for CI/CD scripts | Only with 30-day deprecation notice |
-| Add `unsafe-eval` to CSP for PostHog toolbar | PostHog toolbar works | Weakens CSP protecting encryption key fragments; higher XSS risk | Never -- self-host PostHog without toolbar instead |
-| Log `userId + secretId` for debugging | Easier to trace issues | Creates the user-secret association the zero-knowledge model forbids | Never |
-| Skip `req.session.regenerate()` on login | One less async call | Session fixation vulnerability | Never |
+| Add Stripe webhook route after `express.json()` | Simpler app.ts ordering | Signature verification fails in production (error is cryptic) | Never |
+| Serve SEO pages as SPA routes from `index.html` | No new server code | Content invisible to AI crawlers; slow indexing; poor Google ranking at launch | Never for launch-critical SEO pages |
+| Send all 3 onboarding emails without marketing consent checkbox | Simpler registration flow | GDPR violation for EU users; fines up to 4% annual revenue; reputational damage | Never for EU-facing app |
+| Skip double opt-in for email capture form | One less friction step | Higher deliverability risk; harder to prove consent to regulators | Avoid — double opt-in is GDPR best practice |
+| Generate 8 use-case pages from a minimal template | More URL surface area for SEO | Thin content penalties from Google core updates; domain authority damage | Never at launch — fewer high-quality pages beat many thin ones |
+| Check subscription status from DB only in feature gate | Fast, no external API call | Stale "active" status after cancellation leaks revenue; stale "inactive" blocks paying users | Acceptable only with a Redis TTL cache + explicit success-page Stripe API sync |
+| Log full Stripe webhook event objects for debugging | Easy debugging | May log user email alongside request context correlated with secretId — ZK invariant at risk | Never in production logs; use structured fields only |
+| Inject JSON-LD via JS router (extending existing pattern) | Consistent code style | Invisible to AI crawlers (GPTBot, ClaudeBot, PerplexityBot) | Never for launch SEO pages |
+| Store marketing email list in the `users` table | Simpler data model | Marketing consent and account consent are different legal bases; mixing them creates compliance complexity | Never |
+| Add Stripe.js `script-src` to CSP "just in case" | Avoid future CSP debugging | Weakens CSP; `js.stripe.com` is a large attack surface; not needed for redirect Checkout | Never unless embedded Stripe elements are actually used |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when connecting auth, payments, and analytics in this specific stack.
+Common mistakes when connecting Stripe billing, SEO pages, and email capture in this specific stack.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| PostHog + URL fragments | `$current_url` captures `#ENCRYPTION-KEY` | `sanitize_properties` strips fragment before every event |
-| PostHog + CSP nonces | PostHog script blocked silently | Add `app.posthog.com` to `script-src`, `connect-src`, `style-src` in helmet config |
-| PostHog + autocapture | DOM attributes with secret metadata captured | Set `autocapture: false`, use manual event capture only |
-| Stripe webhooks + Express JSON | `constructEvent` fails with signature mismatch | Register webhook route with `express.raw()` BEFORE global `express.json()` |
-| Stripe webhooks + Render.com | Webhook secret differs between CLI and dashboard | Separate `STRIPE_WEBHOOK_SECRET_TEST` and `STRIPE_WEBHOOK_SECRET` env vars |
-| OAuth state + sessions | State stored in cookie that JS can read | Store state in server-side session (`express-session` with Redis store) |
-| OAuth state + PKCE | Treating PKCE as a replacement for state | PKCE protects code interception; state protects CSRF -- both required |
-| OAuth callback + `next` param | `next` in redirect_uri breaks exact match validation | Store post-login destination in session, not in redirect_uri |
-| Rate limits + Redis keys | Tightening limits reuses old Redis counters | Version the Redis key prefix (`rl:create:v2:`) when changing limits |
-| Drizzle + nullable FK migration | Adding FK column + FK constraint in one migration (bug #4147) | Add nullable column first (one migration), then FK constraint (second migration) |
-| Sessions + Render.com | `SESSION_SECRET` rotated causing all users to be logged out | Rotate session secret during low-traffic window; old sessions invalidate gracefully |
-| express-session + Redis | Sessions lost on Render.com deploy restart | Use `connect-redis` with the existing Redis instance; sessions survive restarts |
+| Stripe hosted Checkout + CSP | Adding `script-src js.stripe.com` and `frame-src js.stripe.com` when using server-side redirect | Redirect Checkout does NOT load Stripe.js on the merchant page; no `script-src` or `frame-src` additions needed |
+| Stripe webhook + `app.ts` ordering | Adding webhook route after `app.use(express.json())` (follows auth handler pattern superficially) | Webhook route BEFORE `express.json()`, same position as auth handler; update `app.ts` comment block |
+| Stripe webhook + ZK invariant | Logging `userId + email` or `userId + stripeCustomerId + any Stripe event data` in same log line | Log only `{ event.type, customer }` — no email, no userId, no secretId in same payload |
+| Stripe Customer metadata | Storing email, name, or other PII in metadata | Store only the internal opaque `userId` (DB ID); never email or username |
+| `@better-auth/stripe` plugin | Assuming plugin handles all webhook events including `invoice.payment_failed` | Plugin handles subscription lifecycle; verify its event coverage; add custom handler for `invoice.payment_failed` if needed |
+| Subscription feature gate + Redis | Checking subscription status from DB on every request | Cache subscription status in Redis with 5-minute TTL; clear on webhook events |
+| SEO pages + SPA router | Routing `/vs/:competitor` and `/use/:slug` through `client/src/router.ts` | Server-render these pages as full HTML in Express; do not put them in the SPA router |
+| JSON-LD + SPA router | Injecting schema markup in the JS router's per-route setup (consistent with existing meta tag pattern) | Embed JSON-LD as static `<script type="application/ld+json">` in server-rendered HTML templates |
+| Email onboarding + Resend | Sending upgrade prompt email to all registered users without a marketing consent flag | Filter Resend sends by `marketing_consent: true` on the user record; only send promotional emails to opted-in users |
+| Email capture form + DB schema | Storing pre-launch subscribers in the `users` table | Use a separate `marketing_subscribers` table with `consented_at`, `consent_source`, and `unsubscribed_at` columns |
+| NOINDEX_PREFIXES + SEO pages | SEO pages accidentally inheriting noindex from a wildcard prefix match | Verify `/vs/`, `/alternatives/`, `/use/` are NOT in `NOINDEX_PREFIXES` in `app.ts`; confirm with `curl -I https://torchsecret.com/vs/onetimesecret | grep X-Robots` |
+| Referrer-Policy: no-referrer + Stripe redirect | Stripe redirect back to success URL may lose referrer context needed for analytics attribution | Use `session_id` query param on success URL (not referrer) to identify checkout completions |
 
 ---
 
@@ -732,43 +416,42 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Storing full JWT payload in session cookie | Cookie too large (>4KB), requests rejected by proxies | Store only session ID in cookie, user data in Redis session store | At user objects > ~500 bytes |
-| Querying Stripe API on every authenticated request to check subscription status | 200ms+ added to every request, Stripe rate limits hit | Cache subscription status in Redis with 5-minute TTL, refresh on webhook events | At ~100 concurrent users |
-| No Redis for session storage | Sessions lost on server restart (Render.com restarts on deploy) | Use `connect-redis` with the existing Redis instance | Every deployment |
-| Webhook handler synchronously sends emails | Webhook timeout, Stripe retries, duplicate emails | Queue emails via background job, return 200 immediately from webhook | When email provider is slow (>5s) |
-| PostgreSQL full-table scan for user by email on every login | Login latency degrades as user count grows | Unique index on `users.email` (case-insensitive) | At ~10k users |
+| Calling Stripe API on every `requirePlan` check | 50-200ms added to every Pro feature request; Stripe rate limits hit (~100 req/s default) | Cache subscription status in Redis with 5-minute TTL; refresh on webhook events | At ~50 concurrent Pro users making rapid requests |
+| Server-rendering SEO pages synchronously from a database query | First-byte latency spikes if DB is slow; pages not cacheable | Pre-render pages at deploy time as static HTML files, or cache rendered HTML in Redis with long TTL | At any meaningful search traffic |
+| Storing email capture list in-process (memory) | Emails lost on server restart (Render.com restarts on each deploy) | Write to `marketing_subscribers` table immediately on form submit | Every deployment |
+| Programmatic use-case pages generated dynamically from a DB query per request | Latency scales with DB query time; no cache layer | Pre-generate static HTML at build time for a finite slug set; cache-bust only on content change | At crawl-level traffic (Googlebot may hit many slugs rapidly) |
 
 ---
 
 ## Security Mistakes
 
-Domain-specific security issues when adding auth, payments, and analytics to a zero-knowledge app.
+Domain-specific security issues specific to v5.0 additions.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| `secrets` table gains `user_id` foreign key | Zero-knowledge destroyed -- server knows user-secret association | No FK from secrets to users; use aggregated counters instead |
-| PostHog `$current_url` contains `#ENCRYPTION_KEY` | Encryption keys sent to third-party analytics server | `sanitize_properties` on init strips fragment from all URL properties |
-| Early-return on user not found during login | Timing oracle enables email enumeration | Always run Argon2id comparison against a dummy hash when user not found |
-| Session ID not regenerated on authentication | Session fixation attack enables account takeover | Call `req.session.regenerate()` before setting authenticated user data |
-| `STRIPE_SECRET_KEY` in client bundle | Stripe key exposed to all users | Stripe secret key only on server; client uses Stripe.js with publishable key only |
-| Analytics tracking on the reveal page | User behavior on secret reveal page sent to third party | Explicitly exclude `/secret/:id` path from all PostHog tracking |
-| Unvalidated `next` redirect after login | Open redirect to phishing site | Allowlist post-login destinations to internal paths only |
-| OAuth access token stored server-side for long periods | Token theft from database breach grants provider access | Store only `sub` (subject claim) from OAuth; do not persist access tokens |
+| Stripe secret key (`STRIPE_SECRET_KEY`) bundled in Vite client build | All users can see the key in browser DevTools; anyone can make Stripe API calls as the merchant | Stripe secret key server-only (`server/src/config/env.ts`); only publishable key on client (and only if Stripe.js is used) |
+| Stripe webhook endpoint without `express.raw()` before `express.json()` | Forged webhooks accepted (signature verification silently fails, not throws) | Confirm `constructEvent()` throws on invalid signature — test with a wrong secret in dev |
+| Marketing email consent stored without timestamp | Cannot prove consent to regulators; invalid consent record | Store `{ email, consented_at: new Date(), consent_text: '...' }` — the exact consent language is part of the legal record |
+| SEO comparison page copies competitor screenshots or content | Copyright infringement and DMCA risk | Use only factual feature claims; cite public documentation; no screenshots of competitor UIs without permission |
+| Stripe Customer object metadata contains email + any field correlatable with secretId | Violates ZK invariant via Stripe's data — Stripe's privacy policy allows them to share this with partners | Metadata: `{ userId: db_user_id }` only — never email, never secretId |
+| GDPR double opt-in email uses a shared unsubscribe token | Token reuse allows one subscriber to unsubscribe another | Per-subscriber signed token: `crypto.createHmac('sha256', env.UNSUBSCRIBE_SECRET).update(email).digest('hex')` |
+| Programmatic SEO pages served with user-controlled slug without sanitization | Path traversal or HTML injection in page content | Validate slug against an allowlist of known slugs; never interpolate raw slug into HTML |
 
 ---
 
 ## UX Pitfalls
 
-User experience mistakes specific to adding accounts to an anonymous-first tool.
+User experience mistakes specific to adding billing and marketing pages to an existing privacy-first tool.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Account signup required before using the tool | Defeats the anonymous-first value proposition; users churn | Anonymous usage first, account creation is optional upgrade with visible benefits |
-| "Your secrets" dashboard shows secret IDs | Implies server stores which secrets user created (privacy expectation violated) | Show only aggregate count and creation timestamps, never secret IDs |
-| Login page announces user does not exist | Enables email enumeration | Same generic response for "wrong password" and "user not found" |
-| No clear indication of what account provides | Users do not understand upgrade value | List specific benefits before the signup form: higher limits, longer expiry, etc. |
-| Subscription cancellation revokes access immediately | User paid for the month; expects access until period end | Use `cancel_at_period_end: true` in Stripe, maintain access until `current_period_end` |
-| No "processing" state on checkout return | User sees "no subscription" for 5 seconds while webhook arrives; assumes failure | Immediate Stripe API check on `session_id` return URL parameter |
+| Pricing page uses industry-standard "Contact Sales" for Pro tier | Friction kills self-serve conversion; users expect instant upgrade | Stripe Checkout redirect on "Upgrade to Pro" button — no contact form for $9/month |
+| Success page queries local DB before webhook arrives | User sees "No active subscription" for 5 seconds after paying | Query Stripe API directly on `?session_id=...` return URL before rendering success UI |
+| Subscription cancelled but access revoked immediately | User paid for the billing period; expects access until `current_period_end` | Set `cancel_at_period_end: true` in Stripe; show "Your Pro access ends on [date]" in settings |
+| Pro feature upsell shown on the secret creation form to anonymous users | Interrupts the zero-friction anonymous flow — the core value proposition | Show upsell only after successful creation (on confirmation page), never during creation |
+| Marketing homepage email capture with no confirmation that email was received | Users resubmit the form; you get duplicates; users lose trust | Show inline confirmation: "Check your inbox — we sent a confirmation." Prevent duplicate submissions with a debounce |
+| Competitor comparison page is clearly written to rank, not to help | Users distrust biased comparison; converts poorly | Include genuine trade-offs; Torch Secret is NOT the right tool for every user; say so |
+| Privacy page says "GDPR-compliant" but email capture form has no consent checkbox | Users (especially EU users) notice the contradiction | Audit every data collection touchpoint before launch; the marketing homepage form is a data collection touchpoint |
 
 ---
 
@@ -776,17 +459,18 @@ User experience mistakes specific to adding accounts to an anonymous-first tool.
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **OAuth flow:** Login works but `req.session.oauthState` is never validated in the callback -- CSRF protection is absent. Test by manually submitting the callback with a mismatched state.
-- [ ] **Session cookies:** Auth works in browser but cookies lack `HttpOnly`, `Secure`, and `SameSite` attributes -- verify with browser DevTools Application tab.
-- [ ] **PostHog integration:** Events appear in dashboard but `$current_url` contains `#BASE64KEY` -- check PostHog event properties on the reveal page specifically.
-- [ ] **Stripe webhooks:** Checkout works but `express.json()` middleware runs before the webhook route -- `constructEvent` will fail in production with live signatures.
-- [ ] **Stripe idempotency:** Webhook handler processes events but has no deduplication -- test by sending the same event twice: `stripe events resend evt_...`
-- [ ] **Payment failure handling:** Subscription activates on checkout but `invoice.payment_failed` is not handled -- simulate with `stripe triggers invoice.payment_failed`
-- [ ] **Rate limit change:** New lower anonymous limit deployed but Redis still contains counters from the old limit window -- users at 4/10 suddenly hit the 3/3 limit.
-- [ ] **Schema migration:** User-related FK column added but Drizzle bug #4147 generated a migration that adds FK and column in one statement -- review generated SQL before applying to production.
-- [ ] **Secret-user association:** Auth is working but log lines like `{ userId, secretId }` appear in server logs -- scan production logs for any co-occurrence of both values.
-- [ ] **Analytics on reveal page:** PostHog initialized globally but the reveal page (`/secret/:id`) should be explicitly excluded -- verify no events fire when viewing a secret.
-- [ ] **Session fixation:** Login handler sets `req.session.userId` without calling `req.session.regenerate()` first -- verify session ID changes between pre-auth and post-auth requests.
+- [ ] **Stripe billing:** Checkout flow works end-to-end in test mode, but `STRIPE_WEBHOOK_SECRET` in production is the live secret, not the CLI test secret — verify `stripe listen --forward-to` uses test secret and production uses the dashboard webhook secret
+- [ ] **Stripe webhook route ordering:** The Stripe webhook handler is registered in `app.ts`, but its position is after `express.json()` — verify by checking `app.ts` middleware comment block step numbers
+- [ ] **Pro feature gate:** The 30-day expiration option appears in the UI for Pro users, but `requirePlan` middleware checks only the DB without cache — verify the subscription status check under Redis cache miss vs. cache hit
+- [ ] **SEO pages:** `/vs/onetimesecret` returns a 200 from the Express server, but `curl https://torchsecret.com/vs/onetimesecret | grep '<h1>'` returns nothing — the content is JS-rendered and invisible to crawlers
+- [ ] **JSON-LD schema:** Google Rich Results Test shows the schema is valid, but the test uses a rendered version — run the test with "Fetch as Google" (raw HTML) to confirm the JSON-LD is in the initial HTML response
+- [ ] **Email onboarding:** The 3-email Resend sequence sends successfully in development, but no marketing consent flag is checked — verify the code filters sends by `user.marketing_consent === true` for emails 2 and 3
+- [ ] **Email capture form:** The form stores emails, but there is no unsubscribe endpoint — verify `GET /unsubscribe?token=...` sets `unsubscribed_at` and Resend respects it
+- [ ] **GDPR double opt-in:** Confirmation email is sent, but clicking the confirmation link sets `confirmed: true` in a session cookie, not in the DB — verify the record in `marketing_subscribers` has `confirmed_at` populated
+- [ ] **CSP + Stripe:** No new CSP violations appear in browser DevTools after the Checkout redirect flow — check the Network tab for any `q.stripe.com` requests blocked by CSP
+- [ ] **Competitor comparison pages:** Pages are published, but Semrush/Ahrefs shows zero indexed pages 2 weeks after launch — verify the pages are server-rendered HTML (not SPA routes) and are in the sitemap with `changefreq: weekly`
+- [ ] **NOINDEX\_PREFIXES audit:** After adding `/pricing`, `/vs/`, and `/use/` routes, confirm they are NOT accidentally matched by any prefix in `NOINDEX_PREFIXES` in `app.ts`
+- [ ] **ZK invariant in INVARIANTS.md:** After Stripe phase ships, confirm the Stripe webhook handler and email capture table have been added to the enforcement table in `.planning/INVARIANTS.md`
 
 ---
 
@@ -796,15 +480,12 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Missing OAuth state validation discovered post-launch | HIGH | Audit all user sessions for compromise, invalidate all sessions, deploy fix, notify users |
-| Encryption keys captured in PostHog | HIGH | Immediately disable PostHog, delete all captured events from PostHog dashboard, deploy sanitize_properties fix, query PostHog for scope of `$current_url` with fragments |
-| User-secret association in logs | HIGH | Delete affected log files, deploy log redaction fix, assess how many associations were recorded and for how long |
-| Stripe webhook double-provisioning | MEDIUM | Query Stripe for canonical subscription state, reconcile local database, add idempotency key table |
-| Stripe webhook signature verification missing | MEDIUM | Deploy fix immediately (raw body parser before JSON middleware), test with Stripe CLI, audit webhook logs for forged events |
-| Anonymous rate limit broken existing users | LOW | Revert rate limit change, communicate in UI, staged rollout with deprecation notice |
-| Session fixation (no regenerate on login) | MEDIUM | Invalidate all existing sessions, deploy `req.session.regenerate()` fix |
-| Drizzle FK + column migration failure | LOW | Roll back migration, manually split into two migration files, re-apply |
-| Timing attack on email lookup | LOW | Deploy dummy hash comparison, no user notification needed |
+| Stripe webhook after `express.json()` — forged webhook events accepted | MEDIUM | Audit Stripe webhook logs for suspicious events; add idempotency check to prevent replay of any forged events already processed; deploy fix immediately (mount before `express.json()`); rotate `STRIPE_WEBHOOK_SECRET` |
+| GDPR consent missing from email capture — regulatory complaint | HIGH | Stop all marketing sends immediately; delete records without consent; redesign form with proper consent; notify affected users if consent reconstruction is impossible; consult legal counsel |
+| SEO pages served as SPA routes — not indexed after 4 weeks | MEDIUM | Convert pages to server-rendered HTML; resubmit to Google Search Console; expect 2-4 weeks for re-indexing |
+| Thin content penalty on programmatic pages — traffic drop after core update | MEDIUM | Identify affected pages in Search Console; either beef up content to meet quality bar or noindex the pages until they are improved; do not delete pages (404s create new indexing latency) |
+| Subscription status stale — cancelled users retain Pro access | LOW | Query Stripe API to identify active vs. cancelled subscriptions; sync DB to Stripe source of truth; implement Redis cache with short TTL going forward |
+| Stripe secret key in client bundle (Vite config error) | HIGH | Immediately rotate the leaked key in Stripe dashboard; audit all API calls made with the leaked key; deploy fix (move key to server-only env); notify affected users if any unauthorized charges occurred |
 
 ---
 
@@ -814,58 +495,49 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| OAuth state parameter missing (1) | Auth foundation | Playwright test: callback without valid state returns 403 |
-| localStorage token storage (2) | Auth foundation | No `localStorage.setItem` for session/token; cookie attributes verified in browser |
-| User-secret association in logs (3) | Auth foundation (design invariant) | Log scan test: no log line contains both `userId` and `secretId` patterns |
-| Analytics capturing encryption key (4) | Analytics integration | Manual test: view a secret with PostHog active, inspect `$current_url` in PostHog event properties |
-| CSP violations from analytics (5) | Analytics integration | No browser CSP violations after PostHog init; PostHog events confirmed in dashboard |
-| Stripe webhook idempotency (6) | Payments integration | Resend same webhook event twice via Stripe CLI, verify no double-provisioning |
-| Stripe signature verification (7) | Payments integration | Send forged webhook without valid signature, expect 400 rejection |
-| Checkout/webhook race condition (8) | Payments integration | Complete checkout, check success page before webhook arrives, confirm subscription shown |
-| Payment failure not handled (9) | Payments integration | `stripe triggers invoice.payment_failed` -- user status updates, email sent |
-| Rate limit reduction breakage (10) | Rate limiting phase | Staged rollout plan documented; Redis key version bump verified in code |
-| Anonymous secret claim creates association (11) | Auth foundation (architecture) | No `secrets.created_by_user_id` column exists; no JOIN between users and secrets tables |
-| OAuth redirect URI permissive (12) | Auth foundation | Authorization request with modified redirect_uri rejected by provider |
-| Session fixation (13) | Auth foundation | Session ID verified different before and after login in integration test |
-| Timing attack on login (14) | Auth foundation | Response time within 50ms variance for existing vs non-existing user on login endpoint |
-| Drizzle FK migration bug (15) | Schema/database phase | Generated migration SQL reviewed before applying; no FK constraint before column ADD |
+| Stripe billing ZK invariant surface (1) | Stripe billing phase | INVARIANTS.md updated before any webhook handler code is written; log audit: no email in log lines alongside user context |
+| Stripe CSP for redirect Checkout (2) | Stripe billing phase | No CSP violations in browser DevTools after Checkout redirect flow; no `js.stripe.com` in `script-src` |
+| Stripe webhook ordering in `app.ts` (3) | Stripe billing phase | `app.ts` middleware comment block updated; send forged webhook (wrong secret) — expect 400 rejection |
+| SPA-rendered SEO pages invisible to crawlers (4) | SEO content pages phase | `curl https://torchsecret.com/vs/onetimesecret | grep '<h1>'` returns page content in raw HTML |
+| JS-injected JSON-LD invisible to AI crawlers (5) | SEO content pages phase | `curl https://torchsecret.com/vs/onetimesecret | grep 'application/ld+json'` returns the schema block |
+| GDPR boundary for onboarding emails (6) | Email onboarding phase | Marketing consent flag in DB checked before each Resend send for emails 2 and 3; unsubscribe link present |
+| GDPR consent for email capture form (7) | Marketing homepage phase | Form has unchecked consent checkbox; consent record stored with timestamp in `marketing_subscribers` table |
+| Thin content SEO penalty (8) | SEO content pages phase | Manual review: each page has 800+ words of original substantive content; no template-only pages published |
+| Stale subscription status in Pro feature gate (9) | Stripe billing phase | Redis cache confirmed present; success page queries Stripe API directly on `?session_id=`; cancellation test shows access retained until `current_period_end` |
 
 ---
 
 ## Sources
 
-### OAuth Security
-- [RFC 9700 - OAuth 2.0 Security Best Current Practice (January 2025)](https://datatracker.ietf.org/doc/rfc9700/) -- HIGH confidence, IETF standard
-- [Auth0: Prevent Attacks with OAuth 2.0 State Parameters](https://auth0.com/docs/secure/attack-protection/state-parameters) -- HIGH confidence, official docs
-- [PortSwigger: OAuth 2.0 Authentication Vulnerabilities](https://portswigger.net/web-security/oauth) -- HIGH confidence, security research
-- [Slack missing state parameter on HackerOne](https://hackerone.com/reports/2688) -- HIGH confidence, disclosed vulnerability
-- [WorkOS: OAuth Best Practices from RFC 9700](https://workos.com/blog/oauth-best-practices) -- MEDIUM confidence, practitioner guide
+### Stripe CSP and Webhook
+- [Stripe Security Guide](https://docs.stripe.com/security) — CSP directives for different Stripe integration modes (HIGH confidence, official Stripe docs)
+- [Stripe webhook signature verification](https://docs.stripe.com/webhooks/signature) — raw body requirement, `constructEvent` pattern (HIGH confidence)
+- [stripe-js GitHub issue #127: q.stripe.com CSP connect-src](https://github.com/stripe/stripe-js/issues/127) — telemetry domain CSP violation (MEDIUM confidence)
+- [Fixing CSP with Stripe.js web workers](https://medium.com/@tempmailwithpassword/fixing-content-security-policy-problems-with-javascript-web-workers-and-stripe-js-0c6306089e89) — `worker-src: blob:` requirement (MEDIUM confidence)
+- [csplite.com Stripe CSP reference](https://csplite.com/csp/svc155/) — full directive list for Stripe services (MEDIUM confidence)
 
-### Token Storage and Session Security
-- [OWASP: HTML5 Security Cheat Sheet -- localStorage](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html) -- HIGH confidence, official OWASP
-- [OWASP ASVS session storage guidance issue #1141](https://github.com/OWASP/ASVS/issues/1141) -- HIGH confidence, official OWASP
-- [Pivot Point Security: Local Storage vs Cookies](https://www.pivotpointsecurity.com/local-storage-versus-cookies-which-to-use-to-securely-store-session-tokens/) -- MEDIUM confidence, security firm
+### SEO and Crawlers
+- [Google: Generate Structured Data with JavaScript](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript) — JS-injected JSON-LD timing requirements (HIGH confidence, official Google docs)
+- [Google: JavaScript SEO Basics](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics) — two-wave rendering, deferred indexing (HIGH confidence, official Google docs)
+- [Why SPAs Still Struggle with SEO (2025)](https://devtechinsights.com/spas-seo-challenges-2025/) — crawl budget, render queue delays (MEDIUM confidence)
+- [AI Search Optimization: Structured Data Accessibility](https://www.searchenginejournal.com/ai-search-optimization-make-your-structured-data-accessible/537843/) — AI crawlers cannot execute JS (MEDIUM confidence)
+- [Avoiding thin content penalties](https://www.semrush.com/blog/thin-content/) — what constitutes thin content (MEDIUM confidence)
+- [JSON-LD in SPA: GTM vs SSR visibility to AI crawlers](https://semking.com/json-ld-google-tag-manager-no-ssr-invisible-ai-crawlers/) — AI crawlers miss JS-injected JSON-LD (MEDIUM confidence)
 
-### Timing Attacks and Enumeration
-- [Triaxiom Security: Timing-Based Username Enumeration](https://www.triaxiomsecurity.com/vulnerability-walkthrough-timing-based-username-enumeration/) -- MEDIUM confidence, security research
-- [CVE-2025-22234: Spring Security timing attack regression](https://www.cve.news/cve-2025-22234/) -- HIGH confidence, CVE record
+### GDPR and Email
+- [GDPR Transactional vs Marketing Email distinction (TermsFeed)](https://www.termsfeed.com/blog/gdpr-transactional-emails/) — legal classification of onboarding emails (HIGH confidence)
+- [MailerSend: Transactional vs Marketing Emails](https://www.mailersend.com/help/transactional-email-vs-marketing-email) — classification rules and examples (MEDIUM confidence)
+- [GDPR Email Compliance Guide 2025 (Omnisend)](https://www.omnisend.com/blog/gdpr-video-gdpr-ready-email-marketing-automation-consent/) — double opt-in, consent records, unsubscribe requirements (HIGH confidence)
+- [Landing Page GDPR Compliance (Apexure)](https://www.apexure.com/blog/landing-page-compliance-everything-about-gdpr-and-more) — email capture form requirements (MEDIUM confidence)
+- [EU Digital Consent Requirements 2026 (Mailbird)](https://www.getmailbird.com/eu-digital-consent-email-tracking-requirements/) — current enforcement trends (MEDIUM confidence)
 
-### Stripe Webhooks
-- [Stripe: Using Webhooks with Subscriptions](https://docs.stripe.com/billing/subscriptions/webhooks) -- HIGH confidence, official Stripe docs
-- [Stripe: Idempotent Requests](https://docs.stripe.com/api/idempotent_requests) -- HIGH confidence, official Stripe docs
-- [Stigg: Best practices for Stripe webhook integration](https://www.stigg.io/blog-posts/best-practices-i-wish-we-knew-when-integrating-stripe-webhooks) -- MEDIUM confidence, practitioner experience
-- [Pedro Alonso: Stripe Webhooks Race Conditions](https://www.pedroalonso.net/blog/stripe-webhooks-solving-race-conditions/) -- MEDIUM confidence, practitioner experience
-
-### Analytics Privacy
-- [PostHog: URL masking via sanitize_properties (GitHub issue #7118)](https://github.com/PostHog/posthog.com/issues/7118) -- HIGH confidence, PostHog official issue
-- [PostHog: CSP unsafe-eval issue and fix (GitHub issue #1918)](https://github.com/PostHog/posthog-js/issues/1918) -- HIGH confidence, PostHog official issue
-- [Privacy-Friendly Analytics: GDPR-Compliant Insights](https://secureprivacy.ai/blog/privacy-friendly-analytics) -- MEDIUM confidence, industry overview
-
-### Schema Migrations
-- [Drizzle ORM: FK + column migration bug #4147](https://github.com/drizzle-team/drizzle-orm/issues/4147) -- HIGH confidence, official Drizzle issue tracker
-- [Xata: Zero-downtime PostgreSQL schema migrations](https://xata.io/blog/zero-downtime-schema-migrations-postgresql) -- MEDIUM confidence, engineering blog
+### Stripe Billing Race Conditions
+- [Stripe: Using Webhooks with Subscriptions](https://docs.stripe.com/billing/subscriptions/webhooks) — webhook event order, timing (HIGH confidence, official Stripe docs)
+- [Pedro Alonso: Stripe Webhooks Race Conditions](https://www.pedroalonso.net/blog/stripe-webhooks-solving-race-conditions/) — checkout/webhook race condition pattern (MEDIUM confidence)
+- [Better Auth Stripe plugin](https://www.better-auth.com/docs/plugins/stripe) — plugin's race condition handling via modified `successUrl` (HIGH confidence, official Better Auth docs)
+- [Billing webhook race condition guide (excessivecoding.com)](https://excessivecoding.com/blog/billing-webhook-race-condition-solution-guide) — cache-aside pattern, polling fallback (MEDIUM confidence)
 
 ---
-*Pitfalls research for: SecureShare v4.0 Hybrid Anonymous + Account Model*
-*Researched: 2026-02-18*
-*Supersedes: Previous PITFALLS.md covering v3.0 Docker/CI/CD/E2E pitfalls*
+*Pitfalls research for: Torch Secret v5.0 Product Launch (Stripe billing, marketing SEO, email)*
+*Researched: 2026-02-22*
+*Supersedes: Previous PITFALLS.md covering v4.0 OAuth, Stripe basics, PostHog analytics pitfalls*
