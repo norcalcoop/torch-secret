@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 31 of 38 (Rebrand + Tech Debt)
-Plan: 3 of 3 in current phase
-Status: In progress — Phase 31 plan 3/3 complete
-Last activity: 2026-02-22 — Phase 31 Plan 03 complete (NOINDEX + schema comment + planning doc fixes)
+Plan: 4 of 4 in current phase
+Status: In progress — Phase 31 plan 4/4 complete
+Last activity: 2026-02-22 — Phase 31 Plan 04 complete (light-theme protection panel fix)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -27,6 +27,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | **Total shipped** | **30** | **89** | **~11 days** |
 
 *v5.0 velocity tracking begins after first plan completes*
+| Phase 31 P04 | 2 | 1 task | 1 file |
 | Phase 31 P02 | 247 | 2 tasks | 7 files |
 | Phase 31 P01 | 8 | 3 tasks | 32 files |
 
@@ -43,6 +44,10 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
 
+### Phase 31 Execution Notes
+
+- BRAND-03 gap closure: protection panel hardcoded text-white/* classes replaced with semantic tokens (text-text-primary/secondary/muted, border-border) — light theme now readable across all four protection tabs
+
 ### Phase 31 Kickoff Notes
 
 - BRAND-01/02: grep audit recommended — search for "SecureShare" and "secureshare.example.com" across all files before and after rename to verify completeness
@@ -57,5 +62,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 31 Plan 03 complete — NOINDEX_PREFIXES + schema.ts ZK comment + REQUIREMENTS.md fix
-Resume file: None — Phase 31 complete (3/3 plans done)
+Stopped at: Phase 31 Plan 04 complete — light-theme protection panel text fix (semantic token classes)
+Resume file: None — Phase 31 complete (4/4 plans done)

@@ -219,7 +219,7 @@ Plans:
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
-| 31. Rebrand + Tech Debt | v5.0 | 3/4 | In progress | - |
+| 31. Rebrand + Tech Debt | 4/4 | Complete   | 2026-02-22 | - |
 | 32. Marketing Homepage + /create Split | v5.0 | 0/TBD | Not started | - |
 | 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
