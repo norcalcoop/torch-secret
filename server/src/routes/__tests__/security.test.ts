@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import request from 'supertest';
@@ -12,13 +12,13 @@ import { sql } from 'drizzle-orm';
 // Valid base64-encoded ciphertext for test payloads
 const VALID_CIPHERTEXT = 'dGVzdA==';
 
-// Shared app instance for non-rate-limit tests.
-// Rate limit tests use their own fresh buildApp() instances.
+// Fresh app per test -- each buildApp() creates a new MemoryStore so
+// rate limit counters do not bleed between tests. The anon hourly limit
+// is now 3 (CONV-01), so any shared app instance across multiple POST
+// tests would exhaust the limit mid-suite.
 let app: Express;
 
 beforeAll(async () => {
-  app = buildApp();
-
   // Ensure secrets table exists (idempotent)
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS secrets (
@@ -30,6 +30,10 @@ beforeAll(async () => {
       password_attempts INTEGER NOT NULL DEFAULT 0
     )
   `);
+});
+
+beforeEach(() => {
+  app = buildApp();
 });
 
 afterEach(async () => {
@@ -49,7 +53,7 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
   test('CSP header includes nonce-based script-src', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const csp = res.headers['content-security-policy'];
@@ -62,12 +66,12 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
   test('CSP nonce is unique per request', async () => {
     const res1 = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const res2 = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const csp1 = res1.headers['content-security-policy'];
@@ -86,7 +90,7 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
   test('CSP header includes style-src with nonce', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const csp = res.headers['content-security-policy'];
@@ -96,7 +100,7 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
   test('CSP blocks object and frame embedding', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const csp = res.headers['content-security-policy'];
@@ -109,25 +113,25 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
 // Success Criterion 2: Rate limiting on POST /api/secrets
 // ---------------------------------------------------------------------------
 describe('Success Criterion 2: Rate limiting on POST /api/secrets', () => {
-  test('returns 429 after 10 POST requests in same window', async () => {
+  test('returns 429 after 3 anonymous POST requests in same hour window', async () => {
     // Fresh app instance so rate limit counter starts at 0
     const rateLimitApp = buildApp();
 
-    // First 10 requests should all succeed
-    for (let i = 0; i < 10; i++) {
+    // First 3 anonymous requests should all succeed (anon hourly limit is 3)
+    for (let i = 0; i < 3; i++) {
       const res = await request(rateLimitApp)
         .post('/api/secrets')
-        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' });
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' });
       expect(res.status).toBe(201);
     }
 
-    // 11th request should be rate-limited
+    // 4th anonymous request should be rate-limited
     const res = await request(rateLimitApp)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' });
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' });
     expect(res.status).toBe(429);
     expect(res.body.error).toBe('rate_limited');
-  }, 30000); // Extended timeout for 11 sequential requests
+  }, 30000); // Extended timeout for sequential requests
 
   test('GET requests are not rate-limited', async () => {
     // Fresh app instance with its own rate limiter
@@ -146,11 +150,12 @@ describe('Success Criterion 2: Rate limiting on POST /api/secrets', () => {
 
     const res = await request(rateLimitApp)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
-    // draft-7 uses a single combined "RateLimit" header (lowercase in supertest)
-    expect(res.headers['ratelimit']).toBeDefined();
+    // Anon hourly limiter uses draft-6 which sends separate RateLimit-Reset header
+    // (draft-7 embeds reset in a combined header; draft-6 allows client to read RateLimit-Reset directly)
+    expect(res.headers['ratelimit-reset']).toBeDefined();
   });
 });
 
@@ -161,7 +166,7 @@ describe('Success Criterion 3: HTTPS redirect and HSTS', () => {
   test('HSTS header correctly conditional on environment', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     if (process.env.NODE_ENV === 'production') {
@@ -190,7 +195,7 @@ describe('Success Criterion 4: Referrer-Policy', () => {
   test('Referrer-Policy is no-referrer on POST response', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     expect(res.headers['referrer-policy']).toBe('no-referrer');
@@ -200,7 +205,7 @@ describe('Success Criterion 4: Referrer-Policy', () => {
     // Create a secret first
     const createRes = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     const { id } = createRes.body;
@@ -219,7 +224,7 @@ describe('Success Criterion 5: Same-origin CORS', () => {
   test('no Access-Control-Allow-Origin header on same-origin request', async () => {
     const res = await request(app)
       .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     // No CORS headers should be present (same-origin enforcement)
@@ -230,7 +235,7 @@ describe('Success Criterion 5: Same-origin CORS', () => {
     const res = await request(app)
       .post('/api/secrets')
       .set('Origin', 'https://evil.com')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
       .expect(201);
 
     // Even with a foreign Origin, no CORS headers should be sent

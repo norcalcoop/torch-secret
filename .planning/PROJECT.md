@@ -2,7 +2,7 @@
 
 ## What This Is
 
-SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Dark terminal-inspired UI with glassmorphism surfaces, complete SEO infrastructure, multi-browser E2E tests, containerized deployment, and CI/CD pipeline. No accounts, no signup — just paste, encrypt, share, and destroy.
+SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel from anonymous use — while preserving the zero-knowledge invariant: no log, DB record, or analytics event may contain both a userId and a secretId together. Dark terminal-inspired UI with glassmorphism surfaces, multi-browser E2E tests, containerized deployment, and CI/CD pipeline.
 
 ## Core Value
 
@@ -42,52 +42,70 @@ Users can share sensitive information once, securely, without accounts or comple
 - ✓ Playwright runs across Chromium, Firefox, and WebKit in CI — v3.0
 - ✓ GitHub Actions CI/CD: lint gates tests, E2E with service containers, auto-deploy to Render — v3.0
 - ✓ Professional GitHub presence: README, issue/PR templates, CONTRIBUTING.md, CHANGELOG, Release — v3.0
+- ✓ Auto-generated EFF Diceware passphrases (4-word, client-side, two-channel security flow) — v4.0
+- ✓ 4-tab protection panel (No protection / Generate password / Custom password / Passphrase) with entropy display and masked inputs — v4.0
+- ✓ User account registration and login (email/password + OAuth via Google and GitHub) — v4.0
+- ✓ User dashboard — secret history, pre-view deletion, secret labeling, four status states — v4.0
+- ✓ Email notifications when secrets are viewed (Resend transactional email, per-secret opt-in) — v4.0
+- ✓ Tightened anonymous rate limits: 3/hour and 10/day with inline conversion prompts — v4.0
+- ✓ Extended expiration for authenticated users (up to 7 days vs 1h anonymous) — v4.0
+- ✓ Progressive conversion prompts (soft after 1st secret, benefit-focused after 3rd, inline on rate limit) — v4.0
+- ✓ Privacy-safe PostHog analytics (URL fragment sanitization, no PII, user identification by ID only) — v4.0
+- ✓ Legal documents: Privacy Policy (/privacy) and Terms of Service (/terms) with noindex — v4.0
+- ✓ Server-side X-Robots-Tag noindex for auth and dashboard routes — v4.0
+- ✓ Docker build CI job + package.json version 4.0.0 — v4.0
 
 ### Active
 
-(No active requirements — planning next milestone)
+<!-- v5.0 Pro Tier + Advanced Features -->
+
+- [ ] Stripe subscription billing at $7/month (Pro tier)
+- [ ] Pro users get extended expiration up to 90 days
+- [ ] Pro users receive webhook notifications on secret view (POST to user-configured URL)
+- [ ] Pro user can upload files up to 25MB, encrypted client-side before upload
+- [ ] File uploads stored via Cloudflare R2 with presigned PUT URL flow
+- [ ] 6-word Diceware passphrases (higher entropy: ~77 bits) for Pro users
 
 ### Out of Scope
 
-- User accounts and authentication — zero-friction is the core differentiator
-- File uploads — text only, reduces complexity and storage costs
 - Editing/revoking secrets after creation — one-time links are the model
-- Analytics dashboard for users — no accounts means no dashboard
 - Browser extensions — web-first
-- Public API — internal use only
-- Team/organization features — individual sharing
+- Public API — internal use only; even Pro tier does not expose public API
+- Team/organization features — individual sharing only; Enterprise is future
 - Mobile apps — responsive web covers mobile use cases
-- Real-time notifications when secret is viewed — adds complexity without core value
 - Offline mode — real-time server interaction is core to the destroy model
-- Unit test gap coverage beyond current 163 tests — coverage is adequate for current scope
-- Enhanced homepage hero/features redesign — deferred; current create-form homepage works well
-- Product Hunt / social media launch — deferred; needs production domain first
+- Session recording (PostHog) — privacy violation: create form contains sensitive plaintext before encryption
+- Google Analytics — conflicts with privacy promise; requires cookie consent banners
+- Claiming anonymous secrets on account creation — privacy risk: linking browser session to user identity
+- Real-time push notifications — email-on-view is sufficient; websocket notifications not warranted
+- Custom domains — Enterprise tier; not planned
+- "Notify if expires unviewed" email option — ADV feature deferred with Pro tier
 
 ## Context
 
-Shipped v3.0 with ~6,633 LOC TypeScript across 20 phases, 51 plans total (22 in v1.0 + 14 in v2.0 + 15 in v3.0).
+Shipped v4.0 with ~21,775 LOC TypeScript across 30 phases, 89 plans total (22 in v1.0 + 14 in v2.0 + 15 in v3.0 + 38 in v4.0).
 
-Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17.
-Crypto: Web Crypto API (AES-256-GCM), PADME padding, Argon2id password hashing.
-163 unit tests (87 crypto, 32 API integration, 14 security, 13 expiration, 6 accessibility, 4 SEO, 7 UI).
-E2E: Playwright with Chromium, Firefox, WebKit — 4 spec files covering all critical user flows.
-CI/CD: GitHub Actions lint → test → E2E → auto-deploy to Render.com.
+Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Better Auth 1.x, Resend, PostHog.
+Crypto: Web Crypto API (AES-256-GCM), PADME padding, Argon2id password hashing, EFF Diceware, rejection-sampling.
+Tests: 163+ Vitest unit/integration tests, Playwright E2E across Chromium, Firefox, WebKit.
+CI/CD: GitHub Actions lint → test → E2E → docker-build → auto-deploy to Render.com.
 Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphism surfaces.
-SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret routes.
 
-**Known tech debt:**
+**Known tech debt (post-v4.0):**
 - Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
 - Lucide ESM workaround via Vite resolve.alias (upstream bug)
-- Playwright webServer 30s timeout risk on slow CI runners (fix: pre-build client in CI e2e job)
-- Codecov badge shows "unknown" until CODECOV_TOKEN added to GitHub repo secrets
-- Bare `docker run <image>` skips migrations (only docker-compose / render.yaml supported paths)
+- CI test/e2e jobs missing BETTER_AUTH_SECRET et al. (server integration tests use env vars; recommended fix: add placeholder values to ci.yml, same as docker-compose.yml pattern)
+- /privacy and /terms absent from NOINDEX_PREFIXES in app.ts (X-Robots-Tag not sent; meta noindex is set client-side; low severity)
+- schema.ts inline zero-knowledge comment lists 3 enforcement points; INVARIANTS.md canonical has 6 (documentation staleness only)
+- PostHog live transmission requires VITE_POSTHOG_KEY (human verification pending for live env)
 
 ## Constraints
 
 - **Security**: Zero-knowledge — server must never see plaintext secrets
-- **Simplicity**: No accounts, no signup, minimal clicks to share
+- **Zero-knowledge invariant**: No DB record, log line, or analytics event may contain both userId and secretId in the same payload (see .planning/INVARIANTS.md)
+- **Simplicity**: Core anonymous flow stays frictionless — accounts are opt-in
 - **Performance**: Page load < 1s on 3G, secret creation < 500ms, retrieval < 300ms
-- **Privacy**: No tracking cookies, no PII collection, GDPR compliant
+- **Privacy**: No PII in analytics, no tracking cookies, GDPR-oriented
 - **Accessibility**: WCAG 2.1 AA compliance
 - **Secret size**: Max 10,000 characters per secret
 
@@ -123,6 +141,24 @@ SEO: Full meta infrastructure, JSON-LD, favicons, sitemap, noindex on secret rou
 | lint job gates test/e2e in CI | Fail fast on code quality before expensive test runs | ✓ Good |
 | autoDeployTrigger: checksPass in render.yaml | Deploy only when all CI checks pass; prevents broken deploys | ✓ Good |
 | YAML form issue templates over markdown | Structured validation, required fields, better contributor UX | ✓ Good |
+| Better Auth over custom auth | Full-featured auth library; OAuth, sessions, email verification out of the box | ✓ Good |
+| onDelete: 'set null' on secrets.userId | Preserves already-shared links if user deletes account; cascade would lose data | ✓ Good |
+| onDelete: 'cascade' on sessions/accounts.userId | Better Auth requirement for session cleanup on account deletion | ✓ Good |
+| Drizzle bug #4147 workaround: split FK migrations | ADD COLUMN + ADD CONSTRAINT in separate files prevents migration failure | ✓ Good |
+| Zero-knowledge invariant in INVARIANTS.md | Canonical source with 3-way cross-reference (schema.ts + INVARIANTS.md + CLAUDE.md); audit enforcement | ✓ Good |
+| optionalAuth never returns 401 | Session check failure is non-fatal; anonymous users proceed unchanged | ✓ Good |
+| getUserSecrets() explicit column list | Sole enforcement preventing ciphertext/passwordHash from appearing in dashboard responses | ✓ Good |
+| before_send hook for PostHog (not sanitize_properties) | sanitize_properties is legacy name; wrong name silently fails and leaks AES keys | ✓ Good |
+| capture_pageview: false + manual capturePageview() | Prevents race with reveal-page fragment stripping | ✓ Good |
+| autocapture: false for PostHog | Passive DOM capture would record plaintext from create-page textarea before encryption | ✓ Good |
+| identifyUser by internal user ID only | Never email, name, or PII; PostHog receives opaque DB ID | ✓ Good |
+| Tightened anonymous limits (3/hr, 10/day, 1h max) | Conversion pressure without blocking core use; versioned Redis keys prevent counter inheritance | ✓ Good |
+| standardHeaders: 'draft-6' on anon hourly limiter | draft-7 embeds reset in combined header; draft-6 emits standalone RateLimit-Reset for countdown display | ✓ Good |
+| sessionStorage for OAuth redirect analytics flag | Tab-scoped and cleared when tab closes; correct lifetime for one-time post-redirect analytics flag | ✓ Good |
+| NOINDEX_PREFIXES array in app.ts | Extensible pattern for server-side X-Robots-Tag: future auth routes need a single array entry | ✓ Good |
+| Protection panel as 4-tab tablist/tab/tabpanel | ARIA pattern with arrow-key navigation; combined password field; clear mode separation | ✓ Good |
+| EFF Diceware rejection sampling cutoff 4294964736 | Eliminates modulo bias for n=7776; rejection probability ~0.0000006 per word | ✓ Good |
+| docker-build CI job uses needs: [lint] (parallel) | Runs parallel with test/e2e after lint; does not extend critical path | ✓ Good |
 
 ---
-*Last updated: 2026-02-18 after v3.0 milestone*
+*Last updated: 2026-02-22 after v4.0 milestone*

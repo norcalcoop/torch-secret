@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
 import { Redis } from 'ioredis';
+import { toNodeHandler } from 'better-auth/node';
 import {
   cspNonceMiddleware,
   createHelmetMiddleware,
@@ -11,6 +12,9 @@ import { httpLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createSecretsRouter } from './routes/secrets.js';
 import { healthRouter } from './routes/health.js';
+import { auth } from './auth.js';
+import { meRouter } from './routes/me.js';
+import { createDashboardRouter } from './routes/dashboard.js';
 import { env } from './config/env.js';
 
 /**
@@ -20,15 +24,16 @@ import { env } from './config/env.js';
  * This pattern enables supertest-based testing without port conflicts.
  *
  * Middleware order is critical for correctness:
- * 1. trust proxy  -- enables correct req.ip behind reverse proxy
- * 2. httpsRedirect -- redirect HTTP->HTTPS before any response
- * 3. cspNonce     -- generate nonce BEFORE helmet reads it
- * 4. helmet       -- set all security headers (CSP uses nonce from step 3)
- * 5. httpLogger   -- logging
- * 6. json parser  -- body parsing
- * 7. routes       -- API endpoints
- * 8. static assets + SPA catch-all (production only, when client/dist exists)
- * 9. errorHandler -- MUST be last
+ * 1. trust proxy    -- enables correct req.ip behind reverse proxy
+ * 2. httpsRedirect  -- redirect HTTP->HTTPS before any response
+ * 3. cspNonce       -- generate nonce BEFORE helmet reads it
+ * 4. helmet         -- set all security headers (CSP uses nonce from step 3)
+ * 5. httpLogger     -- logging
+ * 6. auth handler   -- /api/auth/*splat MUST be before express.json() (body-stream ordering)
+ * 7. json parser    -- body parsing (for non-auth routes)
+ * 8. routes         -- API endpoints (health, secrets, me)
+ * 9. static assets + SPA catch-all (production only, when client/dist exists)
+ * 10. errorHandler  -- MUST be last
  */
 export function buildApp() {
   const app = express();
@@ -55,6 +60,12 @@ export function buildApp() {
   // HTTP request logging (pino-http with secret ID redaction)
   app.use(httpLogger);
 
+  // Better Auth handler -- MUST be before express.json() to avoid body-stream conflict.
+  // Better Auth parses its own bodies internally; if express.json() runs first,
+  // the stream is consumed and all auth requests hang indefinitely.
+  // Express 5 wildcard syntax: /api/auth/*splat (not /api/auth/*)
+  app.all('/api/auth/{*splat}', toNodeHandler(auth));
+
   // Parse JSON bodies with explicit size limit (100kb prevents abuse)
   app.use(express.json({ limit: '100kb' }));
 
@@ -64,9 +75,15 @@ export function buildApp() {
   // Mount API routes (factory creates fresh router + rate limiter per app)
   app.use('/api/secrets', createSecretsRouter(redisClient));
 
+  // Mount /api/me route (requires auth session)
+  app.use('/api/me', meRouter);
+
+  // Mount /api/dashboard routes (requires auth session)
+  app.use('/api/dashboard', createDashboardRouter());
+
   // API catch-all: return JSON 404 for any unmatched /api/* request.
-  // MUST come after all API routes and before the SPA catch-all to prevent
-  // API requests from falling through to the HTML response.
+  // MUST come after ALL API routes (health, secrets, me) and before the SPA catch-all
+  // to prevent API requests from falling through to the HTML response.
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'not_found' });
   });
@@ -86,10 +103,20 @@ export function buildApp() {
       const html = htmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce as string);
       res.setHeader('Content-Type', 'text/html');
 
-      // Defense-in-depth: HTTP-level noindex for secret routes.
-      // Crawlers see this header before parsing HTML, preventing indexing
-      // even if the client-side meta tag fails to render.
-      if (req.path.startsWith('/secret/')) {
+      // Defense-in-depth: HTTP-level noindex for routes that must not be crawled.
+      // /secret/* routes contain encrypted-secret interstitials (crawlers should never index them).
+      // Auth and dashboard routes (/login, /register, /forgot-password, /reset-password, /dashboard)
+      // should not appear in search results — they are private-state pages with no SEO value.
+      // X-Robots-Tag is server-side complement to the client-side <meta name="robots"> tag.
+      const NOINDEX_PREFIXES = [
+        '/secret/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/dashboard',
+      ];
+      if (NOINDEX_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
         res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       }
 

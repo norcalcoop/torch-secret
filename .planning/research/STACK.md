@@ -1,530 +1,457 @@
-# Technology Stack: DevOps, Testing, and Code Quality Milestone
+# Stack Research
 
-**Project:** SecureShare
-**Researched:** 2026-02-16
-**Confidence:** HIGH
+**Domain:** Hybrid anonymous + account model additions (auth, payments, email, analytics, passphrase generation)
+**Researched:** 2026-02-18
+**Confidence:** HIGH — all library versions verified via npm registry; integration details verified via official docs and GitHub
+
+---
 
 ## Scope
 
-This document covers ONLY the new stack additions needed for the v3.0 milestone: Docker deployment to Render.com, GitHub Actions CI/CD, Playwright E2E tests, ESLint + Prettier, TypeScript strict mode enforcement, and enhanced marketing homepage. The existing validated stack (Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Redis, Vitest 4, vanilla TypeScript, lucide, JetBrains Mono, etc.) is unchanged and not re-researched.
+This document covers ONLY new additions needed for v4.0. Existing validated stack (Node.js 24, Express 5, Vite 7, Vanilla TS, Tailwind CSS 4, Drizzle ORM 0.45.1, PostgreSQL 17, Redis, Argon2id, Helmet CSP nonces, Vitest 4, Zod 4, nanoid 5, ESLint 10, Playwright, GitHub Actions) is unchanged and not re-researched.
 
 ---
 
-## Recommended Stack Additions
+## 1. EFF Diceware Passphrase Generation
 
-### 1. E2E Testing: Playwright
+### Recommendation: Ship the wordlist as a static JSON asset — no new npm dependency
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| @playwright/test | ^1.50.0 | End-to-end browser testing | The standard E2E framework for 2026. Supports Node.js 24 natively. Multi-browser (Chromium, Firefox, WebKit). Built-in `webServer` config launches both Express backend and Vite frontend before tests. Auto-waits for elements, reducing flake. HTML report with traces for debugging CI failures. |
+**Why not `eff-diceware-passphrase@3.0.0`:** The package is CJS-only (no `"exports"` field, `"main": "index.js"`). In an ESM-only codebase with `"type": "module"` and NodeNext module resolution, importing CJS packages without `.cjs` extensions requires Vite resolve aliases. The package is also lightly maintained (13 commits total, no recent activity). It provides nothing that cannot be done in ~30 lines using the Web Crypto API already present in this codebase.
 
-**Why NOT Cypress:** Cypress does not support WebKit (Safari), limiting cross-browser coverage. Playwright's `webServer` array natively handles the dual-server setup (Express + Vite) without `concurrently` or wrapper scripts. Playwright is also faster in CI due to parallel browser contexts sharing a single browser instance.
+**Recommended approach — zero external dependency:**
 
-**Why NOT Selenium/WebdriverIO:** Legacy architecture. Playwright's auto-wait and trace viewer are a generation ahead for developer experience.
-
-**Why pin to ^1.50.0 (not ^1.58.0):** Playwright ships breaking browser changes with every minor version. Pinning to `^1.50.0` allows patch updates within the 1.50.x series without surprise failures from browser engine upgrades. When ready, intentionally bump to `^1.51.0`, `^1.52.0`, etc. The latest available version is 1.58.2 (released 2026-02-06). Start at 1.50 minimum to ensure Node.js 24 support and stable API surface, then upgrade incrementally.
-
-**IMPORTANT: Pin strategy.** Unlike most npm packages, Playwright bundles specific browser versions per release. A `^1.50.0` range means npm will install 1.50.x patches only. When you want to upgrade browsers, explicitly bump: `npm install @playwright/test@1.52 && npx playwright install`.
-
-**Integration with existing Vitest:**
-
-Playwright E2E tests live in a separate directory (`e2e/`) with their own config (`playwright.config.ts`). They do NOT run through Vitest. The two test systems are independent:
-- Vitest: Unit + integration tests (163 existing tests, fast, no browser)
-- Playwright: E2E tests (real browsers, full user flows)
-
-**webServer configuration for dual Express + Vite:**
+Commit the EFF large wordlist as a static JSON file. Vite handles JSON imports natively with no plugin.
 
 ```typescript
-// playwright.config.ts
-import { defineConfig } from '@playwright/test';
+// client/src/crypto/passphrase.ts
+import wordlist from '../assets/eff-wordlist.json' with { type: 'json' }
+// Note: use "assert" syntax if TypeScript < 5.3
 
-export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? 'html' : 'list',
-  use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
-  },
-  webServer: [
-    {
-      command: 'npm run dev:server',
-      url: 'http://localhost:3000/api/health',
-      name: 'Express API',
-      timeout: 30_000,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: 'npm run dev:client',
-      url: 'http://localhost:5173',
-      name: 'Vite Frontend',
-      timeout: 30_000,
-      reuseExistingServer: !process.env.CI,
-    },
-  ],
-  projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-    // Add firefox/webkit later when stable
-  ],
-});
-```
-
-**Key detail:** Playwright's `webServer` array launches both servers sequentially, waits for each URL to respond 2xx/3xx, then runs tests. This eliminates the need for `concurrently`, `wait-on`, or any process management library.
-
-**Health check endpoint required:** The Express server needs a `GET /api/health` endpoint returning 200. This is also needed for Render.com deployment. Add it once, use it everywhere.
-
----
-
-### 2. Linting: ESLint 10 + typescript-eslint
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| eslint | ^10.0.0 | JavaScript/TypeScript linting | ESLint 10 released 2026-02-06. Flat config is now the ONLY config system (eslintrc removed entirely). Smaller install (9.4MB vs 11MB). JSX reference tracking eliminates false positives. Node.js >=24 supported. |
-| @eslint/js | ^10.0.0 | ESLint recommended rule set | Companion package for ESLint 10 recommended rules. |
-| typescript-eslint | ^8.56.0 | TypeScript-specific linting rules | Supports ESLint `^8.57.0 \|\| ^9.0.0 \|\| ^10.0.0` and TypeScript `>=4.8.4 <6.0.0`. Provides `tseslint.configs.recommended`, `.strict`, and `.stylistic` presets. |
-
-**Why ESLint 10 over ESLint 9:** ESLint 10 was released 10 days ago (2026-02-06). Since the project has NO existing ESLint configuration, there is zero migration cost. ESLint 9 is already in maintenance mode. Starting fresh on 10 avoids a near-future migration. typescript-eslint 8.56.0 already supports ESLint 10 (confirmed: peer dependency `^8.57.0 || ^9.0.0 || ^10.0.0`).
-
-**Risk assessment:** ESLint 10 is brand new. Some ecosystem plugins may not yet support it. However, SecureShare's linting needs are simple (TypeScript + Prettier integration) and do not require exotic plugins. The core typescript-eslint and eslint-config-prettier packages already support ESLint 10. If any compatibility issue surfaces, falling back to ESLint 9 (`^9.0.0`) is trivial since both use flat config.
-
-**FALLBACK: If ESLint 10 causes issues with any dependency, drop to `eslint@^9.0.0` and `@eslint/js@^9.0.0`. The config file format is identical.**
-
-**Configuration (eslint.config.ts -- TypeScript config file):**
-
-Since the project has `"type": "module"` and uses TypeScript 5.9, ESLint 10 supports `eslint.config.ts` natively with Node.js >= 22.13.0 (no jiti needed for Node.js 24).
-
-```typescript
-// eslint.config.ts
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import eslintConfigPrettier from 'eslint-config-prettier';
-
-export default tseslint.config(
-  // Global ignores
-  { ignores: ['dist/', 'client/dist/', 'drizzle/', 'node_modules/'] },
-
-  // Base recommended rules
-  eslint.configs.recommended,
-
-  // TypeScript rules (recommended + strict)
-  ...tseslint.configs.recommendedTypeChecked,
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-
-  // Prettier must be LAST to override formatting rules
-  eslintConfigPrettier,
-);
-```
-
-**Why `recommendedTypeChecked` over `recommended`:** The project already has `strict: true` in tsconfig.json. Type-checked linting catches bugs that syntax-only rules miss (e.g., `no-floating-promises`, `no-unsafe-assignment`). Since the TypeScript compiler is already running, the incremental cost is minimal.
-
-**Why NOT `strictTypeChecked`:** Too aggressive for initial adoption. Start with `recommendedTypeChecked`, assess the findings, then optionally upgrade to `strictTypeChecked` in a future phase.
-
----
-
-### 3. Code Formatting: Prettier
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| prettier | ^3.8.0 | Opinionated code formatter | Latest stable: 3.8.1 (released 2026-01-14). TypeScript config file support (3.5+). No configuration debates -- enforces consistency. |
-| eslint-config-prettier | ^10.1.0 | Disables ESLint rules that conflict with Prettier | Essential when using ESLint + Prettier together. Turns off all formatting-related ESLint rules so Prettier owns formatting and ESLint owns logic. |
-
-**Why NOT eslint-plugin-prettier:** Running Prettier as an ESLint rule (via eslint-plugin-prettier) is slower than running Prettier separately. The recommended approach is eslint-config-prettier (disable conflicts) + run Prettier as a separate step. This is the official Prettier team recommendation.
-
-**Prettier configuration (.prettierrc):**
-
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "trailingComma": "all",
-  "printWidth": 80,
-  "tabWidth": 2,
-  "arrowParens": "always"
+export function generatePassphrase(wordCount: 4 | 6): string {
+  const indices = new Uint32Array(wordCount)
+  crypto.getRandomValues(indices)
+  return Array.from(indices)
+    .map(n => wordlist[n % wordlist.length])
+    .join(' ')
 }
 ```
 
-**Integration with existing code:** The project has 6,296 LOC with no formatter. The initial `npx prettier --write .` will reformat everything. This should be a dedicated commit before any other changes to keep git blame clean.
+**Entropy:** 4-word passphrase = ~51.7 bits (12.92 bits per word × 4). 6-word = ~77.5 bits. Both exceed NIST SP 800-63B minimum for memorized secrets.
+
+**Bundle impact:** EFF large wordlist is 7,776 words, ~85 KB uncompressed, ~25 KB gzipped. Vite tree-shakes JSON imports are not tree-shakeable (it is an array), so the full ~25 KB gzipped is added to the bundle for any page that imports it. Accept this: it is a one-time download, cached by the browser.
+
+**Wordlist source:** Download from https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt. Convert to JSON array and commit to `client/src/assets/eff-wordlist.json`.
+
+**If the npm package is preferred anyway:**
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| `eff-diceware-passphrase` | `3.0.0` | CJS-only. Requires Vite `resolve.alias` workaround. Not recommended for this codebase. |
 
 ---
 
-### 4. Docker: Multi-Stage Build
+## 2. User Authentication
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| node:24-slim (Debian Bookworm) | 24.x LTS | Docker base image | Official Node.js LTS image. Debian Bookworm-slim is ~200MB (vs ~1GB for full image, ~180MB for Alpine). Slim chosen over Alpine because `argon2` native module uses prebuilt binaries compiled for glibc (Ubuntu/Debian). Alpine uses musl libc, which would require compiling argon2 from source with build tools. |
+### Recommendation: `better-auth@1.4.18` + `@better-auth/stripe@1.4.18`
 
-**Why NOT node:24-alpine:** The project depends on `argon2@0.44.0`, a native N-API module with prebuilt binaries for glibc-based Linux (Ubuntu/Debian). Alpine Linux uses musl libc, which is incompatible with these prebuilts. Using Alpine would require installing `python3`, `make`, `g++`, and compiling argon2 from source during Docker build -- adding 2-3 minutes to build time and ~300MB to intermediate layers. Bookworm-slim avoids this entirely.
+**Why Better Auth over alternatives:**
 
-**Why multi-stage build:** The project has both a Vite client build step and a server build step. Multi-stage builds separate build dependencies (TypeScript compiler, Vite, dev packages) from the runtime image, resulting in ~80% smaller production images.
+| Library | Status 2026 | Verdict |
+|---------|-------------|---------|
+| **Better Auth 1.4.18** | Active, 100% ESM since v1.4, rapidly growing | **Recommended.** Framework-agnostic, Express 5 integration documented, vanilla TS client via `createAuthClient`, built-in Drizzle ORM adapter, built-in Google + GitHub OAuth, database-backed sessions, Stripe plugin available. |
+| Lucia v3 | Deprecated March 2025 | Avoid. Maintainer explicitly deprecated it; recommends migrating to Better Auth. |
+| Passport.js 0.7.0 | Maintained but aging | Avoid for greenfield. Last OAuth2 strategy release was 2+ years ago. Requires hand-rolling session management, OAuth callbacks, DB schema, CSRF — everything Better Auth provides pre-built. Not TypeScript-first. |
+| Auth.js v5 | Active | Next.js-centric design; Express adapter is secondary-class. Better Auth is more natural for raw Express 5. |
+| Custom sessions | Always possible | Viable but adds ~2–3 phases of implementation work (session table, CSRF, OAuth callbacks, email verification, password reset). Better Auth is that work, pre-built and audited. |
 
-**Dockerfile structure:**
+**Why Better Auth fits this specific codebase:**
 
-```dockerfile
-# Stage 1: Install ALL dependencies (build + runtime)
-FROM node:24-slim AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+- **ESM-only (v1.4+):** Better Auth 1.4 is 100% ESM. SecureShare is `"type": "module"` with NodeNext resolution. Perfect match. Earlier versions had a `jose` ESM interop conflict (`ERR_REQUIRE_ESM`) that is fully resolved in v1.4+.
+- **Express 5:** Official integration documented. Express 5 catch-all uses `app.all('/api/auth/*splat', toNodeHandler(auth))`, matching SecureShare's existing Express 5 wildcard pattern.
+- **Vanilla TS client:** `createAuthClient` from `better-auth/client` — no React, no framework dependency. Drops into the existing SPA.
+- **Drizzle ORM:** Official Drizzle adapter with peer dependency `drizzle-orm >=0.41.0`. Installed version is `drizzle-orm@0.45.1` — compatible.
+- **Database-backed sessions:** Default mode uses signed cookies + PostgreSQL `session` table. Sessions are revocable. No JWT footguns. Fits the zero-trust philosophy of SecureShare (server should not know secrets; it can however know who is logged in).
+- **OAuth providers:** Google and GitHub are first-class built-in providers (40+ total). Configuration is `socialProviders: { google: { clientId, clientSecret }, github: { clientId, clientSecret } }`.
+- **Email verification hook:** `emailAndPassword.sendVerificationEmail` callback plugs directly into Resend (see Section 4).
+- **Schema generation via CLI:** `npx @better-auth/cli generate` creates Drizzle schema for `user`, `session`, `account`, `verification` tables. No hand-writing auth tables.
 
-# Stage 2: Build client (Vite) and compile server (TypeScript)
-FROM deps AS build
-COPY . .
-RUN npm run build:client
-# Server runs via tsx in production OR compile to JS:
-# RUN npx tsc --project tsconfig.server.json
+### Session Strategy: Database-backed cookie sessions (not JWT)
 
-# Stage 3: Production runtime
-FROM node:24-slim AS runtime
-WORKDIR /app
-ENV NODE_ENV=production
+Better Auth uses signed cookies containing a session token. Sessions live in a PostgreSQL `session` table. Cookie caching is optional for performance (reduces DB reads via short-lived signed cookie). This approach is correct for SecureShare: sessions are revocable, logout is real logout, GDPR compliance is straightforward (delete session row).
 
-# Copy only production dependencies
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+### Auth Packages
 
-# Copy built client assets
-COPY --from=build /app/client/dist ./client/dist
-
-# Copy server source (runs via tsx) or compiled JS
-COPY --from=build /app/server ./server
-COPY --from=build /app/shared ./shared
-COPY --from=build /app/drizzle ./drizzle
-
-# Non-root user for security
-RUN addgroup --system app && adduser --system --ingroup app app
-USER app
-
-EXPOSE 10000
-CMD ["npx", "tsx", "server/src/server.ts"]
-```
-
-**Production server execution choice:** The project currently uses `tsx watch` for development. For production Docker, there are two approaches:
-1. **tsx (simpler):** Include `tsx` in production dependencies. Adds ~5MB but avoids a separate server compilation step. Good for getting started.
-2. **Compiled JS (smaller):** Add a `tsconfig.server.json` for server-only compilation, compile to `dist/server/`, run with `node dist/server/server.js`. Eliminates tsx dependency in production. Better for final optimization.
-
-Recommend starting with tsx for simplicity, then optimize to compiled JS in a future iteration.
-
-**Critical: .dockerignore**
-
-```
-node_modules
-dist
-client/dist
-.git
-.env
-.env.*
-.planning
-*.md
-e2e
-playwright-report
-test-results
-```
-
----
-
-### 5. Render.com Deployment: Blueprint YAML
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| render.yaml (Blueprint) | N/A | Infrastructure-as-code for Render.com | Declarative service definition. Defines web service, PostgreSQL, and Redis together. Git-committed, reproducible. Auto-deploys on push to main. |
-
-**render.yaml structure:**
-
-```yaml
-services:
-  - type: web
-    runtime: docker
-    name: secureshare
-    repo: https://github.com/OWNER/secureshare
-    region: oregon
-    plan: starter
-    branch: main
-    dockerfilePath: ./Dockerfile
-    dockerContext: ./
-    healthCheckPath: /api/health
-    numInstances: 1
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: secureshare-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: secureshare-redis
-          type: keyvalue
-          property: connectionString
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: "10000"
-
-  - type: keyvalue
-    name: secureshare-redis
-    region: oregon
-    plan: free
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: allow-all
-
-databases:
-  - name: secureshare-db
-    plan: free
-    region: oregon
-    databaseName: secureshare
-    postgresMajorVersion: "17"
-```
-
-**Key Render.com details:**
-- Default PORT is 10000 (not 3000). The app must read `process.env.PORT`. The existing `env.ts` already does this with `.default(3000)`. For Render, set PORT=10000 in the blueprint.
-- Health checks: Render sends GET requests to `healthCheckPath`. The Express app needs `GET /api/health` returning 200.
-- PostgreSQL free tier: 1GB storage, never expires (but was previously 30-day expiry -- verify current terms).
-- Redis free tier: 25MB ephemeral storage. Data lost on restart. Fine for rate limiting (MemoryStore fallback exists).
-- Docker builds use BuildKit with layer caching. Multi-stage builds are parallelized.
-- `ipAllowList` is REQUIRED for Key Value (Redis) instances, even if allowing all.
-
-**Render.com PORT gotcha:** The existing `env.ts` defaults PORT to 3000. Render defaults to 10000. The render.yaml above explicitly sets PORT=10000, but the app should also work if PORT is not set (falls back to 3000 for local dev). This is already handled by the Zod schema: `PORT: z.coerce.number().default(3000)`.
-
----
-
-### 6. CI/CD: GitHub Actions
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| actions/checkout | @v6 | Clone repository | Latest major (released 2024-10-14). Stores credentials under $RUNNER_TEMP for better security. |
-| actions/setup-node | @v6 | Install Node.js 24 | Latest major (v6.2.0, released 2025-01-15). Auto-caches npm dependencies when package-lock.json exists. |
-| actions/upload-artifact | @v4 | Upload Playwright reports | Latest major. Stores HTML reports and traces for debugging failed E2E tests. |
-
-**GitHub Actions workflow structure (3 jobs):**
-
-```yaml
-name: CI
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - run: npm ci
-      - run: npx eslint .
-      - run: npx prettier --check .
-
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: secureshare_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/secureshare_test
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - run: npm ci
-      - run: npm run db:migrate
-      - run: npm run test:run
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: [test]
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: secureshare_e2e
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/secureshare_e2e
-      NODE_ENV: test
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run db:migrate
-      - run: npx playwright test
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
-```
-
-**Key design decisions:**
-- **3 separate jobs** (lint, test, e2e): Lint and test run in parallel. E2E depends on test passing (no point running expensive browser tests if unit tests fail).
-- **PostgreSQL service container:** Real PostgreSQL 17, matching production. Uses GitHub Actions service containers (not Docker Compose). The existing integration tests already require a real database.
-- **No Redis service container:** Rate limiting has a MemoryStore fallback. Redis is optional. Adding a Redis service container is easy later if needed.
-- **`--with-deps chromium`:** Install only Chromium (not all 3 browsers) in CI to save ~2 minutes of download time. Add Firefox/WebKit when cross-browser testing matters.
-- **`needs: [test]`:** E2E only runs after unit/integration tests pass. This saves CI minutes on PRs with test failures.
-
----
-
-### 7. npm Scripts Additions
-
-| Script | Command | Purpose |
-|--------|---------|---------|
-| `lint` | `eslint .` | Run ESLint |
-| `lint:fix` | `eslint . --fix` | Auto-fix ESLint issues |
-| `format` | `prettier --write .` | Format all files |
-| `format:check` | `prettier --check .` | Check formatting (CI) |
-| `test:e2e` | `playwright test` | Run E2E tests |
-| `test:e2e:ui` | `playwright test --ui` | Open Playwright UI for debugging |
-| `test:e2e:headed` | `playwright test --headed` | Run tests in visible browser |
-
----
-
-## Installation
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `better-auth` | `1.4.18` | Auth server + Drizzle adapter + OAuth providers + email/password |
+| `@better-auth/stripe` | `1.4.18` | Stripe subscription plugin (version is synchronized with better-auth) |
 
 ```bash
-# E2E testing
-npm install -D @playwright/test
-npx playwright install chromium
-
-# Linting
-npm install -D eslint @eslint/js typescript-eslint eslint-config-prettier
-
-# Formatting
-npm install -D prettier
-
-# No new production dependencies needed
+npm install better-auth @better-auth/stripe
 ```
 
-Total new dev dependencies: 6 packages
-Total new production dependencies: 0 packages
+### Express 5 Integration Pattern
+
+```typescript
+// server/src/routes/auth.ts
+import { toNodeHandler } from 'better-auth/node'
+import { auth } from '../config/auth.js'
+
+// Express 5 wildcard syntax (*splat, not *)
+app.all('/api/auth/*splat', toNodeHandler(auth))
+```
+
+```typescript
+// server/src/config/auth.ts
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '../db/connection.js'
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, { provider: 'pg' }),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      // plug in resend.emails.send() here
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+})
+```
+
+---
+
+## 3. Stripe Subscription Billing
+
+### Recommendation: `stripe@20.3.1` + `@better-auth/stripe@1.4.18`
+
+**Why `@better-auth/stripe` plugin over custom Stripe integration:**
+
+The plugin provides ~1 phase of boilerplate for free:
+- Automatic Stripe Customer creation on user signup
+- Subscription lifecycle webhook handling (`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`)
+- Subscription status sync to database (including `cancelAtPeriodEnd`, `cancelAt`, `canceledAt`)
+- Trial period management with one-trial-per-account abuse prevention
+- Customer Portal session creation helper
+
+**Peer dependencies verified:** `@better-auth/stripe` requires `stripe@^18 || ^19 || ^20` and `better-auth@1.4.18`. Both are satisfied.
+
+**No client-side Stripe SDK needed.** The $7/month single plan fits Stripe Hosted Checkout (redirect flow). No embedded card elements required. This means no `@stripe/stripe-js` in the Vite bundle and no additional `script-src` CSP entries for `js.stripe.com`.
+
+### Stripe Packages
+
+| Package | Version | Side | Purpose |
+|---------|---------|------|---------|
+| `stripe` | `20.3.1` | Server only | Stripe API client: checkout sessions, billing portal, webhook verification |
+
+```bash
+npm install stripe
+```
+
+### Webhook Route Pattern (raw body required)
+
+Express 5 webhook route must bypass the JSON bodyParser to preserve the raw body for `stripe.webhooks.constructEvent()`. The `@better-auth/stripe` plugin wraps this internally, but the raw middleware must be registered before the JSON parser for this route.
+
+```typescript
+// server/src/app.ts — register webhook route BEFORE express.json() middleware
+app.post('/api/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
+  stripe.webhookHandler  // provided by @better-auth/stripe
+)
+
+// Then register express.json() for all other routes
+app.use(express.json())
+```
+
+**This ordering is critical.** The existing `app.ts` middleware comment — "middleware order is critical" — already flags this pattern. The webhook route must be added before `express.json()` in the stack.
+
+### Stripe API Version
+
+`@better-auth/stripe` pins API version `2025-11-17.clover`. This exceeds the minimum `2025-06-30.basil` required for accurate subscription behavior. Accept the plugin's pinned version.
+
+### Stripe Packages
+
+| Package | Version | Side | Notes |
+|---------|---------|------|-------|
+| `stripe` | `20.3.1` | Server | ESM import: `import Stripe from 'stripe'` |
+
+---
+
+## 4. Transactional Email
+
+### Recommendation: `resend@6.9.2`
+
+**Why Resend over alternatives:**
+
+| Library | Verdict | Reason |
+|---------|---------|--------|
+| **Resend 6.9.2** | **Recommended** | ESM-native (`import { Resend } from 'resend'`). Plain HTML supported — no React Email required. Free tier: 3,000 emails/month, 100/day, 1 domain. Typed `{ data, error }` response pattern aligns with existing Zod validation style. Clean REST API — no SMTP server needed. |
+| SendGrid | Avoid | Free tier eliminated July 2025. More complex API. Overkill for low-volume transactional email. |
+| Nodemailer | Avoid for new code | Requires SMTP server or relay credentials. Single Render.com instance has no configured mail relay. More operational complexity than a REST API call. |
+| AWS SES | Overkill | Requires AWS account, IAM roles, SES sandbox approval. No benefit at SecureShare's volume. |
+
+**Integration with Better Auth's `sendVerificationEmail`:**
+
+```typescript
+// server/src/services/email.service.ts
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY!)
+
+export async function sendVerificationEmail(to: string, url: string): Promise<void> {
+  const { error } = await resend.emails.send({
+    from: 'SecureShare <noreply@yourdomain.com>',
+    to,
+    subject: 'Verify your email address',
+    html: `<p>Click to verify your email: <a href="${url}">${url}</a></p>`,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function sendSecretViewedNotification(to: string, secretLabel: string | null): Promise<void> {
+  const { error } = await resend.emails.send({
+    from: 'SecureShare <noreply@yourdomain.com>',
+    to,
+    subject: 'Your secret was viewed',
+    html: `<p>Your secret${secretLabel ? ` "${secretLabel}"` : ''} was viewed and has been destroyed.</p>`,
+  })
+  if (error) throw new Error(error.message)
+}
+```
+
+**Note on non-awaited email sends:** Per Better Auth documentation, `sendVerificationEmail` should not be awaited on serverless platforms to prevent timing attacks. On Render.com (persistent server), awaiting is acceptable but wrapping in `void` plus catching errors separately is cleaner.
+
+### Email Package
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `resend` | `6.9.2` | Transactional email via REST API |
+
+```bash
+npm install resend
+```
+
+---
+
+## 5. Analytics
+
+### Recommendation: `posthog-js@1.351.1` (client, bundled) + `posthog-node@5.24.17` (server)
+
+**Why PostHog:**
+- Open-source, self-hostable, privacy-safe by default
+- Anonymous-first: no user identity until explicit identification
+- No third-party cookies required
+- Free tier: 1 million events/month
+
+### CSP Compatibility — Critical for SecureShare
+
+SecureShare uses Helmet with per-request nonces. This creates two constraints:
+
+1. **No dynamic script injection** — scripts injected at runtime cannot receive a per-request nonce. The PostHog snippet approach injects `<script>` tags dynamically and is therefore **incompatible** with nonce-based CSP.
+
+2. **No `unsafe-eval` required** — PostHog had a historic `unsafe-eval` dependency (issue #1918 on posthog-js). This was fixed and a linting rule added to prevent regression. Current versions do not require `unsafe-eval`.
+
+**Solution: Use posthog-js via npm, bundled by Vite.** The bundled approach includes PostHog in the main JS bundle — no dynamic script injection, no nonce issues.
+
+**Required CSP additions to Helmet config (connect-src only):**
+
+```typescript
+// server/src/middleware/security.ts
+// Add to the connectSrc array in the Helmet CSP config:
+'https://us.i.posthog.com',         // PostHog ingestion (US)
+'https://us-assets.i.posthog.com',  // PostHog static assets
+// Use eu.i.posthog.com + eu-assets.i.posthog.com for EU data residency
+```
+
+`script-src` does NOT need modification when using the bundled approach. No `unsafe-eval`, no `unsafe-inline`, no external script domain.
+
+**posthog-js client initialization:**
+
+```typescript
+// client/src/analytics.ts
+import posthog from 'posthog-js'
+
+export function initAnalytics(): void {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com',
+    capture_pageview: 'history_change',  // fires on History API pushState — fits SPA router
+    session_recording: { maskAllInputs: true, maskTextSelector: '*' }, // privacy default
+    persistence: 'localStorage+cookie',
+    autocapture: false,  // disable for privacy; capture events explicitly
+  })
+}
+
+export { posthog }
+```
+
+`capture_pageview: 'history_change'` is the correct setting for SecureShare's existing History API SPA router — pageviews fire on `pushState` without any additional integration.
+
+**posthog-node server-side:**
+
+```typescript
+// server/src/services/analytics.service.ts
+import { PostHog } from 'posthog-node'
+
+export const analytics = new PostHog(process.env.POSTHOG_API_KEY!, {
+  host: process.env.POSTHOG_HOST ?? 'https://us.i.posthog.com',
+  flushAt: 20,   // batch size before auto-flush
+  flushInterval: 10_000, // ms between auto-flushes
+})
+
+// Register in graceful shutdown (server/src/server.ts already has SIGTERM handler)
+export async function shutdownAnalytics(): Promise<void> {
+  await analytics.shutdown()
+}
+```
+
+**Why not `posthog-js-lite@4.5.2`:** Explicitly described as "reduced feature set" and "not officially supported for feature-complete web usage." Use full `posthog-js` with the bundled approach.
+
+### Analytics Packages
+
+| Package | Version | Side | Purpose |
+|---------|---------|------|---------|
+| `posthog-js` | `1.351.1` | Client (Vite bundle) | Pageviews, UI events, feature flags, session recording |
+| `posthog-node` | `5.24.17` | Server | Server-side event capture (secret created, subscription events) |
+
+```bash
+npm install posthog-js posthog-node
+```
+
+---
+
+## Complete Installation Command
+
+```bash
+# Auth + Stripe plugin
+npm install better-auth @better-auth/stripe
+
+# Payments
+npm install stripe
+
+# Email
+npm install resend
+
+# Analytics
+npm install posthog-js posthog-node
+```
+
+**No new dev dependencies required.** All packages integrate with existing Vitest, ESLint, TypeScript, and Playwright setups.
 
 ---
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| E2E testing | @playwright/test | Cypress | No WebKit support. Single-tab architecture limits complex flow testing. No native multi-server webServer config. |
-| E2E testing | @playwright/test | WebdriverIO | Legacy Selenium-based architecture. Slower, more flaky, worse DX. |
-| Linting | ESLint 10 | ESLint 9 | ESLint 9 is in maintenance. No existing config to migrate. Starting fresh on 10 is free. |
-| Linting | ESLint 10 | Biome | Biome is fast but TypeScript type-checked linting is limited. typescript-eslint's `recommendedTypeChecked` ruleset catches more bugs. Biome cannot replace ESLint for type-aware rules like `no-floating-promises`. |
-| Formatting | Prettier | Biome formatter | Would require Biome for linting too (or awkward dual-tool setup). Prettier has wider ecosystem support and editor integration. |
-| Formatting | Prettier (separate) | eslint-plugin-prettier | Running Prettier as ESLint rule is slower. Official Prettier team recommends against it. |
-| Docker base | node:24-slim | node:24-alpine | argon2 native module has prebuilt binaries for glibc (Debian). Alpine uses musl, requiring source compilation. |
-| Docker base | node:24-slim | node:24 (full) | Full image is ~1GB vs ~200MB for slim. No need for gcc/python in runtime image. |
-| Deployment | Render.com | Railway | Render has native PostgreSQL + Redis managed services with infrastructure-as-code (render.yaml). Railway requires manual service setup. |
-| Deployment | Render.com | Fly.io | Fly.io requires more DevOps knowledge (Machines API, volumes). Render is simpler for a single-instance app. |
-| CI/CD | GitHub Actions | CircleCI / GitLab CI | Repo is on GitHub. Actions is native, free for public repos, tightest integration. |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| `better-auth` | Passport.js | If you have an existing large Passport codebase or need a specific OAuth strategy from Passport's ecosystem that Better Auth does not cover |
+| `better-auth` | Custom sessions | If you need unusual session semantics or want zero external auth dependencies — at cost of significant implementation time |
+| `better-auth` | Auth.js v5 | If the project were Next.js-based — Auth.js is excellent there but secondary-class for plain Express |
+| `resend` | Nodemailer | If you already have SMTP infrastructure (relay, credentials) and want to avoid third-party API dependencies |
+| `posthog-js` bundled | PostHog snippet | Never prefer snippet in a nonce-CSP setup — dynamically injected `<script>` cannot receive a per-request nonce |
+| `stripe` direct + `@better-auth/stripe` | Custom Stripe webhooks | If you need unusual billing logic that the plugin does not support |
+| Custom wordlist JSON | `eff-diceware-passphrase` npm | If you want a pinned npm dependency over a committed JSON file — acceptable, but requires CJS interop workaround |
 
 ---
 
-## What NOT to Add
+## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `concurrently` / `npm-run-all` | Playwright's `webServer` array handles multi-server startup natively. No need for process management libraries for E2E tests. | Playwright `webServer: [...]` |
-| `wait-on` | Playwright's webServer already polls the URL and waits for response. Redundant. | Playwright `webServer.url` + `timeout` |
-| `husky` + `lint-staged` (for now) | Add AFTER linting is stable and the team has resolved all existing lint errors. Adding pre-commit hooks before cleanup creates friction. Phase later. | Run lint/format in CI first |
-| `eslint-plugin-prettier` | Slower than running Prettier separately. Mixes formatting errors into lint output. | `eslint-config-prettier` + separate `prettier` command |
-| `docker-compose.yml` for production | Render.com manages service orchestration via render.yaml. Docker Compose is for local dev only (and even that is optional since PostgreSQL/Redis can run natively or via standalone containers). | render.yaml for production, optional docker-compose.yml for local dev convenience |
-| `ts-node` | tsx is already in use and is faster (esbuild-based vs TypeScript compiler). | tsx (already a dependency) |
-| `nodemon` | tsx watch already provides file watching for development. | `tsx watch` (already in dev:server script) |
+| `passport` + `passport-google-oauth20` + `passport-github2` | Three packages for what Better Auth does in one. Not TS-first. Session management is manual. OAuth strategy last updated 2+ years ago. | `better-auth` with `socialProviders` |
+| `lucia` (any version) | Officially deprecated March 2025. Maintainer recommends migrating to Better Auth. | `better-auth` |
+| `jsonwebtoken` / JWT for sessions | For a database-backed app with revocation needs, stateless JWTs are an anti-pattern — logout does not actually revoke the token without a server-side blocklist. | Better Auth database-backed cookie sessions (default) |
+| `@stripe/stripe-js` (client-side) | Not needed for hosted Checkout redirect flow. Adds bundle weight and requires `script-src https://js.stripe.com` in CSP. | Server-side `stripe` SDK only + redirect to `checkout.stripe.com` |
+| SendGrid | Free tier eliminated July 2025. Complex API with legacy cruft. | `resend` |
+| PostHog snippet approach | Injects `<script>` tags dynamically at runtime. Per-request CSP nonces cannot be applied to runtime-injected scripts. Breaks with strict nonce-based CSP. | `posthog-js` via npm + Vite bundle |
+| `nodemailer` without SMTP relay | Requires SMTP server, TLS configuration, and authentication — none of which exist on a single Render.com instance. | `resend` REST API |
 
 ---
 
-## Version Compatibility Matrix
+## Version Compatibility
 
-| New Package | Node.js 24 | TypeScript 5.9 | Vite 7 | Express 5 | Vitest 4 |
-|-------------|------------|----------------|--------|-----------|----------|
-| @playwright/test ^1.50.0 | YES (tested) | YES | N/A (separate) | N/A | Independent |
-| eslint ^10.0.0 | YES (requires >=24) | N/A | N/A | N/A | N/A |
-| typescript-eslint ^8.56.0 | YES | YES (<6.0.0) | N/A | N/A | N/A |
-| prettier ^3.8.0 | YES | YES | N/A | N/A | N/A |
-| eslint-config-prettier ^10.1.0 | YES | N/A | N/A | N/A | N/A |
-
-All new packages are dev dependencies only. They do not affect the production bundle or runtime behavior.
+| Package | Version | Compatible With | Notes |
+|---------|---------|----------------|-------|
+| `better-auth` | `1.4.18` | `"type": "module"`, NodeNext, `drizzle-orm@>=0.41.0`, `vitest@^2\|\|^3\|\|^4` | All peer deps optional; ESM-only since v1.4 |
+| `@better-auth/stripe` | `1.4.18` | `better-auth@1.4.18`, `stripe@^18\|\|^19\|\|^20` | Versions synchronized with better-auth |
+| `stripe` | `20.3.1` | Node.js 16+, ESM + CJS dual export | `import Stripe from 'stripe'` works in ESM codebase |
+| `resend` | `6.9.2` | Node.js 18+, ESM-native | `import { Resend } from 'resend'` — no interop issues |
+| `posthog-js` | `1.351.1` | Vite 7, no `unsafe-eval` required | Bundled approach; `unsafe-eval` CSP issue fixed ~v1.236 |
+| `posthog-node` | `5.24.17` | Node.js 14+, ESM | `import { PostHog } from 'posthog-node'` |
+| `drizzle-orm` | `0.45.1` (installed) | `better-auth@1.4.18` | Peer dep `>=0.41.0` satisfied |
 
 ---
 
-## Configuration Files to Create
+## New Environment Variables Required
 
-| File | Purpose | Notes |
-|------|---------|-------|
-| `eslint.config.ts` | ESLint 10 flat config | TypeScript config (native Node.js 24 support, no jiti needed) |
-| `.prettierrc` | Prettier options | JSON format, minimal options |
-| `.prettierignore` | Files Prettier should skip | dist/, drizzle/, package-lock.json |
-| `playwright.config.ts` | Playwright E2E config | webServer array, browser projects, CI settings |
-| `Dockerfile` | Multi-stage Docker build | node:24-slim, 3 stages (deps, build, runtime) |
-| `.dockerignore` | Files excluded from Docker context | node_modules, .git, .env, e2e, .planning |
-| `render.yaml` | Render.com Blueprint | Web service + PostgreSQL + Redis |
-| `.github/workflows/ci.yml` | GitHub Actions CI pipeline | lint + test + e2e jobs |
+```bash
+# Better Auth
+BETTER_AUTH_SECRET=           # 32+ char random string for signing cookies
+BETTER_AUTH_URL=              # https://yourdomain.com (production URL)
+
+# OAuth — Google
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# OAuth — GitHub
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Stripe
+STRIPE_SECRET_KEY=            # sk_live_... or sk_test_...
+STRIPE_WEBHOOK_SECRET=        # whsec_... from Stripe dashboard
+STRIPE_PRO_PRICE_ID=          # price_... for the $7/month plan
+
+# Resend
+RESEND_API_KEY=               # re_...
+RESEND_FROM_EMAIL=            # noreply@yourdomain.com
+
+# PostHog (server-side)
+POSTHOG_API_KEY=              # phc_... server key
+POSTHOG_HOST=                 # https://us.i.posthog.com
+
+# PostHog (client-side, exposed via Vite)
+VITE_POSTHOG_KEY=             # phc_... same key or separate client key
+VITE_POSTHOG_HOST=            # https://us.i.posthog.com
+```
+
+**Zod validation:** Add these to the existing `server/src/config/env.ts` Zod schema. Client env vars (`VITE_*`) are validated at build time by Vite; consider a separate `client/src/config/env.ts` for typed client env access.
 
 ---
 
 ## Sources
 
-### HIGH Confidence (verified with official docs)
-- [Playwright installation docs](https://playwright.dev/docs/intro) -- Node.js 24 support confirmed, npm package name
-- [Playwright release notes](https://playwright.dev/docs/release-notes) -- v1.58 latest, version history
-- [Playwright webServer docs](https://playwright.dev/docs/test-webserver) -- Multiple webServer array config, all options documented
-- [Playwright CI setup](https://playwright.dev/docs/ci-intro) -- GitHub Actions workflow template, action versions
-- [ESLint 10 release blog](https://eslint.org/blog/2026/02/eslint-v10.0.0-released/) -- Breaking changes, Node.js requirements, eslintrc removal
-- [typescript-eslint getting started](https://typescript-eslint.io/getting-started/) -- Flat config setup, package names
-- [typescript-eslint dependency versions](https://typescript-eslint.io/users/dependency-versions/) -- ESLint `^8.57.0 || ^9.0.0 || ^10.0.0` confirmed, TypeScript `>=4.8.4 <6.0.0`
-- [Render.com Blueprint spec](https://render.com/docs/blueprint-spec) -- render.yaml structure, all field definitions
-- [Render.com Docker docs](https://render.com/docs/docker) -- Multi-stage builds, layer caching, BuildKit
-- [Render.com health checks](https://render.com/docs/health-checks) -- GET requests, 2xx/3xx expected
-- [actions/checkout releases](https://github.com/actions/checkout/releases) -- v6 latest
-- [actions/setup-node releases](https://github.com/actions/setup-node/releases) -- v6.2.0 latest
-- [Docker Hub node:24-slim](https://hub.docker.com/_/node) -- Debian Bookworm-slim, LTS tags
-
-### MEDIUM Confidence (verified with multiple sources)
-- [Prettier 3.8 release](https://prettier.io/blog/) -- v3.8.1 latest, TS config support from 3.5+
-- [eslint-config-prettier npm](https://www.npmjs.com/package/eslint-config-prettier) -- v10.1.8 latest, flat config support
-- [argon2 npm](https://www.npmjs.com/package/argon2) -- Prebuilt binaries for glibc (Ubuntu/Debian), v0.44.0
-- [Render.com pricing](https://render.com/pricing) -- Free tier PostgreSQL and Redis availability, ephemeral Redis
-
-### LOW Confidence (needs validation during implementation)
-- ESLint 10 ecosystem compatibility: While typescript-eslint and eslint-config-prettier support ESLint 10, other plugins may not yet. Test during setup and fall back to ESLint 9 if blocked.
-- Render.com free tier PostgreSQL expiry: Conflicting reports on whether free tier databases expire after 30 days. Verify current terms during deployment setup.
-- tsx in production Docker: Running tsx (esbuild JIT) in production works but adds ~5MB. Consider compiling to JS for production in a later optimization pass.
+- `npm info better-auth` — version `1.4.18`; peer deps `drizzle-orm >=0.41.0` (optional), `vitest ^2||^3||^4` (optional)
+- https://www.better-auth.com/blog/1-4 — 100% ESM confirmation, breaking changes (method renames), Stripe plugin details
+- https://www.better-auth.com/docs/integrations/express — Express 5 `/*splat` pattern confirmed
+- https://www.better-auth.com/docs/concepts/session-management — database-backed sessions, cookie caching
+- https://www.better-auth.com/docs/plugins/stripe — `@better-auth/stripe` capabilities, `stripe@^18||^19||^20` requirement, API version `2025-11-17.clover`
+- `npm info @better-auth/stripe` — version `1.4.18`, peer deps confirmed
+- https://github.com/better-auth/better-auth/issues/6765 — Drizzle peer dep conflict history; resolved via `>=0.41.0` range in current release
+- https://github.com/better-auth/better-auth/issues/3568 — ESM/`jose` conflict confirmed fixed in v1.4+
+- `npm info stripe` — version `20.3.1`
+- https://github.com/stripe/stripe-node/blob/master/examples/webhook-signing/express/main.ts — `express.raw()` webhook pattern, ESM `import Stripe from 'stripe'` confirmed
+- `npm info resend` — version `6.9.2`
+- https://resend.com/docs/send-with-nodejs — ESM import pattern, plain HTML support confirmed
+- https://resend.com/pricing — free tier: 3,000/month, 100/day, 1 domain
+- `npm info posthog-js` — version `1.351.1`
+- `npm info posthog-node` — version `5.24.17`
+- https://github.com/PostHog/posthog-js/issues/1918 — `unsafe-eval` issue confirmed fixed; linting rule added to prevent regression
+- https://github.com/PostHog/posthog/issues/20461 — `connect-src` domains: `https://*.posthog.com` (or explicit `us.i.posthog.com`)
+- `npm info posthog-js-lite` — version `4.5.2`; description explicitly says "reduced feature set, not officially supported for feature-complete web usage"
+- `npm info eff-diceware-passphrase` — version `3.0.0`, `"main": "index.js"` (CJS), no `"exports"` field
+- https://github.com/emilbayes/eff-diceware-passphrase — API reference, 25 KB gzipped wordlist size
+- https://lucia-auth.com — deprecation confirmed, Better Auth recommended as successor
 
 ---
-*Stack research for: SecureShare v3.0 -- DevOps, Testing, and Code Quality*
-*Researched: 2026-02-16*
+*Stack research for: SecureShare v4.0 — hybrid anonymous + account model additions*
+*Researched: 2026-02-18*

@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [tailwindcss()],
   root: 'client',
+  // envDir defaults to `root` when root is overridden. Since our .env lives
+  // in the project root (one level above client/), point envDir back there.
+  envDir: '..',
   resolve: {
     alias: {
       // lucide 0.564.0 has a broken `module` field pointing to a non-existent

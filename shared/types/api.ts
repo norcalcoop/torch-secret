@@ -12,6 +12,10 @@ export const CreateSecretSchema = z.object({
   expiresIn: z.enum(['1h', '24h', '7d', '30d']),
   /** Optional password for password-protected secrets (Phase 5) */
   password: z.string().min(1).max(128).optional(),
+  /** Optional label for dashboard display (authenticated users only, max 100 chars) */
+  label: z.string().max(100).optional(),
+  /** Per-secret email notification opt-in. Phase 26 sends the actual notification. */
+  notify: z.boolean().optional(),
 });
 
 export type CreateSecretRequest = z.infer<typeof CreateSecretSchema>;
@@ -74,4 +78,29 @@ export interface VerifySecretResponse {
 export interface VerifyErrorResponse {
   error: 'wrong_password';
   attemptsRemaining: number;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 23: Dashboard
+// ---------------------------------------------------------------------------
+
+/** A single secret row returned by GET /api/dashboard/secrets (metadata only — never ciphertext) */
+export interface DashboardSecretItem {
+  id: string;
+  label: string | null;
+  createdAt: string; // ISO string
+  expiresAt: string; // ISO string
+  status: 'active' | 'viewed' | 'expired' | 'deleted';
+  notify: boolean;
+  viewedAt: string | null; // ISO string or null
+}
+
+/** Response from GET /api/dashboard/secrets */
+export interface DashboardListResponse {
+  secrets: DashboardSecretItem[];
+}
+
+/** Response from DELETE /api/dashboard/secrets/:id on success */
+export interface DashboardDeleteResponse {
+  success: true;
 }

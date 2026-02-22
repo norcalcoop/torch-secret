@@ -12,6 +12,7 @@
  */
 
 import { Shield } from 'lucide';
+import { authClient } from '../api/auth-client.js';
 import { createIcon } from './icons.js';
 import { createThemeToggle } from './theme-toggle.js';
 import { navigate } from '../router.js';
@@ -75,6 +76,19 @@ function createHeader(): HTMLElement {
   const themeToggle = createThemeToggle();
   rightSide.appendChild(themeToggle);
 
+  // "Dashboard" nav link (hidden when unauthenticated)
+  const dashboardLink = document.createElement('a');
+  dashboardLink.href = '/dashboard';
+  dashboardLink.id = 'nav-dashboard-link';
+  dashboardLink.className =
+    'text-sm text-text-secondary hover:text-accent transition-colors hidden';
+  dashboardLink.textContent = 'Dashboard';
+  dashboardLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigate('/dashboard');
+  });
+  rightSide.appendChild(dashboardLink);
+
   // "Create" nav link (hidden on create page)
   const createLink = document.createElement('a');
   createLink.href = '/';
@@ -97,8 +111,31 @@ function createHeader(): HTMLElement {
     createLink.classList.toggle('hidden', isCreatePage);
   }
 
+  // Auth-reactive visibility: toggle "Dashboard" link based on session state
+  async function updateDashboardLink(): Promise<void> {
+    try {
+      const result = await authClient.getSession();
+      // Better Auth getSession() returns `any`; use a type guard per CLAUDE.md convention
+      const isAuthenticated =
+        result !== null &&
+        typeof result === 'object' &&
+        'data' in result &&
+        result.data !== null &&
+        typeof result.data === 'object' &&
+        'session' in result.data &&
+        (result.data as Record<string, unknown>)['session'] !== null;
+      dashboardLink.classList.toggle('hidden', !isAuthenticated);
+    } catch {
+      dashboardLink.classList.add('hidden');
+    }
+  }
+
   window.addEventListener('routechange', updateCreateLink);
-  updateCreateLink(); // Initial check
+  window.addEventListener('routechange', () => {
+    void updateDashboardLink();
+  });
+  updateCreateLink(); // synchronous — runs immediately
+  void updateDashboardLink(); // async — fires and resolves without blocking render
 
   return header;
 }
@@ -121,6 +158,24 @@ function createFooter(): HTMLElement {
     const span = document.createElement('span');
     span.textContent = text;
     inner.appendChild(span);
+  }
+
+  // Legal links
+  const legalLinks = [
+    { text: 'Privacy Policy', path: '/privacy' },
+    { text: 'Terms of Service', path: '/terms' },
+  ];
+
+  for (const { text, path } of legalLinks) {
+    const a = document.createElement('a');
+    a.href = path;
+    a.textContent = text;
+    a.className = 'hover:text-text-secondary transition-colors underline-offset-2 hover:underline';
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(path);
+    });
+    inner.appendChild(a);
   }
 
   footer.appendChild(inner);

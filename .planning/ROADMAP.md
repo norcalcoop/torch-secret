@@ -5,6 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-02-15)
 - ✅ **v2.0 Developer-Grade UI & SEO** — Phases 9-14 (shipped 2026-02-16)
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
+- ✅ **v4.0 Hybrid Anonymous + Account Model** — Phases 21-30 (shipped 2026-02-22)
 
 ## Phases
 
@@ -52,6 +53,24 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 
 </details>
 
+<details>
+<summary>✅ v4.0 Hybrid Anonymous + Account Model (Phases 21-30) — SHIPPED 2026-02-22</summary>
+
+- [x] Phase 21: Schema Foundation (3/3 plans) — completed 2026-02-19
+- [x] Phase 22: Authentication (7/7 plans) — completed 2026-02-19
+- [x] Phase 23: Secret Dashboard (5/5 plans) — completed 2026-02-20
+- [x] Phase 24: EFF Diceware Passphrase Generator (3/3 plans) — completed 2026-02-21
+- [x] Phase 25: PostHog Analytics (3/3 plans) — completed 2026-02-21
+- [x] Phase 26: Email Notifications (3/3 plans) — completed 2026-02-21
+- [x] Phase 27: Conversion Prompts + Rate Limits + Legal Pages (4/4 plans) — completed 2026-02-21
+- [x] Phase 28: Optional Password or Passphrase Protection (3/3 plans) — completed 2026-02-21
+- [x] Phase 29: v4.0 Tech Debt Cleanup (5/5 plans) — completed 2026-02-22
+- [x] Phase 30: Docker & Render Deployment Fixes (2/2 plans) — completed 2026-02-22
+
+See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -76,3 +95,13 @@ See [v3.0 Roadmap Archive](milestones/v3.0-ROADMAP.md) for full phase details.
 | 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
 | 19. GitHub Repository Polish | v3.0 | 3/3 | Complete | 2026-02-18 |
 | 20. Fix Multi-Browser CI | v3.0 | 1/1 | Complete | 2026-02-18 |
+| 21. Schema Foundation | v4.0 | 3/3 | Complete | 2026-02-19 |
+| 22. Authentication | v4.0 | 7/7 | Complete | 2026-02-19 |
+| 23. Secret Dashboard | v4.0 | 5/5 | Complete | 2026-02-20 |
+| 24. EFF Diceware Passphrase Generator | v4.0 | 3/3 | Complete | 2026-02-21 |
+| 25. PostHog Analytics | v4.0 | 3/3 | Complete | 2026-02-21 |
+| 26. Email Notifications | v4.0 | 3/3 | Complete | 2026-02-21 |
+| 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 4/4 | Complete | 2026-02-21 |
+| 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
+| 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
+| 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |

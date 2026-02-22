@@ -10,20 +10,28 @@ import type {
   SecretResponse,
   MetaResponse,
   VerifySecretResponse,
+  DashboardListResponse,
+  DashboardDeleteResponse,
 } from '../../../shared/types/api.js';
 
 /**
  * API error with HTTP status and response body.
+ *
+ * For 429 responses, rateLimitReset carries the delta in seconds (time remaining)
+ * from the RateLimit-Reset draft-6 header so the client can display a countdown
+ * on upsell prompts (CONV-06).
  */
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
+  readonly rateLimitReset?: number; // Delta in seconds (time remaining) from RateLimit-Reset draft-6 header
 
-  constructor(status: number, body: unknown) {
+  constructor(status: number, body: unknown, rateLimitReset?: number) {
     super(`API error ${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.body = body;
+    this.rateLimitReset = rateLimitReset;
   }
 }
 
@@ -31,20 +39,39 @@ export class ApiError extends Error {
  * Create a new secret on the server.
  *
  * Sends the pre-encrypted ciphertext blob. The server never sees plaintext.
+ * Authenticated users may include an optional label (max 100 chars) for
+ * dashboard display and opt into per-secret email notification.
+ *
+ * On 429 Too Many Requests, throws ApiError with rateLimitReset set from
+ * the RateLimit-Reset draft-6 header (delta in seconds, time remaining) for countdown display.
  */
 export async function createSecret(
   ciphertext: string,
   expiresIn: '1h' | '24h' | '7d' | '30d',
   password?: string,
+  label?: string,
+  notify?: boolean,
 ): Promise<CreateSecretResponse> {
   const res = await fetch('/api/secrets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ciphertext, expiresIn, ...(password ? { password } : {}) }),
+    body: JSON.stringify({
+      ciphertext,
+      expiresIn,
+      ...(password ? { password } : {}),
+      ...(label ? { label } : {}),
+      ...(notify !== undefined ? { notify } : {}),
+    }),
   });
 
   if (!res.ok) {
-    throw new ApiError(res.status, await res.json());
+    const body = (await res.json()) as unknown;
+    if (res.status === 429) {
+      const resetHeader = res.headers.get('RateLimit-Reset');
+      const rateLimitReset = resetHeader ? parseInt(resetHeader, 10) : undefined;
+      throw new ApiError(res.status, body, rateLimitReset);
+    }
+    throw new ApiError(res.status, body);
   }
 
   return res.json() as Promise<CreateSecretResponse>;
@@ -103,4 +130,28 @@ export async function verifySecretPassword(
   }
 
   return res.json() as Promise<VerifySecretResponse>;
+}
+
+/**
+ * Fetch the authenticated user's secret history (metadata only).
+ * Requires an active session cookie — throws ApiError 401 if unauthenticated.
+ */
+export async function fetchDashboardSecrets(): Promise<DashboardListResponse> {
+  const res = await fetch('/api/dashboard/secrets');
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<DashboardListResponse>;
+}
+
+/**
+ * Soft-delete an Active secret from the dashboard.
+ * Returns success true, or throws ApiError 404 if not found / wrong owner / non-active.
+ */
+export async function deleteDashboardSecret(id: string): Promise<DashboardDeleteResponse> {
+  const res = await fetch(`/api/dashboard/secrets/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<DashboardDeleteResponse>;
 }

@@ -61,3 +61,28 @@
 
 ---
 
+
+## v4.0 Hybrid Anonymous + Account Model (Shipped: 2026-02-22)
+
+**Phases completed:** 10 phases (21-30), 38 plans
+**Timeline:** 4 days (2026-02-18 → 2026-02-22)
+**Codebase:** ~21,775 LOC TypeScript (+44,306 insertions across 196 files)
+**Git range:** feat(21-01) → test(30), 38 plans shipped
+
+**Key accomplishments:**
+- Better Auth integration — email/password + Google/GitHub OAuth, email verification, sessions, password reset, and 8 integration-tested auth flows
+- Secret dashboard — authenticated users view owned-secret history (label, status, created/expires dates) with Active/Viewed/Expired/Deleted states and pre-view deletion
+- EFF Diceware passphrase generator + password generator — 4-tab protection panel (No protection / Generate password / Custom password / Passphrase) with entropy display, brute-force estimates, rejection-sampling, and masked inputs with eye toggles
+- Privacy-safe PostHog analytics — `before_send` hook strips URL fragments enforcing zero-knowledge invariant; funnel events + user identity without PII
+- Email notifications via Resend — per-secret opt-in; fire-and-forget dispatch after atomic destroy; confirms deletion without secret content or viewer IP
+- Conversion funnel + rate limits — tightened anonymous limits (3/hr, 10/day, 1h max expiration), authenticated higher tier (20/day, 7d max), inline upsell prompts at 3 trigger points, Privacy Policy and ToS pages
+
+**Delivered:** SecureShare evolved from a pure anonymous tool into a hybrid model — anonymous users get instant secret creation with client-side passphrase generation, while optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel. All features preserve the zero-knowledge invariant: no log, DB record, or analytics event contains both userId and secretId.
+
+**Archives:**
+- [Roadmap](milestones/v4.0-ROADMAP.md)
+- [Requirements](milestones/v4.0-REQUIREMENTS.md)
+- [Audit](milestones/v4.0-MILESTONE-AUDIT.md)
+
+---
+

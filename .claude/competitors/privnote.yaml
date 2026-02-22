@@ -1,0 +1,124 @@
+# Privnote — Competitor Data Profile
+# Source: privnote.com, community research, security blog analysis
+# Last updated: 2026-02-21
+# Note: Privnote's encryption model is disputed. Claims client-side AES-256 but
+#       cannot be independently verified as it is not open source.
+
+name: Privnote
+url: https://privnote.com
+tagline: "Send notes that will self-destruct after being read"
+open_source: false
+source_repo: null
+
+encryption:
+  model: disputed / unclear
+  algorithm: Claimed AES-256 (client-side per their documentation, but unverifiable)
+  zero_knowledge: unverified
+  explanation: >
+    Privnote claims client-side AES-256 encryption where the key is embedded in
+    the URL fragment. However, because the code is not open source, these claims
+    cannot be independently audited. Security researchers have noted that the
+    service cannot be verified to not intercept plaintext. Additionally, the
+    web is filled with phishing clone sites (identical UIs with different domains)
+    designed to capture secrets before they're encrypted — a risk amplified by
+    Privnote's lack of open source verification.
+  passphrase_handling: >
+    Optional reference phrase for sender identification (not a true second
+    factor password on the secret itself).
+
+pricing:
+  free_tier:
+    name: Free
+    price: $0
+    revenue_model: Ad-supported
+    features:
+      - Self-destructing notes
+      - No account required
+      - Optional email notification on destruction
+      - Optional reference phrase
+      - Expiration options
+    limits:
+      - Ads displayed
+      - No API
+      - No team features
+      - No audit logs
+      - No custom domains
+      - Not open source
+  paid_tier: null
+
+features:
+  one_time_view: true
+  password_protection: false (reference phrase only, not cryptographic password)
+  expiration_options: true
+  api: false
+  custom_domains: false
+  file_sharing: false
+  audit_logs: false
+  team_dashboard: false
+  account_required_for_recipient: false
+  self_host: false
+  email_notification: true (sender can request email on note destruction)
+  open_source: false
+
+strengths:
+  - Very simple UX — minimal friction, approachable for non-technical users
+  - No account required for sender or recipient
+  - Free, no credit card, no signup
+  - Long-established product with brand recognition
+  - Email notification when note is destroyed (useful for confirming delivery)
+
+weaknesses:
+  - NOT open source — security claims cannot be audited
+  - Encryption model is unverifiable — "trust us" with no way to check
+  - Ad-supported — ads on a tool for handling sensitive credentials is a trust concern
+  - No API — no automation or workflow integration
+  - No password protection (cryptographic second factor)
+  - No file sharing
+  - No audit logs
+  - Significant phishing clone problem — many fake Privnote sites intercept secrets
+  - No custom domains, no self-hosting
+  - No view receipts or history
+
+best_for:
+  - Casual, non-technical users sharing low-sensitivity notes
+  - People who just need to share a note privately once with no setup
+  - Situations where the content is mildly sensitive but not high-stakes
+
+not_ideal_for:
+  - Technical users or security professionals (no open source verification)
+  - Sharing actual credentials, API keys, or passwords (unverifiable encryption)
+  - Teams who need API access, audit logs, or compliance documentation
+  - Anyone who wants to be certain the service cannot read their secret
+  - Self-hosting or white-labeling
+
+common_complaints:
+  - "Not open source — can't verify the security claims"
+  - "Ads on a security tool feel wrong"
+  - "Too many phishing clones with similar domains — hard to tell the real one"
+  - "No API means can't integrate into workflows"
+  - "No real password protection — just a reference phrase"
+
+seo_terms:
+  - privnote alternative
+  - alternative to privnote
+  - privnote alternatives
+  - best privnote alternatives
+  - torch secret vs privnote
+  - privnote open source
+  - privnote zero knowledge
+
+differentiation_from_torch_secret:
+  encryption: >
+    Privnote claims client-side encryption but cannot be verified (closed source).
+    Torch Secret: open source — verify the zero-knowledge architecture yourself.
+  open_source: >
+    Privnote: closed source. Torch Secret: fully open source, auditable.
+  api: >
+    Privnote: no API. Torch Secret: REST API for workflow integration.
+  password_protection: >
+    Privnote: reference phrase only. Torch Secret: cryptographic password protection (Argon2id server-side).
+  phishing_risk: >
+    Privnote clone sites are a documented threat. Torch Secret is open source — users
+    can self-host to eliminate this risk entirely.
+  pricing: >
+    Both free at base. Torch Secret is ad-free. Privnote is ad-supported.

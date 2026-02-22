@@ -18,3 +18,6 @@ export { encrypt } from './encrypt';
 export { decrypt } from './decrypt';
 export { generateKey, exportKeyToBase64Url, importKeyFromBase64Url } from './keys';
 export type { EncryptedPayload, EncryptResult } from './types';
+export { generatePassphrase } from './passphrase.js';
+export { generatePassword } from './password-generator.js';
+export type { PasswordTier, PasswordOptions, GeneratedPassword } from './password-generator.js';
