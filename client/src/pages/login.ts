@@ -365,6 +365,11 @@ function createOAuthButton(
   button.appendChild(labelEl);
 
   button.addEventListener('click', () => {
+    // Set a flag before the OAuth redirect so dashboard.ts can fire the
+    // captureUserLoggedIn analytics event after the full-page redirect completes.
+    // sessionStorage survives the same-origin redirect but is cleared by dashboard.ts
+    // immediately after reading, preventing stale flags on subsequent dashboard visits.
+    sessionStorage.setItem('oauth_login_provider', provider);
     void authClient.signIn.social({
       provider,
       callbackURL: '/dashboard',

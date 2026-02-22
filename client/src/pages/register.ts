@@ -451,6 +451,11 @@ function createOAuthButton(
   button.appendChild(labelEl);
 
   button.addEventListener('click', () => {
+    // Set a flag before the OAuth redirect so dashboard.ts can fire the
+    // captureUserRegistered analytics event after the full-page redirect completes.
+    // OAuth new users arrive at /dashboard directly (no email verification required).
+    // dashboard.ts reads and clears this flag to determine if this is a first registration.
+    sessionStorage.setItem('oauth_register_provider', provider);
     void authClient.signIn.social({
       provider,
       callbackURL: '/dashboard',
