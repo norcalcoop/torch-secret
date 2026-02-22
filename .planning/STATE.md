@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 ## Current Position
 
-Phase: 29 of 29 (v4 Tech Debt Cleanup — gap closure plans) — Plans 01, 02, 03, 04 complete
-Plan: 4 of 4 complete
-Status: Phase 29 Plans 01-04 complete — milestone audit, OAuth analytics events, accessibility test coverage, E2E rate-limit and expiration cap tests all closed
-Last activity: 2026-02-21 — Phase 29 Plan 04 complete; e2e/specs/rate-limits.spec.ts created with 5 tests for anonymous expiration cap and rate-limit countdown (skip-guarded)
+Phase: 29 of 29 (v4 Tech Debt Cleanup — gap closure plans) — Plans 01, 02, 03, 04, 05 complete
+Plan: 5 of 5 complete
+Status: Phase 29 ALL PLANS COMPLETE — milestone audit, OAuth analytics events, accessibility test coverage, E2E rate-limit and expiration cap tests, showRateLimitUpsell() unit tests all closed
+Last activity: 2026-02-22 — Phase 29 Plan 05 complete; client/src/__tests__/create-rate-limit.test.ts created with 5 unit tests for showRateLimitUpsell() countdown rendering (SC-3 gap closed)
 
 Progress: [██████████] 100% (v4.0 — all requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 through PROT-04)
 
@@ -57,6 +57,7 @@ Progress: [██████████] 100% (v4.0 — all requirements compl
 | Phase 29-v4-tech-debt-cleanup P02 | 2 | 2 tasks | 3 files |
 | Phase 29-v4-tech-debt-cleanup P03 | 2 | 1 tasks | 1 files |
 | Phase 29 P04 | 8 | 1 tasks | 1 files |
+| Phase 29 P05 | 3 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -171,6 +172,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 29-01]: NOINDEX_PREFIXES array (not individual startsWith checks) chosen for X-Robots-Tag guard in app.ts — extensible pattern: future auth routes need a single array entry
 - [Phase 29-01]: /dashboard included in NOINDEX_PREFIXES even though auth-gated — defense-in-depth; belt-and-suspenders against crawlers that bypass authentication
 - [Phase 29-01]: requirements-completed field added to 27-01-SUMMARY.md frontmatter only — no implementation changes; CONV-01 was already implemented in Phase 27 (documentation gap closure only)
+- [Phase 29]: [Phase 29-05]: form > :scope > [role='alert'] scoped selector required in test because protection panel contains nested #gen-error role=alert element that precedes form errorArea in DOM order
+- [Phase 29]: [Phase 29-05]: importOriginal factory in vi.mock preserves real ApiError class for instanceof check while replacing createSecret; eslint-disable-next-line no-unsafe-return needed because vi.fn() returns any and test override omits that rule
 
 ### Roadmap Evolution
 
@@ -190,5 +193,5 @@ Key v4.0 architectural constraints (carry forward to every phase):
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 29-02-PLAN.md (backfilled); Phase 29 Plans 01-04 all complete
-Resume: v4.0 complete. Phase 29 all plans done. ANLT-01 OAuth analytics gap closed (Plan 02). No active blockers.
+Stopped at: Completed 29-05-PLAN.md; Phase 29 ALL 5 plans complete
+Resume: v4.0 complete. Phase 29 all plans done (01-05). SC-3 gap closed: showRateLimitUpsell() unit tests created (Plan 05). No active blockers.

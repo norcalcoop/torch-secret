@@ -221,7 +221,7 @@ Plans:
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | 4/4 | Complete    | 2026-02-21 | - |
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 29. v4.0 Tech Debt Cleanup | 4/4 | Complete   | 2026-02-22 | - |
+| 29. v4.0 Tech Debt Cleanup | 5/5 | Complete   | 2026-02-22 | - |
 
 ### Phase 28: Optional password or passphrase protection with password generator and masked inputs
 
@@ -246,7 +246,7 @@ Plans:
   3. Playwright E2E tests verify the anonymous rate-limit countdown displays correctly and the 1-hour expiration cap is enforced
   4. Axe accessibility test covers the incompatible filter error state in the protection panel; unit/integration test covers PROT-02 brute-force label output
   5. Documentation gaps closed: `27-01-SUMMARY.md` has `requirements-completed: [CONV-01]`; passphrase tab `getPassword() → undefined` behavior has an explanatory code comment
-**Plans:** 5 plans (4 complete + 1 gap closure)
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 29-01-PLAN.md — Server-side noindex for auth routes + 27-01-SUMMARY.md CONV-01 fix + create.ts passphrase tab design comment
