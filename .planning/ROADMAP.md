@@ -259,7 +259,7 @@ Plans:
 
 **Goal:** All deployment configuration files are updated to reflect the v4.0 feature set — render.yaml declares all required auth env vars with sync: false, docker-compose.yml has placeholder values that prevent startup crashes, the Dockerfile build stage accepts VITE_ build args for PostHog, the CI pipeline validates Docker builds, and package.json reflects the completed v4.0 milestone version
 **Depends on:** Phase 29
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 30-01-PLAN.md — Update render.yaml (all v4.0 env vars + sync: false), docker-compose.yml (auth placeholders), and Dockerfile (VITE_ ARG declarations)
