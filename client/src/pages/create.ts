@@ -915,6 +915,17 @@ function createProtectionPanel(): {
   }
 
   // ---- Accessors ----
+
+  // getPassword() intentionally returns undefined when the passphrase tab is active.
+  //
+  // Design intent (two-channel model): the passphrase tab is a communication aid —
+  // the EFF Diceware passphrase is displayed on the confirmation page so the sender
+  // can share it with the recipient via a separate channel (e.g. SMS vs. encrypted email).
+  // The passphrase is NOT used as the Argon2id server-side password and is NOT sent to
+  // the API. Only getPassphrase() surfaces it, for the confirmation page UI only.
+  //
+  // This is correct per PROT-04: "Passphrase" tab → passphrase card on confirmation;
+  // no password hash is stored server-side; the passphrase is out-of-band security guidance.
   function getPassword(): string | undefined {
     if (activeTab === 'generate') return confirmedPassword || undefined;
     if (activeTab === 'custom') return customPasswordInput.value.trim() || undefined;

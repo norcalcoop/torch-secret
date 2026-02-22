@@ -1,6 +1,7 @@
 ---
 phase: 27-conversion-prompts-rate-limits-legal-pages
 plan: "01"
+requirements-completed: [CONV-01]
 subsystem: rate-limiting
 tags:
   - rate-limits
