@@ -11,8 +11,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 - [ ] **BRAND-01**: App name displays as "Torch Secret" in all user-facing locations (HTML `<title>`, OG tags, header, email sender)
 - [ ] **BRAND-02**: All canonical URLs, sitemap entries, JSON-LD `@id`/`url`, and OG tags use `torchsecret.com` domain (replacing `secureshare.example.com`)
-- [ ] **BRAND-03**: README updated with "Torch Secret" name and link to `torchsecret.com` as the live hosted version
-- [ ] **BRAND-04**: CI workflow, Docker Compose, and `package.json` name field updated to reflect new product name
+- [x] **BRAND-03**: README updated with "Torch Secret" name and link to `torchsecret.com` as the live hosted version
+- [x] **BRAND-04**: CI workflow, Docker Compose, and `package.json` name field updated to reflect new product name
 
 ### Homepage (HOME)
 
@@ -65,7 +65,7 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Tech Debt (TECH)
 
-- [ ] **TECH-01**: CI workflow includes placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) to prevent integration test failures
+- [x] **TECH-01**: CI workflow includes placeholder env vars (`BETTER_AUTH_SECRET`, `DATABASE_URL`, etc.) to prevent integration test failures
 - [x] **TECH-02**: `/privacy` and `/terms` added to `NOINDEX_PREFIXES` in `app.ts` for server-side `X-Robots-Tag` header
 - [x] **TECH-03**: `schema.ts` zero-knowledge inline comment updated to match canonical 7-point list in `INVARIANTS.md`
 
@@ -123,9 +123,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | BRAND-01 | Phase 31 | Pending |
 | BRAND-02 | Phase 31 | Pending |
-| BRAND-03 | Phase 31 | Pending |
-| BRAND-04 | Phase 31 | Pending |
-| TECH-01 | Phase 31 | Pending |
+| BRAND-03 | Phase 31 | Complete |
+| BRAND-04 | Phase 31 | Complete |
+| TECH-01 | Phase 31 | Complete |
 | TECH-02 | Phase 31 | Complete |
 | TECH-03 | Phase 31 | Complete |
 | HOME-01 | Phase 32 | Pending |
