@@ -221,7 +221,7 @@ Plans:
 | 26. Email Notifications | 3/3 | Complete    | 2026-02-21 | - |
 | 27. Conversion Prompts + Rate Limits + Legal Pages | 4/4 | Complete    | 2026-02-21 | - |
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 29. v4.0 Tech Debt Cleanup | 5/5 | Complete   | 2026-02-22 | - |
+| 29. v4.0 Tech Debt Cleanup | 5/5 | Complete    | 2026-02-22 | - |
 
 ### Phase 28: Optional password or passphrase protection with password generator and masked inputs
 
