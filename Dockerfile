@@ -13,6 +13,11 @@ RUN npm ci
 FROM deps AS build
 WORKDIR /app
 COPY . .
+# PostHog analytics are baked into the JS bundle at build time.
+# Pass via --build-arg or set in Render dashboard (Render auto-passes env vars as build args).
+# If not provided, analytics are silently disabled — safe default for local Docker builds.
+ARG VITE_POSTHOG_KEY
+ARG VITE_POSTHOG_HOST
 RUN npm run build:client
 
 # ============================================================
