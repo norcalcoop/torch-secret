@@ -13,7 +13,12 @@ import { fetchDashboardSecrets, deleteDashboardSecret } from '../api/client.js';
 import { createIcon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
 import { navigate } from '../router.js';
-import { identifyUser, resetAnalyticsIdentity } from '../analytics/posthog.js';
+import {
+  identifyUser,
+  resetAnalyticsIdentity,
+  captureUserLoggedIn,
+  captureUserRegistered,
+} from '../analytics/posthog.js';
 import type { DashboardSecretItem } from '../../../shared/types/api.js';
 
 // ---------------------------------------------------------------------------
@@ -353,6 +358,34 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
   // (callbackURL: '/dashboard'). PostHog deduplicates when distinct ID is unchanged.
   // Never pass email, name, or secretId — zero-knowledge invariant.
   identifyUser(session.user.id);
+
+  // OAuth analytics: detect post-OAuth landing and fire the correct event.
+  //
+  // OAuth uses a full-page redirect — the browser navigates away from /login or /register
+  // before any callback can fire. login.ts and register.ts set a sessionStorage flag
+  // immediately before triggering authClient.signIn.social(). dashboard.ts reads the
+  // flag here (on the first dashboard render after the redirect) and fires the analytics
+  // event. The flag is deleted immediately after reading to prevent it from firing
+  // again on subsequent dashboard visits (e.g. page refresh, SPA navigation back).
+  //
+  // ZERO-KNOWLEDGE INVARIANT: provider string ('google'/'github') only — no userId, no email.
+  const oauthLoginProvider = sessionStorage.getItem('oauth_login_provider') as
+    | 'google'
+    | 'github'
+    | null;
+  if (oauthLoginProvider === 'google' || oauthLoginProvider === 'github') {
+    sessionStorage.removeItem('oauth_login_provider');
+    captureUserLoggedIn(oauthLoginProvider);
+  }
+
+  const oauthRegisterProvider = sessionStorage.getItem('oauth_register_provider') as
+    | 'google'
+    | 'github'
+    | null;
+  if (oauthRegisterProvider === 'google' || oauthRegisterProvider === 'github') {
+    sessionStorage.removeItem('oauth_register_provider');
+    captureUserRegistered(oauthRegisterProvider);
+  }
 
   // --- Page wrapper ---
   const wrapper = document.createElement('div');
