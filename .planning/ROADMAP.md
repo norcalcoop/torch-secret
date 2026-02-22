@@ -254,3 +254,13 @@ Plans:
 - [ ] 29-03-PLAN.md — Accessibility + integration tests: incompatible filter error state axe test, PROT-02 brute-force label tests
 - [ ] 29-04-PLAN.md — E2E tests: anonymous rate-limit countdown display and 1-hour expiration cap enforcement
 - [ ] 29-05-PLAN.md — Vitest unit tests for showRateLimitUpsell() countdown rendering (SC-3 gap closure)
+
+### Phase 30: Docker & Render Deployment Fixes
+
+**Goal:** All deployment configuration files are updated to reflect the v4.0 feature set — render.yaml declares all required auth env vars with sync: false, docker-compose.yml has placeholder values that prevent startup crashes, the Dockerfile build stage accepts VITE_ build args for PostHog, the CI pipeline validates Docker builds, and package.json reflects the completed v4.0 milestone version
+**Depends on:** Phase 29
+**Plans:** 2 plans
+
+Plans:
+- [ ] 30-01-PLAN.md — Update render.yaml (all v4.0 env vars + sync: false), docker-compose.yml (auth placeholders), and Dockerfile (VITE_ ARG declarations)
+- [ ] 30-02-PLAN.md — Bump package.json to 4.0.0 and add docker-build CI job
