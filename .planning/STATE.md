@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-18 after v4.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v4.0 — Phase 28: Optional Password or Passphrase Protection with Password Generator and Masked Inputs — COMPLETE
+**Current focus:** v4.0 tech debt cleanup — Phase 29: v4 Tech Debt Cleanup (gap closure plans)
 
 ## Current Position
 
-Phase: 28 of 28 (Optional Password or Passphrase Protection with Password Generator and Masked Inputs) — Complete
-Plan: 3 of 3 complete
-Status: Phase 28 complete — all PROT requirements satisfied (PROT-01 through PROT-04); UAT approved
-Last activity: 2026-02-21 — Phase 28 Plan 03 UAT approved; SUMMARY.md created; v4.0 milestone fully shipped
+Phase: 29 of 29 (v4 Tech Debt Cleanup — gap closure plans) — Plans 01, 02, 03 complete
+Plan: 3 of 3 complete (Plan 02 backfilled 2026-02-22)
+Status: Phase 29 Plans 01-03 complete — milestone audit, OAuth analytics events, accessibility test coverage all closed
+Last activity: 2026-02-22 — Phase 29 Plan 02 backfilled; sessionStorage flags + dashboard OAuth analytics (ANLT-01 gap closed)
 
 Progress: [██████████] 100% (v4.0 — all requirements complete: AUTH-01 through AUTH-08 + DASH-01 through DASH-05 + PASS-01 through PASS-04 + ANLT-01 through ANLT-03 + NOTF-01 through NOTF-03 + CONV-01 through CONV-03 + CONV-06 + LEGAL-01 + LEGAL-02 + PROT-01 through PROT-04)
 
@@ -53,6 +53,8 @@ Progress: [██████████] 100% (v4.0 — all requirements compl
 | Phase 28 P01 | 6 | 3 TDD phases | 3 files |
 | Phase 28 P02 | 5 | 2 tasks | 1 files |
 | Phase 28 P03 | ~15 | 3 tasks + UAT | 3 files |
+| Phase 29-v4-tech-debt-cleanup P03 | 2 | 1 tasks | 1 files |
+| Phase 29 P04 | 8 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -159,6 +161,8 @@ Key v4.0 architectural constraints (carry forward to every phase):
 - [Phase 28]: [Phase 28-03 v2]: Protection panel refactored again to horizontal 4-tab design per second UAT iteration — tablist/tab/tabpanel ARIA pattern; arrow key navigation; combined password field replaces separate preview div + applied-password field in generate tab; passphrase tab uses RefreshCw icon; no-useless-assignment fix: const nextIndex via ternary replaces let nextIndex = currentIndex pattern
 - [Phase 28]: [Phase 28-03]: Reveal page heading updated to "Protection Required" (from "Password Required") — mode-agnostic wording covers both passphrase and password protection modes without naming a specific mode; subtext + placeholder + label updated to "Passphrase or password" for same reason
 - [Phase 28]: [Phase 28-03]: previewField div requires role=status with aria-label — bare div with aria-label violates axe prohibited-attr rule; role=status is semantically correct for live password preview output
+- [Phase 29]: Rate-limit countdown test uses test.skip(E2E_TEST === 'true') — E2E mode raises anon hourly limit to 1000 making 429 unreachable; countdown UI covered by unit/integration tests
+- [Phase 29]: Anonymous expiration select test checks select.count() before asserting — anonymous users get a div, authenticated users get a select; defensive branching handles both DOM variants
 
 ### Roadmap Evolution
 
@@ -177,6 +181,6 @@ Key v4.0 architectural constraints (carry forward to every phase):
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 28 Plan 03 complete — UAT approved, SUMMARY.md created, v4.0 milestone fully shipped
-Resume: v4.0 complete. All 28 phases done. PROT-01 through PROT-04 all satisfied. No active blockers.
+Last session: 2026-02-22
+Stopped at: Completed 29-v4-tech-debt-cleanup-03-PLAN.md
+Resume: Phase 29 Plan 03 complete. Accessibility test gaps closed — 5 new tests added (incompatible filter error state axe + PROT-02 brute-force label integration). All 260 tests pass. No active blockers.
