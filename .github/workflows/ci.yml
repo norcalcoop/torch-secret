@@ -49,6 +49,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
       NODE_ENV: test
+      BETTER_AUTH_SECRET: ci-test-secret-placeholder-must-be-at-least-32-chars
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RESEND_API_KEY: re_placeholder
+      RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
 
     steps:
       - name: Checkout repository
@@ -108,6 +113,12 @@ jobs:
     env:
       DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
       REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      BETTER_AUTH_SECRET: ci-test-secret-placeholder-must-be-at-least-32-chars
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RESEND_API_KEY: re_placeholder
+      RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
 
     steps:
       - name: Checkout repository
@@ -164,5 +175,5 @@ jobs:
           docker build --no-cache \
             --build-arg VITE_POSTHOG_KEY="" \
             --build-arg VITE_POSTHOG_HOST="" \
-            -t secureshare:ci-test \
+            -t torch-secret:ci-test \
             .

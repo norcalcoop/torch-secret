@@ -1,4 +1,4 @@
-# Render.com Blueprint — one-click deployment for SecureShare
+# Render.com Blueprint — one-click deployment for Torch Secret
 # Deploy: https://render.com/deploy → import this repo
 #
 # Free tier notes:
@@ -12,7 +12,7 @@
 services:
   # Web service — Docker-based Node.js application
   - type: web
-    name: secureshare
+    name: torch-secret
     runtime: docker
     plan: free
     region: oregon
@@ -22,12 +22,12 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: secureshare-db
+          name: torch-secret-db
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: keyvalue
-          name: secureshare-redis
+          name: torch-secret-redis
           property: connectionString
       - key: NODE_ENV
         value: production
@@ -40,14 +40,14 @@ services:
       # Generate with: openssl rand -base64 32
       - key: BETTER_AUTH_SECRET
         sync: false
-      # Set to your Render service URL, e.g. https://secureshare.onrender.com (no trailing slash)
+      # Set to your Render service URL, e.g. https://torchsecret.onrender.com (no trailing slash)
       - key: BETTER_AUTH_URL
         sync: false
 
       # === Email delivery via Resend (required for email auth features) ===
       - key: RESEND_API_KEY
         sync: false
-      # Format: "SecureShare <noreply@yourdomain.com>" — must use a Resend-verified domain
+      # Format: "Torch Secret <noreply@yourdomain.com>" — must use a Resend-verified domain
       - key: RESEND_FROM_EMAIL
         sync: false
 
@@ -71,7 +71,7 @@ services:
 
   # Redis key-value store for distributed rate limiting
   - type: keyvalue
-    name: secureshare-redis
+    name: torch-secret-redis
     plan: free
     region: oregon
     ipAllowList: [] # Only accessible from Render internal network
@@ -79,7 +79,7 @@ services:
 
 # PostgreSQL database
 databases:
-  - name: secureshare-db
+  - name: torch-secret-db
     plan: free
     region: oregon
     postgresMajorVersion: '17'

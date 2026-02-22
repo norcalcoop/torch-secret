@@ -18,7 +18,7 @@ const EnvSchema = z.object({
   // Frontend origin for email links. In dev, set to Vite's port (e.g. http://localhost:5173)
   // so reset/verify links land on the dev server, not Express. In production, omit or set
   // to the same value as BETTER_AUTH_URL.
-  APP_URL: z.string().url().optional(),
+  APP_URL: z.string().url().default('http://localhost:3000'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),

@@ -43,7 +43,7 @@ services:
       BETTER_AUTH_URL: 'http://localhost:3000'
       # --- Email (placeholder satisfies z.string().min(1); emails won't deliver) ---
       RESEND_API_KEY: 'placeholder-not-sent-in-docker-local-dev'
-      RESEND_FROM_EMAIL: 'SecureShare <noreply@localhost>'
+      RESEND_FROM_EMAIL: 'Torch Secret <noreply@localhost>'
       # --- OAuth (commented out; buttons won't appear — correct for local dev) ---
       # GOOGLE_CLIENT_ID:
       # GOOGLE_CLIENT_SECRET:
