@@ -1,5 +1,5 @@
 /**
- * Crypto module type definitions for SecureShare.
+ * Crypto module type definitions for Torch Secret.
  *
  * These types define the shapes of encrypted data and encryption results.
  * All other crypto module files import from here.

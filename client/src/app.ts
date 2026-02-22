@@ -1,5 +1,5 @@
 /**
- * SecureShare application entry point.
+ * Torch Secret application entry point.
  *
  * Initializes the layout shell (header, footer, dot-grid) then the
  * client-side router on DOM ready. Layout must init first so its

@@ -1,5 +1,5 @@
 /**
- * SecureShare PostHog Analytics Module
+ * Torch Secret PostHog Analytics Module
  *
  * Zero-Knowledge Invariant (enforced by module design):
  * - Secret events (secret_created, secret_viewed) must NEVER contain userId or any

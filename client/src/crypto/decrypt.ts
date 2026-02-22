@@ -1,5 +1,5 @@
 /**
- * Decrypt module for SecureShare.
+ * Decrypt module for Torch Secret.
  *
  * Decrypts ciphertext using AES-256-GCM with a key from a base64url string.
  * Integrates: keys (importKeyFromBase64Url), padding (unpadPlaintext), encoding (base64ToUint8Array).

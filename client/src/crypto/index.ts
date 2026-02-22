@@ -1,5 +1,5 @@
 /**
- * SecureShare Crypto Module - Public API
+ * Torch Secret Crypto Module - Public API
  *
  * This barrel export exposes only the public interface needed by the application.
  * Internal utilities (encoding, padding) are implementation details and not exported.

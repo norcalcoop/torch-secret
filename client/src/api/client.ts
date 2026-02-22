@@ -1,5 +1,5 @@
 /**
- * Typed fetch wrapper for the SecureShare secrets API.
+ * Typed fetch wrapper for the Torch Secret secrets API.
  *
  * IMPORTANT: GET requests are never cached -- each call atomically
  * destroys the secret on the server. There is no retry or cache logic.

@@ -1,5 +1,5 @@
 /**
- * Crypto constants for SecureShare.
+ * Crypto constants for Torch Secret.
  *
  * Defines AES-256-GCM parameters and application-level crypto limits.
  * All values are derived from NIST SP800-38D and project requirements.
