@@ -103,10 +103,20 @@ export function buildApp() {
       const html = htmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce as string);
       res.setHeader('Content-Type', 'text/html');
 
-      // Defense-in-depth: HTTP-level noindex for secret routes.
-      // Crawlers see this header before parsing HTML, preventing indexing
-      // even if the client-side meta tag fails to render.
-      if (req.path.startsWith('/secret/')) {
+      // Defense-in-depth: HTTP-level noindex for routes that must not be crawled.
+      // /secret/* routes contain encrypted-secret interstitials (crawlers should never index them).
+      // Auth and dashboard routes (/login, /register, /forgot-password, /reset-password, /dashboard)
+      // should not appear in search results — they are private-state pages with no SEO value.
+      // X-Robots-Tag is server-side complement to the client-side <meta name="robots"> tag.
+      const NOINDEX_PREFIXES = [
+        '/secret/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/dashboard',
+      ];
+      if (NOINDEX_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
         res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       }
 
