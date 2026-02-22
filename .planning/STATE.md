@@ -2,18 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-22 after v4.0 milestone)
+See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** Planning next milestone (v5.0 Pro Tier)
+**Current focus:** v5.0 Product Launch Checklist
 
 ## Current Position
 
-Phase: v4.0 milestone complete — all 30 phases shipped
-Status: Milestone archived to .planning/milestones/v4.0-*
-Last activity: 2026-02-22 — v4.0 milestone archived (10 phases, 38 plans, 35/35 requirements)
-
-Progress: [██████████] 100% v4.0 complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-22 — Milestone v5.0 started
 
 ## Performance Metrics
 

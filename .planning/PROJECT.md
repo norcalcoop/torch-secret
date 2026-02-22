@@ -1,4 +1,19 @@
-# SecureShare
+# Torch Secret
+
+## Current Milestone: v5.0 Product Launch Checklist
+
+**Goal:** Ship everything needed to publicly launch Torch Secret — rebrand, marketing homepage, pricing + Pro billing, SEO content pages, email onboarding, and pre-launch infrastructure.
+
+**Target features:**
+- Rebrand from SecureShare → Torch Secret + replace all `secureshare.example.com` references with `torchsecret.com`
+- Marketing homepage redesign (hero, zero-knowledge proof points, How It Works, pricing preview, email capture)
+- Pricing page (`/pricing`) with Free + Pro tier cards (copy pre-written)
+- Stripe Pro billing integration ($9/month or $7/month annual) + 30-day expiration unlock
+- SEO content pages: competitor comparison (`/vs/onetimesecret`, `/vs/pwpush`, `/vs/privnote`) + use case programmatic pages (`/use/[slug]`)
+- Schema markup (WebApplication, FAQ, HowTo JSON-LD) on key pages
+- Feedback form link on confirmation + post-reveal pages
+- Email onboarding sequence for new account holders (3 emails via Resend)
+- Tech debt: CI env vars, /privacy + /terms NOINDEX fix, schema.ts ZK comment sync
 
 ## What This Is
 
@@ -57,14 +72,20 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ### Active
 
-<!-- v5.0 Pro Tier + Advanced Features -->
+<!-- v5.0 Product Launch Checklist -->
 
-- [ ] Stripe subscription billing at $7/month (Pro tier)
-- [ ] Pro users get extended expiration up to 90 days
-- [ ] Pro users receive webhook notifications on secret view (POST to user-configured URL)
-- [ ] Pro user can upload files up to 25MB, encrypted client-side before upload
-- [ ] File uploads stored via Cloudflare R2 with presigned PUT URL flow
-- [ ] 6-word Diceware passphrases (higher entropy: ~77 bits) for Pro users
+- [ ] Rebrand from SecureShare → Torch Secret across all code, SEO, meta, and README
+- [ ] Replace all `secureshare.example.com` references with `torchsecret.com`
+- [ ] Marketing homepage redesign with hero, zero-knowledge proof points, How It Works, pricing preview, and email capture
+- [ ] Pricing page (`/pricing`) with Free + Pro tier cards, FAQ, and CTAs
+- [ ] Stripe Pro billing ($9/month or $7/month annual) with 30-day expiration unlock for Pro users
+- [ ] Competitor comparison SEO pages: `/vs/onetimesecret`, `/vs/pwpush`, `/vs/privnote`
+- [ ] Alternative SEO pages: `/alternatives/onetimesecret`, `/alternatives/pwpush`, `/alternatives/privnote`
+- [ ] Programmatic use case pages: `/use/[slug]` (8 pages + hub)
+- [ ] Schema markup (WebApplication, FAQPage, HowTo JSON-LD) on key pages
+- [ ] Feedback form link on confirmation page and post-reveal page
+- [ ] Email onboarding sequence: welcome, key features, upgrade prompt (3 emails via Resend)
+- [ ] Tech debt: CI env vars, /privacy + /terms NOINDEX, schema.ts ZK comment sync
 
 ### Out of Scope
 
@@ -79,7 +100,12 @@ Users can share sensitive information once, securely, without accounts or comple
 - Claiming anonymous secrets on account creation — privacy risk: linking browser session to user identity
 - Real-time push notifications — email-on-view is sufficient; websocket notifications not warranted
 - Custom domains — Enterprise tier; not planned
-- "Notify if expires unviewed" email option — ADV feature deferred with Pro tier
+- "Notify if expires unviewed" email option — deferred to future Pro features
+- Webhook notifications on secret view — v6.0+ Pro feature
+- File uploads (25MB, Cloudflare R2) — v6.0+ Pro feature
+- 6-word Diceware passphrases — v6.0+ Pro feature
+- Extended expiration beyond 30 days (90-day option) — v6.0+ Pro feature
+- Team tier — launch with Free + Pro only; add Team when organic team patterns emerge
 
 ## Context
 
@@ -161,4 +187,4 @@ Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphis
 | docker-build CI job uses needs: [lint] (parallel) | Runs parallel with test/e2e after lint; does not extend critical path | ✓ Good |
 
 ---
-*Last updated: 2026-02-22 after v4.0 milestone*
+*Last updated: 2026-02-22 after v5.0 milestone started*
