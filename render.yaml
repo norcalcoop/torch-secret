@@ -1,10 +1,13 @@
 # Render.com Blueprint — one-click deployment for SecureShare
 # Deploy: https://render.com/deploy → import this repo
 #
-# IMPORTANT: Free tier PostgreSQL expires after 30 days (14-day grace period).
-# For persistent production use, upgrade to a paid database plan.
-# Free tier Redis (keyvalue) data is ephemeral and lost on restart.
-# Free web services spin down after 15 minutes of inactivity.
+# Free tier notes:
+# - Free PostgreSQL expires after 30 days (14-day grace period to upgrade)
+# - Free Redis data is ephemeral (lost on restart; rate limit counters reset)
+# - Free web services spin down after 15 minutes of inactivity (~60s cold start)
+#
+# IMPORTANT: After initial Blueprint sync, manually add all secret env vars
+# (marked sync:false) in the Render dashboard. See README for required values and how to generate them.
 
 services:
   # Web service — Docker-based Node.js application
@@ -32,6 +35,39 @@ services:
         value: 'true'
       - key: LOG_LEVEL
         value: info
+
+      # === Authentication (required) ===
+      # Generate with: openssl rand -base64 32
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      # Set to your Render service URL, e.g. https://secureshare.onrender.com (no trailing slash)
+      - key: BETTER_AUTH_URL
+        sync: false
+
+      # === Email delivery via Resend (required for email auth features) ===
+      - key: RESEND_API_KEY
+        sync: false
+      # Format: "SecureShare <noreply@yourdomain.com>" — must use a Resend-verified domain
+      - key: RESEND_FROM_EMAIL
+        sync: false
+
+      # === OAuth providers (optional — omit to disable Google/GitHub sign-in) ===
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+
+      # === Analytics (optional — PostHog baked in at build time via Docker ARG) ===
+      # Setting these triggers a rebuild that bakes them into the JS bundle.
+      # If unset, analytics are silently disabled (safe default).
+      - key: VITE_POSTHOG_KEY
+        sync: false
+      - key: VITE_POSTHOG_HOST
+        sync: false
 
   # Redis key-value store for distributed rate limiting
   - type: keyvalue
