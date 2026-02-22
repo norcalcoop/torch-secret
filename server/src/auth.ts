@@ -73,7 +73,7 @@ export const auth = betterAuth({
       void resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
-        subject: 'Reset your SecureShare password',
+        subject: 'Reset your Torch Secret password',
         text: `Click to reset your password: ${toAppUrl(url)}\n\nIf you did not request this, you can ignore this email.`,
       });
       return Promise.resolve();
@@ -85,7 +85,7 @@ export const auth = betterAuth({
       void resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
-        subject: 'Verify your SecureShare email',
+        subject: 'Verify your Torch Secret email',
         text: `Click to verify your email: ${toAppUrl(url)}\n\nIf you did not create an account, you can ignore this email.`,
       });
       return Promise.resolve();

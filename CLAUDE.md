@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SecureShare is a zero-knowledge, one-time secret sharing web app. Users paste sensitive text, get an encrypted link, share it, and the secret self-destructs after one view. No accounts, no signup. The encryption key lives exclusively in the URL fragment (`#key`) and never reaches the server.
+Torch Secret is a zero-knowledge, one-time secret sharing web app. Users paste sensitive text, get an encrypted link, share it, and the secret self-destructs after one view. No accounts, no signup. The encryption key lives exclusively in the URL fragment (`#key`) and never reaches the server.
 
 ## Tech Stack
 

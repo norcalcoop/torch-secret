@@ -1,6 +1,6 @@
-# Contributing to SecureShare
+# Contributing to Torch Secret
 
-Welcome, and thank you for your interest in contributing to SecureShare! Whether you're fixing a typo, reporting a bug, or building a new feature -- we appreciate every contribution.
+Welcome, and thank you for your interest in contributing to Torch Secret! Whether you're fixing a typo, reporting a bug, or building a new feature -- we appreciate every contribution.
 
 This guide will help you get set up and explain the workflow for making changes.
 
@@ -76,7 +76,7 @@ npx tsc --noEmit
 
 ## Testing
 
-SecureShare uses [Vitest](https://vitest.dev/) for unit and integration tests, and [Playwright](https://playwright.dev/) for end-to-end tests.
+Torch Secret uses [Vitest](https://vitest.dev/) for unit and integration tests, and [Playwright](https://playwright.dev/) for end-to-end tests.
 
 - **Run all tests:**
 
@@ -142,4 +142,4 @@ For security vulnerabilities, please see [SECURITY.md](SECURITY.md). **Do not** 
 
 ## License
 
-By contributing to SecureShare, you agree that your contributions will be licensed under the project's [ISC License](LICENSE).
+By contributing to Torch Secret, you agree that your contributions will be licensed under the project's [ISC License](LICENSE).

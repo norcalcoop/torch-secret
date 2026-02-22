@@ -21,9 +21,9 @@ export async function sendSecretViewedNotification(
   const { error } = await resend.emails.send({
     from: env.RESEND_FROM_EMAIL,
     to: userEmail,
-    subject: 'Your SecureShare secret was viewed',
+    subject: 'Your Torch Secret secret was viewed',
     text: [
-      'A secret you created on SecureShare was viewed and permanently deleted.',
+      'A secret you created on Torch Secret was viewed and permanently deleted.',
       '',
       `Viewed at: ${viewedAt.toUTCString()}`,
       '',

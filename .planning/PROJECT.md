@@ -17,7 +17,7 @@
 
 ## What This Is
 
-SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel from anonymous use — while preserving the zero-knowledge invariant: no log, DB record, or analytics event may contain both a userId and a secretId together. Dark terminal-inspired UI with glassmorphism surfaces, multi-browser E2E tests, containerized deployment, and CI/CD pipeline.
+Torch Secret is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel from anonymous use — while preserving the zero-knowledge invariant: no log, DB record, or analytics event may contain both a userId and a secretId together. Dark terminal-inspired UI with glassmorphism surfaces, multi-browser E2E tests, containerized deployment, and CI/CD pipeline.
 
 ## Core Value
 

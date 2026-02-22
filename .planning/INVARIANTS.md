@@ -1,6 +1,6 @@
-# SecureShare Invariants
+# Torch Secret Invariants
 
-This document is the **canonical source** for SecureShare's hard design invariants.
+This document is the **canonical source** for Torch Secret's hard design invariants.
 All other references (CLAUDE.md, schema.ts comments) cite this document.
 
 When adding new tables, logging systems, or analytics integrations in Phases 22–27,
@@ -22,7 +22,7 @@ Combining `userId` + `secretId` in any shared record creates a deanonymization a
 An attacker — or an insider — with access to DB rows, application logs, or analytics events
 could correlate which user created which secret, directly violating the zero-knowledge security model.
 
-SecureShare's core promise is that the server cannot learn who sent what to whom. Keeping
+Torch Secret's core promise is that the server cannot learn who sent what to whom. Keeping
 `userId` and `secretId` permanently separated at the data layer enforces this promise
 structurally, not just operationally.
 
