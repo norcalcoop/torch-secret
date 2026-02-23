@@ -104,3 +104,36 @@ export interface DashboardListResponse {
 export interface DashboardDeleteResponse {
   success: true;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 34: Stripe Pro Billing
+// ---------------------------------------------------------------------------
+
+/** Response from GET /api/me — includes subscription tier (Phase 34) */
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    emailVerified: boolean;
+    image: string | null;
+    createdAt: string; // ISO string
+    subscriptionTier: 'free' | 'pro';
+  };
+}
+
+/** Response from GET /api/billing/checkout */
+export interface BillingCheckoutResponse {
+  url: string;
+}
+
+/** Response from GET /api/billing/verify-checkout */
+export interface VerifyCheckoutResponse {
+  status: 'active';
+  tier: 'pro';
+}
+
+/** Response from POST /api/billing/portal */
+export interface BillingPortalResponse {
+  url: string;
+}
