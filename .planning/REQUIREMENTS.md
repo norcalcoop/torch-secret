@@ -24,10 +24,10 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Pricing (PRICE)
 
-- [ ] **PRICE-01**: User can view Free vs. Pro tier comparison at `/pricing`
-- [ ] **PRICE-02**: Pricing page has monthly/annual billing toggle (annual default, shows 22% savings)
-- [ ] **PRICE-03**: Pro tier card is highlighted as "Recommended" with complete feature list
-- [ ] **PRICE-04**: Pricing page includes FAQ section (6-8 questions: cancellation, refunds, billing cycle, trial, payment methods)
+- [x] **PRICE-01**: User can view Free vs. Pro tier comparison at `/pricing`
+- [x] **PRICE-02**: Pricing page has monthly/annual billing toggle (annual default, shows 22% savings)
+- [x] **PRICE-03**: Pro tier card is highlighted as "Recommended" with complete feature list
+- [x] **PRICE-04**: Pricing page includes FAQ section (6-8 questions: cancellation, refunds, billing cycle, trial, payment methods)
 - [ ] **PRICE-05**: Pricing page includes `FAQPage` JSON-LD schema markup
 
 ### Billing (BILL)
@@ -133,10 +133,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-03 | Phase 32 | Complete |
 | HOME-04 | Phase 32 | Complete |
 | HOME-05 | Phase 32 | Complete |
-| PRICE-01 | Phase 33 | Pending |
-| PRICE-02 | Phase 33 | Pending |
-| PRICE-03 | Phase 33 | Pending |
-| PRICE-04 | Phase 33 | Pending |
+| PRICE-01 | Phase 33 | Complete |
+| PRICE-02 | Phase 33 | Complete |
+| PRICE-03 | Phase 33 | Complete |
+| PRICE-04 | Phase 33 | Complete |
 | PRICE-05 | Phase 33 | Pending |
 | BILL-01 | Phase 34 | Pending |
 | BILL-02 | Phase 34 | Pending |

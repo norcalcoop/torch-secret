@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 32: Marketing Homepage + Create Split
+**Current focus:** v5.0 Product Launch Checklist — Phase 33: Pricing Page
 
 ## Current Position
 
-Phase: 32 of 38 (Marketing Homepage + Create Split)
-Plan: 4 of 4 in current phase — PHASE COMPLETE
-Status: Complete — Phase 32 all 4/4 plans complete; Phase 33 is next
-Last activity: 2026-02-23 — Phase 32 Plan 04 complete (human UAT: all HOME requirements verified; footer clipping fix)
+Phase: 33 of 38 (Pricing Page)
+Plan: 1 of 3 in current phase — Plan 01 complete
+Status: In Progress — Phase 33 Plan 01 complete; Plan 02 (router + JSON-LD) is next
+Last activity: 2026-02-23 — Phase 33 Plan 01 complete (pricing.ts: 473 lines, billing toggle, Free/Pro cards, FAQ accordion)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -34,6 +34,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 31 P01 | 8 | 3 tasks | 32 files |
 | Phase 32 P04 | ~30min | 2 tasks | 1 file |
 | Phase 32 P03 | 175s | 2 tasks | 1 files |
+| Phase 33 P01 | 4 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -47,6 +48,16 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - loops@6.2.0 uses v6.x createContact() single-object API — breaking change from v5; do not use v5 positional arguments
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
+
+### Phase 33 Execution Notes
+
+- pricing.ts (Plan 01) complete: 473 lines, exports renderPricingPage() and FAQ_ITEMS
+- Billing toggle registration pattern: toggle creates callback slot; createTierCards registers Pro card's updatePrice fn via the returned registration function
+- Pro card price refs stored (proAmountEl/proPeriodEl/proSubLabelEl) and updated via textContent — no re-render on toggle
+- Annual pricing: $65/year ($5.42/mo equivalent) at 22.6% savings; matches "22% savings" badge requirement
+- FAQ_ITEMS is canonical source — Plan 02 must copy verbatim strings into FAQPage JSON-LD in index.html
+- Pro CTA: /register?plan=pro — Phase 34 reads query param; auth-aware CTA deferred to Phase 34
+- Native <details>/<summary> accordion; group-open:rotate-180 on chevron via Tailwind CSS 4 group-open: variant
 
 ### Phase 32 Execution Notes
 
@@ -76,5 +87,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 32-04-PLAN.md — human UAT + footer clipping fix; Phase 32 complete
-Resume file: None — Phase 32 fully complete, Phase 33 (Pricing Page) is next
+Stopped at: Completed 33-01-PLAN.md — pricing.ts page module (473 lines, 1 task, 1 file)
+Resume file: None — Phase 33 Plan 01 complete; Plan 02 (router swap + FAQPage JSON-LD) is next
