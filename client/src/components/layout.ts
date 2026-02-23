@@ -36,6 +36,7 @@ export function createLayoutShell(): void {
 
   // Insert footer after <main>
   const footer = createFooter();
+  footer.classList.add('mb-16', 'sm:mb-0'); // space for mobile tab bar
   main.parentElement!.insertBefore(footer, main.nextSibling);
 
   // Add dot-grid background and flex-1 for footer positioning to <main>
