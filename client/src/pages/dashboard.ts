@@ -9,7 +9,14 @@
 
 import { Circle, CheckCircle2, Clock, Trash2, Lock, Bell } from 'lucide';
 import { authClient } from '../api/auth-client.js';
-import { fetchDashboardSecrets, deleteDashboardSecret } from '../api/client.js';
+import {
+  fetchDashboardSecrets,
+  deleteDashboardSecret,
+  getMe,
+  initiateCheckout,
+  createPortalSession,
+  verifyCheckoutSession,
+} from '../api/client.js';
 import { createIcon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
 import { navigate } from '../router.js';
@@ -353,6 +360,25 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
     return;
   }
 
+  // Fetch Pro status (subscriptionTier not on Better Auth session)
+  let subscriptionTier: 'free' | 'pro' = 'free';
+  try {
+    const meData = await getMe();
+    subscriptionTier = meData.user.subscriptionTier;
+  } catch {
+    // Safe degradation: treat as free on error
+  }
+  const isPro = subscriptionTier === 'pro';
+
+  // Handle post-checkout return URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const isUpgraded = urlParams.get('upgraded') === 'true';
+  const checkoutSessionId = urlParams.get('session_id');
+  const isCancelled = urlParams.get('checkout') === 'cancelled';
+
+  // Clean up URL params without triggering navigation
+  window.history.replaceState({}, '', '/dashboard');
+
   // Identify the authenticated user in PostHog by internal DB user ID only — ANLT-03.
   // Called on every dashboard load: covers email login returns AND OAuth callbacks
   // (callbackURL: '/dashboard'). PostHog deduplicates when distinct ID is unchanged.
@@ -414,13 +440,25 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
 
   // --- Logout card ---
   const logoutCard = document.createElement('div');
-  logoutCard.className =
-    'bg-surface border border-surface-border rounded-xl p-4 shadow-sm flex items-center justify-between';
+  logoutCard.className = 'bg-surface border border-surface-border rounded-xl p-4 shadow-sm';
+
+  const logoutTopRow = document.createElement('div');
+  logoutTopRow.className = 'flex items-center justify-between';
 
   const logoutInfo = document.createElement('div');
   logoutInfo.className = 'text-sm text-text-secondary';
   logoutInfo.textContent = `Signed in as ${session.user.email}`;
-  logoutCard.appendChild(logoutInfo);
+
+  if (isPro) {
+    const proBadge = document.createElement('span');
+    proBadge.className =
+      'inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-xs font-semibold';
+    proBadge.textContent = 'Pro';
+    proBadge.setAttribute('aria-label', 'Pro subscriber');
+    logoutInfo.appendChild(proBadge);
+  }
+
+  logoutTopRow.appendChild(logoutInfo);
 
   const logoutButton = document.createElement('button');
   logoutButton.type = 'button';
@@ -444,9 +482,114 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
     })();
   });
 
-  logoutCard.appendChild(logoutButton);
+  logoutTopRow.appendChild(logoutButton);
+  logoutCard.appendChild(logoutTopRow);
+
+  // Billing action: upgrade CTA for free users, Manage Subscription for Pro
+  const billingRow = document.createElement('div');
+  billingRow.className = 'mt-3 pt-3 border-t border-border';
+
+  if (isPro) {
+    // Pro: show Manage Subscription link
+    const manageBtn = document.createElement('button');
+    manageBtn.type = 'button';
+    manageBtn.className =
+      'text-sm text-accent hover:text-accent-hover underline-offset-2 hover:underline focus:ring-2 focus:ring-accent focus:outline-hidden rounded transition-colors cursor-pointer';
+    manageBtn.textContent = 'Manage Subscription';
+    manageBtn.addEventListener('click', () => {
+      void (async () => {
+        manageBtn.disabled = true;
+        manageBtn.textContent = 'Opening\u2026';
+        try {
+          const { url } = await createPortalSession();
+          window.open(url, '_blank');
+        } catch {
+          showToast('Could not open subscription portal. Please try again.');
+        } finally {
+          manageBtn.disabled = false;
+          manageBtn.textContent = 'Manage Subscription';
+        }
+      })();
+    });
+    billingRow.appendChild(manageBtn);
+  } else {
+    // Free: show upgrade CTA
+    const upgradeBtn = document.createElement('button');
+    upgradeBtn.type = 'button';
+    upgradeBtn.className =
+      'w-full px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    upgradeBtn.textContent = 'Upgrade to Pro \u2014 $9/mo';
+
+    upgradeBtn.addEventListener('click', () => {
+      void (async () => {
+        upgradeBtn.disabled = true;
+        upgradeBtn.textContent = 'Redirecting to Stripe\u2026';
+        try {
+          const { url } = await initiateCheckout();
+          window.location.href = url;
+        } catch {
+          showToast('Could not start checkout. Please try again.');
+          upgradeBtn.disabled = false;
+          upgradeBtn.textContent = 'Upgrade to Pro \u2014 $9/mo';
+        }
+      })();
+    });
+    billingRow.appendChild(upgradeBtn);
+
+    // Sub-note under upgrade button
+    const upgradeNote = document.createElement('p');
+    upgradeNote.className = 'mt-1.5 text-xs text-text-muted text-center';
+    upgradeNote.textContent = 'Unlocks 30-day secret expiration. Cancel anytime.';
+    billingRow.appendChild(upgradeNote);
+  }
+
+  logoutCard.appendChild(billingRow);
   wrapper.appendChild(logoutCard);
   container.appendChild(wrapper);
+
+  // Post-checkout: verify session or show cancellation toast
+  if (isUpgraded && checkoutSessionId) {
+    void (async () => {
+      // Show inline verification banner with spinner
+      const banner = document.createElement('div');
+      banner.className =
+        'mt-4 p-4 rounded-xl bg-surface border border-border flex items-center gap-3';
+
+      const spinner = document.createElement('span');
+      spinner.className =
+        'block w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin';
+      spinner.setAttribute('aria-hidden', 'true');
+
+      const bannerText = document.createElement('span');
+      bannerText.className = 'text-sm text-text-secondary';
+      bannerText.textContent = 'Verifying your subscription\u2026';
+
+      banner.appendChild(spinner);
+      banner.appendChild(bannerText);
+      // Insert banner at the top of the wrapper, before the page header
+      wrapper.insertBefore(banner, wrapper.firstChild);
+
+      try {
+        await verifyCheckoutSession(checkoutSessionId);
+        // Success: replace spinner with success message
+        spinner.remove();
+        banner.className =
+          'mt-4 p-4 rounded-xl bg-success/10 border border-success/30 flex items-center gap-3';
+        bannerText.className = 'text-sm text-success font-medium';
+        bannerText.textContent = '\u2713 You\u2019re now Pro \u2014 30-day secrets unlocked';
+      } catch {
+        // Verification failed: show error banner
+        spinner.remove();
+        banner.className =
+          'mt-4 p-4 rounded-xl bg-warning/10 border border-warning/30 flex items-center gap-3';
+        bannerText.className = 'text-sm text-warning';
+        bannerText.textContent =
+          'Subscription verifying \u2014 refresh in a moment if Pro features aren\u2019t active yet.';
+      }
+    })();
+  } else if (isCancelled) {
+    showToast('Checkout cancelled \u2014 you can upgrade anytime');
+  }
 
   // --- Fetch dashboard secrets ---
   let allSecrets: DashboardSecretItem[];
