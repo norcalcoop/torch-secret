@@ -178,12 +178,33 @@ function handleRoute(): void {
 
   if (path === '/') {
     updatePageMeta({
-      title: 'Share a Secret',
+      title: 'Torch Secret — Zero-Knowledge Secret Sharing',
       description:
-        'Share secrets securely with zero-knowledge encryption. One-time view, no accounts, end-to-end encrypted in your browser.',
+        'Share sensitive info in seconds. End-to-end encrypted, one-time view, no accounts needed.',
+    });
+    import('./pages/home.js')
+      .then((mod) => mod.renderHomePage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/create') {
+    updatePageMeta({
+      title: 'Create a Secret',
+      description:
+        'Share secrets securely with zero-knowledge encryption. One-time view, no accounts.',
     });
     import('./pages/create.js')
       .then((mod) => mod.renderCreatePage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/pricing') {
+    updatePageMeta({
+      title: 'Pricing',
+      description: 'Simple, transparent pricing for Torch Secret. Free and Pro plans.',
+      noindex: true,
+    });
+    // Phase 33 replaces this with renderPricingPage
+    import('./pages/error.js')
+      .then((mod) => mod.renderErrorPage(container, 'not_found'))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
   } else if (path.startsWith('/secret/')) {
