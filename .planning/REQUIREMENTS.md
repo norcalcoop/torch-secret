@@ -35,8 +35,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 - [x] **BILL-01**: Authenticated user can initiate Stripe Checkout to subscribe to Pro tier
 - [x] **BILL-02**: Subscription status is updated via Stripe webhook events (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`)
 - [ ] **BILL-03**: Pro subscriber can select 30-day expiration when creating secrets
-- [ ] **BILL-04**: Authenticated user can access Stripe Customer Portal to manage or cancel subscription
-- [ ] **BILL-05**: Success page verifies subscription status via direct Stripe API query on `?session_id=` param (not dependent on webhook arrival timing)
+- [x] **BILL-04**: Authenticated user can access Stripe Customer Portal to manage or cancel subscription
+- [x] **BILL-05**: Success page verifies subscription status via direct Stripe API query on `?session_id=` param (not dependent on webhook arrival timing)
 - [x] **BILL-06**: INVARIANTS.md extended with Stripe billing row before any webhook handler code is written
 
 ### SEO Content Pages (SEO)
@@ -141,8 +141,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-01 | Phase 34 | Complete |
 | BILL-02 | Phase 34 | Complete |
 | BILL-03 | Phase 34 | Pending |
-| BILL-04 | Phase 34 | Pending |
-| BILL-05 | Phase 34 | Pending |
+| BILL-04 | Phase 34 | Complete |
+| BILL-05 | Phase 34 | Complete |
 | BILL-06 | Phase 34 | Complete |
 | SEO-01 | Phase 35 | Pending |
 | SEO-02 | Phase 35 | Pending |

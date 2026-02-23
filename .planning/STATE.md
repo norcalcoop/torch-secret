@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 34 of 38 (Stripe Pro Billing) — IN PROGRESS
-Plan: 1 of 4 in current phase — Plan 01 complete (billing foundation shipped)
-Status: Phase 34 Plan 01 Complete — INVARIANTS.md updated, DB columns + migration, Stripe singleton, billing.service.ts
-Last activity: 2026-02-23 — Phase 34 Plan 01 complete; Stripe billing foundation live
+Plan: 2 of 4 in current phase — Plan 02 complete (billing routes + webhook handler shipped)
+Status: Phase 34 Plan 02 Complete — billing.ts (checkout/verify-checkout/portal), webhooks.ts (stripeWebhookHandler), app.ts wired, me.ts extended with subscriptionTier
+Last activity: 2026-02-23 — Phase 34 Plan 02 complete; all four Stripe billing routes live
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -38,6 +38,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 33 P02 | 2min | 2 tasks | 2 files |
 | Phase 33 P03 | 5 | 2 tasks | 0 files |
 | Phase 34 P01 | 2min | 2 tasks | 10 files |
+| Phase 34 P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,10 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - subscriptionTierEnum exported from schema.ts at module scope (before users table) so drizzle-kit generates CREATE TYPE statement
 - All three Stripe env vars required (not optional) in Zod schema: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRO_PRICE_ID
 - BILL-06 satisfied before any webhook handler code written
+- Billing routes (Plan 02) complete: POST /api/billing/checkout, GET /api/billing/verify-checkout, POST /api/billing/portal, POST /api/webhooks/stripe
+- Webhook ordering invariant confirmed: stripeWebhookHandler mounted with express.raw() at line 78 in app.ts — BEFORE express.json() at line 85
+- POST /api/billing/checkout (not GET) — state-creating operation; GET in plan code sample was incorrect; must_haves spec (POST) takes precedence
+- GET /api/me now returns subscriptionTier via DB lookup — Better Auth AuthUser does not include custom columns
 
 ### Phase 33 Execution Notes
 
@@ -101,5 +106,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 34-01-PLAN.md — Stripe billing foundation: INVARIANTS.md updated (BILL-06), DB columns + migration 0004, stripe SDK singleton, billing.service.ts (getOrCreateStripeCustomer/activatePro/deactivatePro)
-Resume file: None — Phase 34 Plan 01 complete; Phase 34 Plan 02 (webhook handler) is next
+Stopped at: Completed 34-02-PLAN.md — billing routes (checkout/verify-checkout/portal), stripeWebhookHandler, app.ts wired, me.ts with subscriptionTier
+Resume file: None — Phase 34 Plan 02 complete; Phase 34 Plan 03 (frontend billing UI) is next
