@@ -77,7 +77,7 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 **Milestone Goal:** Ship everything needed to publicly launch Torch Secret — rebrand, marketing homepage, pricing + Pro billing, SEO content pages, email onboarding, and pre-launch infrastructure.
 
 - [x] **Phase 31: Rebrand + Tech Debt** — Rename SecureShare to Torch Secret and torchsecret.com throughout all code; clear four known tech debt items (completed 2026-02-22)
-- [ ] **Phase 32: Marketing Homepage + /create Split** — Move create-secret form to /create; build marketing landing page at /
+- [x] **Phase 32: Marketing Homepage + /create Split** — Move create-secret form to /create; build marketing landing page at / (completed 2026-02-23)
 - [ ] **Phase 33: Pricing Page** — Static /pricing page with Free vs Pro tier cards, billing toggle, FAQ, and FAQPage JSON-LD
 - [ ] **Phase 34: Stripe Pro Billing** — Checkout, webhook lifecycle handler, Pro feature unlock (30-day expiration), Customer Portal
 - [ ] **Phase 35: SEO Content Pages (Express SSR)** — Server-rendered /vs/*, /alternatives/*, /use/* pages with JSON-LD visible to AI crawlers
@@ -225,7 +225,7 @@ Plans:
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
 | 31. Rebrand + Tech Debt | 4/4 | Complete    | 2026-02-22 | - |
-| 32. Marketing Homepage + /create Split | 3/4 | In Progress|  | - |
+| 32. Marketing Homepage + /create Split | 4/4 | Complete   | 2026-02-23 | - |
 | 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |

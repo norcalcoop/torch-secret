@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 32 of 38 (Marketing Homepage + Create Split)
-Plan: 3 of 4 in current phase
-Status: In progress — Phase 32 plan 3/4 complete
-Last activity: 2026-02-23 — Phase 32 Plan 03 complete (navigation overhaul: desktop header + iOS mobile bottom tab bar)
+Plan: 4 of 4 in current phase — PHASE COMPLETE
+Status: Complete — Phase 32 all 4/4 plans complete; Phase 33 is next
+Last activity: 2026-02-23 — Phase 32 Plan 04 complete (human UAT: all HOME requirements verified; footer clipping fix)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -32,6 +32,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 31 P04 | 2 | 1 task | 1 file |
 | Phase 31 P02 | 247 | 2 tasks | 7 files |
 | Phase 31 P01 | 8 | 3 tasks | 32 files |
+| Phase 32 P04 | ~30min | 2 tasks | 1 file |
 | Phase 32 P03 | 175s | 2 tasks | 1 files |
 
 ## Accumulated Context
@@ -55,6 +56,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Nav overhaul (Plan 03): desktop header has Pricing + Dashboard/Login + Create a Secret CTA + ThemeToggle; mobile gets iOS-style bottom tab bar with 4 tabs (Home/Create/Pricing/Dashboard)
 - Mobile nav uses document.body.appendChild() outside flex column — fixed position requires this
 - updateCreateLink() toggles sm:block (not hidden) to preserve desktop-only base class pattern (hidden sm:block)
+- Footer needs mb-16 sm:mb-0 (Plan 04 UAT fix): page wrapper pb-16 alone is insufficient — the footer element itself must have bottom margin to clear the fixed 64px tab bar on mobile
 
 ### Phase 31 Execution Notes
 
@@ -74,5 +76,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 32-03-PLAN.md — navigation overhaul + iOS mobile bottom tab bar
-Resume file: None — Phase 32 Plan 03 complete, Plan 04 is next
+Stopped at: Completed 32-04-PLAN.md — human UAT + footer clipping fix; Phase 32 complete
+Resume file: None — Phase 32 fully complete, Phase 33 (Pricing Page) is next
