@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 34 of 38 (Stripe Pro Billing) — IN PROGRESS
-Plan: 3 of 4 in current phase — Plan 03 complete (frontend Pro tier gating: billing types, API client functions, custom combobox with Lock icon on 30d for free users)
-Status: Phase 34 Plan 03 Complete — MeResponse/billing types in shared/types/api.ts, getMe/initiateCheckout/verifyCheckoutSession/createPortalSession in client/src/api/client.ts, Pro-aware custom combobox in expiration-select.ts, create.ts passes isPro
-Last activity: 2026-02-23 — Phase 34 Plan 03 complete; frontend Pro tier gating live
+Phase: 34 of 38 (Stripe Pro Billing) — COMPLETE
+Plan: 4 of 4 in current phase — Plan 04 complete (dashboard Pro billing UI: Pro badge, upgrade CTA, Manage Subscription, post-checkout verification banner)
+Status: Phase 34 Complete — All four plans shipped: DB foundation (01), billing routes (02), create page Pro gating (03), dashboard billing UI (04)
+Last activity: 2026-02-23 — Phase 34 Plan 04 complete; full Stripe subscription flow wired end-to-end
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -40,6 +40,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34 P01 | 2min | 2 tasks | 10 files |
 | Phase 34 P02 | 2min | 2 tasks | 4 files |
 | Phase 34 P03 | 5min | 2 tasks | 4 files |
+| Phase 34 P04 | 3min | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Custom combobox pattern established: native <select> cannot render icons/tooltips on individual options — use div-based ARIA combobox (role=combobox trigger + role=listbox + role=option rows)
 - NodeListOf requires Array.from() in for-of loops under ES2022 lib target — tsconfig does not include downlevel iterator support for DOM NodeList
 - getMe() called in auth IIFE with try/catch fallback: isPro = false on any API error (safe degradation — create page never breaks)
+- Dashboard billing UI (Plan 04) complete: Pro badge + logout card vertical restructure; upgrade CTA (free) / Manage Subscription (Pro); post-checkout ?upgraded=true&session_id=... verification banner; ?checkout=cancelled toast; URL params cleaned with history.replaceState
+- Post-checkout verification pattern: void IIFE with spinner banner inserted synchronously, updated async after verifyCheckoutSession() resolves — banner does not block page render
+- getMe() on dashboard load: subscriptionTier fetched after session check; isPro used to gate Pro badge and billing row content
 
 ### Phase 33 Execution Notes
 
@@ -111,5 +115,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 34-03-PLAN.md — billing types in shared/types/api.ts, four API client functions, Pro-aware custom combobox in expiration-select.ts, create.ts passes isPro
-Resume file: None — Phase 34 Plan 03 complete; Phase 34 Plan 04 (subscription management page) is next
+Stopped at: Completed 34-04-PLAN.md — Phase 34 complete; dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout verification banner all live
+Resume file: None — Phase 34 complete; next phase is Phase 35
