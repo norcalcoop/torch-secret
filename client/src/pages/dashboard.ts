@@ -518,7 +518,7 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
     upgradeBtn.type = 'button';
     upgradeBtn.className =
       'w-full px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
-    upgradeBtn.textContent = 'Upgrade to Pro \u2014 $9/mo';
+    upgradeBtn.textContent = 'Upgrade to Pro \u2014 $7/mo';
 
     upgradeBtn.addEventListener('click', () => {
       void (async () => {
@@ -530,7 +530,7 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
         } catch {
           showToast('Could not start checkout. Please try again.');
           upgradeBtn.disabled = false;
-          upgradeBtn.textContent = 'Upgrade to Pro \u2014 $9/mo';
+          upgradeBtn.textContent = 'Upgrade to Pro \u2014 $7/mo';
         }
       })();
     });
