@@ -20,6 +20,7 @@ import { nanoid } from 'nanoid';
  *   Logger — dashboard route: redactUrl regex extended to cover /api/dashboard/secrets/:id paths — Phase 23
  *   Email (Resend):           notification email body contains only viewed-at timestamp; no secretId, label, or ciphertext — Phase 26
  *   Rate limits + prompts:    429 responses and conversion prompt events contain no userId or secretId — Phase 27
+ *   Stripe billing:         webhook handler receives stripe_customer_id; activatePro/deactivatePro look up by stripe_customer_id only — no code path joins userId + secretId — Phase 34
  *
  * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
  */

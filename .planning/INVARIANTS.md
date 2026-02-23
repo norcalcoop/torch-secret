@@ -46,6 +46,7 @@ This invariant applies to:
 | **Logger — dashboard route** | `server/src/middleware/logger.ts` `redactUrl` | Pino HTTP logger redaction regex extended to cover `/api/dashboard/secrets/:id` paths. Secret IDs in dashboard DELETE URLs are redacted before any log line is written. | Phase 23 |
 | **Email (Resend)** | `server/src/services/notification.service.ts` | Notification email body contains only: viewed-at timestamp and generic "secret was viewed" message. No `secretId`, no `label`, no ciphertext, no viewer IP address in the body or subject. Resend delivery record logs recipient email + subject — no secretId. Error log line emits only `error.message` with no identifying fields. | Phase 26 |
 | **Rate limits + conversion prompts** | `server/src/middleware/rate-limit.ts`, `client/src/analytics/posthog.ts` | 429 responses for anonymous users contain no `userId` (anonymous by definition) and no `secretId` (POST /api/secrets URL contains no secret ID). Conversion prompt analytics events (`conversion_prompt_shown`, `conversion_prompt_clicked`) contain only `prompt_number` — no `userId`, no `secretId`. Legal pages contain no user-identifiable or secret-identifiable data. | Phase 27 |
+| **Stripe billing** | `server/src/routes/webhooks.ts`, `server/src/services/billing.service.ts` | Webhook handler receives `stripe_customer_id` from the Stripe event payload. All DB lookups in billing service use `eq(users.stripeCustomerId, ...)` — user is looked up BY stripe_customer_id, not the other way around. No webhook code path receives or logs both `userId` and `secretId` simultaneously. `stripe_customer_id` must not be logged alongside `userId` in the same Pino log line. The `getOrCreateStripeCustomer` function stores `stripe_customer_id` on the user row (a `userId`+`customerId` link) — this is acceptable because Stripe is a trusted payment processor and the link does NOT involve `secretId`. | Phase 34 |
 
 ### Extension Protocol
 
@@ -65,4 +66,4 @@ Both references must remain current.
 ---
 
 *Document created: Phase 21 (Schema Foundation)*
-*Last updated: Phase 27*
+*Last updated: Phase 34*
