@@ -27,6 +27,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | **Total shipped** | **30** | **89** | **~11 days** |
 
 *v5.0 velocity tracking begins after first plan completes*
+| Phase 32 P02 | 3min | 2 tasks | 1 file |
 | Phase 32 P01 | 2 | 1 task | 2 files |
 | Phase 31 P04 | 2 | 1 task | 1 file |
 | Phase 31 P02 | 247 | 2 tasks | 7 files |
@@ -49,7 +50,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 ### Phase 32 Execution Notes
 
 - Router split complete: / → home.js (no noindex, indexable), /create → create.js (existing form), /pricing stub (noindex, not_found — Phase 33 target)
-- home.ts stub created with renderHomePage export so ESLint type-check passes; Plan 02 replaces with full marketing homepage
+- home.ts (Plan 02) complete: 4-section marketing page (hero, trust strip, use-cases, GDPR email capture), 346 lines, no innerHTML, TypeScript clean
 - Stub pattern established: create .ts with correct export signature for ESLint safety before module implementation plan runs
 - Nav overhaul (Plan 03): desktop header has Pricing + Dashboard/Login + Create a Secret CTA + ThemeToggle; mobile gets iOS-style bottom tab bar with 4 tabs (Home/Create/Pricing/Dashboard)
 - Mobile nav uses document.body.appendChild() outside flex column — fixed position requires this

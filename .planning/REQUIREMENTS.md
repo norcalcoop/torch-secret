@@ -16,10 +16,10 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Homepage (HOME)
 
-- [ ] **HOME-01**: User lands on marketing homepage at `/` with hero section, zero-knowledge proof points, and How It Works section
+- [x] **HOME-01**: User lands on marketing homepage at `/` with hero section, zero-knowledge proof points, and How It Works section
 - [x] **HOME-02**: Create-secret form is accessible at `/create` (moved from `/`)
 - [x] **HOME-03**: Header navigation updated to include links for `/create`, `/pricing`, and `/dashboard`
-- [ ] **HOME-04**: Marketing homepage includes email capture form widget (UI wired to backend in ECAP phase)
+- [x] **HOME-04**: Marketing homepage includes email capture form widget (UI wired to backend in ECAP phase)
 - [x] **HOME-05**: Marketing homepage includes `WebApplication` JSON-LD schema markup
 
 ### Pricing (PRICE)
@@ -128,10 +128,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TECH-01 | Phase 31 | Complete |
 | TECH-02 | Phase 31 | Complete |
 | TECH-03 | Phase 31 | Complete |
-| HOME-01 | Phase 32 | Pending |
+| HOME-01 | Phase 32 | Complete |
 | HOME-02 | Phase 32 | Complete |
 | HOME-03 | Phase 32 | Complete |
-| HOME-04 | Phase 32 | Pending |
+| HOME-04 | Phase 32 | Complete |
 | HOME-05 | Phase 32 | Complete |
 | PRICE-01 | Phase 33 | Pending |
 | PRICE-02 | Phase 33 | Pending |
