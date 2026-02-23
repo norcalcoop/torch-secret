@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 33 of 38 (Pricing Page) — COMPLETE; Phase 34 (Stripe Pro Billing) is next
-Plan: 3 of 3 in current phase — Plan 03 complete (UAT approved)
-Status: Phase 33 Complete — all 5 PRICE requirements human-verified; ready for Phase 34
-Last activity: 2026-02-23 — Phase 33 Plan 03 UAT approved; /pricing fully verified end-to-end
+Phase: 34 of 38 (Stripe Pro Billing) — IN PROGRESS
+Plan: 1 of 4 in current phase — Plan 01 complete (billing foundation shipped)
+Status: Phase 34 Plan 01 Complete — INVARIANTS.md updated, DB columns + migration, Stripe singleton, billing.service.ts
+Last activity: 2026-02-23 — Phase 34 Plan 01 complete; Stripe billing foundation live
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -37,6 +37,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 33 P01 | 4 | 1 tasks | 1 files |
 | Phase 33 P02 | 2min | 2 tasks | 2 files |
 | Phase 33 P03 | 5 | 2 tasks | 0 files |
+| Phase 34 P01 | 2min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -50,6 +51,15 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - loops@6.2.0 uses v6.x createContact() single-object API — breaking change from v5; do not use v5 positional arguments
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
+
+### Phase 34 Execution Notes
+
+- Stripe billing foundation (Plan 01) complete: stripe_customer_id + subscription_tier columns on users table; migration 0004 applied; billing.service.ts exports getOrCreateStripeCustomer, activatePro, deactivatePro
+- ZK billing pattern established: activatePro/deactivatePro receive stripe_customer_id only — webhook handler never has userId in scope alongside secretId
+- Stripe SDK singleton: import { stripe } from '../config/stripe.js' — never new Stripe() in service files
+- subscriptionTierEnum exported from schema.ts at module scope (before users table) so drizzle-kit generates CREATE TYPE statement
+- All three Stripe env vars required (not optional) in Zod schema: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRO_PRICE_ID
+- BILL-06 satisfied before any webhook handler code written
 
 ### Phase 33 Execution Notes
 
@@ -91,5 +101,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 33-03-PLAN.md — pricing page UAT approved; all PRICE requirements verified; Phase 33 complete
-Resume file: None — Phase 33 complete; Phase 34 (Stripe Pro Billing) is next
+Stopped at: Completed 34-01-PLAN.md — Stripe billing foundation: INVARIANTS.md updated (BILL-06), DB columns + migration 0004, stripe SDK singleton, billing.service.ts (getOrCreateStripeCustomer/activatePro/deactivatePro)
+Resume file: None — Phase 34 Plan 01 complete; Phase 34 Plan 02 (webhook handler) is next
