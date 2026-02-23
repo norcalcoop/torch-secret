@@ -230,7 +230,7 @@ Plans:
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
 | 31. Rebrand + Tech Debt | 4/4 | Complete    | 2026-02-22 | - |
 | 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
-| 33. Pricing Page | 1/3 | In Progress|  | - |
+| 33. Pricing Page | 2/3 | In Progress|  | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
 | 36. Email Capture | v5.0 | 0/TBD | Not started | - |

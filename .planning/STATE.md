@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 33 of 38 (Pricing Page)
-Plan: 1 of 3 in current phase — Plan 01 complete
-Status: In Progress — Phase 33 Plan 01 complete; Plan 02 (router + JSON-LD) is next
-Last activity: 2026-02-23 — Phase 33 Plan 01 complete (pricing.ts: 473 lines, billing toggle, Free/Pro cards, FAQ accordion)
+Plan: 2 of 3 in current phase — Plan 02 complete
+Status: In Progress — Phase 33 Plan 02 complete; Plan 03 (auth-aware CTA) is next
+Last activity: 2026-02-23 — Phase 33 Plan 02 complete (/pricing route live, FAQPage JSON-LD in index.html)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -35,6 +35,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 32 P04 | ~30min | 2 tasks | 1 file |
 | Phase 32 P03 | 175s | 2 tasks | 1 files |
 | Phase 33 P01 | 4 | 1 tasks | 1 files |
+| Phase 33 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -55,9 +56,11 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Billing toggle registration pattern: toggle creates callback slot; createTierCards registers Pro card's updatePrice fn via the returned registration function
 - Pro card price refs stored (proAmountEl/proPeriodEl/proSubLabelEl) and updated via textContent — no re-render on toggle
 - Annual pricing: $65/year ($5.42/mo equivalent) at 22.6% savings; matches "22% savings" badge requirement
-- FAQ_ITEMS is canonical source — Plan 02 must copy verbatim strings into FAQPage JSON-LD in index.html
+- FAQ_ITEMS is canonical source — Plan 02 copied verbatim strings into FAQPage JSON-LD in index.html (DONE)
+- FAQPage JSON-LD in index.html is static (not JS-injected) — required for SPA curl-verifiability (PRICE-05)
 - Pro CTA: /register?plan=pro — Phase 34 reads query param; auth-aware CTA deferred to Phase 34
 - Native <details>/<summary> accordion; group-open:rotate-180 on chevron via Tailwind CSS 4 group-open: variant
+- /pricing route is live, SEO-indexable — noindex removed in Plan 02
 
 ### Phase 32 Execution Notes
 
@@ -87,5 +90,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 33-01-PLAN.md — pricing.ts page module (473 lines, 1 task, 1 file)
-Resume file: None — Phase 33 Plan 01 complete; Plan 02 (router swap + FAQPage JSON-LD) is next
+Stopped at: Completed 33-02-PLAN.md — /pricing route live + FAQPage JSON-LD in index.html (2 tasks, 2 files)
+Resume file: None — Phase 33 Plan 02 complete; Plan 03 (auth-aware CTA) is next
