@@ -225,7 +225,7 @@ Plans:
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
 | 31. Rebrand + Tech Debt | 4/4 | Complete    | 2026-02-22 | - |
-| 32. Marketing Homepage + /create Split | 4/4 | Complete   | 2026-02-23 | - |
+| 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
 | 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
