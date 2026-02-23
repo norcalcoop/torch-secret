@@ -27,7 +27,7 @@
  */
 
 import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
-import { createSecret, ApiError } from '../api/client.js';
+import { createSecret, ApiError, getMe } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
 import {
   captureSecretCreated,
@@ -1195,9 +1195,20 @@ export function renderCreatePage(container: HTMLElement): void {
         // Mark authenticated for prompt suppression in submit handler
         isAuthenticated = true;
 
-        // Upgrade expiration select to authenticated mode (1h/24h/7d options)
+        // Fetch full profile to determine subscription tier
+        // (subscriptionTier is not on the Better Auth session object)
+        let isPro = false;
+        try {
+          const meData = await getMe();
+          isPro = meData.user.subscriptionTier === 'pro';
+        } catch {
+          // Fallback: treat as free tier on API error (safe degradation)
+          isPro = false;
+        }
+
+        // Upgrade expiration select to authenticated mode with Pro awareness
         expirationSelectResult.element.remove();
-        expirationSelectResult = createExpirationSelect(true);
+        expirationSelectResult = createExpirationSelect(true, isPro);
         expirationGroup.appendChild(expirationSelectResult.element);
 
         const labelField = createLabelField();
