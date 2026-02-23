@@ -114,7 +114,12 @@ Plans:
   3. The header navigation includes links to `/create`, `/pricing`, and `/dashboard` and these links work from every SPA route
   4. The homepage includes an email capture form widget (UI visible; submission wired in Phase 36)
   5. Viewing page source or curl output for `/` includes a `WebApplication` JSON-LD script block in the `<head>`
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 32-01-PLAN.md — Router split: / → home.js, /create → create.js, /pricing stub
+- [ ] 32-02-PLAN.md — Homepage page module: hero, use-cases, GDPR email capture
+- [ ] 32-03-PLAN.md — Nav overhaul: desktop links + iOS-style mobile bottom tab bar
+- [ ] 32-04-PLAN.md — Human verification checkpoint
 
 ### Phase 33: Pricing Page
 **Goal**: Users can evaluate Free vs Pro tiers, understand pricing, and get answers to common billing questions — all from a single static page at `/pricing`
