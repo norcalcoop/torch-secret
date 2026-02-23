@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 34 of 38 (Stripe Pro Billing) — IN PROGRESS
-Plan: 2 of 4 in current phase — Plan 02 complete (billing routes + webhook handler shipped)
-Status: Phase 34 Plan 02 Complete — billing.ts (checkout/verify-checkout/portal), webhooks.ts (stripeWebhookHandler), app.ts wired, me.ts extended with subscriptionTier
-Last activity: 2026-02-23 — Phase 34 Plan 02 complete; all four Stripe billing routes live
+Plan: 3 of 4 in current phase — Plan 03 complete (frontend Pro tier gating: billing types, API client functions, custom combobox with Lock icon on 30d for free users)
+Status: Phase 34 Plan 03 Complete — MeResponse/billing types in shared/types/api.ts, getMe/initiateCheckout/verifyCheckoutSession/createPortalSession in client/src/api/client.ts, Pro-aware custom combobox in expiration-select.ts, create.ts passes isPro
+Last activity: 2026-02-23 — Phase 34 Plan 03 complete; frontend Pro tier gating live
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -39,6 +39,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 33 P03 | 5 | 2 tasks | 0 files |
 | Phase 34 P01 | 2min | 2 tasks | 10 files |
 | Phase 34 P02 | 2min | 2 tasks | 4 files |
+| Phase 34 P03 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,10 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Webhook ordering invariant confirmed: stripeWebhookHandler mounted with express.raw() at line 78 in app.ts — BEFORE express.json() at line 85
 - POST /api/billing/checkout (not GET) — state-creating operation; GET in plan code sample was incorrect; must_haves spec (POST) takes precedence
 - GET /api/me now returns subscriptionTier via DB lookup — Better Auth AuthUser does not include custom columns
+- Frontend Pro tier gating (Plan 03) complete: MeResponse/billing types in shared/types/api.ts; getMe/initiateCheckout/verifyCheckoutSession/createPortalSession in client.ts; custom combobox in expiration-select.ts with Lock icon + tooltip on 30d for free users
+- Custom combobox pattern established: native <select> cannot render icons/tooltips on individual options — use div-based ARIA combobox (role=combobox trigger + role=listbox + role=option rows)
+- NodeListOf requires Array.from() in for-of loops under ES2022 lib target — tsconfig does not include downlevel iterator support for DOM NodeList
+- getMe() called in auth IIFE with try/catch fallback: isPro = false on any API error (safe degradation — create page never breaks)
 
 ### Phase 33 Execution Notes
 
@@ -106,5 +111,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 34-02-PLAN.md — billing routes (checkout/verify-checkout/portal), stripeWebhookHandler, app.ts wired, me.ts with subscriptionTier
-Resume file: None — Phase 34 Plan 02 complete; Phase 34 Plan 03 (frontend billing UI) is next
+Stopped at: Completed 34-03-PLAN.md — billing types in shared/types/api.ts, four API client functions, Pro-aware custom combobox in expiration-select.ts, create.ts passes isPro
+Resume file: None — Phase 34 Plan 03 complete; Phase 34 Plan 04 (subscription management page) is next
