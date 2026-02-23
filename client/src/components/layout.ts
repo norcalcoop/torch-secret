@@ -132,15 +132,18 @@ function createHeader(): HTMLElement {
   inner.appendChild(rightSide);
   header.appendChild(inner);
 
-  // Route-aware visibility: hide "Create a Secret" on /create page
+  // Route-aware visibility: hide "Create a Secret" on /create page.
+  // The link uses `hidden sm:block` as its base — hidden on mobile always (tab bar handles it),
+  // visible on sm+ when NOT on /create. When on /create, we remove sm:block so hidden dominates
+  // all breakpoints (media query wins only if sm:block is present).
   function updateCreateLink(): void {
     const isCreatePage = window.location.pathname === '/create';
-    createLink.classList.toggle('hidden', isCreatePage);
-    // Restore sm:block only when not hidden
-    if (!isCreatePage) {
-      createLink.classList.add('sm:block');
-    } else {
+    if (isCreatePage) {
+      // Hide completely: remove sm:block so `hidden` dominates all viewports
       createLink.classList.remove('sm:block');
+    } else {
+      // Show on desktop only: sm:block overrides `hidden` on sm+ via media query
+      createLink.classList.add('sm:block');
     }
   }
 
