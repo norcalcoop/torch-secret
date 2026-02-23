@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 31: Rebrand + Tech Debt
+**Current focus:** v5.0 Product Launch Checklist — Phase 32: Marketing Homepage + Create Split
 
 ## Current Position
 
-Phase: 31 of 38 (Rebrand + Tech Debt)
-Plan: 4 of 4 in current phase
-Status: In progress — Phase 31 plan 4/4 complete
-Last activity: 2026-02-22 — Phase 31 Plan 04 complete (light-theme protection panel fix)
+Phase: 32 of 38 (Marketing Homepage + Create Split)
+Plan: 1 of 4 in current phase
+Status: In progress — Phase 32 plan 1/4 complete
+Last activity: 2026-02-23 — Phase 32 Plan 01 complete (router split: / → home.js, /create → create.js, /pricing stub)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -27,6 +27,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | **Total shipped** | **30** | **89** | **~11 days** |
 
 *v5.0 velocity tracking begins after first plan completes*
+| Phase 32 P01 | 2 | 1 task | 2 files |
 | Phase 31 P04 | 2 | 1 task | 1 file |
 | Phase 31 P02 | 247 | 2 tasks | 7 files |
 | Phase 31 P01 | 8 | 3 tasks | 32 files |
@@ -43,6 +44,12 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - loops@6.2.0 uses v6.x createContact() single-object API — breaking change from v5; do not use v5 positional arguments
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
+
+### Phase 32 Execution Notes
+
+- Router split complete: / → home.js (no noindex, indexable), /create → create.js (existing form), /pricing stub (noindex, not_found — Phase 33 target)
+- home.ts stub created with renderHomePage export so ESLint type-check passes; Plan 02 replaces with full marketing homepage
+- Stub pattern established: create .ts with correct export signature for ESLint safety before module implementation plan runs
 
 ### Phase 31 Execution Notes
 
@@ -61,6 +68,6 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: Phase 31 Plan 04 complete — light-theme protection panel text fix (semantic token classes)
-Resume file: None — Phase 31 complete (4/4 plans done)
+Last session: 2026-02-23
+Stopped at: Completed 32-01-PLAN.md — router split (/ → home.js, /create → create.js, /pricing stub)
+Resume file: None — Phase 32 Plan 01 complete, Plan 02 is next
