@@ -15,6 +15,8 @@ import { healthRouter } from './routes/health.js';
 import { auth } from './auth.js';
 import { meRouter } from './routes/me.js';
 import { createDashboardRouter } from './routes/dashboard.js';
+import { billingRouter } from './routes/billing.js';
+import { stripeWebhookHandler } from './routes/webhooks.js';
 import { env } from './config/env.js';
 
 /**
@@ -30,8 +32,9 @@ import { env } from './config/env.js';
  * 4. helmet         -- set all security headers (CSP uses nonce from step 3)
  * 5. httpLogger     -- logging
  * 6. auth handler   -- /api/auth/*splat MUST be before express.json() (body-stream ordering)
+ * 6.5. Stripe webhook -- /api/webhooks/stripe with express.raw() (BEFORE express.json)
  * 7. json parser    -- body parsing (for non-auth routes)
- * 8. routes         -- API endpoints (health, secrets, me)
+ * 8. routes         -- API endpoints (health, secrets, me, billing)
  * 9. static assets + SPA catch-all (production only, when client/dist exists)
  * 10. errorHandler  -- MUST be last
  */
@@ -66,6 +69,18 @@ export function buildApp() {
   // Express 5 wildcard syntax: /api/auth/*splat (not /api/auth/*)
   app.all('/api/auth/{*splat}', toNodeHandler(auth));
 
+  // Stripe webhook handler -- MUST be before express.json() (raw body required).
+  // Stripe's constructEvent() verifies the HMAC-SHA256 signature against the raw bytes.
+  // express.json() consumes and replaces req.body; mounting after causes silent signature
+  // verification failure ("No signatures found matching the expected signature").
+  // Use express.raw() on this specific route only -- not globally.
+  app.post(
+    '/api/webhooks/stripe',
+    express.raw({ type: 'application/json' }),
+
+    stripeWebhookHandler,
+  );
+
   // Parse JSON bodies with explicit size limit (100kb prevents abuse)
   app.use(express.json({ limit: '100kb' }));
 
@@ -80,6 +95,9 @@ export function buildApp() {
 
   // Mount /api/dashboard routes (requires auth session)
   app.use('/api/dashboard', createDashboardRouter());
+
+  // Mount /api/billing routes (Stripe Checkout, portal, verify-checkout)
+  app.use('/api/billing', billingRouter);
 
   // API catch-all: return JSON 404 for any unmatched /api/* request.
   // MUST come after ALL API routes (health, secrets, me) and before the SPA catch-all
