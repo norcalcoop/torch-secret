@@ -131,7 +131,11 @@ Plans:
   3. The Pro tier card is visually distinct with a "Recommended" badge
   4. A FAQ accordion section with 6-8 questions (covering cancellation, refunds, billing cycle, trial, and payment methods) is visible below the pricing cards
   5. Viewing page source or curl output for `/pricing` includes a `FAQPage` JSON-LD script block in the `<head>`
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 33-01-PLAN.md — pricing.ts page module: page header, billing toggle, Free + Pro cards, FAQ accordion
+- [ ] 33-02-PLAN.md — Static FAQPage JSON-LD in index.html + router stub swap
+- [ ] 33-03-PLAN.md — Human UAT checkpoint: verify all PRICE requirements
 
 ### Phase 34: Stripe Pro Billing
 **Goal**: Authenticated users can subscribe to Pro, manage their subscription, and immediately receive the 30-day expiration unlock; the subscription lifecycle is kept accurate by webhook events
@@ -226,7 +230,7 @@ Plans:
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
 | 31. Rebrand + Tech Debt | 4/4 | Complete    | 2026-02-22 | - |
 | 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
-| 33. Pricing Page | v5.0 | 0/TBD | Not started | - |
+| 33. Pricing Page | v5.0 | 0/3 | Not started | - |
 | 34. Stripe Pro Billing | v5.0 | 0/TBD | Not started | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
 | 36. Email Capture | v5.0 | 0/TBD | Not started | - |
