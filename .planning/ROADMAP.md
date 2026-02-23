@@ -147,7 +147,13 @@ Plans:
   3. An authenticated Pro user clicking "Manage Subscription" is redirected to the Stripe Customer Portal where they can cancel or update payment
   4. Cancelling a subscription (simulated via webhook `customer.subscription.deleted` event) removes Pro access within one billing cycle — the 30-day expiration option disappears for the now-Free user
   5. INVARIANTS.md contains a Stripe/billing row documenting that no webhook handler payload logs both `customerId` and `userId` together, added before any webhook handler code is written
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 34-01-PLAN.md — INVARIANTS.md update + DB schema migration + Stripe SDK + billing service foundation
+- [ ] 34-02-PLAN.md — Server billing routes (checkout, verify-checkout, portal) + webhook handler + me.ts extension
+- [ ] 34-03-PLAN.md — Frontend shared types + billing API client + Pro-aware expiration select + create.ts wiring
+- [ ] 34-04-PLAN.md — Dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout banner/toast
+- [ ] 34-05-PLAN.md — Human UAT checkpoint: verify all BILL requirements end-to-end
 
 ### Phase 35: SEO Content Pages (Express SSR)
 **Goal**: Competitor comparison, alternative, and use-case pages are fully server-rendered so their content is visible to AI crawlers and indexes on Google without a JavaScript rendering delay
