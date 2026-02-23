@@ -25,6 +25,11 @@ const EnvSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().min(1),
   RESEND_FROM_EMAIL: z.string().min(1),
+
+  // === Stripe Billing (Phase 34) ===
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
+  STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
+  STRIPE_PRO_PRICE_ID: z.string().startsWith('price_'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

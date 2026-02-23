@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, integer, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, text, timestamp, integer, boolean, index } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
+
+export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro']);
 
 /**
  * ZERO-KNOWLEDGE INVARIANT — canonical rule (see also CLAUDE.md and .planning/INVARIANTS.md)
@@ -36,6 +38,10 @@ export const users = pgTable('users', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  /** Stripe customer ID for billing — nullable until user initiates checkout (Phase 34) */
+  stripeCustomerId: text('stripe_customer_id'),
+  /** Subscription tier — 'free' by default, 'pro' after successful payment (Phase 34) */
+  subscriptionTier: subscriptionTierEnum('subscription_tier').notNull().default('free'),
 });
 
 export const sessions = pgTable('sessions', {

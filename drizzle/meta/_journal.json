@@ -29,6 +29,13 @@
       "when": 1771615175689,
       "tag": "0003_add_dashboard_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771855272500,
+      "tag": "0004_add_stripe_columns",
+      "breakpoints": true
     }
   ]
 }
