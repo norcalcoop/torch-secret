@@ -200,11 +200,9 @@ function handleRoute(): void {
     updatePageMeta({
       title: 'Pricing',
       description: 'Simple, transparent pricing for Torch Secret. Free and Pro plans.',
-      noindex: true,
     });
-    // Phase 33 replaces this with renderPricingPage
-    import('./pages/error.js')
-      .then((mod) => mod.renderErrorPage(container, 'not_found'))
+    import('./pages/pricing.js')
+      .then((mod) => mod.renderPricingPage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
   } else if (path.startsWith('/secret/')) {
