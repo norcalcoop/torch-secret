@@ -54,6 +54,8 @@ export default defineConfig([
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      // vi.mocked() objects are not real class instances — this-binding concern does not apply
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 
