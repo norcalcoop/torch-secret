@@ -20,6 +20,10 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // SSR content pages served by Express (not Vite)
+      '/vs': { target: 'http://localhost:3000', changeOrigin: true },
+      '/alternatives': { target: 'http://localhost:3000', changeOrigin: true },
+      '/use': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
 });
