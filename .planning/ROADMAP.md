@@ -249,7 +249,7 @@ Plans:
 | 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
 | 33. Pricing Page | 3/3 | Complete    | 2026-02-23 | - |
 | 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
-| 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete   | 2026-02-26 | - |
+| 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
 | 36. Email Capture | v5.0 | 0/TBD | Not started | - |
 | 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
