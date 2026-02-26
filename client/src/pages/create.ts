@@ -303,14 +303,21 @@ function createProtectionPanel(
 
   // ---- Root container ----
   const root = document.createElement('div');
-  root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md overflow-hidden';
+  root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+
+  // Inner wrapper clips the tab strip and panels with rounded corners.
+  // overflow-hidden lives here (not on root) so absolutely-positioned popovers
+  // appended to root are not clipped when they extend below the tab strip.
+  const inner = document.createElement('div');
+  inner.className = 'overflow-hidden rounded-lg';
+  root.appendChild(inner);
 
   // ---- Tab strip ----
   const tabList = document.createElement('div');
   tabList.setAttribute('role', 'tablist');
   tabList.setAttribute('aria-label', 'Protection mode');
   tabList.className = 'flex border-b border-border';
-  root.appendChild(tabList);
+  inner.appendChild(tabList);
 
   const tabDefs: Array<{ id: ActiveTab; label: string }> = [
     { id: 'none', label: 'No protection' },
@@ -461,7 +468,7 @@ function createProtectionPanel(
 
   // ---- Tab panels ----
   const panelsContainer = document.createElement('div');
-  root.appendChild(panelsContainer);
+  inner.appendChild(panelsContainer);
 
   // Helper: create a tabpanel wrapper
   function createTabPanel(id: ActiveTab): HTMLDivElement {
