@@ -50,11 +50,11 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Email Capture (ECAP)
 
-- [ ] **ECAP-01**: User can submit email address from homepage form to join the mailing list
-- [ ] **ECAP-02**: Email capture form includes unchecked GDPR consent checkbox with clear consent language
-- [ ] **ECAP-03**: User receives double opt-in confirmation email before being added to active subscribers
-- [ ] **ECAP-04**: User can unsubscribe via `GET /unsubscribe?token=` endpoint
-- [ ] **ECAP-05**: Marketing consent timestamp, consent text, and IP hash stored in `marketing_subscribers` table
+- [x] **ECAP-01**: User can submit email address from homepage form to join the mailing list
+- [x] **ECAP-02**: Email capture form includes unchecked GDPR consent checkbox with clear consent language
+- [x] **ECAP-03**: User receives double opt-in confirmation email before being added to active subscribers
+- [x] **ECAP-04**: User can unsubscribe via `GET /unsubscribe?token=` endpoint
+- [x] **ECAP-05**: Marketing consent timestamp, consent text, and IP hash stored in `marketing_subscribers` table
 
 ### Email Onboarding Sequence (ESEQ)
 
@@ -150,11 +150,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEO-04 | Phase 35 | Complete |
 | SEO-05 | Phase 35 | Complete |
 | SEO-06 | Phase 35 | Complete |
-| ECAP-01 | Phase 36 | Pending |
-| ECAP-02 | Phase 36 | Pending |
-| ECAP-03 | Phase 36 | Pending |
-| ECAP-04 | Phase 36 | Pending |
-| ECAP-05 | Phase 36 | Pending |
+| ECAP-01 | Phase 36 | Complete |
+| ECAP-02 | Phase 36 | Complete |
+| ECAP-03 | Phase 36 | Complete |
+| ECAP-04 | Phase 36 | Complete |
+| ECAP-05 | Phase 36 | Complete |
 | ESEQ-01 | Phase 37 | Pending |
 | ESEQ-02 | Phase 37 | Pending |
 | ESEQ-03 | Phase 37 | Pending |

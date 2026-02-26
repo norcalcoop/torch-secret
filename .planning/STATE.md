@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 35: SEO Content Pages (Express SSR)
+**Current focus:** v5.0 Product Launch Checklist — Phase 36: Email Capture (GDPR-compliant marketing subscribers)
 
 ## Current Position
 
-Phase: 35 of 38 (SEO Content Pages Express SSR) — IN PROGRESS
-Plan: 3 of 4 in current phase — Plan 03 complete (seoRouter wired into app.ts, sitemap.xml extended to 17 entries, 31 SEO integration tests all passing)
-Status: Phase 35 Plan 03 complete — 3 files; TypeScript clean; 302 total tests passing; all SSR routes live at /vs/*, /alternatives/*, /use/*
-Last activity: 2026-02-26 — Phase 35 Plan 03 complete; app.ts (seoRouter mount), sitemap.xml (17 entries), seo.test.ts (31 tests, SEO-01 through SEO-06)
+Phase: 36 of 38 (Email Capture) — IN PROGRESS
+Plan: 1 of 4 in current phase — Plan 01 complete (INVARIANTS.md Phase 36 row, marketingSubscribers schema, migration 0005 applied, subscribers.test.ts scaffold with 16 RED tests)
+Status: Phase 36 Plan 01 complete — 9 files; TypeScript clean; migration applied; 16 RED integration tests ready for Plan 02
+Last activity: 2026-02-26 — Phase 36 Plan 01 complete; marketingSubscribers Drizzle table, migration 0005, env vars (RESEND_AUDIENCE_ID + IP_HASH_SALT), test scaffold
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -59,6 +59,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 35 P01 | 19 | 2 tasks | 6 files |
 | Phase 35 P02 | 9 | 2 tasks | 3 files |
 | Phase 35 P03 | 2min | 2 tasks | 3 files |
+| Phase 36 P01 | 7min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,17 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
 - Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
 
+### Phase 36 Execution Notes
+
+- marketing_subscribers has NO FK to users or secrets — standalone GDPR table, ZK invariant enforced at schema level
+- INVARIANTS.md must be updated BEFORE any schema/code changes — per CLAUDE.md mandate (Phase 36 row added first)
+- vi.mocked() wrapper functions (emailSend()/contactsCreate()) for mock assertions — avoids @typescript-eslint/unbound-method on object property methods
+- @typescript-eslint/unbound-method: off added to test file ESLint config — vi.mocked() objects are not real class instances; this-binding concern inapplicable
+- Stripe env vars (STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET/STRIPE_PRO_PRICE_ID) backfilled into ci.yml — pre-existing gap fixed alongside Phase 36 vars
+- vi.mock() factory hoisting: variables defined before vi.mock() are not accessible in the factory — use vi.fn() inline; access via vi.mocked() in test body
+- Plan 01 delivers: INVARIANTS.md row, marketingSubscribers schema, migration 0005 (applied), env vars, 16 RED test cases
+- Plan 02 target: implement POST /api/subscribers, GET /api/subscribers/confirm, GET /api/subscribers/unsubscribe to turn 16 RED tests GREEN
+
 ### Blockers/Concerns
 
 None — v4.0 clean ship, v5.0 roadmap finalized
@@ -173,5 +185,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 35-03-PLAN.md — seoRouter wired into app.ts, sitemap.xml extended to 17 entries, 31 SEO integration tests passing (SEO-01 through SEO-06); 302 total tests passing
-Resume file: None — Phase 35 Plan 03 complete; next plan is 35-04 (UAT verification)
+Stopped at: Completed 36-01-PLAN.md — marketingSubscribers schema + migration 0005 applied + 16 RED integration tests in subscribers.test.ts
+Resume file: None — Phase 36 Plan 01 complete; next plan is 36-02 (subscribers API implementation)

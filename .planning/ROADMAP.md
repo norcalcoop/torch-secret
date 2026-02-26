@@ -256,6 +256,6 @@ Plans:
 | 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
-| 36. Email Capture | v5.0 | 0/4 | Not started | - |
+| 36. Email Capture | 1/4 | In Progress|  | - |
 | 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
