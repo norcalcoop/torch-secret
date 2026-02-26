@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev:server": "tsx watch server/src/server.ts",
-    "dev:client": "vite",
+    "dev:client": "portless torchsecret sh -c 'npx vite --port $PORT --host $HOST'",
     "build:client": "vite build",
     "preview:client": "vite preview",
     "db:generate": "drizzle-kit generate",

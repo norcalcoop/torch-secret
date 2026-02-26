@@ -1,0 +1,161 @@
+phase: 34-stripe-pro-billing
+app: http://torchsecret.localhost:1355
+failures_dir: .planning/phases/34-stripe-pro-billing/uat-failures
+
+# COVERAGE:
+# Test 1 (BILL-06): INVARIANTS.md Stripe billing row — pre-verified via bash grep. PASS.
+# Test 6 (BILL-02): Webhook cancellation via stripe trigger — skipped.
+#   Reason: stripe trigger sends synthetic events with fake customer/subscription IDs
+#   that don't match real DB records; cancellation must be verified via portal instead.
+#
+# ACCOUNTS:
+# uat-browser-free@test.local / UATpass99 — free user (for upgrade flow + pre-checkout checks)
+# uat-browser-pro@test.local / UATpass99 — Pro user (for BILL-03/BILL-04 baseline)
+
+tests:
+
+  # ── Auth setup ────────────────────────────────────────────────────────────
+
+  - name: "Login as free user (uat-phase25)"
+    steps:
+      - close
+      - open {app}/login
+      - wait --load networkidle --timeout 10000
+      - find label "Email" fill "uat-browser-free@test.local"
+      # Use CSS ID selector to avoid --name flag being appended to fill value
+      - fill "#login-password" "UATpass99"
+      # Use --exact to avoid matching OAuth buttons "Sign in with Google/GitHub"
+      - find role button click --name "Sign In" --exact
+      - wait --load networkidle --timeout 15000
+      - state save e2e/uat-auth-session.json
+    assertions:
+      - { type: url_contains, expected: "/dashboard" }
+
+  # ── Free-user dashboard checks ────────────────────────────────────────────
+
+  - name: "Free user: Dashboard shows Upgrade CTA, no Manage Subscription"
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Upgrade to Pro" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "$7/mo" }
+      - { type: eval_not_contains, js: "document.body.innerText", expected: "Manage Subscription" }
+
+  # ── BILL-03 pre-checkout: free user expiration ───────────────────────────
+
+  - name: "BILL-03 (pre-checkout): Free user sees 30-day option as disabled"
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/create
+      - wait --load networkidle --timeout 10000
+      - wait 1500
+    assertions:
+      # listbox is always in DOM (hidden attr when closed); aria-disabled="true" on 30d row
+      - type: eval_contains
+        js: "document.querySelector('[role=\"option\"][aria-disabled=\"true\"]')?.textContent?.trim() ?? 'NOT_FOUND'"
+        expected: "30 days"
+
+  # ── Anonymous expiration check ────────────────────────────────────────────
+
+  - name: "Anonymous: Expiration locked to 1 hour with upsell note"
+    steps:
+      - close
+      - open {app}/create
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "1 hour" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Create a free account for longer expiration" }
+
+  # ── Test 7: Checkout cancellation toast ──────────────────────────────────
+
+  - name: "Test 7: Checkout cancellation toast on /dashboard?checkout=cancelled"
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/dashboard?checkout=cancelled
+      - wait --load networkidle --timeout 10000
+      - wait 1500
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Checkout cancelled" }
+
+  # ── BILL-01 + BILL-05: Full Stripe checkout flow ──────────────────────────
+
+  - name: "BILL-01 + BILL-05: Upgrade to Pro — Stripe checkout and verify banner"
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+      # Click upgrade button (em dash in text — use partial match)
+      - find text "Upgrade to Pro" click
+      - wait --load networkidle --timeout 30000
+      - wait 3000
+      # Now on checkout.stripe.com — snapshot to identify card fields
+      - snapshot -i --json
+      # Fill Stripe payment fields (Payment Element uses aria-labels on card inputs)
+      - find label "Card number" fill "4242424242424242"
+      - find label "Expiration date" fill "1234"
+      - find label "Security code" fill "123"
+      # Submit payment (Stripe Checkout subscription mode button)
+      - find role button click --name "Subscribe"
+      - wait --load networkidle --timeout 45000
+      - wait 5000
+    assertions:
+      # Stripe redirects to /dashboard?upgraded=true&session_id=... → replaceState → /dashboard
+      - { type: url_contains, expected: "/dashboard" }
+      # verifyCheckoutSession fires; banner shows on success
+      - { type: eval_contains, js: "document.body.innerText", expected: "You're now Pro" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "30-day secrets unlocked" }
+
+  # ── BILL-03 post-checkout: Pro expiration (via uat-phase34 baseline) ──────
+
+  - name: "Login as Pro user (uat-phase34)"
+    steps:
+      - close
+      - open {app}/login
+      - wait --load networkidle --timeout 10000
+      - find label "Email" fill "uat-browser-pro@test.local"
+      - fill "#login-password" "UATpass99"
+      - find role button click --name "Sign In" --exact
+      - wait --load networkidle --timeout 15000
+      - state save e2e/uat-auth-session-pro.json
+    assertions:
+      - { type: url_contains, expected: "/dashboard" }
+
+  - name: "BILL-03 (Pro user): 30-day expiration is enabled"
+    steps:
+      - close
+      - state load e2e/uat-auth-session-pro.json
+      - open {app}/create
+      - wait --load networkidle --timeout 10000
+      - wait 1500
+    assertions:
+      # No aria-disabled option for Pro users (30d row is fully selectable)
+      - type: eval_equals
+        js: "document.querySelector('[role=\"option\"][aria-disabled=\"true\"]')?.textContent?.trim() ?? 'NONE'"
+        expected: "NONE"
+      # 30 days IS present in the options list
+      - type: eval_contains
+        js: "Array.from(document.querySelectorAll('[role=\"option\"]')).map(o => o.textContent?.trim()).join('|')"
+        expected: "30 days"
+
+  # ── BILL-04: Customer Portal (Pro user) ───────────────────────────────────
+
+  - name: "BILL-04: Pro user sees Manage Subscription, Pro badge visible"
+    steps:
+      - close
+      - state load e2e/uat-auth-session-pro.json
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Manage Subscription" }
+      # Pro badge visible (aria-label="Pro subscriber")
+      - type: eval_contains
+        js: "document.querySelector('[aria-label=\"Pro subscriber\"]')?.textContent?.trim() ?? 'NOT_FOUND'"
+        expected: "Pro"
+      # Upgrade CTA gone for Pro users
+      - { type: eval_not_contains, js: "document.body.innerText", expected: "Upgrade to Pro" }

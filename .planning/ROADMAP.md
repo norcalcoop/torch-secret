@@ -155,6 +155,16 @@ Plans:
 - [ ] 34-04-PLAN.md — Dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout banner/toast
 - [ ] 34-05-PLAN.md — Human UAT checkpoint: verify all BILL requirements end-to-end
 
+### Phase 34.1: Passphrase/Password Tier Enforcement (INSERTED)
+
+**Goal:** Anonymous users cannot set any passphrase/password. Free users can only generate passphrases (no custom passwords). Pro users can set passwords, generate passphrases, and set custom passwords. Gate the secret creation UI and API by account tier.
+**Requirements**: TBD
+**Depends on:** Phase 34
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 34.1 to break down)
+
 ### Phase 35: SEO Content Pages (Express SSR)
 **Goal**: Competitor comparison, alternative, and use-case pages are fully server-rendered so their content is visible to AI crawlers and indexes on Google without a JavaScript rendering delay
 **Depends on**: Phase 31

@@ -18,3 +18,12 @@ blob-report/
 
 # Coverage
 coverage/
+
+# UAT browser eval workspace
+.planning/uat-browser-workspace/
+
+# UAT browser automation
+e2e/e2e-config.json
+e2e/uat-auth-session.json
+e2e/uat-auth-session-pro.json
+e2e/uat-failures/
