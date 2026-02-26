@@ -14,7 +14,6 @@
 import { KeyRound, Flame, StickyNote, ShieldCheck, Lock, Zap } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { navigate } from '../router.js';
-import { showToast } from '../components/toast.js';
 
 /**
  * Render the marketing homepage into the given container.
@@ -206,10 +205,11 @@ function createUseCaseCard(card: {
 // ---------------------------------------------------------------------------
 
 /**
- * Email capture section: GDPR-compliant form with toast on success.
+ * Email capture section: GDPR-compliant form with real API call.
  *
- * Backend wiring deferred to Phase 36. For now, valid submissions show a
- * toast and reset the form — data is silently dropped.
+ * On success, replaces the form with an inline success message echoing
+ * the submitted email address. Non-2xx responses and network errors
+ * restore the button and show an inline error.
  *
  * GDPR invariants:
  *   - Consent checkbox is unchecked by default (hard requirement)
@@ -261,7 +261,7 @@ function createEmailCaptureSection(): HTMLElement {
     'px-4 py-2 min-h-[44px] rounded-lg bg-accent text-white font-medium ' +
     'hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg ' +
     'focus:outline-hidden transition-colors whitespace-nowrap cursor-pointer';
-  submitBtn.textContent = 'Notify Me';
+  submitBtn.textContent = 'Join the list';
 
   emailRow.appendChild(emailInput);
   emailRow.appendChild(submitBtn);
@@ -313,9 +313,9 @@ function createEmailCaptureSection(): HTMLElement {
   consentRow.appendChild(consentLabel);
   form.appendChild(consentRow);
 
-  // Submit handler — validate email + consent; show toast on success; Phase 36 wires backend
-  form.addEventListener('submit', (e: Event) => {
-    e.preventDefault();
+  // Async submit logic — called from the event handler below.
+  // Extracted to avoid @typescript-eslint/no-misused-promises on addEventListener.
+  async function handleSubmit(): Promise<void> {
     const email = (emailInput.value ?? '').trim();
 
     // Clear previous error
@@ -336,11 +336,70 @@ function createEmailCaptureSection(): HTMLElement {
       return;
     }
 
-    // Phase 36 wires the backend. For now: show success and reset.
-    showToast("You're on the list! We'll be in touch.");
-    form.reset();
+    // In-flight state: spinner + disabled button with "Joining..." label
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Joining...';
+
+    try {
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, consent: true }),
+      });
+
+      if (res.ok) {
+        // Replace form section with inline success message
+        replaceFormWithSuccess(section, email);
+      } else {
+        // Non-2xx: show inline error, restore button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Join the list';
+        errorEl.textContent = 'Something went wrong. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+    } catch {
+      // Network error: restore button
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Join the list';
+      errorEl.textContent = 'Something went wrong. Please try again.';
+      errorEl.classList.remove('hidden');
+    }
+  }
+
+  // Submit handler — validate email + consent; call POST /api/subscribers on success
+  form.addEventListener('submit', (e: Event) => {
+    e.preventDefault();
+    void handleSubmit();
   });
 
   section.appendChild(form);
   return section;
+}
+
+/**
+ * Replace the email capture section content with a success message.
+ *
+ * Called after POST /api/subscribers returns 200. Clears the section and
+ * renders a confirmation message echoing the submitted email address.
+ *
+ * @param container - The email capture section element
+ * @param email - The email address that was successfully submitted
+ */
+function replaceFormWithSuccess(container: HTMLElement, email: string): void {
+  // Clear section content, replace with success message
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
+  // Heading retained from original section
+  const heading = document.createElement('h2');
+  heading.className = 'text-xl font-heading font-semibold text-text-primary';
+  heading.textContent = 'Check your inbox';
+  container.appendChild(heading);
+
+  // Success message echoing the submitted email
+  const message = document.createElement('p');
+  message.className = 'text-sm text-text-secondary';
+  message.textContent = `Check your inbox — we sent a confirmation link to ${email}. Click it to join the list. Check spam if you don't see it.`;
+  container.appendChild(message);
 }
