@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T12:53:57.663Z"
+last_updated: "2026-02-26T14:02:26.061Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 22
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 35 of 38 (SEO Content Pages Express SSR) — IN PROGRESS
-Plan: 1 of 4 in current phase — Plan 01 complete (SSR layout template, VS pages, Alternatives pages, vsRouter, alternativesRouter, seoRouter)
-Status: Phase 35 Plan 01 complete — 6 SSR files created; TypeScript clean; husky pre-commit passes; seoRouter exported and ready for Plan 03 to mount
-Last activity: 2026-02-26 — Phase 35 Plan 01 complete; renderLayout() with CSS-only dark mode + nonce threading; VS_PAGES and ALTERNATIVES_PAGES data maps; 6 files
+Plan: 2 of 4 in current phase — Plan 02 complete (USE_CASE_PAGES data map 8 slugs, useRouter hub + individual pages with HowTo + FAQPage JSON-LD, seoRouter /use mount)
+Status: Phase 35 Plan 02 complete — 3 files; TypeScript clean; husky pre-commit passes; useRouter integrated into seoRouter
+Last activity: 2026-02-26 — Phase 35 Plan 02 complete; use-case-pages.ts (8 slugs + hub), use.ts (useRouter), index.ts (/use mount)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -57,6 +57,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34.1 P01 | 2min | 2 tasks | 3 files |
 | Phase 34.1 P02 | 7 | 2 tasks | 3 files |
 | Phase 35 P01 | 19 | 2 tasks | 6 files |
+| Phase 35 P02 | 9 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,9 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - 404 returns JSON {error: 'not_found'} — consistent with API error format
 - ESLint no-useless-escape rule does not have auto-fix; required manual rewrite of string quoting in both data files (apostrophes in content broke single-quoted strings)
 - seoRouter not yet mounted in app.ts — Plan 03 wires it in before SPA catch-all
+- Plan 02: HowTo + FAQPage combined into single JSON.stringify([howToSchema, faqSchema]) for one <script> block — valid per schema.org spec
+- Plan 02: FAQ items visible in body as <dl>/<dt>/<dd> on use-case pages (unlike VS pages where FAQ is JSON-LD only) — plan specification
+- Plan 02: Quote strategy from Plan 01 applied proactively — double-quoted strings for apostrophe content; no ESLint no-useless-escape issues encountered
 
 ### Blockers/Concerns
 
@@ -163,5 +167,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 35-01-PLAN.md — SSR layout template, VS pages, Alternatives pages, vsRouter, alternativesRouter, seoRouter; 6 files; TypeScript clean; husky passes
-Resume file: None — Phase 35 Plan 01 complete; next plan is 35-02 (use-case pages)
+Stopped at: Completed 35-02-PLAN.md — USE_CASE_PAGES data map (8 slugs + hub), use.ts useRouter (hub + individual pages with HowTo + FAQPage JSON-LD), seoRouter /use mount; 3 files; TypeScript clean; husky passes
+Resume file: None — Phase 35 Plan 02 complete; next plan is 35-03 (mount seoRouter into app.ts)

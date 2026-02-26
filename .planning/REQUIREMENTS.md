@@ -43,8 +43,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 - [x] **SEO-01**: Competitor comparison pages server-rendered at `/vs/onetimesecret`, `/vs/pwpush`, `/vs/privnote` (800+ words each, using pre-written copy from `.claude/competitor-pages/`)
 - [x] **SEO-02**: Alternative pages server-rendered at `/alternatives/onetimesecret`, `/alternatives/pwpush`, `/alternatives/privnote`
-- [ ] **SEO-03**: Use case hub page server-rendered at `/use/` linking to all use case pages
-- [ ] **SEO-04**: All 8 use case pages server-rendered at `/use/[slug]` (copy from `.claude/use-case-pages.md`)
+- [x] **SEO-03**: Use case hub page server-rendered at `/use/` linking to all use case pages
+- [x] **SEO-04**: All 8 use case pages server-rendered at `/use/[slug]` (copy from `.claude/use-case-pages.md`)
 - [x] **SEO-05**: All SEO content pages include static JSON-LD (`FAQPage` on `/vs/*`, `HowTo` on `/use/*`) in `<head>` of server-rendered HTML
 - [ ] **SEO-06**: All new SEO routes added to `sitemap.xml`; `NOINDEX_PREFIXES` verified not to match SEO routes
 
@@ -146,8 +146,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-06 | Phase 34 | Complete |
 | SEO-01 | Phase 35 | Complete |
 | SEO-02 | Phase 35 | Complete |
-| SEO-03 | Phase 35 | Pending |
-| SEO-04 | Phase 35 | Pending |
+| SEO-03 | Phase 35 | Complete |
+| SEO-04 | Phase 35 | Complete |
 | SEO-05 | Phase 35 | Complete |
 | SEO-06 | Phase 35 | Pending |
 | ECAP-01 | Phase 36 | Pending |
