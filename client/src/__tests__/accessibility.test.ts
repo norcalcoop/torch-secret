@@ -155,8 +155,12 @@ describe('Protection panel accessibility', () => {
   });
 
   it('incompatible filter error state has no accessibility violations', async () => {
-    const { renderCreatePage } = await import('../pages/create.js');
-    renderCreatePage(container);
+    // Use a Pro-mode panel so the generate tab is unlocked and clickable.
+    // In anonymous mode (renderCreatePage default), generate and custom tabs are
+    // Pro-locked and cannot be activated — this test verifies generate-tab UI.
+    const { createProtectionPanel } = await import('../pages/create.js');
+    const panel = createProtectionPanel({ isAuthenticated: true, isPro: true });
+    container.appendChild(panel.element);
 
     // Activate the Generate password tab by clicking it
     const generateTab = container.querySelector<HTMLButtonElement>('#tab-btn-generate');
@@ -278,8 +282,11 @@ describe('PROT-02 brute-force label integration', () => {
   });
 
   it('brute-force label is visible in the generate tab DOM after generation', async () => {
-    const { renderCreatePage } = await import('../pages/create.js');
-    renderCreatePage(container);
+    // Use a Pro-mode panel so the generate tab is unlocked and clickable.
+    // In anonymous mode, the generate tab is Pro-locked and cannot be activated.
+    const { createProtectionPanel } = await import('../pages/create.js');
+    const panel = createProtectionPanel({ isAuthenticated: true, isPro: true });
+    container.appendChild(panel.element);
 
     // Activate the Generate password tab
     const generateTab = container.querySelector<HTMLButtonElement>('#tab-btn-generate');
