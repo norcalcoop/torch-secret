@@ -24,23 +24,19 @@ interface VsPageData {
   faqItems: Array<{ question: string; answer: string }>;
 }
 
-const CTA_BUTTON = `<a href="/create" style="display: inline-block; margin-top: 2rem; border-radius: 0.5rem; background: var(--ds-color-accent); padding: 0.75rem 1.5rem; font-weight: 600; color: #fff; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='var(--ds-color-accent-hover)'" onmouseout="this.style.background='var(--ds-color-accent)'">Create a secure link &rarr;</a>`;
+const CTA_BUTTON = `<a href="/create" class="ssr-cta">Create a secure link &rarr;</a>`;
 
-const CARD_OPEN = `<div style="border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: var(--ds-color-surface); padding: 2rem; margin-bottom: 2rem;">`;
+const CARD_OPEN = `<div class="ssr-card">`;
 const CARD_CLOSE = `</div>`;
 
-const H1 = (text: string) =>
-  `<h1 style="font-size: 1.875rem; font-weight: 700; color: var(--ds-color-text-primary); margin-bottom: 1rem; line-height: 1.25;">${text}</h1>`;
-const H2 = (text: string) =>
-  `<h2 style="font-size: 1.25rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2.5rem; margin-bottom: 0.75rem;">${text}</h2>`;
-const P = (text: string) =>
-  `<p style="color: var(--ds-color-text-secondary); line-height: 1.7; margin-bottom: 1rem;">${text}</p>`;
-const STRONG = (text: string) =>
-  `<strong style="color: var(--ds-color-text-primary);">${text}</strong>`;
-const HR = `<hr style="border: none; border-top: 1px solid var(--ds-color-border); margin: 2rem 0;" />`;
-const UL_OPEN = `<ul style="list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">`;
+const H1 = (text: string) => `<h1 class="ssr-h1">${text}</h1>`;
+const H2 = (text: string) => `<h2 class="ssr-h2">${text}</h2>`;
+const P = (text: string) => `<p class="ssr-p">${text}</p>`;
+const STRONG = (text: string) => `<strong class="ssr-strong">${text}</strong>`;
+const HR = `<hr class="ssr-hr" />`;
+const UL_OPEN = `<ul class="ssr-ul">`;
 const UL_CLOSE = `</ul>`;
-const LI = (text: string) => `<li style="color: var(--ds-color-text-secondary);">${text}</li>`;
+const LI = (text: string) => `<li class="ssr-li">${text}</li>`;
 
 export const VS_PAGES: Record<string, VsPageData> = {
   onetimesecret: {
@@ -60,7 +56,7 @@ ${P(`${STRONG('TL;DR:')} OneTimeSecret is the tool that popularized one-time sec
 ${CARD_CLOSE}
 
 ${H2('At-a-glance comparison')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -106,7 +102,7 @@ ${P('Both are open source. Read either codebase and verify for yourself.')}
 ${HR}
 
 ${H2('Pricing')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -223,7 +219,7 @@ ${P(`${STRONG('TL;DR:')} Password Pusher is a capable, open source tool with str
 ${CARD_CLOSE}
 
 ${H2('At-a-glance comparison')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -389,7 +385,7 @@ ${P(`${STRONG('TL;DR:')} Privnote is one of the oldest tools in this category an
 ${CARD_CLOSE}
 
 ${H2('At-a-glance comparison')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>

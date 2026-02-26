@@ -60,7 +60,7 @@ function renderNav(): string {
   return `
   <header class="sticky top-0 z-50 border-b border-[var(--ds-color-border)] bg-[color:var(--ds-color-surface)]/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-      <a href="/" class="text-lg font-bold text-[color:var(--ds-color-text-primary)] no-underline" style="font-family: ui-monospace, 'JetBrains Mono Variable', monospace;">
+      <a href="/" class="ssr-logo text-lg font-bold text-[color:var(--ds-color-text-primary)] no-underline">
         Torch Secret
       </a>
       <nav class="flex items-center gap-6 text-sm">
@@ -193,12 +193,46 @@ export function renderLayout(opts: LayoutOptions): string {
     }
     th { font-weight: 600; color: var(--ds-color-text-primary); background: var(--ds-color-surface-raised); }
     tr:nth-child(even) td { background: var(--ds-color-surface-raised); }
+    /* SSR page utility classes — used by vs-pages, alternatives-pages, use-case-pages, use.ts */
+    .ssr-logo { font-family: ui-monospace, 'JetBrains Mono Variable', monospace; }
+    .ssr-main { flex: 1; max-width: 64rem; margin: 0 auto; width: 100%; padding: 3rem 1rem; }
+    .ssr-card { border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: var(--ds-color-surface); padding: 2rem; margin-bottom: 2rem; }
+    .ssr-h1 { font-size: 1.875rem; font-weight: 700; color: var(--ds-color-text-primary); margin-bottom: 1rem; line-height: 1.25; }
+    .ssr-h2 { font-size: 1.25rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2.5rem; margin-bottom: 0.75rem; }
+    .ssr-h3 { font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2rem; margin-bottom: 0.5rem; }
+    .ssr-p { color: var(--ds-color-text-secondary); line-height: 1.7; margin-bottom: 1rem; }
+    .ssr-lead { color: var(--ds-color-text-secondary); font-size: 1.125rem; line-height: 1.7; }
+    .ssr-strong { color: var(--ds-color-text-primary); }
+    .ssr-hr { border: none; border-top: 1px solid var(--ds-color-border); margin: 2rem 0; }
+    .ssr-ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+    .ssr-ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .ssr-li { color: var(--ds-color-text-secondary); }
+    .ssr-cta { display: inline-block; margin-top: 2rem; border-radius: 0.5rem; background: var(--ds-color-accent); padding: 0.75rem 1.5rem; font-weight: 600; color: #fff; text-decoration: none; transition: background 0.15s; }
+    .ssr-cta:hover { background: var(--ds-color-accent-hover); color: #fff; }
+    .ssr-overflow { overflow-x: auto; margin-bottom: 1.5rem; }
+    .ssr-link-inline { display: inline-block; margin-top: 1rem; margin-left: 1rem; color: var(--ds-color-accent); text-decoration: none; }
+    .ssr-dl { margin: 0; }
+    .ssr-dl-item { margin-bottom: 1.25rem; }
+    .ssr-dt { font-weight: 600; color: var(--ds-color-text-primary); margin-bottom: 0.375rem; }
+    .ssr-dd { color: var(--ds-color-text-secondary); line-height: 1.7; margin: 0; }
+    .ssr-related { color: var(--ds-color-text-muted); font-size: 0.875rem; margin-top: 1rem; }
+    .ssr-related a { color: var(--ds-color-accent); }
+    .ssr-intro { margin-bottom: 2.5rem; }
+    .ssr-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); margin-bottom: 3rem; }
+    .ssr-grid-card { display: block; border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: var(--ds-color-surface); padding: 1.5rem; text-decoration: none; transition: background 0.15s; }
+    .ssr-grid-card:hover { background: var(--ds-color-surface-raised); }
+    .ssr-grid-card-h2 { font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-bottom: 0.5rem; }
+    .ssr-grid-card-p { font-size: 0.875rem; color: var(--ds-color-text-secondary); margin: 0; }
+    .ssr-section-footer { border-top: 1px solid var(--ds-color-border); padding-top: 2rem; margin-top: 1rem; }
+    .ssr-section-footer h2 { font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-bottom: 1rem; }
+    .ssr-links-row { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.875rem; }
+    .ssr-links-row a { color: var(--ds-color-accent); text-decoration: none; }
   </style>
   ${jsonLdBlock}
 </head>
 <body>
   ${renderNav()}
-  <main id="main-content" style="flex: 1; max-width: 64rem; margin: 0 auto; width: 100%; padding: 3rem 1rem;">
+  <main id="main-content" class="ssr-main">
     ${opts.bodyHtml}
   </main>
   ${renderFooter()}

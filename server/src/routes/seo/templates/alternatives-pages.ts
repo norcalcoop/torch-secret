@@ -24,25 +24,20 @@ interface AlternativesPageData {
   faqItems: Array<{ question: string; answer: string }>;
 }
 
-const CTA_BUTTON = `<a href="/create" style="display: inline-block; margin-top: 2rem; border-radius: 0.5rem; background: var(--ds-color-accent); padding: 0.75rem 1.5rem; font-weight: 600; color: #fff; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='var(--ds-color-accent-hover)'" onmouseout="this.style.background='var(--ds-color-accent)'">Create a secure link &rarr;</a>`;
+const CTA_BUTTON = `<a href="/create" class="ssr-cta">Create a secure link &rarr;</a>`;
 
-const CARD_OPEN = `<div style="border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: var(--ds-color-surface); padding: 2rem; margin-bottom: 2rem;">`;
+const CARD_OPEN = `<div class="ssr-card">`;
 const CARD_CLOSE = `</div>`;
 
-const H1 = (text: string) =>
-  `<h1 style="font-size: 1.875rem; font-weight: 700; color: var(--ds-color-text-primary); margin-bottom: 1rem; line-height: 1.25;">${text}</h1>`;
-const H2 = (text: string) =>
-  `<h2 style="font-size: 1.25rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2.5rem; margin-bottom: 0.75rem;">${text}</h2>`;
-const H3 = (text: string) =>
-  `<h3 style="font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2rem; margin-bottom: 0.5rem;">${text}</h3>`;
-const P = (text: string) =>
-  `<p style="color: var(--ds-color-text-secondary); line-height: 1.7; margin-bottom: 1rem;">${text}</p>`;
-const STRONG = (text: string) =>
-  `<strong style="color: var(--ds-color-text-primary);">${text}</strong>`;
-const HR = `<hr style="border: none; border-top: 1px solid var(--ds-color-border); margin: 2rem 0;" />`;
-const UL_OPEN = `<ul style="list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.25rem;">`;
+const H1 = (text: string) => `<h1 class="ssr-h1">${text}</h1>`;
+const H2 = (text: string) => `<h2 class="ssr-h2">${text}</h2>`;
+const H3 = (text: string) => `<h3 class="ssr-h3">${text}</h3>`;
+const P = (text: string) => `<p class="ssr-p">${text}</p>`;
+const STRONG = (text: string) => `<strong class="ssr-strong">${text}</strong>`;
+const HR = `<hr class="ssr-hr" />`;
+const UL_OPEN = `<ul class="ssr-ul">`;
 const UL_CLOSE = `</ul>`;
-const LI = (text: string) => `<li style="color: var(--ds-color-text-secondary);">${text}</li>`;
+const LI = (text: string) => `<li class="ssr-li">${text}</li>`;
 
 export const ALTERNATIVES_PAGES: Record<string, AlternativesPageData> = {
   onetimesecret: {
@@ -135,7 +130,7 @@ ${P(`${STRONG('Best for:')} Users who want a hosted zero-knowledge option and wa
 ${HR}
 
 ${H2('Which alternative is right for you?')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -162,7 +157,7 @@ ${H2('Try Torch Secret')}
 ${P('The zero-knowledge alternative to OneTimeSecret. Free to use, no account required.')}
 ${P("Your secret is encrypted in your browser. We receive only the ciphertext. When it's opened once, it's gone from our servers permanently.")}
 ${CTA_BUTTON}
-<a href="/vs/onetimesecret" style="display: inline-block; margin-top: 1rem; margin-left: 1rem; color: var(--ds-color-accent); text-decoration: none;">Compare Torch Secret vs. OneTimeSecret in detail &rarr;</a>
+<a href="/vs/onetimesecret" class="ssr-link-inline">Compare Torch Secret vs. OneTimeSecret in detail &rarr;</a>
     `,
     faqItems: [
       {
@@ -285,7 +280,7 @@ ${P(`${STRONG('Best for:')} Organizations that need persistent credential manage
 ${HR}
 
 ${H2('Which alternative is right for you?')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -312,7 +307,7 @@ ${H2('Try Torch Secret')}
 ${P('Free, hosted, zero-knowledge. No self-hosting required. No account required.')}
 ${P('Your secret is encrypted in your browser before anything is transmitted. We store only the ciphertext. On first view, the record is permanently deleted.')}
 ${CTA_BUTTON}
-<a href="/vs/pwpush" style="display: inline-block; margin-top: 1rem; margin-left: 1rem; color: var(--ds-color-accent); text-decoration: none;">Compare Torch Secret vs. Password Pusher in detail &rarr;</a>
+<a href="/vs/pwpush" class="ssr-link-inline">Compare Torch Secret vs. Password Pusher in detail &rarr;</a>
     `,
     faqItems: [
       {
@@ -439,7 +434,7 @@ ${P(`${STRONG('Best for:')} Technical users who want to self-host a verified zer
 ${HR}
 
 ${H2('Which alternative is right for you?')}
-<div style="overflow-x: auto; margin-bottom: 1.5rem;">
+<div class="ssr-overflow">
 <table>
   <thead>
     <tr>
@@ -475,7 +470,7 @@ ${H2('Try Torch Secret')}
 ${P('Open source. Ad-free. Zero-knowledge. No account required.')}
 ${P('Encryption runs in your browser before anything reaches our server. You can read the code and verify that claim before you use it.')}
 ${CTA_BUTTON}
-<a href="/vs/privnote" style="display: inline-block; margin-top: 1rem; margin-left: 1rem; color: var(--ds-color-accent); text-decoration: none;">Compare Torch Secret vs. Privnote in detail &rarr;</a>
+<a href="/vs/privnote" class="ssr-link-inline">Compare Torch Secret vs. Privnote in detail &rarr;</a>
     `,
     faqItems: [
       {

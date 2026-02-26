@@ -99,26 +99,22 @@ export const USE_CASE_HUB = {
 // Shared style helpers (same as vs-pages.ts for visual consistency)
 // ---------------------------------------------------------------------------
 
-const CTA_BUTTON = `<a href="/create" style="display:inline-block;margin-top:2rem;border-radius:0.5rem;background:var(--ds-color-accent);padding:0.75rem 1.5rem;font-weight:600;color:#fff;text-decoration:none;transition:background 0.15s;" onmouseover="this.style.background='var(--ds-color-accent-hover)'" onmouseout="this.style.background='var(--ds-color-accent)'">Create a secure link &rarr;</a>`;
+const CTA_BUTTON = `<a href="/create" class="ssr-cta">Create a secure link &rarr;</a>`;
 
-const CARD_OPEN = `<div style="border-radius:0.75rem;border:1px solid var(--ds-color-border);background:var(--ds-color-surface);padding:2rem;margin-bottom:2rem;">`;
+const CARD_OPEN = `<div class="ssr-card">`;
 const CARD_CLOSE = `</div>`;
 
-const H1 = (text: string) =>
-  `<h1 style="font-size:1.875rem;font-weight:700;color:var(--ds-color-text-primary);margin-bottom:1rem;line-height:1.25;">${text}</h1>`;
-const H2 = (text: string) =>
-  `<h2 style="font-size:1.25rem;font-weight:600;color:var(--ds-color-text-primary);margin-top:2.5rem;margin-bottom:0.75rem;">${text}</h2>`;
-const P = (text: string) =>
-  `<p style="color:var(--ds-color-text-secondary);line-height:1.7;margin-bottom:1rem;">${text}</p>`;
-const STRONG = (text: string) =>
-  `<strong style="color:var(--ds-color-text-primary);">${text}</strong>`;
-const HR = `<hr style="border:none;border-top:1px solid var(--ds-color-border);margin:2rem 0;" />`;
-const UL_OPEN = `<ul style="list-style:disc;padding-left:1.5rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.25rem;">`;
+const H1 = (text: string) => `<h1 class="ssr-h1">${text}</h1>`;
+const H2 = (text: string) => `<h2 class="ssr-h2">${text}</h2>`;
+const P = (text: string) => `<p class="ssr-p">${text}</p>`;
+const STRONG = (text: string) => `<strong class="ssr-strong">${text}</strong>`;
+const HR = `<hr class="ssr-hr" />`;
+const UL_OPEN = `<ul class="ssr-ul">`;
 const UL_CLOSE = `</ul>`;
-const LI = (text: string) => `<li style="color:var(--ds-color-text-secondary);">${text}</li>`;
+const LI = (text: string) => `<li class="ssr-li">${text}</li>`;
 
 /** Render a numbered step list item */
-const OL_OPEN = `<ol style="list-style:decimal;padding-left:1.5rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.75rem;">`;
+const OL_OPEN = `<ol class="ssr-ol">`;
 const OL_CLOSE = `</ol>`;
 
 /** Render a visible FAQ section as a definition list */
@@ -126,24 +122,21 @@ function renderFaq(items: Array<{ question: string; answer: string }>): string {
   const rows = items
     .map(
       (item) => `
-  <div style="margin-bottom:1.25rem;">
-    <dt style="font-weight:600;color:var(--ds-color-text-primary);margin-bottom:0.375rem;">${escHtml(item.question)}</dt>
-    <dd style="color:var(--ds-color-text-secondary);line-height:1.7;margin:0;">${escHtml(item.answer)}</dd>
+  <div class="ssr-dl-item">
+    <dt class="ssr-dt">${escHtml(item.question)}</dt>
+    <dd class="ssr-dd">${escHtml(item.answer)}</dd>
   </div>`,
     )
     .join('');
-  return `<dl style="margin:0;">${rows}</dl>`;
+  return `<dl class="ssr-dl">${rows}</dl>`;
 }
 
 /** Render a "Related guides" link row */
 function renderRelated(links: Array<{ slug: string; label: string }>): string {
   const anchors = links
-    .map(
-      (l) =>
-        `<a href="/use/${escHtml(l.slug)}" style="color:var(--ds-color-accent);">${escHtml(l.label)}</a>`,
-    )
+    .map((l) => `<a href="/use/${escHtml(l.slug)}">${escHtml(l.label)}</a>`)
     .join(' &middot; ');
-  return `<p style="color:var(--ds-color-text-muted);font-size:0.875rem;margin-top:1rem;">${anchors}</p>`;
+  return `<p class="ssr-related">${anchors}</p>`;
 }
 
 // ---------------------------------------------------------------------------
