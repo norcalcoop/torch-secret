@@ -162,6 +162,9 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-success: #195c2e;
       --ds-color-warning: #7e4f04;
       --ds-color-icon: #5c6375;
+      --ds-color-dot-grid: rgb(173 176 186 / 0.12);
+      --font-heading: 'JetBrains Mono Variable', ui-monospace, monospace;
+      --font-body: ui-sans-serif, system-ui, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -217,11 +220,12 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-success: #195c2e;
       --ds-color-warning: #7e4f04;
       --ds-color-icon: #5c6375;
+      --ds-color-dot-grid: rgb(173 176 186 / 0.12);
     }
     /* Base styles for SSR pages */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
       background-color: var(--ds-color-bg);
       color: var(--ds-color-text-primary);
       min-height: 100vh;
@@ -245,7 +249,7 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-header-inner { max-width: 64rem; margin: 0 auto; padding: 0 1rem; height: 3.5rem; display: flex; align-items: center; justify-content: space-between; }
     .ssr-brand { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--ds-color-text-primary); }
     .ssr-brand:hover { color: var(--ds-color-text-primary); }
-    .ssr-brand-text { font-family: ui-monospace, 'JetBrains Mono Variable', monospace; font-weight: 600; font-size: 1.125rem; }
+    .ssr-brand-text { font-family: var(--font-heading, 'JetBrains Mono Variable', ui-monospace, monospace); font-weight: 600; font-size: 1.125rem; }
     .ssr-nav-right { display: flex; align-items: center; gap: 1rem; }
     /* Header nav link classes */
     .ssr-nav-link { font-size: 0.875rem; color: var(--ds-color-text-secondary); text-decoration: none; transition: color 0.15s; }
@@ -263,11 +267,12 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-footer-link:hover { color: var(--ds-color-text-secondary); text-decoration: underline; }
     /* SSR page utility classes — used by vs-pages, alternatives-pages, use-case-pages, use.ts */
     .ssr-logo { font-family: ui-monospace, 'JetBrains Mono Variable', monospace; }
-    .ssr-main { flex: 1; max-width: 64rem; margin: 0 auto; width: 100%; padding: 3rem 1rem; }
-    .ssr-card { border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: var(--ds-color-surface); padding: 2rem; margin-bottom: 2rem; }
-    .ssr-h1 { font-size: 1.875rem; font-weight: 700; color: var(--ds-color-text-primary); margin-bottom: 1rem; line-height: 1.25; }
-    .ssr-h2 { font-size: 1.25rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2.5rem; margin-bottom: 0.75rem; }
-    .ssr-h3 { font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2rem; margin-bottom: 0.5rem; }
+    .ssr-main { flex: 1; max-width: 64rem; margin: 0 auto; width: 100%; padding: 3rem 1rem; position: relative; }
+    .ssr-main::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, var(--ds-color-dot-grid) 1px, transparent 1px); background-size: 44px 44px; pointer-events: none; z-index: -1; }
+    .ssr-card { border-radius: 0.75rem; border: 1px solid var(--ds-color-border); background: color-mix(in srgb, var(--ds-color-surface) 80%, transparent); backdrop-filter: blur(12px); padding: 2rem; margin-bottom: 2rem; }
+    .ssr-h1 { font-family: var(--font-heading, 'JetBrains Mono Variable', ui-monospace, monospace); font-size: 1.875rem; font-weight: 700; color: var(--ds-color-text-primary); margin-bottom: 1rem; line-height: 1.25; }
+    .ssr-h2 { font-family: var(--font-heading, 'JetBrains Mono Variable', ui-monospace, monospace); font-size: 1.25rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2.5rem; margin-bottom: 0.75rem; }
+    .ssr-h3 { font-family: var(--font-heading, 'JetBrains Mono Variable', ui-monospace, monospace); font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-top: 2rem; margin-bottom: 0.5rem; }
     .ssr-p { color: var(--ds-color-text-secondary); line-height: 1.7; margin-bottom: 1rem; }
     .ssr-lead { color: var(--ds-color-text-secondary); font-size: 1.125rem; line-height: 1.7; }
     .ssr-strong { color: var(--ds-color-text-primary); }
