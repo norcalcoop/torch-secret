@@ -62,6 +62,12 @@ const SHIELD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="1
 /** Lucide Moon SVG — theme toggle icon (static; JS applies .dark/.light class). */
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 
+/** Lucide tab bar icons — 20×20, matches SPA mobile nav. */
+const ICON_HOME = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+const ICON_PEN_LINE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+const ICON_CREDIT_CARD = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`;
+const ICON_LAYOUT_DASHBOARD = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="11" rx="1"/><rect width="7" height="5" x="3" y="15" rx="1"/></svg>`;
+
 function renderNav(): string {
   return `
   <header id="site-header" class="sticky top-0 z-40 backdrop-blur-md">
@@ -78,6 +84,30 @@ function renderNav(): string {
       </div>
     </div>
   </header>`;
+}
+
+function renderMobileNav(): string {
+  const tabs = [
+    { icon: ICON_HOME, label: 'Home', path: '/' },
+    { icon: ICON_PEN_LINE, label: 'Create', path: '/create' },
+    { icon: ICON_CREDIT_CARD, label: 'Pricing', path: '/pricing' },
+    { icon: ICON_LAYOUT_DASHBOARD, label: 'Dashboard', path: '/dashboard' },
+  ];
+
+  const buttons = tabs
+    .map(
+      (t) => `
+    <a href="${t.path}" class="ssr-tab-btn" data-path="${t.path}" aria-label="${t.label}">
+      ${t.icon}
+      <span class="ssr-tab-label">${t.label}</span>
+    </a>`,
+    )
+    .join('');
+
+  return `
+  <nav id="ssr-mobile-nav" aria-label="Main navigation">
+    <div class="ssr-tab-inner">${buttons}</div>
+  </nav>`;
 }
 
 function renderFooter(): string {
@@ -304,12 +334,38 @@ export function renderLayout(opts: LayoutOptions): string {
     /* ── Touch targets: minimum 44×44px per WCAG 2.5.5 ───────────────── */
     .ssr-theme-btn { min-width: 2.75rem; min-height: 2.75rem; }
 
+    /* ── Mobile bottom tab bar (mirrors SPA mobile-tab-bar) ─────────── */
+    #ssr-mobile-nav {
+      display: none; /* shown only on mobile via media query below */
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+      border-top: 1px solid var(--ds-color-border);
+      background: color-mix(in srgb, var(--ds-color-bg) 95%, transparent);
+      backdrop-filter: blur(12px);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .ssr-tab-inner { display: flex; align-items: center; justify-content: space-around; height: 4rem; }
+    .ssr-tab-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 0.125rem;
+      min-width: 3.5rem; padding: 0.5rem 0.25rem;
+      color: var(--ds-color-text-muted); text-decoration: none;
+      transition: color 0.15s;
+    }
+    .ssr-tab-btn:hover { color: var(--ds-color-accent); }
+    .ssr-tab-btn.ssr-tab-active { color: var(--ds-color-accent); }
+    .ssr-tab-label { font-size: 0.625rem; font-weight: 500; line-height: 1; }
+
     /* ── Tables: enforce min-width so columns stay readable on scroll ─── */
     table { min-width: 480px; }
     .ssr-overflow { -webkit-overflow-scrolling: touch; }
 
     /* ── Mobile: ≤ 639px ─────────────────────────────────────────────── */
     @media (max-width: 639px) {
+      /* Show bottom tab bar */
+      #ssr-mobile-nav { display: block; }
+
+      /* Body: pad bottom so tab bar doesn't cover last content */
+      body { padding-bottom: 4rem; }
+
       /* Nav: Pricing + Dashboard links won't fit — hide them; keep brand + CTA + theme */
       .ssr-nav-link { display: none; }
       .ssr-nav-right { gap: 0.5rem; }
@@ -346,7 +402,9 @@ export function renderLayout(opts: LayoutOptions): string {
     ${opts.bodyHtml}
   </main>
   ${renderFooter()}
+  ${renderMobileNav()}
   ${themeScript}
+  <script nonce="${opts.cspNonce}">(function(){var p=window.location.pathname;var tabs=document.querySelectorAll('#ssr-mobile-nav .ssr-tab-btn');tabs.forEach(function(t){if(t.getAttribute('data-path')===p)t.classList.add('ssr-tab-active');});})()</script>
 </body>
 </html>`;
 }
