@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Redis } from 'ioredis';
+import { eq } from 'drizzle-orm';
 import { validateBody, validateParams } from '../middleware/validate.js';
 import {
   createAnonHourlyLimiter,
@@ -21,6 +22,8 @@ import {
 } from '../services/secrets.service.js';
 import { optionalAuth } from '../middleware/optional-auth.js';
 import type { AuthUser } from '../auth.js';
+import { db } from '../db/connection.js';
+import { users } from '../db/schema.js';
 
 /**
  * Identical error response for all "not available" cases.
@@ -96,6 +99,35 @@ export function createSecretsRouter(redisClient?: Redis) {
             'Extended expiration (30 days) is a Pro feature. Free accounts can set up to 7 days.',
         });
         return;
+      }
+
+      // Enforce protection_type tier caps (Phase 34.1)
+      // 'none': always allowed. 'passphrase': requires authentication. 'password': requires Pro.
+      const protectionType = body.protection_type ?? 'none';
+      if (protectionType !== 'none') {
+        if (!userId) {
+          res.status(403).json({
+            error: 'passphrase_not_allowed',
+            message: 'Password protection requires a free account. Sign up to use passphrases.',
+          });
+          return;
+        }
+        if (protectionType === 'password') {
+          const userRow = await db
+            .select({ subscriptionTier: users.subscriptionTier })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const tier = userRow[0]?.subscriptionTier ?? 'free';
+          if (tier !== 'pro') {
+            res.status(403).json({
+              error: 'pro_required',
+              message: 'Custom password protection is a Pro feature. Upgrade to unlock it.',
+            });
+            return;
+          }
+        }
+        // protectionType === 'passphrase' + userId present: allowed (any authenticated tier)
       }
 
       const secret = await createSecret(

@@ -16,6 +16,8 @@ export const CreateSecretSchema = z.object({
   label: z.string().max(100).optional(),
   /** Per-secret email notification opt-in. Phase 26 sends the actual notification. */
   notify: z.boolean().optional(),
+  /** Explicit protection type for server-side tier enforcement (Phase 34.1) */
+  protection_type: z.enum(['none', 'passphrase', 'password']).optional().default('none'),
 });
 
 export type CreateSecretRequest = z.infer<typeof CreateSecretSchema>;
