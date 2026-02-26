@@ -899,3 +899,102 @@ describe('anti-enumeration (password)', () => {
     expect(destroyedMetaRes.body).toEqual(fakeMetaRes.body);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 34.1: protection_type tier enforcement
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets — protection_type tier enforcement', () => {
+  let tierApp: Express;
+
+  beforeEach(() => {
+    tierApp = buildApp();
+  });
+
+  // Anonymous: any non-none protection_type is blocked
+  test('anonymous POST with protection_type passphrase returns 403', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', protection_type: 'passphrase' })
+      .expect(403);
+    expect(res.body.error).toBe('passphrase_not_allowed');
+  });
+
+  test('anonymous POST with protection_type password returns 403', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', protection_type: 'password' })
+      .expect(403);
+    expect(res.body.error).toBe('passphrase_not_allowed');
+  });
+
+  test('anonymous POST without protection_type field returns 201', async () => {
+    const res = await request(tierApp)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+      .expect(201);
+    expect(res.body.id).toHaveLength(21);
+  });
+
+  // Free user: passphrase allowed, password blocked
+  test('authenticated free user with protection_type passphrase returns 201', async () => {
+    const email = `prot-free-pp-${Date.now()}@test.secureshare.dev`;
+    const password = 'password-for-prot-test-123';
+    const { sessionCookie } = await createUserAndSignIn(tierApp, email, password, 'Prot Test User');
+    try {
+      const res = await request(tierApp)
+        .post('/api/secrets')
+        .set('Cookie', sessionCookie)
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', protection_type: 'passphrase' })
+        .expect(201);
+      expect(res.body.id).toHaveLength(21);
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+
+  test('authenticated free user with protection_type password returns 403', async () => {
+    const email = `prot-free-pw-${Date.now()}@test.secureshare.dev`;
+    const password = 'password-for-prot-test-123';
+    const { sessionCookie } = await createUserAndSignIn(tierApp, email, password, 'Prot Test User');
+    try {
+      const res = await request(tierApp)
+        .post('/api/secrets')
+        .set('Cookie', sessionCookie)
+        .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', protection_type: 'password' })
+        .expect(403);
+      expect(res.body.error).toBe('pro_required');
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+
+  // Pro user: all protection types allowed
+  test('authenticated Pro user with protection_type password returns 201', async () => {
+    const email = `prot-pro-pw-${Date.now()}@test.secureshare.dev`;
+    const pw = 'password-for-prot-test-123';
+    const { sessionCookie, userId } = await createUserAndSignIn(
+      tierApp,
+      email,
+      pw,
+      'Pro Test User',
+    );
+    try {
+      // Elevate to Pro
+      await db.update(users).set({ subscriptionTier: 'pro' }).where(eq(users.id, userId));
+
+      const res = await request(tierApp)
+        .post('/api/secrets')
+        .set('Cookie', sessionCookie)
+        .send({
+          ciphertext: VALID_CIPHERTEXT,
+          expiresIn: '1h',
+          protection_type: 'password',
+          password: 'hunter2',
+        })
+        .expect(201);
+      expect(res.body.id).toHaveLength(21);
+    } finally {
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+});
