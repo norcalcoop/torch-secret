@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 36 of 38 (Email Capture) — IN PROGRESS
-Plan: 1 of 4 in current phase — Plan 01 complete (INVARIANTS.md Phase 36 row, marketingSubscribers schema, migration 0005 applied, subscribers.test.ts scaffold with 16 RED tests)
-Status: Phase 36 Plan 01 complete — 9 files; TypeScript clean; migration applied; 16 RED integration tests ready for Plan 02
-Last activity: 2026-02-26 — Phase 36 Plan 01 complete; marketingSubscribers Drizzle table, migration 0005, env vars (RESEND_AUDIENCE_ID + IP_HASH_SALT), test scaffold
+Plan: 2 of 4 in current phase — Plan 02 complete (subscribers.service.ts, subscribersRouter, app.ts wiring, all 16 ECAP tests GREEN)
+Status: Phase 36 Plan 02 complete — 3 files; TypeScript clean; 318 total tests passing; subscribersRouter mounted at /api/subscribers
+Last activity: 2026-02-26 — Phase 36 Plan 02 complete; POST /api/subscribers, GET /confirm, GET /unsubscribe implemented and tested
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -60,6 +60,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 35 P02 | 9 | 2 tasks | 3 files |
 | Phase 35 P03 | 2min | 2 tasks | 3 files |
 | Phase 36 P01 | 7min | 2 tasks | 9 files |
+| Phase 36 P02 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -176,7 +177,10 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Stripe env vars (STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET/STRIPE_PRO_PRICE_ID) backfilled into ci.yml — pre-existing gap fixed alongside Phase 36 vars
 - vi.mock() factory hoisting: variables defined before vi.mock() are not accessible in the factory — use vi.fn() inline; access via vi.mocked() in test body
 - Plan 01 delivers: INVARIANTS.md row, marketingSubscribers schema, migration 0005 (applied), env vars, 16 RED test cases
-- Plan 02 target: implement POST /api/subscribers, GET /api/subscribers/confirm, GET /api/subscribers/unsubscribe to turn 16 RED tests GREEN
+- Plan 02 complete: POST /api/subscribers, GET /api/subscribers/confirm, GET /api/subscribers/unsubscribe — all 16 tests GREEN (318 total)
+- onConflictDoUpdate WHERE status='pending': only pending rows get token refresh; confirmed rows preserved silently
+- createSubscriber returns void with no state indication — prevents subscriber status enumeration across all three states
+- Resend contacts.create is fire-and-forget (.catch()) — local DB is source of truth; Resend Audience is best-effort sync
 
 ### Blockers/Concerns
 
@@ -185,5 +189,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 36-01-PLAN.md — marketingSubscribers schema + migration 0005 applied + 16 RED integration tests in subscribers.test.ts
-Resume file: None — Phase 36 Plan 01 complete; next plan is 36-02 (subscribers API implementation)
+Stopped at: Completed 36-02-PLAN.md — subscribersRouter + subscribers.service.ts + all 16 ECAP tests GREEN (318 total passing)
+Resume file: None — Phase 36 Plan 02 complete; next plan is 36-03 (confirmation + unsubscribe frontend pages)
