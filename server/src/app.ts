@@ -16,6 +16,7 @@ import { auth } from './auth.js';
 import { meRouter } from './routes/me.js';
 import { createDashboardRouter } from './routes/dashboard.js';
 import { billingRouter } from './routes/billing.js';
+import { subscribersRouter } from './routes/subscribers.js';
 import { stripeWebhookHandler } from './routes/webhooks.js';
 import { seoRouter } from './routes/seo/index.js';
 import { env } from './config/env.js';
@@ -100,6 +101,9 @@ export function buildApp() {
 
   // Mount /api/billing routes (Stripe Checkout, portal, verify-checkout)
   app.use('/api/billing', billingRouter);
+
+  // Mount /api/subscribers routes (email list capture, GDPR double opt-in — Phase 36)
+  app.use('/api/subscribers', subscribersRouter);
 
   // API catch-all: return JSON 404 for any unmatched /api/* request.
   // MUST come after ALL API routes (health, secrets, me) and before the SPA catch-all
