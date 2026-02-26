@@ -17,6 +17,7 @@ import { meRouter } from './routes/me.js';
 import { createDashboardRouter } from './routes/dashboard.js';
 import { billingRouter } from './routes/billing.js';
 import { stripeWebhookHandler } from './routes/webhooks.js';
+import { seoRouter } from './routes/seo/index.js';
 import { env } from './config/env.js';
 
 /**
@@ -35,8 +36,9 @@ import { env } from './config/env.js';
  * 6.5. Stripe webhook -- /api/webhooks/stripe with express.raw() (BEFORE express.json)
  * 7. json parser    -- body parsing (for non-auth routes)
  * 8. routes         -- API endpoints (health, secrets, me, billing)
- * 9. static assets + SPA catch-all (production only, when client/dist exists)
- * 10. errorHandler  -- MUST be last
+ * 9. SEO SSR routes   -- /vs/*, /alternatives/*, /use/* (before static/SPA)
+ * 10. static assets + SPA catch-all (production only, when client/dist exists)
+ * 11. errorHandler  -- MUST be last
  */
 export function buildApp() {
   const app = express();
@@ -105,6 +107,12 @@ export function buildApp() {
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'not_found' });
   });
+
+  // SSR SEO content pages (/vs/*, /alternatives/*, /use/*).
+  // MUST be mounted BEFORE express.static and SPA catch-all so these routes
+  // are handled by Express before the SPA catch-all intercepts them.
+  // These routes are intentionally indexable — do NOT add to NOINDEX_PREFIXES.
+  app.use(seoRouter);
 
   // Serve built frontend assets in production (or when client/dist exists)
   const clientDistPath = resolve(import.meta.dirname, '../../client/dist');
