@@ -160,7 +160,7 @@ Plans:
 **Goal:** Anonymous users cannot set any passphrase/password. Free users can only generate passphrases (no custom passwords). Pro users can set passwords, generate passphrases, and set custom passwords. Gate the secret creation UI and API by account tier.
 **Requirements**: TIER-01, TIER-02, TIER-03, TIER-04, TIER-05
 **Depends on:** Phase 34
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 34.1-01-PLAN.md — Shared type + API tier enforcement + integration tests (protection_type in CreateSecretSchema, 403 guards in secrets.ts)
@@ -249,7 +249,7 @@ Plans:
 | 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
 | 33. Pricing Page | 3/3 | Complete    | 2026-02-23 | - |
 | 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
-| 34.1. Passphrase/Password Tier Enforcement | v5.0 | 0/2 | Not started | - |
+| 34.1. Passphrase/Password Tier Enforcement | 1/2 | In Progress|  | - |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 0/TBD | Not started | - |
 | 36. Email Capture | v5.0 | 0/TBD | Not started | - |
 | 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |

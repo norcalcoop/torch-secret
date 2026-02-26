@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 34: Stripe Pro Billing
+**Current focus:** v5.0 Product Launch Checklist — Phase 34.1: Passphrase/Password Tier Enforcement
 
 ## Current Position
 
-Phase: 34 of 38 (Stripe Pro Billing) — COMPLETE
-Plan: 4 of 4 in current phase — Plan 04 complete (dashboard Pro billing UI: Pro badge, upgrade CTA, Manage Subscription, post-checkout verification banner)
-Status: Phase 34 Complete — All four plans shipped: DB foundation (01), billing routes (02), create page Pro gating (03), dashboard billing UI (04)
-Last activity: 2026-02-23 — Phase 34 Plan 04 complete; full Stripe subscription flow wired end-to-end
+Phase: 34.1 of 38 (Passphrase/Password Tier Enforcement) — IN PROGRESS
+Plan: 1 of 1 in current phase — Plan 01 complete (protection_type schema + tier enforcement in POST /api/secrets + 6 integration tests)
+Status: Phase 34.1 Plan 01 complete — server-side protection_type tier guard shipped; 6 integration tests green
+Last activity: 2026-02-26 — Phase 34.1 Plan 01 complete; protection_type enum in CreateSecretSchema; anonymous blocked from passphrases; free blocked from password type
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -54,6 +54,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34 P02 | 2min | 2 tasks | 4 files |
 | Phase 34 P03 | 5min | 2 tasks | 4 files |
 | Phase 34 P04 | 3min | 1 task | 1 file |
+| Phase 34.1 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,17 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - loops@6.2.0 uses v6.x createContact() single-object API — breaking change from v5; do not use v5 positional arguments
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
+
+### Phase 34.1 Execution Notes
+
+- protection_type enum ('none'|'passphrase'|'password') added to CreateSecretSchema with `.optional().default('none')` — backwards-compatible
+- Anonymous users get 403 `passphrase_not_allowed` for both passphrase and password types (no DB lookup, just !userId check)
+- Free users get 403 `pro_required` for password type (DB lookup via Drizzle: select subscriptionTier from users where id = userId)
+- Passphrase type for free users does NOT trigger DB lookup — avoids unnecessary round-trip
+- error codes: `passphrase_not_allowed` for anonymous, `pro_required` for free attempting password
+- Protection tier guard placed after expiresIn caps, before createSecret() call in POST handler
+- Pro user elevation in tests: createUserAndSignIn() + direct Drizzle update to set subscriptionTier='pro'
+- 271 total tests pass (6 new protection_type tier tests + 265 pre-existing)
 
 ### Phase 34 Execution Notes
 
@@ -131,6 +143,6 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Completed 34-04-PLAN.md — Phase 34 complete; dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout verification banner all live
-Resume file: None — Phase 34 complete; next phase is Phase 35
+Last session: 2026-02-26
+Stopped at: Completed 34.1-01-PLAN.md — Phase 34.1 Plan 01 complete; protection_type tier enforcement at API layer shipped; 6 integration tests green; 271 total passing tests
+Resume file: None — Phase 34.1 Plan 01 complete; next plan is 34.1-02 (if exists) or Phase 35
