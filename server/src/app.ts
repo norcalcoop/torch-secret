@@ -147,6 +147,8 @@ export function buildApp() {
         '/dashboard',
         '/privacy',
         '/terms',
+        '/confirm', // email confirmation pages — token in query string; must not be indexed
+        '/unsubscribe', // unsubscribe pages — token in query string; must not be indexed
       ];
       if (NOINDEX_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
         res.setHeader('X-Robots-Tag', 'noindex, nofollow');

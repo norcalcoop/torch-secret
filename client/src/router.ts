@@ -285,6 +285,26 @@ function handleRoute(): void {
       .then((mod) => mod.renderTermsPage(container))
       .then(() => focusPageHeading())
       .catch(() => showLoadError(container));
+  } else if (path === '/confirm') {
+    updatePageMeta({
+      title: 'Confirm Your Email',
+      description: 'Confirm your email address to join the Torch Secret mailing list.',
+      noindex: true,
+    });
+    import('./pages/confirm.js')
+      .then((mod) => mod.renderConfirmPage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
+  } else if (path === '/unsubscribe') {
+    updatePageMeta({
+      title: 'Unsubscribed',
+      description: 'You have been unsubscribed from Torch Secret emails.',
+      noindex: true,
+    });
+    import('./pages/unsubscribe.js')
+      .then((mod) => mod.renderUnsubscribePage(container))
+      .then(() => focusPageHeading())
+      .catch(() => showLoadError(container));
   } else {
     updatePageMeta({
       title: 'Page Not Found',
