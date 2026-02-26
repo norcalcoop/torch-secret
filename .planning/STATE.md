@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T01:43:26.155Z"
+last_updated: "2026-02-26T12:53:57.663Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 22
+  completed_plans: 19
 ---
 
 # Session State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 34.1: Passphrase/Password Tier Enforcement
+**Current focus:** v5.0 Product Launch Checklist — Phase 35: SEO Content Pages (Express SSR)
 
 ## Current Position
 
-Phase: 34.1 of 38 (Passphrase/Password Tier Enforcement) — IN PROGRESS
-Plan: 2 of 2 in current phase — Plan 02 complete (tier-aware protection panel with locked tabs + popover CTAs; protection_type wired into API call)
-Status: Phase 34.1 Plan 02 complete — frontend tier enforcement shipped; locked tabs with Free/Pro badges and popover CTAs; 271 tests green
-Last activity: 2026-02-26 — Phase 34.1 Plan 02 complete; createProtectionPanel({ isAuthenticated, isPro }); getProtectionType(); auth IIFE panel replacement
+Phase: 35 of 38 (SEO Content Pages Express SSR) — IN PROGRESS
+Plan: 1 of 4 in current phase — Plan 01 complete (SSR layout template, VS pages, Alternatives pages, vsRouter, alternativesRouter, seoRouter)
+Status: Phase 35 Plan 01 complete — 6 SSR files created; TypeScript clean; husky pre-commit passes; seoRouter exported and ready for Plan 03 to mount
+Last activity: 2026-02-26 — Phase 35 Plan 01 complete; renderLayout() with CSS-only dark mode + nonce threading; VS_PAGES and ALTERNATIVES_PAGES data maps; 6 files
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -56,6 +56,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34 P04 | 3min | 1 task | 1 file |
 | Phase 34.1 P01 | 2min | 2 tasks | 3 files |
 | Phase 34.1 P02 | 7 | 2 tasks | 3 files |
+| Phase 35 P01 | 19 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,17 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 
 - Phase 34.1 inserted after Phase 34: Passphrase/Password Tier Enforcement (URGENT) — anonymous users blocked from all passphrase/password options; free users limited to generated passphrases; Pro users get full password/passphrase/custom control
 
+### Phase 35 Execution Notes
+
+- SSR template pattern: TypeScript string helpers (P/H1/H2/LI/STRONG/HR constants + CARD_OPEN/CARD_CLOSE) — zero new dependencies, nonce threading straightforward
+- getBuiltCssHref() reads CSS hash from client/dist/index.html at module load — never hardcoded, empty string fallback in dev when client/dist does not exist
+- CSS custom properties defined in inline <style> block (not Tailwind utility classes) — linked compiled CSS handles utility classes; custom props give full --ds-color-* token coverage
+- Dark mode: @media (prefers-color-scheme: dark) on :root — not .dark class (SPA uses JS toggle; SSR pages use CSS-only approach)
+- FAQPage JSON-LD in <head> only — NOT rendered as visible body HTML on VS pages (plan specification)
+- 404 returns JSON {error: 'not_found'} — consistent with API error format
+- ESLint no-useless-escape rule does not have auto-fix; required manual rewrite of string quoting in both data files (apostrophes in content broke single-quoted strings)
+- seoRouter not yet mounted in app.ts — Plan 03 wires it in before SPA catch-all
+
 ### Blockers/Concerns
 
 None — v4.0 clean ship, v5.0 roadmap finalized
@@ -151,5 +163,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 34.1-02-PLAN.md — tier-aware protection panel with locked tabs and popover CTAs; protection_type wired into API call; 271 tests green; Vite build clean
-Resume file: None — Phase 34.1 Plan 02 complete; next plan is 34.1-03 (if exists) or Phase 35
+Stopped at: Completed 35-01-PLAN.md — SSR layout template, VS pages, Alternatives pages, vsRouter, alternativesRouter, seoRouter; 6 files; TypeScript clean; husky passes
+Resume file: None — Phase 35 Plan 01 complete; next plan is 35-02 (use-case pages)
