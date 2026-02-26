@@ -300,6 +300,43 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-section-footer h2 { font-size: 1.125rem; font-weight: 600; color: var(--ds-color-text-primary); margin-bottom: 1rem; }
     .ssr-links-row { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.875rem; }
     .ssr-links-row a { color: var(--ds-color-accent); text-decoration: none; }
+
+    /* ── Touch targets: minimum 44×44px per WCAG 2.5.5 ───────────────── */
+    .ssr-theme-btn { min-width: 2.75rem; min-height: 2.75rem; }
+
+    /* ── Tables: enforce min-width so columns stay readable on scroll ─── */
+    table { min-width: 480px; }
+    .ssr-overflow { -webkit-overflow-scrolling: touch; }
+
+    /* ── Mobile: ≤ 639px ─────────────────────────────────────────────── */
+    @media (max-width: 639px) {
+      /* Nav: Pricing + Dashboard links won't fit — hide them; keep brand + CTA + theme */
+      .ssr-nav-link { display: none; }
+      .ssr-nav-right { gap: 0.5rem; }
+      .ssr-cta-nav { font-size: 0.8125rem; padding: 0.375rem 0.625rem; white-space: nowrap; }
+
+      /* Layout: tighter spacing on small screens */
+      .ssr-main { padding: 1.75rem 0.875rem; }
+      .ssr-card { padding: 1.25rem; margin-bottom: 1.25rem; }
+
+      /* Typography: scale headings down one notch */
+      .ssr-h1 { font-size: 1.5rem; }
+      .ssr-h2 { font-size: 1.125rem; margin-top: 2rem; }
+      .ssr-h3 { font-size: 1rem; margin-top: 1.5rem; }
+      .ssr-lead { font-size: 1rem; }
+
+      /* Tables: reduce cell padding; min-width keeps columns legible via scroll */
+      th, td { padding: 0.5rem 0.625rem; font-size: 0.875rem; }
+
+      /* CTA: full-width block for easy tapping */
+      .ssr-cta { display: block; text-align: center; }
+
+      /* Section footer link row: stack vertically */
+      .ssr-links-row { flex-direction: column; gap: 0.5rem; }
+
+      /* Footer: tighter gap between items */
+      .ssr-footer-inner { gap: 1rem; }
+    }
   </style>
   ${jsonLdBlock}
 </head>
