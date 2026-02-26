@@ -46,7 +46,7 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 - [x] **SEO-03**: Use case hub page server-rendered at `/use/` linking to all use case pages
 - [x] **SEO-04**: All 8 use case pages server-rendered at `/use/[slug]` (copy from `.claude/use-case-pages.md`)
 - [x] **SEO-05**: All SEO content pages include static JSON-LD (`FAQPage` on `/vs/*`, `HowTo` on `/use/*`) in `<head>` of server-rendered HTML
-- [ ] **SEO-06**: All new SEO routes added to `sitemap.xml`; `NOINDEX_PREFIXES` verified not to match SEO routes
+- [x] **SEO-06**: All new SEO routes added to `sitemap.xml`; `NOINDEX_PREFIXES` verified not to match SEO routes
 
 ### Email Capture (ECAP)
 
@@ -149,7 +149,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEO-03 | Phase 35 | Complete |
 | SEO-04 | Phase 35 | Complete |
 | SEO-05 | Phase 35 | Complete |
-| SEO-06 | Phase 35 | Pending |
+| SEO-06 | Phase 35 | Complete |
 | ECAP-01 | Phase 36 | Pending |
 | ECAP-02 | Phase 36 | Pending |
 | ECAP-03 | Phase 36 | Pending |
