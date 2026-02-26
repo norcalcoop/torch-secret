@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T16:30:57.667Z"
+last_updated: "2026-02-26T19:36:21.651Z"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 22
-  completed_plans: 22
+  total_plans: 26
+  completed_plans: 25
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 36 of 38 (Email Capture) — IN PROGRESS
-Plan: 2 of 4 in current phase — Plan 02 complete (subscribers.service.ts, subscribersRouter, app.ts wiring, all 16 ECAP tests GREEN)
-Status: Phase 36 Plan 02 complete — 3 files; TypeScript clean; 318 total tests passing; subscribersRouter mounted at /api/subscribers
-Last activity: 2026-02-26 — Phase 36 Plan 02 complete; POST /api/subscribers, GET /confirm, GET /unsubscribe implemented and tested
+Plan: 3 of 4 in current phase — Plan 03 complete (home.ts real API call, confirm.ts, unsubscribe.ts, /confirm+/unsubscribe routes and NOINDEX_PREFIXES)
+Status: Phase 36 Plan 03 complete — 5 files; TypeScript clean; ESLint clean; build passes with confirm/unsubscribe as separate chunks
+Last activity: 2026-02-26 — Phase 36 Plan 03 complete; client-side email capture flow fully wired; next is Plan 04 (rate limiting + final wiring)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -61,6 +61,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 35 P03 | 2min | 2 tasks | 3 files |
 | Phase 36 P01 | 7min | 2 tasks | 9 files |
 | Phase 36 P02 | 2min | 2 tasks | 3 files |
+| Phase 36 P03 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -181,6 +182,9 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - onConflictDoUpdate WHERE status='pending': only pending rows get token refresh; confirmed rows preserved silently
 - createSubscriber returns void with no state indication — prevents subscriber status enumeration across all three states
 - Resend contacts.create is fire-and-forget (.catch()) — local DB is source of truth; Resend Audience is best-effort sync
+- Plan 03 complete: void handleSubmit() pattern for async addEventListener — avoids @typescript-eslint/no-misused-promises; replaceFormWithSuccess() clears section in-place; unsubscribe always shows success (idempotent — no token validity leakage)
+- /confirm and /unsubscribe registered in router.ts with noindex: true; both added to NOINDEX_PREFIXES in server/src/app.ts for X-Robots-Tag
+- Build verified: confirm and unsubscribe emit as separate chunks (confirm-*.js, unsubscribe-*.js)
 
 ### Blockers/Concerns
 
@@ -189,5 +193,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 36-02-PLAN.md — subscribersRouter + subscribers.service.ts + all 16 ECAP tests GREEN (318 total passing)
-Resume file: None — Phase 36 Plan 02 complete; next plan is 36-03 (confirmation + unsubscribe frontend pages)
+Stopped at: Completed 36-03-PLAN.md — confirm.ts, unsubscribe.ts, home.ts real API call, /confirm+/unsubscribe routes and NOINDEX_PREFIXES
+Resume file: None — Phase 36 Plan 03 complete; next plan is 36-04 (rate limiting + final wiring)
