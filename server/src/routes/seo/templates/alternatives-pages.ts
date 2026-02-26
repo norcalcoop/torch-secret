@@ -70,7 +70,7 @@ ${HR}
 ${H2('The best OneTimeSecret alternatives')}
 
 ${H3('1. Torch Secret — Best for zero-knowledge encryption')}
-${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $9/month Pro, $29/month Team`)}
+${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro, $29/month Team`)}
 ${P('Torch Secret is the most direct upgrade from OneTimeSecret if your reason for switching is the server-side encryption model. The core function is identical: paste a secret, get a link, share it, it disappears after one view. The difference is architectural.')}
 ${P(`${STRONG('How it works:')} AES-256-GCM encryption runs in your browser using the Web Crypto API. The encryption key is generated locally and embedded only in the URL fragment (<code>#key</code>). Per HTTP spec, URL fragments are never transmitted to servers — our server receives only the encrypted ciphertext. We cannot read what we store.`)}
 ${P(`${STRONG('What you get beyond OneTimeSecret:')}`)}
@@ -146,7 +146,7 @@ ${H2('Which alternative is right for you?')}
     <tr><td>You need file sharing</td><td>Password Pusher (Premium)</td></tr>
     <tr><td>You want to self-host + zero-knowledge</td><td>Torch Secret or Cryptgeon</td></tr>
     <tr><td>You're sharing casual, low-stakes notes</td><td>Privnote (if non-technical audience)</td></tr>
-    <tr><td>The OTS $35/month plan is too expensive</td><td>Torch Secret ($9/month Pro)</td></tr>
+    <tr><td>The OTS $35/month plan is too expensive</td><td>Torch Secret ($7/month Pro)</td></tr>
   </tbody>
 </table>
 </div>
@@ -183,7 +183,7 @@ ${CTA_BUTTON}
       {
         question: 'Can I get view receipts in any OneTimeSecret alternative?',
         answer:
-          "Yes. Torch Secret Pro ($9/month) includes view receipts — you'll know when your specific secret was opened. Password Pusher's paid plans also include audit logs.",
+          "Yes. Torch Secret Pro ($7/month) includes view receipts — you'll know when your specific secret was opened. Password Pusher's paid plans also include audit logs.",
       },
     ],
   },
@@ -221,7 +221,7 @@ ${HR}
 ${H2('The best Password Pusher alternatives')}
 
 ${H3('1. Torch Secret — Best for zero-knowledge + free hosted access')}
-${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $9/month Pro, $29/month Team`)}
+${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro, $29/month Team`)}
 ${P("If the server-side encryption is why you're switching, Torch Secret is the most direct answer. It handles the same core job — share a secret once, it disappears — but with client-side AES-256-GCM. The encryption key exists only in the URL fragment and never reaches our server. We store only ciphertext.")}
 ${P(`${STRONG('Where Torch Secret improves on Password Pusher:')}`)}
 ${UL_OPEN}
@@ -229,7 +229,7 @@ ${LI(`${STRONG('Zero-knowledge:')} Server is architecturally incapable of readin
 ${LI(`${STRONG('Free hosted tier:')} Unlimited anonymous secrets, no account, no self-hosting`)}
 ${LI(`${STRONG('Simpler UX:')} Minimal, single-purpose interface — no feature sprawl`)}
 ${LI(`${STRONG('View receipts:')} Know exactly when your specific secret was opened (Pro)`)}
-${LI(`${STRONG('Lower price:')} $9/month Pro vs. $19/month Premium for hosted access`)}
+${LI(`${STRONG('Lower price:')} $7/month Pro vs. $19/month Premium for hosted access`)}
 ${UL_CLOSE}
 ${P(`${STRONG('Where Password Pusher has the edge:')}`)}
 ${UL_OPEN}
@@ -375,7 +375,7 @@ ${HR}
 ${H2('The best Privnote alternatives')}
 
 ${H3('1. Torch Secret — Best overall: open source, zero-knowledge, ad-free')}
-${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous, no account), $9/month Pro`)}
+${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous, no account), $7/month Pro`)}
 ${P('Torch Secret does exactly what Privnote does — but with verifiable, auditable security. The full source code is on GitHub. You can confirm that:')}
 ${UL_OPEN}
 ${LI('AES-256-GCM encryption runs in your browser using the Web Crypto API')}
