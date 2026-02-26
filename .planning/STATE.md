@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T14:02:26.061Z"
+last_updated: "2026-02-26T14:07:18.021Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 35 of 38 (SEO Content Pages Express SSR) — IN PROGRESS
-Plan: 2 of 4 in current phase — Plan 02 complete (USE_CASE_PAGES data map 8 slugs, useRouter hub + individual pages with HowTo + FAQPage JSON-LD, seoRouter /use mount)
-Status: Phase 35 Plan 02 complete — 3 files; TypeScript clean; husky pre-commit passes; useRouter integrated into seoRouter
-Last activity: 2026-02-26 — Phase 35 Plan 02 complete; use-case-pages.ts (8 slugs + hub), use.ts (useRouter), index.ts (/use mount)
+Plan: 3 of 4 in current phase — Plan 03 complete (seoRouter wired into app.ts, sitemap.xml extended to 17 entries, 31 SEO integration tests all passing)
+Status: Phase 35 Plan 03 complete — 3 files; TypeScript clean; 302 total tests passing; all SSR routes live at /vs/*, /alternatives/*, /use/*
+Last activity: 2026-02-26 — Phase 35 Plan 03 complete; app.ts (seoRouter mount), sitemap.xml (17 entries), seo.test.ts (31 tests, SEO-01 through SEO-06)
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -58,6 +58,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34.1 P02 | 7 | 2 tasks | 3 files |
 | Phase 35 P01 | 19 | 2 tasks | 6 files |
 | Phase 35 P02 | 9 | 2 tasks | 3 files |
+| Phase 35 P03 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,11 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Plan 02: HowTo + FAQPage combined into single JSON.stringify([howToSchema, faqSchema]) for one <script> block — valid per schema.org spec
 - Plan 02: FAQ items visible in body as <dl>/<dt>/<dd> on use-case pages (unlike VS pages where FAQ is JSON-LD only) — plan specification
 - Plan 02: Quote strategy from Plan 01 applied proactively — double-quoted strings for apostrophe content; no ESLint no-useless-escape issues encountered
+- Plan 03: seoRouter mounted with app.use(seoRouter) (no path prefix) — routes internally mount /vs, /alternatives, /use; no double-prefix needed
+- Plan 03: NOINDEX_PREFIXES verified unchanged — /vs, /alternatives, /use not added; these SSR pages are intentionally crawlable by Googlebot and AI bots
+- Plan 03: sitemap.xml extended from 1 to 17 entries (root + pricing pre-existing + 14 new SEO pages)
+- Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
+- Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
 
 ### Blockers/Concerns
 
@@ -167,5 +173,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 35-02-PLAN.md — USE_CASE_PAGES data map (8 slugs + hub), use.ts useRouter (hub + individual pages with HowTo + FAQPage JSON-LD), seoRouter /use mount; 3 files; TypeScript clean; husky passes
-Resume file: None — Phase 35 Plan 02 complete; next plan is 35-03 (mount seoRouter into app.ts)
+Stopped at: Completed 35-03-PLAN.md — seoRouter wired into app.ts, sitemap.xml extended to 17 entries, 31 SEO integration tests passing (SEO-01 through SEO-06); 302 total tests passing
+Resume file: None — Phase 35 Plan 03 complete; next plan is 35-04 (UAT verification)
