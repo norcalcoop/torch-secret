@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T00:44:06.268Z"
+last_updated: "2026-02-26T01:38:04.902Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 18
+  completed_plans: 18
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 34.1 of 38 (Passphrase/Password Tier Enforcement) — IN PROGRESS
-Plan: 1 of 1 in current phase — Plan 01 complete (protection_type schema + tier enforcement in POST /api/secrets + 6 integration tests)
-Status: Phase 34.1 Plan 01 complete — server-side protection_type tier guard shipped; 6 integration tests green
-Last activity: 2026-02-26 — Phase 34.1 Plan 01 complete; protection_type enum in CreateSecretSchema; anonymous blocked from passphrases; free blocked from password type
+Plan: 2 of 2 in current phase — Plan 02 complete (tier-aware protection panel with locked tabs + popover CTAs; protection_type wired into API call)
+Status: Phase 34.1 Plan 02 complete — frontend tier enforcement shipped; locked tabs with Free/Pro badges and popover CTAs; 271 tests green
+Last activity: 2026-02-26 — Phase 34.1 Plan 02 complete; createProtectionPanel({ isAuthenticated, isPro }); getProtectionType(); auth IIFE panel replacement
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -55,6 +55,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 34 P03 | 5min | 2 tasks | 4 files |
 | Phase 34 P04 | 3min | 1 task | 1 file |
 | Phase 34.1 P01 | 2min | 2 tasks | 3 files |
+| Phase 34.1 P02 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,12 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Protection tier guard placed after expiresIn caps, before createSecret() call in POST handler
 - Pro user elevation in tests: createUserAndSignIn() + direct Drizzle update to set subscriptionTier='pro'
 - 271 total tests pass (6 new protection_type tier tests + 265 pre-existing)
+- Plan 02: createProtectionPanel({ isAuthenticated, isPro }) — getLockLevel() helper drives per-tab lock state
+- Plan 02: Locked tab popovers appended to root (OUTSIDE tablist) — tablist must only own tab-role children (aria-required-children); tab elements must not contain interactive descendants (nested-interactive axe 4.11)
+- Plan 02: createProtectionPanel exported @internal for test isolation — generate-tab tests need Pro-mode panel since generate/custom are Pro-locked in anonymous mode
+- Plan 02: Auth IIFE replaces protection panel after tier resolves: oldPanel.parentElement?.insertBefore(newPanel, oldPanel); oldPanel.remove()
+- Plan 02: Submit handler reads protectionType = protectionPanel.getProtectionType(); passes as 6th arg to createSecret()
+- Plan 02: createSecret() extended with protectionType param (default 'none'); serialized as protection_type (snake_case) in JSON body
 
 ### Phase 34 Execution Notes
 
@@ -144,5 +151,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 34.1-01-PLAN.md — Phase 34.1 Plan 01 complete; protection_type tier enforcement at API layer shipped; 6 integration tests green; 271 total passing tests
-Resume file: None — Phase 34.1 Plan 01 complete; next plan is 34.1-02 (if exists) or Phase 35
+Stopped at: Completed 34.1-02-PLAN.md — tier-aware protection panel with locked tabs and popover CTAs; protection_type wired into API call; 271 tests green; Vite build clean
+Resume file: None — Phase 34.1 Plan 02 complete; next plan is 34.1-03 (if exists) or Phase 35
