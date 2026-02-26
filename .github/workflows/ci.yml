@@ -54,6 +54,11 @@ jobs:
       APP_URL: http://localhost:3000
       RESEND_API_KEY: re_placeholder
       RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      STRIPE_PRO_PRICE_ID: price_placeholder
+      RESEND_AUDIENCE_ID: aud_placeholder
+      IP_HASH_SALT: ci-test-ip-hash-salt-placeholder
 
     steps:
       - name: Checkout repository
@@ -119,6 +124,11 @@ jobs:
       APP_URL: http://localhost:3000
       RESEND_API_KEY: re_placeholder
       RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      STRIPE_PRO_PRICE_ID: price_placeholder
+      RESEND_AUDIENCE_ID: aud_placeholder
+      IP_HASH_SALT: ci-test-ip-hash-salt-placeholder
 
     steps:
       - name: Checkout repository

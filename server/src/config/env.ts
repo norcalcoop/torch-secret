@@ -30,6 +30,11 @@ const EnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
   STRIPE_PRO_PRICE_ID: z.string().startsWith('price_'),
+
+  // === Email Capture (Phase 36) ===
+  RESEND_AUDIENCE_ID: z.string().min(1),
+  /** Salt for SHA-256 IP hashing — prevents rainbow-table reversal of IPv4 space (ECAP-05) */
+  IP_HASH_SALT: z.string().min(16),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

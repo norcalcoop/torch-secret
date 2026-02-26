@@ -23,6 +23,7 @@ export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro'])
  *   Email (Resend):           notification email body contains only viewed-at timestamp; no secretId, label, or ciphertext — Phase 26
  *   Rate limits + prompts:    429 responses and conversion prompt events contain no userId or secretId — Phase 27
  *   Stripe billing:         webhook handler receives stripe_customer_id; activatePro/deactivatePro look up by stripe_customer_id only — no code path joins userId + secretId — Phase 34
+ *   Email capture:          marketing_subscribers stores email + GDPR evidence; no userId or secretId column — Phase 36
  *
  * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
  */
@@ -174,3 +175,47 @@ export type NewAccount = typeof accounts.$inferInsert;
 
 export type Verification = typeof verification.$inferSelect;
 export type NewVerification = typeof verification.$inferInsert;
+
+/**
+ * Marketing subscribers table: GDPR-compliant email capture for newsletters.
+ *
+ * Zero-knowledge invariant: this table has NO FK to users or secrets tables.
+ * No query may JOIN marketing_subscribers with secrets in the same result set.
+ * ip_hash is SHA-256(IP_HASH_SALT + req.ip) — never stores plain IP addresses.
+ * See .planning/INVARIANTS.md for the full enforcement rule (Phase 36).
+ */
+export const marketingSubscribers = pgTable(
+  'marketing_subscribers',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    email: text('email').notNull().unique(),
+    /** 'pending' | 'confirmed' | 'unsubscribed' */
+    status: text('status').notNull().default('pending'),
+    /** 21-char nanoid — cleared after confirmation; NULL if confirmed or unsubscribed */
+    confirmationToken: text('confirmation_token'),
+    /** Expiry for confirmationToken (24h from creation) */
+    tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
+    /** 21-char nanoid — generated at confirmation time; used in unsubscribe links (persists permanently) */
+    unsubscribeToken: text('unsubscribe_token').unique(),
+    /** Snapshot of the consent text shown at signup — GDPR evidence of what user consented to */
+    consentText: text('consent_text').notNull(),
+    /** UTC timestamp when consent was given */
+    consentAt: timestamp('consent_at', { withTimezone: true }).notNull().defaultNow(),
+    /** SHA-256(IP_HASH_SALT + req.ip) — pseudonymous; never plain IP address (GDPR ECAP-05) */
+    ipHash: text('ip_hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('marketing_subscribers_confirmation_token_idx').on(table.confirmationToken),
+    index('marketing_subscribers_unsubscribe_token_idx').on(table.unsubscribeToken),
+  ],
+);
+
+export type MarketingSubscriber = typeof marketingSubscribers.$inferSelect;
+export type NewMarketingSubscriber = typeof marketingSubscribers.$inferInsert;
