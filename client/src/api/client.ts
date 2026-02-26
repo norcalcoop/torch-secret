@@ -48,6 +48,10 @@ export class ApiError extends Error {
  *
  * On 429 Too Many Requests, throws ApiError with rateLimitReset set from
  * the RateLimit-Reset draft-6 header (delta in seconds, time remaining) for countdown display.
+ *
+ * @param protectionType - The protection mode selected by the user ('none' | 'passphrase' | 'password').
+ *   Serialized as `protection_type` (snake_case) in the JSON body per API contract.
+ *   Defaults to 'none' (no server-side password protection).
  */
 export async function createSecret(
   ciphertext: string,
@@ -55,6 +59,7 @@ export async function createSecret(
   password?: string,
   label?: string,
   notify?: boolean,
+  protectionType: 'none' | 'passphrase' | 'password' = 'none',
 ): Promise<CreateSecretResponse> {
   const res = await fetch('/api/secrets', {
     method: 'POST',
@@ -65,6 +70,7 @@ export async function createSecret(
       ...(password ? { password } : {}),
       ...(label ? { label } : {}),
       ...(notify !== undefined ? { notify } : {}),
+      protection_type: protectionType,
     }),
   });
 
