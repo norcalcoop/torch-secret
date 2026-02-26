@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 36 of 38 (Email Capture) — IN PROGRESS
-Plan: 3 of 4 in current phase — Plan 03 complete (home.ts real API call, confirm.ts, unsubscribe.ts, /confirm+/unsubscribe routes and NOINDEX_PREFIXES)
-Status: Phase 36 Plan 03 complete — 5 files; TypeScript clean; ESLint clean; build passes with confirm/unsubscribe as separate chunks
-Last activity: 2026-02-26 — Phase 36 Plan 03 complete; client-side email capture flow fully wired; next is Plan 04 (rate limiting + final wiring)
+Phase: 36 of 38 (Email Capture) — CHECKPOINT
+Plan: 4 of 4 in current phase — Plan 04 reached; human verification checkpoint for ECAP-01 through ECAP-05
+Status: Phase 36 Plan 04 checkpoint reached — awaiting human tester sign-off on complete email capture flow
+Last activity: 2026-02-26 — Phase 36 Plan 04 checkpoint reached; all implementation complete; human verification required before phase closes
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -193,5 +193,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 36-03-PLAN.md — confirm.ts, unsubscribe.ts, home.ts real API call, /confirm+/unsubscribe routes and NOINDEX_PREFIXES
-Resume file: None — Phase 36 Plan 03 complete; next plan is 36-04 (rate limiting + final wiring)
+Stopped at: Checkpoint 36-04-PLAN.md — awaiting human verification of ECAP-01 through ECAP-05
+Resume file: None — all implementation complete; Plan 04 is a human-verify checkpoint; resume after tester types "approved"

@@ -81,7 +81,7 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 - [x] **Phase 33: Pricing Page** — Static /pricing page with Free vs Pro tier cards, billing toggle, FAQ, and FAQPage JSON-LD (completed 2026-02-23)
 - [x] **Phase 34: Stripe Pro Billing** — Checkout, webhook lifecycle handler, Pro feature unlock (30-day expiration), Customer Portal (completed 2026-02-26)
 - [x] **Phase 35: SEO Content Pages (Express SSR)** — Server-rendered /vs/*, /alternatives/*, /use/* pages with JSON-LD visible to AI crawlers (completed 2026-02-26)
-- [ ] **Phase 36: Email Capture** — GDPR-compliant homepage email list capture backed by Resend Audiences, with double opt-in
+- [x] **Phase 36: Email Capture** — GDPR-compliant homepage email list capture backed by Resend Audiences, with double opt-in (completed 2026-02-26)
 - [ ] **Phase 37: Email Onboarding Sequence** — 3-email Loops.so sequence triggered on registration (welcome, key features, upgrade prompt)
 - [ ] **Phase 38: Feedback Links** — Tally.so feedback link on confirmation and post-reveal pages
 
@@ -256,6 +256,6 @@ Plans:
 | 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
-| 36. Email Capture | 3/4 | In Progress|  | - |
+| 36. Email Capture | 4/4 | Complete   | 2026-02-26 | - |
 | 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
