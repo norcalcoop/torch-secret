@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T19:36:21.651Z"
+last_updated: "2026-02-26T19:59:11Z"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 26
-  completed_plans: 25
+  completed_plans: 26
 ---
 
 # Session State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 36 of 38 (Email Capture) — CHECKPOINT
-Plan: 4 of 4 in current phase — Plan 04 reached; human verification checkpoint for ECAP-01 through ECAP-05
-Status: Phase 36 Plan 04 checkpoint reached — awaiting human tester sign-off on complete email capture flow
-Last activity: 2026-02-26 — Phase 36 Plan 04 checkpoint reached; all implementation complete; human verification required before phase closes
+Phase: 37 of 38 (Email Onboarding Sequence) — NEXT
+Plan: 0 of TBD — Phase 36 complete; Phase 37 not yet started
+Status: Phase 36 complete — all ECAP requirements verified by human tester; ready for Phase 37
+Last activity: 2026-02-26 — Phase 36 Plan 04 human verification approved; all 5 ECAP requirements confirmed; Phase 36 closed
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -62,6 +62,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 36 P01 | 7min | 2 tasks | 9 files |
 | Phase 36 P02 | 2min | 2 tasks | 3 files |
 | Phase 36 P03 | 3min | 2 tasks | 5 files |
+| Phase 36 P04 | ~1min | 1 task (checkpoint) | 0 files |
 
 ## Accumulated Context
 
@@ -185,6 +186,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Plan 03 complete: void handleSubmit() pattern for async addEventListener — avoids @typescript-eslint/no-misused-promises; replaceFormWithSuccess() clears section in-place; unsubscribe always shows success (idempotent — no token validity leakage)
 - /confirm and /unsubscribe registered in router.ts with noindex: true; both added to NOINDEX_PREFIXES in server/src/app.ts for X-Robots-Tag
 - Build verified: confirm and unsubscribe emit as separate chunks (confirm-*.js, unsubscribe-*.js)
+- Plan 04 complete: human verification approved 2026-02-26; all 5 ECAP requirements confirmed by tester (form submission, consent enforcement, confirmation email, /confirm + /unsubscribe pages, NOINDEX headers, ip_hash integrity)
 
 ### Blockers/Concerns
 
@@ -193,5 +195,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Checkpoint 36-04-PLAN.md — awaiting human verification of ECAP-01 through ECAP-05
-Resume file: None — all implementation complete; Plan 04 is a human-verify checkpoint; resume after tester types "approved"
+Stopped at: Completed 36-04-PLAN.md — Phase 36 Email Capture fully verified and closed
+Resume file: None — Phase 36 complete; Phase 37 (Email Onboarding Sequence) is next

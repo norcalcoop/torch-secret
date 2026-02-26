@@ -2,7 +2,7 @@
 phase: 36-email-capture
 plan: 04
 subsystem: ui
-tags: [email-capture, gdpr, human-verify, checkpoint]
+tags: [email-capture, gdpr, human-verify, checkpoint, double-opt-in, ecap]
 
 # Dependency graph
 requires:
@@ -13,8 +13,8 @@ requires:
     plan: 03
     provides: "home.ts real API call + confirm.ts + unsubscribe.ts SPA pages + /confirm+/unsubscribe NOINDEX"
 provides:
-  - "Human verification checkpoint for ECAP-01 through ECAP-05"
-  - "All ECAP success criteria confirmed by human tester"
+  - "Human verification sign-off for all ECAP requirements (ECAP-01 through ECAP-05)"
+  - "Phase 36 email capture feature confirmed working end-to-end — all checks approved"
 affects: []
 
 # Tech tracking
@@ -26,7 +26,8 @@ key-files:
   created: []
   modified: []
 
-key-decisions: []
+key-decisions:
+  - "All five ECAP success criteria verified by human tester on 2026-02-26: form submission, consent enforcement, confirmation email delivery, /confirm and /unsubscribe pages, NOINDEX headers, and DB consent record with ip_hash"
 
 patterns-established: []
 
@@ -39,58 +40,67 @@ completed: 2026-02-26
 
 # Phase 36 Plan 04: Email Capture Verification Checkpoint Summary
 
-**Human verification gate for complete GDPR double opt-in email capture flow — ECAP-01 through ECAP-05 awaiting tester sign-off**
+**GDPR double opt-in email capture flow fully verified end-to-end: form submission, consent enforcement, confirmation email, /confirm page, /unsubscribe page, NOINDEX headers, and DB ip_hash integrity — all ECAP checks approved**
 
 ## Performance
 
-- **Duration:** N/A (checkpoint plan — awaits human verification)
+- **Duration:** N/A (human verification checkpoint)
 - **Started:** 2026-02-26T19:38:08Z
-- **Completed:** Pending human verification
-- **Tasks:** 0/1 (checkpoint gate)
+- **Completed:** 2026-02-26T19:59:11Z
+- **Tasks:** 1/1 (checkpoint gate — approved)
 - **Files modified:** 0
 
 ## Accomplishments
 
-This plan is a verification checkpoint only. All implementation was delivered in Plans 02 and 03:
+All ECAP requirements verified by human tester and approved:
 
-- Plan 02: POST /api/subscribers, GET /api/subscribers/confirm, GET /api/subscribers/unsubscribe — all 16 integration tests GREEN (318 total)
-- Plan 03: home.ts real API call with in-flight state + success/error UX; confirm.ts and unsubscribe.ts SPA pages; /confirm + /unsubscribe in router + NOINDEX_PREFIXES
+- **ECAP-01:** Homepage email form submits — in-flight "Joining..." state observed; form replaced with "Check your inbox — we sent a confirmation link to [email]" success message on 200; no toast, no reload
+- **ECAP-02:** Consent checkbox enforcement confirmed — unchecked consent blocks submission with inline error "Please check the consent box to continue."
+- **ECAP-03:** Confirmation email delivered via Resend; clicking CTA link opens /confirm?token= showing "You're on the list!" with "Try Torch Secret" CTA
+- **ECAP-04:** /unsubscribe?token= shows immediate unsubscribed confirmation (idempotent); expired token for /confirm correctly shows expired state with "Back to homepage" link
+- **ECAP-05:** DB ip_hash is 64-char hex (not plain IP); consent_text and consent_at present and correct
+- **NOINDEX:** X-Robots-Tag: noindex, nofollow confirmed on both /confirm and /unsubscribe HTTP responses
 
 ## Task Commits
 
-No implementation commits in this plan — checkpoint only.
+No implementation commits in this plan — checkpoint verification only.
+
+Prior plans delivered all code:
+- Plan 02: `d8b05db` — subscribers API (16 tests GREEN, 318 total)
+- Plan 03: `01e43c7`, `5517add` — client pages + NOINDEX routing
 
 ## Files Created/Modified
 
-None.
+None — this plan is a human-verify checkpoint with no code changes.
 
 ## Decisions Made
 
-None - checkpoint plan awaiting human verification.
+None - human verification confirmed all ECAP checks pass. No implementation changes required.
 
 ## Deviations from Plan
 
-None - plan executed exactly as written (checkpoint gate reached immediately).
+None - plan executed exactly as written. All checks approved by human tester on first pass.
 
 ## Issues Encountered
 
-None.
+None — all ECAP checks passed without issues on first verification pass.
 
 ## User Setup Required
 
-**For human verification to succeed**, the following must be set in `.env`:
-- `RESEND_API_KEY` — Required for confirmation email delivery
-- `RESEND_FROM_EMAIL` — Sender address (e.g., noreply@torchsecret.com)
-- `RESEND_AUDIENCE_ID` — Resend Dashboard Audience ID for list sync
-- `IP_HASH_SALT` — Min 16-char random salt (generate: `openssl rand -base64 24`)
-
-Without these, the server will fail to send confirmation emails. The DB row will still be created.
+None — verification complete. External services (Resend, IP_HASH_SALT) were confirmed working during the check.
 
 ## Next Phase Readiness
 
-After human approval:
-- Phase 36 is complete — all 5 ECAP requirements verified
-- Next: Phase 37 (remaining v5.0 roadmap items)
+- Phase 36 (Email Capture) is complete — all 4 plans shipped, all 5 ECAP requirements verified by human tester
+- marketing_subscribers table live in production schema; GDPR double opt-in flow confirmed working
+- Resend Audience sync confirmed operational (fire-and-forget pattern; local DB is source of truth)
+- Ready for next phase in v5.0 Product Launch Checklist
+
+## Self-Check: PASSED
+
+- FOUND: .planning/phases/36-email-capture/36-04-SUMMARY.md (this file)
+- FOUND: commit afc218a (checkpoint commit from prior agent)
+- No code files expected — this is a human-verify checkpoint plan
 
 ---
 *Phase: 36-email-capture*
