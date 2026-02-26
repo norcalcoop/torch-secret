@@ -189,7 +189,12 @@ Plans:
   3. After submitting, the user receives a confirmation email with a link to complete double opt-in before being added to the active subscriber list
   4. Clicking the unsubscribe link in any marketing email (or navigating to `GET /unsubscribe?token=`) shows a confirmation that the user has been unsubscribed
   5. The `marketing_subscribers` table stores consent timestamp, consent text snapshot, and IP hash for each subscriber — no plain-text IP addresses are stored
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 36-01-PLAN.md — INVARIANTS.md extension + marketingSubscribers schema + env vars + migration + test scaffold
+- [ ] 36-02-PLAN.md — Subscriber service + subscribersRouter (POST, GET /confirm, GET /unsubscribe) + app.ts wiring
+- [ ] 36-03-PLAN.md — home.ts form wiring + /confirm and /unsubscribe SPA pages + router + NOINDEX
+- [ ] 36-04-PLAN.md — Human UAT checkpoint: verify all ECAP requirements end-to-end
 
 ### Phase 37: Email Onboarding Sequence
 **Goal**: Every new account holder automatically receives a timed 3-email sequence that introduces Torch Secret, highlights key features, and (with marketing consent) prompts upgrade to Pro
@@ -251,6 +256,6 @@ Plans:
 | 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
-| 36. Email Capture | v5.0 | 0/TBD | Not started | - |
+| 36. Email Capture | v5.0 | 0/4 | Not started | - |
 | 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
