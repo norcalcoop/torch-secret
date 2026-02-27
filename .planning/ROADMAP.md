@@ -228,6 +228,18 @@ Plans:
 - [ ] 37.1-02-PLAN.md — Wire call sites in create.ts (getActiveTabId + protection_type) and dashboard.ts (all events + identifyUser extension)
 - [ ] 37.1-03-PLAN.md — PostHog cloud UI configuration (dashboard, funnels, cohorts) + browser event verification
 
+### Phase 37.2: get the most out of infiscal free tier integration (INSERTED)
+
+**Goal:** Migrate all secrets from .env files into Infisical Cloud and wire every environment (local dev, CI, production on Render.com) to pull secrets via the Infisical CLI — making Infisical the single source of truth for all secrets with no application code changes.
+**Requirements**: none
+**Depends on:** Phase 37
+**Plans:** 3 plans
+
+Plans:
+- [ ] 37.2-01-PLAN.md — Infisical project setup: create project + environments + OIDC identity + import secrets (human-action checkpoint)
+- [ ] 37.2-02-PLAN.md — Code changes: .infisical.json + package.json script prefixes + ci.yml OIDC injection + .env.example cleanup + README update
+- [ ] 37.2-03-PLAN.md — Platform wiring: GitHub Actions variable + Render Secret Sync + smoke-test local dev (human-action + verify checkpoints)
+
 ### Phase 37.3: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (INSERTED)
 
 **Goal:** [Urgent work - to be planned]
@@ -237,16 +249,6 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 37.3 to break down)
-
-### Phase 37.2: get the most out of infiscal free tier integration (INSERTED)
-
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
-**Depends on:** Phase 37
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 37.2 to break down)
 
 ### Phase 38: Feedback Links
 **Goal**: Users who have just created or just viewed a secret can reach a feedback form with one click, giving the team a direct signal channel at the highest-intent moments
@@ -300,4 +302,5 @@ Plans:
 | 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
 | 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 0/3 | Not started | - |
+| 37.2. Infisical Free Tier Integration | v5.0 | 0/3 | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
