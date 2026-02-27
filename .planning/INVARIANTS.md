@@ -48,6 +48,7 @@ This invariant applies to:
 | **Rate limits + conversion prompts** | `server/src/middleware/rate-limit.ts`, `client/src/analytics/posthog.ts` | 429 responses for anonymous users contain no `userId` (anonymous by definition) and no `secretId` (POST /api/secrets URL contains no secret ID). Conversion prompt analytics events (`conversion_prompt_shown`, `conversion_prompt_clicked`) contain only `prompt_number` — no `userId`, no `secretId`. Legal pages contain no user-identifiable or secret-identifiable data. | Phase 27 |
 | **Stripe billing** | `server/src/routes/webhooks.ts`, `server/src/services/billing.service.ts` | Webhook handler receives `stripe_customer_id` from the Stripe event payload. All DB lookups in billing service use `eq(users.stripeCustomerId, ...)` — user is looked up BY stripe_customer_id, not the other way around. No webhook code path receives or logs both `userId` and `secretId` simultaneously. `stripe_customer_id` must not be logged alongside `userId` in the same Pino log line. The `getOrCreateStripeCustomer` function stores `stripe_customer_id` on the user row (a `userId`+`customerId` link) — this is acceptable because Stripe is a trusted payment processor and the link does NOT involve `secretId`. | Phase 34 |
 | **Email capture — marketing_subscribers** | `server/src/db/schema.ts` `marketing_subscribers` table | Table stores email address and GDPR consent evidence (consent_text snapshot, consent_at timestamp, ip_hash). MUST NOT store userId or secretId — it is a standalone GDPR record with no FK to the users or secrets tables. No query may JOIN marketing_subscribers with secrets in the same result set. ip_hash is SHA-256(IP_HASH_SALT + req.ip) — never plain IP. | Phase 36 |
+| **Analytics — new events (Phase 37.1)** | `client/src/analytics/posthog.ts` | `checkout_initiated` carries only `{ source }` — no secretId, no userId. `subscription_activated` carries no properties (only fires setPersonProperties for tier). `dashboard_viewed` carries no properties. `secret_created` gains `protection_type` property derived from UI tab state — never from server response. `identifyUser()` extended with optional `tier` + `registeredAt` person properties — no email, no name, no secretId. All events pass through the existing `sanitizeEventUrls` before_send hook. | Phase 37.1 |
 
 ### Extension Protocol
 
@@ -67,4 +68,4 @@ Both references must remain current.
 ---
 
 *Document created: Phase 21 (Schema Foundation)*
-*Last updated: Phase 36*
+*Last updated: Phase 37.1*

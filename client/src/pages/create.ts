@@ -1283,7 +1283,7 @@ export function renderCreatePage(container: HTMLElement): void {
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
         // Step 4: Fire analytics before navigating away from create context
-        captureSecretCreated(expiresIn, !!password);
+        captureSecretCreated(expiresIn, !!password, protectionType);
 
         // Step 5: Determine conversion prompt number for anonymous users.
         // Authenticated users never see conversion prompts.
