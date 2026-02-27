@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-26T20:04:34.835Z"
+last_updated: "2026-02-27T00:51:04.186Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
-  total_plans: 26
-  completed_plans: 26
+  total_plans: 29
+  completed_plans: 27
 ---
 
 # Session State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 36: Email Capture (GDPR-compliant marketing subscribers)
+**Current focus:** v5.0 Product Launch Checklist — Phase 37: Email Onboarding Sequence (Loops integration)
 
 ## Current Position
 
-Phase: 37 of 38 (Email Onboarding Sequence) — NEXT
-Plan: 0 of TBD — Phase 36 complete; Phase 37 not yet started
-Status: Phase 36 complete — all ECAP requirements verified by human tester; ready for Phase 37
-Last activity: 2026-02-26 — Phase 36 Plan 04 human verification approved; all 5 ECAP requirements confirmed; Phase 36 closed
+Phase: 37 of 38 (Email Onboarding Sequence) — IN PROGRESS
+Plan: 1 of TBD — Plan 01 complete; Plan 02 is next
+Status: Phase 37 Plan 01 complete — marketing consent infrastructure delivered; RED test scaffolds in place
+Last activity: 2026-02-27 — Phase 37 Plan 01 complete; migration 0006 applied; Better Auth additionalFields; register form checkbox; RED test scaffolds for onboarding service
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -63,6 +63,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 36 P02 | 2min | 2 tasks | 3 files |
 | Phase 36 P03 | 3min | 2 tasks | 5 files |
 | Phase 36 P04 | ~1min | 1 task (checkpoint) | 0 files |
+| Phase 37 P01 | 5 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,16 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
 - Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
 
+### Phase 37 Execution Notes
+
+- marketingConsent boolean column added to users table via migration 0006 (ALTER TABLE "users" ADD COLUMN "marketing_consent" boolean DEFAULT false NOT NULL)
+- Better Auth additionalFields.marketingConsent with input:true — client signUp.email() passes consent value directly into users table without custom middleware or endpoints
+- Migration renamed from drizzle-kit auto-name (0006_deep_joystick.sql) to 0006_add_marketing_consent.sql per project convention; _journal.json updated
+- LOOPS_API_KEY added as required env var (not optional); CI placeholder loops_placeholder added to test job
+- register.ts: #marketing-consent checkbox unchecked by default, inserted before consentLine via form.insertBefore(); setFormLoading() extended to disable/enable checkbox
+- 321 total tests pass after Plan 01 (3 new GREEN from register.test.ts + 318 pre-existing)
+- onboarding.service.test.ts (6 cases) and billing.service.test.ts (1 case) are intentional RED — Plan 02 creates the onboarding service and extends billing service
+
 ### Phase 36 Execution Notes
 
 - marketing_subscribers has NO FK to users or secrets — standalone GDPR table, ZK invariant enforced at schema level
@@ -194,6 +205,6 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 
 ## Session Continuity
 
-Last session: 2026-02-26
-Stopped at: Completed 36-04-PLAN.md — Phase 36 Email Capture fully verified and closed
-Resume file: None — Phase 36 complete; Phase 37 (Email Onboarding Sequence) is next
+Last session: 2026-02-27
+Stopped at: Completed 37-01-PLAN.md — marketing consent infrastructure (schema, migration, Better Auth fields, register form, CI env, RED scaffolds)
+Resume file: None — Phase 37 Plan 02 is next (create onboarding.service.ts, install loops SDK, add databaseHooks to auth.ts)
