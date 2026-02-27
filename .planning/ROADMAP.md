@@ -205,7 +205,11 @@ Plans:
   2. A user who opted in to marketing during registration receives a key features email on day 3 and an upgrade prompt email on day 7 — users who did not opt in receive only the welcome email
   3. The upgrade prompt email (day 7) links to a live Stripe Checkout session that correctly initiates a Pro subscription
   4. The registration form includes a marketing consent opt-in checkbox (unchecked by default) with clear language, and checking it is stored in the database before any marketing email is sent
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 37-01-PLAN.md — Schema foundation: marketing_consent column + migration + Better Auth additionalFields + register form checkbox + RED test scaffolds
+- [ ] 37-02-PLAN.md — Loops.so integration: SDK install + singleton + onboarding service + auth hook + billing Pro sync + GREEN tests
+- [ ] 37-03-PLAN.md — Loops UI configuration checkpoint + end-to-end ESEQ verification
 
 ### Phase 38: Feedback Links
 **Goal**: Users who have just created or just viewed a secret can reach a feedback form with one click, giving the team a direct signal channel at the highest-intent moments
@@ -257,5 +261,5 @@ Plans:
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
 | 36. Email Capture | 4/4 | Complete    | 2026-02-26 | - |
-| 37. Email Onboarding Sequence | v5.0 | 0/TBD | Not started | - |
+| 37. Email Onboarding Sequence | v5.0 | 0/3 | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
