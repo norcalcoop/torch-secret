@@ -216,6 +216,38 @@ Plans:
 - [x] 37-02-PLAN.md — Loops.so integration: SDK install + singleton + onboarding service + auth hook + billing Pro sync + GREEN tests
 - [x] 37-03-PLAN.md — Loops UI configuration checkpoint + end-to-end ESEQ verification
 
+### Phase 37.1: get the most out of posthog free tier integration (INSERTED)
+
+**Goal:** Maximize PostHog event coverage and person-property richness for the launch: add three new events (checkout_initiated, subscription_activated, dashboard_viewed), extend two existing ones (secret_created with protection_type, identifyUser with tier + registered_at), and configure the PostHog cloud with a launch dashboard, two conversion funnels, and three cohorts.
+**Requirements**: none
+**Depends on:** Phase 37
+**Plans:** 3 plans
+
+Plans:
+- [ ] 37.1-01-PLAN.md — INVARIANTS.md update + posthog.ts new/extended functions + unit tests
+- [ ] 37.1-02-PLAN.md — Wire call sites in create.ts (getActiveTabId + protection_type) and dashboard.ts (all events + identifyUser extension)
+- [ ] 37.1-03-PLAN.md — PostHog cloud UI configuration (dashboard, funnels, cohorts) + browser event verification
+
+### Phase 37.3: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 37
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 37.3 to break down)
+
+### Phase 37.2: get the most out of infiscal free tier integration (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 37
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 37.2 to break down)
+
 ### Phase 38: Feedback Links
 **Goal**: Users who have just created or just viewed a secret can reach a feedback form with one click, giving the team a direct signal channel at the highest-intent moments
 **Depends on**: Phase 31
@@ -267,4 +299,5 @@ Plans:
 | 35. SEO Content Pages (Express SSR) | v5.0 | 4/4 | Complete | 2026-02-26 |
 | 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
 | 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
+| 37.1. PostHog Free Tier Enrichment | v5.0 | 0/3 | Not started | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
