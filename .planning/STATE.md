@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-27T17:18:34.784Z"
+last_updated: "2026-02-27T17:23:47.040Z"
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 35
-  completed_plans: 30
+  completed_plans: 31
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 37.1 of 38 (PostHog free tier integration)
-Plan: 1 of 3 complete — Plan 02 is next
-Status: Plan 01 complete — PostHog analytics extended with 5 new/extended exports; 19 new unit tests; 347 total tests pass
-Last activity: 2026-02-27 — Phase 37.1 Plan 01 complete; captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed added; captureSecretCreated and identifyUser extended with new params
+Plan: 2 of 3 complete — Plan 03 is next (if exists; phase may be complete)
+Status: Plan 02 complete — All PostHog analytics call sites wired: create.ts has 4-value analyticsProtectionType; dashboard.ts has identifyUser with tier+registeredAt, captureDashboardViewed, captureCheckoutInitiated, captureSubscriptionActivated
+Last activity: 2026-02-27 — Phase 37.1 Plan 02 complete; all 5 analytics functions firing in production flows; 347 tests pass
 
 Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases complete)
 
@@ -67,6 +67,7 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 | Phase 37 P02 | 3min | 2 tasks | 7 files |
 | Phase 37 P03 | human-action | 2 tasks | 0 files |
 | Phase 37.1 P01 | 4 | 2 tasks | 4 files |
+| Phase 37.1 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -187,6 +188,10 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 - No-op tests: vi.resetModules() + dynamic import for fresh _initialized=false module state
 - INVARIANTS.md updated before any code (mandatory protocol): Phase 37.1 analytics events row added
 - 19 new tests + 328 pre-existing = 347 total passing
+- Plan 02: getActiveTabId() added to createProtectionPanel return — exposes raw tab ID; analyticsProtectionType computed in submit handler mapping 'generate'→'generated', 'custom'→'password', 'passphrase'→'passphrase', 'none'→'none'
+- Plan 02: registeredAt declared as let outside getMe() try block — accessible at identifyUser call site; safe degradation (undefined) on error
+- Plan 02: captureCheckoutInitiated fires before window.location.href — PostHog flushes before unload; event reliably reaches server
+- Plan 02: captureSubscriptionActivated scoped inside isUpgraded && checkoutSessionId guard, on verifyCheckoutSession() success path only — never fires on regular dashboard loads
 
 ### Phase 37 Execution Notes
 
@@ -227,5 +232,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 37.1-01-PLAN.md — PostHog analytics extended with 5 new/extended exports (captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed, extended captureSecretCreated + identifyUser); 19 new tests; 347 total pass
-Resume file: None — Phase 37.1 Plan 02 is next
+Stopped at: Completed 37.1-02-PLAN.md — PostHog analytics call sites wired; create.ts has 4-value analyticsProtectionType + getActiveTabId(); dashboard.ts has identifyUser(id, tier, registeredAt), captureDashboardViewed, captureCheckoutInitiated('dashboard'), captureSubscriptionActivated; 347 tests pass
+Resume file: None — Phase 37.1 Plan 03 is next (if it exists)
