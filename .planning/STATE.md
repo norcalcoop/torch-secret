@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
-status: in_progress
-last_updated: "2026-02-27T12:00:00.000Z"
+status: unknown
+last_updated: "2026-02-27T17:18:34.784Z"
 progress:
-  total_phases: 8
-  completed_phases: 7
-  total_plans: 29
-  completed_plans: 29
+  total_phases: 11
+  completed_phases: 8
+  total_plans: 35
+  completed_plans: 30
 ---
 
 # Session State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 38 of 38 (Feedback Links) — NOT STARTED
-Plan: 0 of TBD — Phase 38 is next
-Status: Phase 37 complete — Loops onboarding loop published and active; welcome email verified delivered to test inbox; all ESEQ-01 through ESEQ-04 requirements confirmed
-Last activity: 2026-02-27 — Phase 37 Plan 03 complete; Loops 3-email onboarding loop configured in Loops UI; welcome email live and personalized; phase 37 fully shipped
+Phase: 37.1 of 38 (PostHog free tier integration)
+Plan: 1 of 3 complete — Plan 02 is next
+Status: Plan 01 complete — PostHog analytics extended with 5 new/extended exports; 19 new unit tests; 347 total tests pass
+Last activity: 2026-02-27 — Phase 37.1 Plan 01 complete; captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed added; captureSecretCreated and identifyUser extended with new params
 
 Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases complete)
 
@@ -66,6 +66,7 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 | Phase 37 P01 | 5 | 2 tasks | 10 files |
 | Phase 37 P02 | 3min | 2 tasks | 7 files |
 | Phase 37 P03 | human-action | 2 tasks | 0 files |
+| Phase 37.1 P01 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -178,6 +179,15 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 - Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
 - Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
 
+### Phase 37.1 Execution Notes
+
+- captureSecretCreated extended: protectionType is required (3rd param) — create.ts callsite updated in same commit
+- identifyUser extended: tier + registeredAt optional — existing callers (login.ts, register.ts) unchanged
+- captureSubscriptionActivated: calls posthog.capture() then posthog.setPersonProperties({ tier: 'pro' }) inline — single-call pattern
+- No-op tests: vi.resetModules() + dynamic import for fresh _initialized=false module state
+- INVARIANTS.md updated before any code (mandatory protocol): Phase 37.1 analytics events row added
+- 19 new tests + 328 pre-existing = 347 total passing
+
 ### Phase 37 Execution Notes
 
 - marketingConsent boolean column added to users table via migration 0006 (ALTER TABLE "users" ADD COLUMN "marketing_consent" boolean DEFAULT false NOT NULL)
@@ -217,5 +227,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 37-03-PLAN.md — Loops onboarding loop published and active; welcome email verified live in test inbox; all ESEQ requirements confirmed; Phase 37 complete
-Resume file: None — Phase 37 complete; Phase 38 (Feedback Links) is next
+Stopped at: Completed 37.1-01-PLAN.md — PostHog analytics extended with 5 new/extended exports (captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed, extended captureSecretCreated + identifyUser); 19 new tests; 347 total pass
+Resume file: None — Phase 37.1 Plan 02 is next
