@@ -261,5 +261,5 @@ Plans:
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
 | 36. Email Capture | 4/4 | Complete    | 2026-02-26 | - |
-| 37. Email Onboarding Sequence | 1/3 | In Progress|  | - |
+| 37. Email Onboarding Sequence | 2/3 | In Progress|  | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |

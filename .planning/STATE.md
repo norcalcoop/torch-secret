@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 37 of 38 (Email Onboarding Sequence) — IN PROGRESS
-Plan: 1 of TBD — Plan 01 complete; Plan 02 is next
-Status: Phase 37 Plan 01 complete — marketing consent infrastructure delivered; RED test scaffolds in place
-Last activity: 2026-02-27 — Phase 37 Plan 01 complete; migration 0006 applied; Better Auth additionalFields; register form checkbox; RED test scaffolds for onboarding service
+Plan: 2 of TBD — Plan 02 complete; Plan 03 is next (if any)
+Status: Phase 37 Plan 02 complete — Loops SDK installed, onboarding service wired, activatePro syncs Loops contact; all 7 RED test scaffolds now GREEN
+Last activity: 2026-02-27 — Phase 37 Plan 02 complete; loops@6.2.0 installed; config/loops.ts singleton; onboarding.service.ts; auth.ts databaseHooks hook; billing.service.ts extended with Loops contact sync
 
 Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
 
@@ -64,6 +64,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 36 P03 | 3min | 2 tasks | 5 files |
 | Phase 36 P04 | ~1min | 1 task (checkpoint) | 0 files |
 | Phase 37 P01 | 5 | 2 tasks | 10 files |
+| Phase 37 P02 | 3min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -74,7 +75,9 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - Do NOT use @better-auth/stripe billing webhook path — 4 open bugs (#2440, #4957, #5976, #4801 as of Feb 2026) break subscription lifecycle; use raw stripe SDK with hand-written handler
 - SEO content pages (/vs/*, /alternatives/*, /use/*) MUST be Express SSR — SPA routes are invisible to AI crawlers (GPTBot, ClaudeBot, PerplexityBot) and delay Googlebot indexing by days-to-weeks on a new domain
 - GDPR: welcome email is transactional (no consent needed); key features + upgrade prompt emails are marketing (explicit consent required; marketing consent checkbox on registration form must be unchecked by default)
-- loops@6.2.0 uses v6.x createContact() single-object API — breaking change from v5; do not use v5 positional arguments
+- loops@6.2.0 uses v6.x sendEvent()/updateContact() single-object API — breaking change from v5; do not use v5 positional arguments
+- Loops databaseHooks.after hook must be non-async when using void+.catch() fire-and-forget — async without await triggers @typescript-eslint/require-await
+- activatePro() extended with DB select by stripeCustomerId to get email, then loops.updateContact({ subscriptionTier: 'pro' }) fire-and-forget — billing never blocked by Loops outage
 - Use resend@6.9.2 Audiences API (resend.contacts.create()) for email list capture — no new package needed
 - Before writing any webhook handler code: extend INVARIANTS.md with a Stripe/billing row first (BILL-06)
 
@@ -206,5 +209,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 37-01-PLAN.md — marketing consent infrastructure (schema, migration, Better Auth fields, register form, CI env, RED scaffolds)
-Resume file: None — Phase 37 Plan 02 is next (create onboarding.service.ts, install loops SDK, add databaseHooks to auth.ts)
+Stopped at: Completed 37-02-PLAN.md — Loops SDK installed, onboarding service created, auth.ts databaseHooks wired, activatePro extended with Loops contact sync; 328 tests GREEN
+Resume file: None — Phase 37 Plan 02 complete; check ROADMAP.md for next plan in phase 37
