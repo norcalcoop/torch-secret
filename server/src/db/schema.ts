@@ -24,6 +24,7 @@ export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro'])
  *   Rate limits + prompts:    429 responses and conversion prompt events contain no userId or secretId — Phase 27
  *   Stripe billing:         webhook handler receives stripe_customer_id; activatePro/deactivatePro look up by stripe_customer_id only — no code path joins userId + secretId — Phase 34
  *   Email capture:          marketing_subscribers stores email + GDPR evidence; no userId or secretId column — Phase 36
+ *   Loops onboarding:     databaseHooks hook logs only err.message on failure — no userId in Loops error logs — Phase 37
  *
  * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
  */
@@ -43,6 +44,8 @@ export const users = pgTable('users', {
   stripeCustomerId: text('stripe_customer_id'),
   /** Subscription tier — 'free' by default, 'pro' after successful payment (Phase 34) */
   subscriptionTier: subscriptionTierEnum('subscription_tier').notNull().default('free'),
+  /** Whether user opted in to marketing emails at registration — gates day-3/day-7 Loops sequence (Phase 37) */
+  marketingConsent: boolean('marketing_consent').notNull().default(false),
 });
 
 export const sessions = pgTable('sessions', {

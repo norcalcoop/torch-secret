@@ -35,6 +35,9 @@ const EnvSchema = z.object({
   RESEND_AUDIENCE_ID: z.string().min(1),
   /** Salt for SHA-256 IP hashing — prevents rainbow-table reversal of IPv4 space (ECAP-05) */
   IP_HASH_SALT: z.string().min(16),
+
+  // === Loops Onboarding (Phase 37) ===
+  LOOPS_API_KEY: z.string().min(1),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

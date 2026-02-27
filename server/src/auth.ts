@@ -115,6 +115,17 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: [env.BETTER_AUTH_URL, ...(env.APP_URL ? [env.APP_URL] : [])],
+
+  user: {
+    additionalFields: {
+      marketingConsent: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        input: true, // allows client to pass value during signUp.email()
+      },
+    },
+  },
 });
 
 export type AuthSession = typeof auth.$Infer.Session;
