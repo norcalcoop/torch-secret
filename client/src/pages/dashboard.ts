@@ -25,6 +25,9 @@ import {
   resetAnalyticsIdentity,
   captureUserLoggedIn,
   captureUserRegistered,
+  captureDashboardViewed,
+  captureCheckoutInitiated,
+  captureSubscriptionActivated,
 } from '../analytics/posthog.js';
 import type { DashboardSecretItem } from '../../../shared/types/api.js';
 
@@ -362,9 +365,11 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
 
   // Fetch Pro status (subscriptionTier not on Better Auth session)
   let subscriptionTier: 'free' | 'pro' = 'free';
+  let registeredAt: string | undefined;
   try {
     const meData = await getMe();
     subscriptionTier = meData.user.subscriptionTier;
+    registeredAt = meData.user.createdAt;
   } catch {
     // Safe degradation: treat as free on error
   }
@@ -383,7 +388,8 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
   // Called on every dashboard load: covers email login returns AND OAuth callbacks
   // (callbackURL: '/dashboard'). PostHog deduplicates when distinct ID is unchanged.
   // Never pass email, name, or secretId — zero-knowledge invariant.
-  identifyUser(session.user.id);
+  identifyUser(session.user.id, subscriptionTier, registeredAt);
+  captureDashboardViewed();
 
   // OAuth analytics: detect post-OAuth landing and fire the correct event.
   //
@@ -526,6 +532,7 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
         upgradeBtn.textContent = 'Redirecting to Stripe\u2026';
         try {
           const { url } = await initiateCheckout();
+          captureCheckoutInitiated('dashboard');
           window.location.href = url;
         } catch {
           showToast('Could not start checkout. Please try again.');
@@ -571,6 +578,7 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
 
       try {
         await verifyCheckoutSession(checkoutSessionId);
+        captureSubscriptionActivated(); // fires only on verified Stripe success
         // Success: replace spinner with success message
         spinner.remove();
         banner.className =
