@@ -4,6 +4,8 @@ import { db } from './db/connection.js';
 import * as schema from './db/schema.js';
 import { resend } from './services/email.js';
 import { env } from './config/env.js';
+import { enrollInOnboardingSequence } from './services/onboarding.service.js';
+import { logger } from './middleware/logger.js';
 
 /**
  * Rewrites a Better Auth-generated URL so its origin (and any embedded
@@ -123,6 +125,31 @@ export const auth = betterAuth({
         required: false,
         defaultValue: false,
         input: true, // allows client to pass value during signUp.email()
+      },
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: (user) => {
+          // Fire-and-forget: registration must succeed even if Loops is down.
+          // Cast user to access additionalFields — Better Auth's inferred hook types
+          // may not include additionalFields without explicit type augmentation.
+          const userWithConsent = user as typeof user & { marketingConsent?: boolean };
+          void enrollInOnboardingSequence({
+            email: user.email,
+            name: user.name,
+            marketingConsent: userWithConsent.marketingConsent ?? false,
+            subscriptionTier: 'free', // new users are always free tier
+          }).catch((err: unknown) => {
+            // ZK invariant: log only err.message — no userId, no email in the same log line
+            logger.error(
+              { err: err instanceof Error ? err.message : String(err) },
+              'Loops onboarding enrollment failed',
+            );
+          });
+        },
       },
     },
   },

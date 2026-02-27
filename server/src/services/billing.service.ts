@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
 import { stripe } from '../config/stripe.js';
+import { loops } from '../config/loops.js';
+import { logger } from '../middleware/logger.js';
 import type { AuthUser } from '../auth.js';
 
 /**
@@ -11,10 +13,35 @@ import type { AuthUser } from '../auth.js';
  */
 
 export async function activatePro(stripeCustomerId: string): Promise<void> {
+  // Update subscription tier in DB (existing behavior)
   await db
     .update(users)
     .set({ subscriptionTier: 'pro' })
     .where(eq(users.stripeCustomerId, stripeCustomerId));
+
+  // Sync Pro status to Loops contact so day-7 audience filter can suppress upgrade email.
+  // Look up email by stripeCustomerId — same pattern as getOrCreateStripeCustomer.
+  // ZK invariant: stripeCustomerId is the lookup key; userId is not in scope here.
+  const [proUser] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.stripeCustomerId, stripeCustomerId));
+
+  if (proUser) {
+    void loops
+      .updateContact({
+        email: proUser.email,
+        properties: { subscriptionTier: 'pro' },
+      })
+      .catch((err: unknown) => {
+        // Non-critical: log and continue — billing is unaffected if Loops is down
+        // ZK invariant: log only err.message — no userId in same log line
+        logger.error(
+          { err: err instanceof Error ? err.message : String(err) },
+          'Loops contact update failed on Pro upgrade',
+        );
+      });
+  }
 }
 
 export async function deactivatePro(stripeCustomerId: string): Promise<void> {

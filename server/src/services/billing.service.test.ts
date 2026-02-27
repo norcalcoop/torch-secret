@@ -4,8 +4,13 @@ const { mockUpdateContact } = vi.hoisted(() => ({
   mockUpdateContact: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-const { mockDbUpdate } = vi.hoisted(() => ({
-  mockDbUpdate: vi.fn().mockReturnValue({
+const { mockSelect, mockUpdate } = vi.hoisted(() => ({
+  mockSelect: vi.fn().mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([{ email: 'alice@example.com' }]),
+    }),
+  }),
+  mockUpdate: vi.fn().mockReturnValue({
     set: vi.fn().mockReturnValue({
       where: vi.fn().mockResolvedValue([]),
     }),
@@ -17,7 +22,7 @@ vi.mock('../config/loops.js', () => ({
 }));
 
 vi.mock('../db/connection.js', () => ({
-  db: { update: mockDbUpdate },
+  db: { select: mockSelect, update: mockUpdate },
 }));
 
 import { activatePro } from './billing.service.js';
@@ -26,9 +31,14 @@ describe('activatePro — Loops contact update (ESEQ-03)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateContact.mockResolvedValue({ success: true });
-    mockDbUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
+    mockSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
         where: vi.fn().mockResolvedValue([{ email: 'alice@example.com' }]),
+      }),
+    });
+    mockUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
       }),
     });
   });
@@ -37,7 +47,6 @@ describe('activatePro — Loops contact update (ESEQ-03)', () => {
     await activatePro('cus_test123');
     // activatePro does a DB select to get email, then updates Loops
     // After Plan 02 adds the Loops call, this assertion will pass
-    // For now: RED (activatePro does not call loops.updateContact yet)
     expect(mockUpdateContact).toHaveBeenCalledOnce();
     const args = mockUpdateContact.mock.calls[0][0] as {
       properties: { subscriptionTier: string };
