@@ -236,9 +236,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 37.2-01-PLAN.md — Infisical project setup: create project + environments + OIDC identity + import secrets (human-action checkpoint)
-- [ ] 37.2-02-PLAN.md — Code changes: .infisical.json + package.json script prefixes + ci.yml OIDC injection + .env.example cleanup + README update
-- [ ] 37.2-03-PLAN.md — Platform wiring: GitHub Actions variable + Render Secret Sync + smoke-test local dev (human-action + verify checkpoints)
+- [ ] 37.2-01-PLAN.md — Infisical project setup: create project + environments + Universal Auth machine identity + import secrets + Render Secret Sync (human-action checkpoint)
+- [ ] 37.2-02-PLAN.md — Code changes: .infisical.json + package.json script prefixes (infisical run --env=dev --) + staging:up script + ci.yml Universal Auth injection + .env.example cleanup + README update
+- [ ] 37.2-03-PLAN.md — End-to-end smoke tests: local dev without .env file, staging docker-compose config, CI pipeline pass, Render sync verified (human-action + verify checkpoints)
 
 ### Phase 37.3: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (INSERTED)
 
