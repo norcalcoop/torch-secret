@@ -254,6 +254,7 @@ function createProtectionPanel(
   getPassword: () => string | undefined;
   getPassphrase: () => string | undefined;
   getProtectionType: () => 'none' | 'passphrase' | 'password';
+  getActiveTabId: () => 'none' | 'generate' | 'custom' | 'passphrase';
 } {
   const { isAuthenticated, isPro } = opts;
 
@@ -1074,11 +1075,16 @@ function createProtectionPanel(
     return 'none';
   }
 
+  function getActiveTabId(): 'none' | 'generate' | 'custom' | 'passphrase' {
+    return activeTab;
+  }
+
   return {
     element: root,
     getPassword,
     getPassphrase,
     getProtectionType,
+    getActiveTabId,
   };
 }
 
@@ -1253,6 +1259,19 @@ export function renderCreatePage(container: HTMLElement): void {
       // Get protection type from active tab (sent as protection_type in API request body)
       const protectionType = protectionPanel.getProtectionType();
 
+      // Map the 4-tab UI state to the analytics protection_type value.
+      // getProtectionType() collapses 'generate' and 'custom' both to 'password';
+      // getActiveTabId() returns the raw tab ID so we can distinguish them.
+      const activeTabId = protectionPanel.getActiveTabId();
+      const analyticsProtectionType: 'none' | 'passphrase' | 'password' | 'generated' =
+        activeTabId === 'generate'
+          ? 'generated'
+          : activeTabId === 'custom'
+            ? 'password'
+            : activeTabId === 'passphrase'
+              ? 'passphrase'
+              : 'none';
+
       // Get optional label (only present for authenticated users)
       const label = labelInput?.value.trim() || undefined;
 
@@ -1283,7 +1302,7 @@ export function renderCreatePage(container: HTMLElement): void {
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
         // Step 4: Fire analytics before navigating away from create context
-        captureSecretCreated(expiresIn, !!password, protectionType);
+        captureSecretCreated(expiresIn, !!password, analyticsProtectionType);
 
         // Step 5: Determine conversion prompt number for anonymous users.
         // Authenticated users never see conversion prompts.
