@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 37.1 of 38 (PostHog free tier integration)
-Plan: 2 of 3 complete — Plan 03 is next (if exists; phase may be complete)
-Status: Plan 02 complete — All PostHog analytics call sites wired: create.ts has 4-value analyticsProtectionType; dashboard.ts has identifyUser with tier+registeredAt, captureDashboardViewed, captureCheckoutInitiated, captureSubscriptionActivated
-Last activity: 2026-02-27 — Phase 37.1 Plan 02 complete; all 5 analytics functions firing in production flows; 347 tests pass
+Phase: 37.2 of 38 (Infisical free tier integration — next phase)
+Plan: Phase 37.1 complete (3/3 plans done)
+Status: Phase 37.1 complete — PostHog cloud configured (Launch Dashboard with 5 widgets, 2 funnels, 3 cohorts) and all 4 critical events verified firing with correct properties in live browser session
+Last activity: 2026-02-27 — Phase 37.1 Plan 03 complete; PostHog end-to-end integration done; 347 tests pass
 
-Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases complete)
+Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 | Phase 37 P03 | human-action | 2 tasks | 0 files |
 | Phase 37.1 P01 | 4 | 2 tasks | 4 files |
 | Phase 37.1 P02 | 2min | 2 tasks | 2 files |
+| Phase 37.1 P03 | human-action | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -192,6 +193,8 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 - Plan 02: registeredAt declared as let outside getMe() try block — accessible at identifyUser call site; safe degradation (undefined) on error
 - Plan 02: captureCheckoutInitiated fires before window.location.href — PostHog flushes before unload; event reliably reaches server
 - Plan 02: captureSubscriptionActivated scoped inside isUpgraded && checkoutSessionId guard, on verifyCheckoutSession() success path only — never fires on regular dashboard loads
+- Plan 03: PostHog cloud configured via REST API — Launch Dashboard (ID 1316465) with 5 widgets; Funnels "Free-to-Paid Conversion" (ID 7105292) and "Conversion Prompt Effectiveness" (ID 7105295); Cohorts Pro Users (220117), Free Registered Users (220118), Power Users/Dashboard (220119)
+- Plan 03: Browser verification confirmed all 4 critical events: secret_created with protection_type="none"/"passphrase", dashboard_viewed on dashboard load, checkout_initiated with source="dashboard" before Stripe redirect
 
 ### Phase 37 Execution Notes
 
@@ -232,5 +235,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 37.1-02-PLAN.md — PostHog analytics call sites wired; create.ts has 4-value analyticsProtectionType + getActiveTabId(); dashboard.ts has identifyUser(id, tier, registeredAt), captureDashboardViewed, captureCheckoutInitiated('dashboard'), captureSubscriptionActivated; 347 tests pass
-Resume file: None — Phase 37.1 Plan 03 is next (if it exists)
+Stopped at: Completed 37.1-03-PLAN.md — Phase 37.1 complete; PostHog Launch Dashboard + 2 funnels + 3 cohorts configured; all 4 critical events browser-verified; 347 tests pass
+Resume file: None — Phase 37.2 (Infisical free tier integration) is next
