@@ -155,6 +155,9 @@ Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases compl
 ### Roadmap Evolution
 
 - Phase 34.1 inserted after Phase 34: Passphrase/Password Tier Enforcement (URGENT) — anonymous users blocked from all passphrase/password options; free users limited to generated passphrases; Pro users get full password/passphrase/custom control
+- Phase 37.1 inserted after Phase 37: get the most out of posthog free tier integration (URGENT)
+- Phase 37.2 inserted after Phase 37: get the most out of infiscal free tier integration (URGENT)
+- Phase 37.3 inserted after Phase 37: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (URGENT)
 
 ### Phase 35 Execution Notes
 
