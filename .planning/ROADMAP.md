@@ -99,10 +99,10 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
   5. The zero-knowledge inline comment in `schema.ts` lists all 7 enforcement points matching the canonical list in `INVARIANTS.md`
 **Plans**: 4 plans
 Plans:
-- [ ] 31-01-PLAN.md — User-facing brand rename (client src, server src, static files, planning docs)
-- [ ] 31-02-PLAN.md — Infrastructure rename + CI env vars + Lucide upgrade + README refresh
-- [ ] 31-03-PLAN.md — Server-side tech debt (NOINDEX headers, schema.ts comment, planning doc fixes)
-- [ ] 31-04-PLAN.md — Gap closure: fix light-theme invisible text in protection panel (create.ts semantic tokens)
+- [x] 31-01-PLAN.md — User-facing brand rename (client src, server src, static files, planning docs)
+- [x] 31-02-PLAN.md — Infrastructure rename + CI env vars + Lucide upgrade + README refresh
+- [x] 31-03-PLAN.md — Server-side tech debt (NOINDEX headers, schema.ts comment, planning doc fixes)
+- [x] 31-04-PLAN.md — Gap closure: fix light-theme invisible text in protection panel (create.ts semantic tokens)
 
 ### Phase 32: Marketing Homepage + /create Split
 **Goal**: Users arrive at `/` and see a marketing landing page that explains Torch Secret's zero-knowledge model; the create-secret form lives at `/create` and is unaffected in functionality
@@ -116,10 +116,10 @@ Plans:
   5. Viewing page source or curl output for `/` includes a `WebApplication` JSON-LD script block in the `<head>`
 **Plans**: 4 plans
 Plans:
-- [ ] 32-01-PLAN.md — Router split: / → home.js, /create → create.js, /pricing stub
-- [ ] 32-02-PLAN.md — Homepage page module: hero, use-cases, GDPR email capture
-- [ ] 32-03-PLAN.md — Nav overhaul: desktop links + iOS-style mobile bottom tab bar
-- [ ] 32-04-PLAN.md — Human verification checkpoint
+- [x] 32-01-PLAN.md — Router split: / → home.js, /create → create.js, /pricing stub
+- [x] 32-02-PLAN.md — Homepage page module: hero, use-cases, GDPR email capture
+- [x] 32-03-PLAN.md — Nav overhaul: desktop links + iOS-style mobile bottom tab bar
+- [x] 32-04-PLAN.md — Human verification checkpoint
 
 ### Phase 33: Pricing Page
 **Goal**: Users can evaluate Free vs Pro tiers, understand pricing, and get answers to common billing questions — all from a single static page at `/pricing`
@@ -133,9 +133,9 @@ Plans:
   5. Viewing page source or curl output for `/pricing` includes a `FAQPage` JSON-LD script block in the `<head>`
 **Plans**: 3 plans
 Plans:
-- [ ] 33-01-PLAN.md — pricing.ts page module: page header, billing toggle, Free + Pro cards, FAQ accordion
-- [ ] 33-02-PLAN.md — Static FAQPage JSON-LD in index.html + router stub swap
-- [ ] 33-03-PLAN.md — Human UAT checkpoint: verify all PRICE requirements
+- [x] 33-01-PLAN.md — pricing.ts page module: page header, billing toggle, Free + Pro cards, FAQ accordion
+- [x] 33-02-PLAN.md — Static FAQPage JSON-LD in index.html + router stub swap
+- [x] 33-03-PLAN.md — Human UAT checkpoint: verify all PRICE requirements
 
 ### Phase 34: Stripe Pro Billing
 **Goal**: Authenticated users can subscribe to Pro, manage their subscription, and immediately receive the 30-day expiration unlock; the subscription lifecycle is kept accurate by webhook events
@@ -149,11 +149,11 @@ Plans:
   5. INVARIANTS.md contains a Stripe/billing row documenting that no webhook handler payload logs both `customerId` and `userId` together, added before any webhook handler code is written
 **Plans**: 5 plans
 Plans:
-- [ ] 34-01-PLAN.md — INVARIANTS.md update + DB schema migration + Stripe SDK + billing service foundation
-- [ ] 34-02-PLAN.md — Server billing routes (checkout, verify-checkout, portal) + webhook handler + me.ts extension
-- [ ] 34-03-PLAN.md — Frontend shared types + billing API client + Pro-aware expiration select + create.ts wiring
-- [ ] 34-04-PLAN.md — Dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout banner/toast
-- [ ] 34-05-PLAN.md — Human UAT checkpoint: verify all BILL requirements end-to-end
+- [x] 34-01-PLAN.md — INVARIANTS.md update + DB schema migration + Stripe SDK + billing service foundation
+- [x] 34-02-PLAN.md — Server billing routes (checkout, verify-checkout, portal) + webhook handler + me.ts extension
+- [x] 34-03-PLAN.md — Frontend shared types + billing API client + Pro-aware expiration select + create.ts wiring
+- [x] 34-04-PLAN.md — Dashboard Pro badge, upgrade CTA, Manage Subscription, post-checkout banner/toast
+- [x] 34-05-PLAN.md — Human UAT checkpoint: verify all BILL requirements end-to-end
 
 ### Phase 34.1: Passphrase/Password Tier Enforcement (INSERTED)
 
@@ -163,8 +163,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 34.1-01-PLAN.md — Shared type + API tier enforcement + integration tests (protection_type in CreateSecretSchema, 403 guards in secrets.ts)
-- [ ] 34.1-02-PLAN.md — Frontend protection panel refactor (tier-aware locked tabs, popovers, submit handler wiring)
+- [x] 34.1-01-PLAN.md — Shared type + API tier enforcement + integration tests (protection_type in CreateSecretSchema, 403 guards in secrets.ts)
+- [x] 34.1-02-PLAN.md — Frontend protection panel refactor (tier-aware locked tabs, popovers, submit handler wiring)
 
 ### Phase 35: SEO Content Pages (Express SSR)
 **Goal**: Competitor comparison, alternative, and use-case pages are fully server-rendered so their content is visible to AI crawlers and indexes on Google without a JavaScript rendering delay
@@ -177,7 +177,12 @@ Plans:
   4. Navigating to any published `/use/[slug]` page shows substantive content with a visible H1 and a HowTo JSON-LD block in `<head>`
   5. Running `curl -I https://torchsecret.com/vs/onetimesecret | grep X-Robots` returns no `noindex` header — SEO pages are indexable
   6. All new SEO routes (`/vs/*`, `/alternatives/*`, `/use/*`) appear in `sitemap.xml`
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 35-01-PLAN.md — VS + alternatives SSR templates: layout helpers, /vs/* and /alternatives/* routes with FAQPage JSON-LD
+- [x] 35-02-PLAN.md — Use-case SSR templates: /use/* hub + slug pages with HowTo + FAQPage JSON-LD
+- [x] 35-03-PLAN.md — seoRouter wiring in app.ts + sitemap.xml extended to 17 entries + integration tests
+- [x] 35-04-PLAN.md — Human UAT checkpoint: verify all SEO requirements end-to-end
 
 ### Phase 36: Email Capture
 **Goal**: Users can join the Torch Secret mailing list from the homepage with informed GDPR consent, receive a confirmation email, and unsubscribe at any time via a link
@@ -191,10 +196,10 @@ Plans:
   5. The `marketing_subscribers` table stores consent timestamp, consent text snapshot, and IP hash for each subscriber — no plain-text IP addresses are stored
 **Plans**: 4 plans
 Plans:
-- [ ] 36-01-PLAN.md — INVARIANTS.md extension + marketingSubscribers schema + env vars + migration + test scaffold
-- [ ] 36-02-PLAN.md — Subscriber service + subscribersRouter (POST, GET /confirm, GET /unsubscribe) + app.ts wiring
-- [ ] 36-03-PLAN.md — home.ts form wiring + /confirm and /unsubscribe SPA pages + router + NOINDEX
-- [ ] 36-04-PLAN.md — Human UAT checkpoint: verify all ECAP requirements end-to-end
+- [x] 36-01-PLAN.md — INVARIANTS.md extension + marketingSubscribers schema + env vars + migration + test scaffold
+- [x] 36-02-PLAN.md — Subscriber service + subscribersRouter (POST, GET /confirm, GET /unsubscribe) + app.ts wiring
+- [x] 36-03-PLAN.md — home.ts form wiring + /confirm and /unsubscribe SPA pages + router + NOINDEX
+- [x] 36-04-PLAN.md — Human UAT checkpoint: verify all ECAP requirements end-to-end
 
 ### Phase 37: Email Onboarding Sequence
 **Goal**: Every new account holder automatically receives a timed 3-email sequence that introduces Torch Secret, highlights key features, and (with marketing consent) prompts upgrade to Pro
@@ -254,12 +259,12 @@ Plans:
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
-| 31. Rebrand + Tech Debt | 4/4 | Complete    | 2026-02-22 | - |
-| 32. Marketing Homepage + /create Split | 4/4 | Complete    | 2026-02-23 | - |
-| 33. Pricing Page | 3/3 | Complete    | 2026-02-23 | - |
-| 34. Stripe Pro Billing | 5/5 | Complete    | 2026-02-26 | - |
-| 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
-| 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
-| 36. Email Capture | 4/4 | Complete    | 2026-02-26 | - |
-| 37. Email Onboarding Sequence | 3/3 | Complete | 2026-02-27 | - |
+| 31. Rebrand + Tech Debt | v5.0 | 4/4 | Complete | 2026-02-22 |
+| 32. Marketing Homepage + /create Split | v5.0 | 4/4 | Complete | 2026-02-23 |
+| 33. Pricing Page | v5.0 | 3/3 | Complete | 2026-02-23 |
+| 34. Stripe Pro Billing | v5.0 | 5/5 | Complete | 2026-02-26 |
+| 34.1. Passphrase/Password Tier Enforcement | v5.0 | 2/2 | Complete | 2026-02-26 |
+| 35. SEO Content Pages (Express SSR) | v5.0 | 4/4 | Complete | 2026-02-26 |
+| 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
+| 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |

@@ -1,0 +1,34 @@
+phase: 37-email-onboarding-sequence
+app: http://torchsecret.localhost:1355
+failures_dir: .planning/phases/37-email-onboarding-sequence/uat-failures
+
+# Tests 3, 4, 5 are skipped — cannot be automated with browser testing:
+#   Test 3 (Welcome Email Received): requires email inbox access
+#   Test 4 (Loops Contact Properties): requires access to external loops.so dashboard
+#   Test 5 (Loops Loop Structure): requires access to external loops.so dashboard
+
+tests:
+  - name: "Marketing Consent Checkbox on Register Form"
+    steps:
+      - close
+      - open {app}/register
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_equals, js: "document.querySelector('#marketing-consent') !== null ? 'present' : 'NOT_FOUND'", expected: "present" }
+      - { type: eval_equals, js: "String(document.querySelector('#marketing-consent')?.checked)", expected: "false" }
+      - { type: eval_contains, js: "document.querySelector('label[for=\"marketing-consent\"]')?.textContent ?? 'NOT_FOUND'", expected: "Send me product tips and updates" }
+
+  - name: "Register Without Consent Succeeds"
+    # Uses unique epoch-stamped email to avoid "already registered" on first run.
+    # Re-run: update email if this account was already created.
+    steps:
+      - close
+      - open {app}/register
+      - wait --load networkidle --timeout 10000
+      - find label "Name" fill "UAT Test User"
+      - find label "Email" fill "gsd-uat-1772323200@example.com"
+      - find label "Password" fill "GsdUat123!"
+      - find role button click --name "Create Account"
+      - wait --load networkidle --timeout 15000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Check your email" }
