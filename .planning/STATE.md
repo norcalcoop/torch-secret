@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Product Launch Checklist
-status: unknown
-last_updated: "2026-02-27T00:51:04.186Z"
+status: in_progress
+last_updated: "2026-02-27T01:30:00.000Z"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 29
-  completed_plans: 27
+  completed_plans: 28
 ---
 
 # Session State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 37 of 38 (Email Onboarding Sequence) — IN PROGRESS
-Plan: 2 of TBD — Plan 02 complete; Plan 03 is next (if any)
-Status: Phase 37 Plan 02 complete — Loops SDK installed, onboarding service wired, activatePro syncs Loops contact; all 7 RED test scaffolds now GREEN
-Last activity: 2026-02-27 — Phase 37 Plan 02 complete; loops@6.2.0 installed; config/loops.ts singleton; onboarding.service.ts; auth.ts databaseHooks hook; billing.service.ts extended with Loops contact sync
+Phase: 38 of 38 (Feedback Links) — NOT STARTED
+Plan: 0 of TBD — Phase 38 is next
+Status: Phase 37 complete — Loops onboarding loop published and active; welcome email verified delivered to test inbox; all ESEQ-01 through ESEQ-04 requirements confirmed
+Last activity: 2026-02-27 — Phase 37 Plan 03 complete; Loops 3-email onboarding loop configured in Loops UI; welcome email live and personalized; phase 37 fully shipped
 
-Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in progress)
+Progress: [███████░░░] 87% (v5.0 phases — 7/8 phases complete)
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 | Phase 36 P04 | ~1min | 1 task (checkpoint) | 0 files |
 | Phase 37 P01 | 5 | 2 tasks | 10 files |
 | Phase 37 P02 | 3min | 2 tasks | 7 files |
+| Phase 37 P03 | human-action | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,10 @@ Progress: [█░░░░░░░░░] 12% (v5.0 phases — 1/8 phases in pr
 - register.ts: #marketing-consent checkbox unchecked by default, inserted before consentLine via form.insertBefore(); setFormLoading() extended to disable/enable checkbox
 - 321 total tests pass after Plan 01 (3 new GREEN from register.test.ts + 318 pre-existing)
 - onboarding.service.test.ts (6 cases) and billing.service.test.ts (1 case) are intentional RED — Plan 02 creates the onboarding service and extends billing service
+- Plan 02: loops@6.2.0 installed; config/loops.ts LoopsClient singleton; onboarding.service.ts fires sendEvent('registered') with firstName/marketingConsent/subscriptionTier; auth.ts databaseHooks.user.create.after wired fire-and-forget; activatePro() extended with Loops contact sync; all 7 RED scaffolds GREEN; 328 tests pass
+- Plan 03 (human-action checkpoint): Loops loop published in Loops.so dashboard with 7-node structure triggered by 'registered' event; welcome email delivered ~30s after test registration; "Hey Torchtest, welcome to Torch Secret" subject confirmed; from: hello@torchsecret.com; all ESEQ-01 through ESEQ-04 verified by user; phase 37 complete
+- Loops audience filter node placement: filter evaluated at send time (not at registration time) — allows real-time tier changes from activatePro() to take effect before day-7 send
+- Welcome email node has no audience filter (transactional/GDPR-compliant); day-3 node has marketingConsent=true filter; day-7 node has marketingConsent=true AND subscriptionTier!=pro dual filter
 
 ### Phase 36 Execution Notes
 
@@ -209,5 +214,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 37-02-PLAN.md — Loops SDK installed, onboarding service created, auth.ts databaseHooks wired, activatePro extended with Loops contact sync; 328 tests GREEN
-Resume file: None — Phase 37 Plan 02 complete; check ROADMAP.md for next plan in phase 37
+Stopped at: Completed 37-03-PLAN.md — Loops onboarding loop published and active; welcome email verified live in test inbox; all ESEQ requirements confirmed; Phase 37 complete
+Resume file: None — Phase 37 complete; Phase 38 (Feedback Links) is next

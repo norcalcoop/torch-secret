@@ -82,7 +82,7 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 - [x] **Phase 34: Stripe Pro Billing** — Checkout, webhook lifecycle handler, Pro feature unlock (30-day expiration), Customer Portal (completed 2026-02-26)
 - [x] **Phase 35: SEO Content Pages (Express SSR)** — Server-rendered /vs/*, /alternatives/*, /use/* pages with JSON-LD visible to AI crawlers (completed 2026-02-26)
 - [x] **Phase 36: Email Capture** — GDPR-compliant homepage email list capture backed by Resend Audiences, with double opt-in (completed 2026-02-26)
-- [ ] **Phase 37: Email Onboarding Sequence** — 3-email Loops.so sequence triggered on registration (welcome, key features, upgrade prompt)
+- [x] **Phase 37: Email Onboarding Sequence** — 3-email Loops.so sequence triggered on registration (welcome, key features, upgrade prompt) (completed 2026-02-27)
 - [ ] **Phase 38: Feedback Links** — Tally.so feedback link on confirmation and post-reveal pages
 
 ## Phase Details
@@ -207,9 +207,9 @@ Plans:
   4. The registration form includes a marketing consent opt-in checkbox (unchecked by default) with clear language, and checking it is stored in the database before any marketing email is sent
 **Plans**: 3 plans
 Plans:
-- [ ] 37-01-PLAN.md — Schema foundation: marketing_consent column + migration + Better Auth additionalFields + register form checkbox + RED test scaffolds
-- [ ] 37-02-PLAN.md — Loops.so integration: SDK install + singleton + onboarding service + auth hook + billing Pro sync + GREEN tests
-- [ ] 37-03-PLAN.md — Loops UI configuration checkpoint + end-to-end ESEQ verification
+- [x] 37-01-PLAN.md — Schema foundation: marketing_consent column + migration + Better Auth additionalFields + register form checkbox + RED test scaffolds
+- [x] 37-02-PLAN.md — Loops.so integration: SDK install + singleton + onboarding service + auth hook + billing Pro sync + GREEN tests
+- [x] 37-03-PLAN.md — Loops UI configuration checkpoint + end-to-end ESEQ verification
 
 ### Phase 38: Feedback Links
 **Goal**: Users who have just created or just viewed a secret can reach a feedback form with one click, giving the team a direct signal channel at the highest-intent moments
@@ -261,5 +261,5 @@ Plans:
 | 34.1. Passphrase/Password Tier Enforcement | 2/2 | Complete    | 2026-02-26 | - |
 | 35. SEO Content Pages (Express SSR) | 4/4 | Complete    | 2026-02-26 | - |
 | 36. Email Capture | 4/4 | Complete    | 2026-02-26 | - |
-| 37. Email Onboarding Sequence | 2/3 | In Progress|  | - |
+| 37. Email Onboarding Sequence | 3/3 | Complete | 2026-02-27 | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
