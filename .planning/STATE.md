@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 38 of 38 (Feedback links — in progress)
-Plan: 38-01 checkpoint:human-verify (Tasks 1-2 complete; Task 3 awaiting visual verification)
-Status: 8 new tests pass (4 FBCK-01 + 4 FBCK-02); createFeedbackLink component built and wired into confirmation + reveal pages; 361 total tests; awaiting human visual confirmation
-Last activity: 2026-02-28 — Phase 38 Plan 01 Tasks 1-2 complete; checkpoint:human-verify for Task 3
+Phase: 38 of 38 (Feedback links — complete)
+Plan: 38-01 complete (1/1 plans done)
+Status: All 3 tasks complete — createFeedbackLink component, wired into confirmation + reveal pages, visual verification approved, real Tally form https://tally.so/r/Y5ZV56 live; 361 tests passing; FBCK-01 + FBCK-02 satisfied
+Last activity: 2026-02-28 — Phase 38 Plan 01 complete; visual verification approved; real Tally form URL committed (cec26a8)
 
-Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
+Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete)
 
 ## Performance Metrics
 
@@ -271,5 +271,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 38 Plan 01 — checkpoint:human-verify (Task 3); createFeedbackLink component built; wired into confirmation.ts + reveal.ts; 8 new tests GREEN (361 total); awaiting visual verification of feedback links on both pages
-Resume file: .planning/phases/38-feedback-links/38-01-PLAN.md — resume at Task 3 (human-verify checkpoint)
+Stopped at: Completed 38-01-PLAN.md — createFeedbackLink component + TALLY_FEEDBACK_URL constant; wired into confirmation.ts + reveal.ts; 8 new tests (361 total); visual verification approved; real Tally form https://tally.so/r/Y5ZV56 live; v5.0 milestone complete
+Resume file: None — Phase 38 Plan 01 is the final plan; v5.0 complete

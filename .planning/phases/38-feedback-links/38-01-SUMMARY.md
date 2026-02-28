@@ -35,7 +35,7 @@ key-files:
     - client/src/pages/reveal.ts
 
 key-decisions:
-  - "TALLY_FEEDBACK_URL = 'https://tally.so/r/TODO' — placeholder intentional; single constant for easy swap when real Tally form is published"
+  - "TALLY_FEEDBACK_URL updated from placeholder 'https://tally.so/r/TODO' to real form 'https://tally.so/r/Y5ZV56' (Tally form ID Y5ZV56, created via API)"
   - "renderRevealedSecret exported @internal for test isolation — avoids full render pipeline mock complexity"
   - "No icon added to feedback link — keeps component minimal; avoids Lucide import complexity in shared component"
   - "ZK invariant enforced: TALLY_FEEDBACK_URL is static string with no query parameters — no userId/secretId appended"
@@ -53,19 +53,19 @@ completed: 2026-02-28
 
 # Phase 38 Plan 01: Feedback Links Summary
 
-**`createFeedbackLink` shared component with TALLY_FEEDBACK_URL constant wired into confirmation and post-reveal pages via TDD (8 new tests, 361 total passing)**
+**`createFeedbackLink` shared component wired into confirmation and post-reveal pages via TDD (8 new tests, 361 total passing) with real Tally form https://tally.so/r/Y5ZV56 live**
 
 ## Performance
 
-- **Duration:** ~3 min
+- **Duration:** ~5 min
 - **Started:** 2026-02-28T22:53:36Z
-- **Completed:** 2026-02-28T22:56:32Z
-- **Tasks:** 2 (+ Task 3 is checkpoint:human-verify, awaiting visual verification)
-- **Files modified:** 5
+- **Completed:** 2026-02-28T23:02:00Z
+- **Tasks:** 3/3 complete
+- **Files modified:** 6
 
 ## Accomplishments
 
-- Created `client/src/components/feedback-link.ts` with `TALLY_FEEDBACK_URL` constant (`https://tally.so/r/TODO`) and `createFeedbackLink(url)` factory returning fully-configured `HTMLAnchorElement`
+- Created `client/src/components/feedback-link.ts` with `TALLY_FEEDBACK_URL` constant (updated to real form `https://tally.so/r/Y5ZV56`) and `createFeedbackLink(url)` factory returning fully-configured `HTMLAnchorElement`
 - Wired feedback link into `confirmation.ts` — rendered after "Create Another Secret" button as last child of wrapper
 - Wired feedback link into `reveal.ts` — rendered as second child of actions row after "Create a New Secret" link; `renderRevealedSecret` exported @internal for test isolation
 - 8 new unit tests (4 FBCK-01 + 4 FBCK-02) assert href contains "tally.so/r/", target="_blank", rel="noopener noreferrer", textContent="Share feedback"
@@ -77,7 +77,9 @@ Each task was committed atomically:
 
 1. **Task 1: Create shared feedback-link component and write failing tests** - `bb36a14` (test — TDD RED)
 2. **Task 2: Wire createFeedbackLink into confirmation.ts and reveal.ts** - `3257bb7` (feat — TDD GREEN)
-3. **Task 3: Visual verification checkpoint** - awaiting human approval
+3. **Task 3: Visual verification — approved; real Tally form URL committed** - `cec26a8` (feat — TALLY_FEEDBACK_URL updated to https://tally.so/r/Y5ZV56)
+
+**Plan metadata:** `2662d33` (docs: complete plan)
 
 _Note: TDD tasks — RED commit (test) then GREEN commit (feat)_
 
@@ -89,25 +91,20 @@ _Note: TDD tasks — RED commit (test) then GREEN commit (feat)_
 - `client/src/pages/confirmation.test.ts` — 4 assertions for FBCK-01 (href, target, rel, textContent)
 - `client/src/pages/reveal.test.ts` — 4 assertions for FBCK-02 (href, target, rel, textContent)
 
-## TALLY_FEEDBACK_URL — How to Update
+## TALLY_FEEDBACK_URL — Current Value
 
-When the real Tally.so feedback form is created:
+Real Tally.so form is live: `https://tally.so/r/Y5ZV56` (Tally form ID Y5ZV56, created via API 2026-02-28).
 
-1. Open the form in Tally.so dashboard
-2. Click "Share" tab
-3. Copy the share URL (format: `https://tally.so/r/XXXXXX`)
-4. Update the single constant in `client/src/components/feedback-link.ts`:
-   ```typescript
-   export const TALLY_FEEDBACK_URL = 'https://tally.so/r/XXXXXX';
-   ```
-5. Both placements (confirmation + reveal) update automatically
+The constant in `client/src/components/feedback-link.ts` is already set to the live URL. Both placements (confirmation page + post-reveal page) link to the real form.
+
+To update in future: change `TALLY_FEEDBACK_URL` in `client/src/components/feedback-link.ts` — both pages update automatically.
 
 ## Decisions Made
 
-- `TALLY_FEEDBACK_URL = 'https://tally.so/r/TODO'` placeholder — intentional; single constant means one file to update when real form is created
+- `TALLY_FEEDBACK_URL` started as placeholder `'https://tally.so/r/TODO'`; updated to live form `'https://tally.so/r/Y5ZV56'` after Tally form was created via API — single constant made the swap a one-line change
 - `renderRevealedSecret` exported `@internal` to enable direct test isolation without mocking the full reveal page pipeline (avoids async `handleReveal` and API call complexity in tests)
 - No icon added to feedback link — keeps the shared component minimal and avoids Lucide import coupling in a shared utility
-- ZK invariant: confirmed `TALLY_FEEDBACK_URL` is static with no `?` query parameters — grep confirms no identifying data appended
+- ZK invariant: confirmed `TALLY_FEEDBACK_URL` is static with no `?` query parameters — no identifying data appended
 
 ## Deviations from Plan
 
@@ -119,13 +116,14 @@ None.
 
 ## User Setup Required
 
-None — no external service configuration required. Feedback link currently points to `https://tally.so/r/TODO` (placeholder). Update `TALLY_FEEDBACK_URL` when real Tally form is created.
+None — real Tally form `https://tally.so/r/Y5ZV56` is live. No configuration needed.
 
 ## Next Phase Readiness
 
-- Task 3 (checkpoint:human-verify) awaits visual confirmation of feedback link placement on both pages
-- Dev server startup and manual navigation to `/create` → confirmation page and `/s/:id` → reveal page required
-- After human approval, phase 38 plan 01 is complete
+- Phase 38 Plan 01 complete — all 3 tasks done, visual verification approved
+- FBCK-01 and FBCK-02 requirements satisfied
+- Feedback links are live on confirmation page and post-reveal page pointing to real Tally form
+- No blockers
 
 ---
 *Phase: 38-feedback-links*
