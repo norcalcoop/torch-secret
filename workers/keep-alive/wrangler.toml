@@ -13,6 +13,7 @@
 name = "torch-secret-keep-alive"
 main = "src/index.ts"
 compatibility_date = "2026-02-28"
+workers_dev = false  # cron-only Worker — no HTTP route needed
 # account_id: set via CLOUDFLARE_ACCOUNT_ID environment variable
 
 [triggers]
