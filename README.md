@@ -33,6 +33,7 @@ When a secret is retrieved, the server performs an atomic three-step transaction
 - **Rate limiting** — Redis-backed or in-memory, configurable per endpoint
 - **Content Security Policy** — per-request nonces via Helmet
 - **Privacy-safe analytics** — PostHog with URL fragment stripping; zero PII in events
+- **Supply chain security** — dependency changes are automatically scanned by [Socket.dev](https://socket.dev) on PRs for supply chain security
 - **Accessible** — WCAG 2.1 AA compliant, keyboard navigable, screen reader tested
 - **Themeable** — light, dark, and system-preference modes with localStorage persistence
 

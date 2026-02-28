@@ -1,0 +1,14 @@
+# Socket.dev supply chain security configuration
+# https://docs.socket.dev/docs/socket-yml
+# Version 2 format (v1 issueRules is deprecated)
+#
+# GitHub App: github.com/apps/socket-security
+# Scans package.json + package-lock.json on every PR for supply chain risk.
+# After installing the GitHub App, Socket will post PR comments and checks.
+version: 2
+
+githubApp:
+  enabled: true
+  pullRequestAlertsEnabled: true
+  dependencyOverviewEnabled: true
+  projectReportsEnabled: true
