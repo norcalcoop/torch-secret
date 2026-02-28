@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-27T17:23:47.040Z"
+last_updated: "2026-02-28T01:41:12.499Z"
 progress:
   total_phases: 11
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 35
-  completed_plans: 31
+  completed_plans: 34
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 37.2 of 38 (Infisical free tier integration — in progress)
-Plan: 37.2-01 complete (1/3 plans done)
-Status: Plan 01 complete — Infisical project torch-secret-28-vs created; dev/staging/prod populated (20 secrets each); Universal Auth CI identity + GitHub Secrets set; Render Secret Sync active; smoke-test passed
-Last activity: 2026-02-27 — Phase 37.2 Plan 01 complete; moving to Plan 02 (code wiring)
+Plan: 37.2-02 complete (2/3 plans done)
+Status: Plan 02 complete — .infisical.json created; dev scripts prefixed with infisical run --env=dev; staging:up added; CI test+e2e jobs use secrets-action universal auth; .env.example stripped to keys-only with BETTER_AUTH_TRUSTED_ORIGINS and LOOPS_API_KEY added; README updated with Infisical onboarding; 347 tests pass
+Last activity: 2026-02-28 — Phase 37.2 Plan 02 complete; moving to Plan 03 (smoke test)
 
 Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
 
@@ -69,6 +69,7 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 | Phase 37.1 P01 | 4 | 2 tasks | 4 files |
 | Phase 37.1 P02 | 2min | 2 tasks | 2 files |
 | Phase 37.1 P03 | human-action | 2 tasks | 0 files |
+| Phase 37.2 P02 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -192,6 +193,11 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 - NODE_ENV set per-environment in Infisical: development / staging / production
 - Render Secret Sync: prod environment → torch-secret Render service; Auto-Sync ON; status "Synced"
 - GitHub Secrets set: INFISICAL_CLIENT_ID + INFISICAL_CLIENT_SECRET (machine identity: github-actions-ci)
+- Plan 02: .infisical.json created (workspaceId + defaultEnvironment dev); dev:server/dev:client prefixed with infisical run --env=dev --; staging:up added
+- Plan 02: CI test+e2e jobs: secrets-action@v1.0.9 added after checkout; BETTER_AUTH_SECRET/STRIPE_*/RESEND_API_KEY/IP_HASH_SALT/LOOPS_API_KEY removed from job-level env
+- Plan 02: .env.example stripped to keys-only; BETTER_AUTH_TRUSTED_ORIGINS= and LOOPS_API_KEY= added with comments
+- Plan 02: README Getting Started replaced with Infisical onboarding (infisical login + npm run dev)
+- RESEND_FROM_EMAIL kept in CI job env (config string, not secret); NODE_ENV kept in CI job env (test suite checks NODE_ENV=test; Infisical dev sets 'development')
 
 ### Phase 37.1 Execution Notes
 
@@ -246,6 +252,6 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 37.1-03-PLAN.md — Phase 37.1 complete; PostHog Launch Dashboard + 2 funnels + 3 cohorts configured; all 4 critical events browser-verified; 347 tests pass
-Resume file: None — Phase 37.2 (Infisical free tier integration) is next
+Last session: 2026-02-28
+Stopped at: Completed 37.2-02-PLAN.md — Infisical code wiring complete; .infisical.json created, dev scripts prefixed, CI uses secrets-action, .env.example cleaned, README updated; 347 tests pass
+Resume file: None — Phase 37.2 Plan 03 (smoke test) is next
