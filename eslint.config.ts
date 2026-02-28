@@ -95,6 +95,13 @@ export default defineConfig([
     extends: [tseslint.configs.disableTypeChecked],
   },
 
+  // Cloudflare Workers use their own global types (ScheduledController, ExecutionContext)
+  // not included in root tsconfig — disable type-checked rules for the workers dir.
+  {
+    files: ['workers/**/*.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],

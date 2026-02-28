@@ -22,12 +22,24 @@ vi.mock('../../services/email.js', () => ({
   },
 }));
 
-// Import the mocked module AFTER vi.mock — vitest replaces with mock implementation
+// ---------------------------------------------------------------------------
+// Mock Loops to avoid real HTTP calls
+// vi.mock is hoisted — factory must only use vi.fn() inline, not outer variables
+// ---------------------------------------------------------------------------
+vi.mock('../../config/loops.js', () => ({
+  loops: {
+    sendEvent: vi.fn().mockResolvedValue({ success: true }),
+  },
+}));
+
+// Import the mocked modules AFTER vi.mock — vitest replaces with mock implementation
 import { resend } from '../../services/email.js';
+import { loops } from '../../config/loops.js';
 
 // Typed helpers to access vi.fn() methods without @typescript-eslint/unbound-method
 const emailSend = () => vi.mocked(resend.emails.send);
 const contactsCreate = () => vi.mocked(resend.contacts.create);
+const loopsSendEvent = () => vi.mocked(loops.sendEvent);
 
 let app: Express;
 beforeEach(async () => {
@@ -208,6 +220,41 @@ describe('GET /api/subscribers/confirm', () => {
 
   test('missing token returns 400', async () => {
     await request(app).get('/api/subscribers/confirm').expect(400);
+  });
+
+  test('fires loops subscribed event on confirm', async () => {
+    // Create a pending subscriber first
+    await request(app).post('/api/subscribers').send({ email: 'loops@test.local', consent: true });
+    const [row] = await db
+      .select()
+      .from(marketingSubscribers)
+      .where(eq(marketingSubscribers.email, 'loops@test.local'));
+
+    await request(app).get(`/api/subscribers/confirm?token=${row.confirmationToken!}`).expect(200);
+
+    // Fire-and-forget: loops.sendEvent should have been called
+    expect(loopsSendEvent()).toHaveBeenCalledOnce();
+    expect(loopsSendEvent()).toHaveBeenCalledWith({
+      email: 'loops@test.local',
+      eventName: 'subscribed',
+      contactProperties: { source: 'email-capture' },
+    });
+  });
+
+  test('loops sendEvent rejection does not propagate — confirm still returns 200', async () => {
+    // Make loops.sendEvent reject
+    loopsSendEvent().mockRejectedValueOnce(new Error('Loops API down'));
+
+    await request(app)
+      .post('/api/subscribers')
+      .send({ email: 'loops-err@test.local', consent: true });
+    const [row] = await db
+      .select()
+      .from(marketingSubscribers)
+      .where(eq(marketingSubscribers.email, 'loops-err@test.local'));
+
+    // Should still return 200 — fire-and-forget error is swallowed
+    await request(app).get(`/api/subscribers/confirm?token=${row.confirmationToken!}`).expect(200);
   });
 });
 

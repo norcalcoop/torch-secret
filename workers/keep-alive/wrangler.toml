@@ -1,0 +1,19 @@
+# Torch Secret keep-alive Cloudflare Worker
+# Pings /api/health every 10 minutes to prevent Render.com free tier spin-down.
+#
+# Deploy: wrangler deploy --config workers/keep-alive/wrangler.toml
+# Test locally: npx wrangler dev --config workers/keep-alive/wrangler.toml --test-scheduled
+#   Then: curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
+#
+# Prerequisites:
+#   - Run `wrangler login` once to authenticate
+#   - Set CLOUDFLARE_ACCOUNT_ID env var (or wrangler will prompt)
+#   - account_id is intentionally omitted from this file to avoid checking it into source control
+
+name = "torch-secret-keep-alive"
+main = "src/index.ts"
+compatibility_date = "2026-02-28"
+# account_id: set via CLOUDFLARE_ACCOUNT_ID environment variable
+
+[triggers]
+crons = ["*/10 * * * *"]
