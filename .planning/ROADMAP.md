@@ -246,7 +246,7 @@ Plans:
 **Goal:** [Urgent work - to be planned]
 **Requirements**: TBD
 **Depends on:** Phase 37
-**Plans:** 1/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 37.3 to break down)
@@ -301,7 +301,7 @@ Plans:
 | 34.1. Passphrase/Password Tier Enforcement | v5.0 | 2/2 | Complete | 2026-02-26 |
 | 35. SEO Content Pages (Express SSR) | v5.0 | 4/4 | Complete | 2026-02-26 |
 | 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
-| 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
+| 37. Email Onboarding Sequence | 3/3 | Complete   | 2026-02-28 | 2026-02-27 |
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
