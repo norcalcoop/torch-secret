@@ -13,6 +13,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { marketingSubscribers } from '../db/schema.js';
 import { resend } from './email.js';
+import { loops } from '../config/loops.js';
 import { env } from '../config/env.js';
 
 /**
@@ -160,6 +161,21 @@ export async function confirmSubscriber(token: string): Promise<'confirmed' | 'e
     .catch((err: unknown) => {
       console.error(
         'Resend contacts.create failed on confirm:',
+        err instanceof Error ? err.message : String(err),
+      );
+    });
+
+  // Fire-and-forget Loops subscribed event (alongside existing Resend Audience sync)
+  // ZERO-KNOWLEDGE SAFE: only email + source property are sent — no userId, no secretId.
+  void loops
+    .sendEvent({
+      email: subscriber.email,
+      eventName: 'subscribed',
+      contactProperties: { source: 'email-capture' },
+    })
+    .catch((err: unknown) => {
+      console.error(
+        'Loops subscribed event failed on confirm:',
         err instanceof Error ? err.message : String(err),
       );
     });
