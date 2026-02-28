@@ -132,11 +132,36 @@ torch-secret/
   shared/             Zod schemas and TypeScript interfaces
   e2e/                Playwright end-to-end tests
   drizzle/            Generated database migrations
+  workers/            Cloudflare Workers (keep-alive cron job)
   docker-compose.yml  One-command local development
   render.yaml         Render.com deployment Blueprint
 ```
 
 The SPA router uses the History API with dynamic imports for code splitting. Each page is a separate chunk. The CSP nonce flow injects a per-request nonce at the Express layer, replacing a build-time placeholder in the Vite output.
+
+### Cloudflare Worker (Keep-Alive)
+
+A Cloudflare Worker cron job pings `/api/health` every 10 minutes to prevent Render.com free tier spin-down. The Worker lives in `workers/keep-alive/`.
+
+**Deploy:**
+
+```bash
+# One-time: authenticate with Cloudflare
+wrangler login
+
+# Deploy the Worker
+wrangler deploy --config workers/keep-alive/wrangler.toml
+```
+
+**Test locally:**
+
+```bash
+npx wrangler dev --config workers/keep-alive/wrangler.toml --test-scheduled
+# In another terminal:
+curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
+```
+
+The Worker is deployed manually from a developer machine — it rarely needs updates and does not benefit from CI automation.
 
 ---
 
