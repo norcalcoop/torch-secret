@@ -5,8 +5,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev:server": "tsx watch server/src/server.ts",
-    "dev:client": "portless torchsecret sh -c 'npx vite --port $PORT --host $HOST'",
+    "dev:server": "infisical run --env=dev -- tsx watch server/src/server.ts",
+    "dev:client": "infisical run --env=dev -- portless torchsecret sh -c 'npx vite --port $PORT --host $HOST'",
+    "staging:up": "infisical run --env=staging -- docker-compose up",
     "build:client": "vite build",
     "preview:client": "vite preview",
     "db:generate": "drizzle-kit generate",
