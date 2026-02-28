@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 37.2 of 38 (Infisical free tier integration — in progress)
-Plan: 37.2-02 complete (2/3 plans done)
-Status: Plan 02 complete — .infisical.json created; dev scripts prefixed with infisical run --env=dev; staging:up added; CI test+e2e jobs use secrets-action universal auth; .env.example stripped to keys-only with BETTER_AUTH_TRUSTED_ORIGINS and LOOPS_API_KEY added; README updated with Infisical onboarding; 347 tests pass
-Last activity: 2026-02-28 — Phase 37.2 Plan 02 complete; moving to Plan 03 (smoke test)
+Phase: 37.3 of 38 (Cloudflare/Render/Loops/Resend/Socket.dev free tier integrations — in progress)
+Plan: 37.3-01 complete (1/6 plans done)
+Status: Plan 01 complete — render.yaml has full env var parity with .env.example (8 missing stubs added: APP_URL, BETTER_AUTH_TRUSTED_ORIGINS, LOOPS_API_KEY, STRIPE_*, RESEND_AUDIENCE_ID, IP_HASH_SALT); CI re-enabled with push(main)+pull_request+workflow_dispatch triggers; Render autoDeployTrigger:checksPass gate now active
+Last activity: 2026-02-28 — Phase 37.3 Plan 01 complete; moving to Plan 02
 
 Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
 
@@ -70,6 +70,7 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 | Phase 37.1 P02 | 2min | 2 tasks | 2 files |
 | Phase 37.1 P03 | human-action | 2 tasks | 0 files |
 | Phase 37.2 P02 | 5 | 2 tasks | 5 files |
+| Phase 37.3 P01 | 64s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -253,5 +254,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 37.2-02-PLAN.md — Infisical code wiring complete; .infisical.json created, dev scripts prefixed, CI uses secrets-action, .env.example cleaned, README updated; 347 tests pass
-Resume file: None — Phase 37.2 Plan 03 (smoke test) is next
+Stopped at: Completed 37.3-01-PLAN.md — render.yaml env var parity (8 stubs added); CI re-enabled with push+pull_request triggers; Render checksPass gate active; 347 tests pass
+Resume file: None — Phase 37.3 Plan 02 is next
