@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-02-28T14:21:24.034Z"
+last_updated: "2026-02-28T14:26:28.359Z"
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 42
-  completed_plans: 39
+  completed_plans: 40
 ---
 
 # Session State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 Phase: 37.3 of 38 (Cloudflare/Render/Loops/Resend/Socket.dev free tier integrations — in progress)
 Plan: 37.3-05 complete (5/6 plans done)
 Status: Plan 05 complete — Cloudflare Worker keep-alive cron job created (workers/keep-alive/); pings /api/health every 10 minutes to prevent Render.com free tier spin-down; README updated with wrangler deploy docs; eslint.config.ts updated with workers/**/*.ts disableTypeChecked override
-Last activity: 2026-02-28 — Phase 37.3 Plan 05 complete; moving to Plan 06
+Last activity: 2026-02-28 — Phase 37.3 Plan 03 complete (account deletion backend); Plan 05 already complete; Phase 37.3 Plan 06 is next
 
 Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
 
@@ -73,6 +73,7 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 | Phase 37.3 P01 | 64s | 2 tasks | 2 files |
 | Phase 37.3 P05 | 2 | 2 tasks | 5 files |
 | Phase 37.3 P02 | 3min | 2 tasks | 5 files |
+| Phase 37.3 P03 | 7 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -185,6 +186,17 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 - Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
 - Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
 
+### Phase 37.3 Execution Notes
+
+- Plan 01: render.yaml env var parity (8 missing stubs added: APP_URL, BETTER_AUTH_TRUSTED_ORIGINS, LOOPS_API_KEY, STRIPE_*, RESEND_AUDIENCE_ID, IP_HASH_SALT); CI re-enabled with push(main)+pull_request+workflow_dispatch triggers; Render autoDeployTrigger:checksPass gate active
+- Plan 02: loops.sendEvent('subscribed') fire-and-forget added to confirmSubscriber() — triggered when marketing subscriber confirms double opt-in email; Socket.dev socket.yml v2 config added for supply-chain security scanning
+- Plan 03: auth.api.deleteUser requires body:{} even when all body fields are optional — omitting body causes 500 (Better Auth reads ctx.body.password in freshness check block)
+- Plan 03: INVARIANTS.md account deletion row added before any code (mandatory protocol)
+- Plan 03: beforeDelete is async and awaited by Better Auth — differs from databaseHooks.user.create.after which must be non-async (no await)
+- Plan 03: loops.deleteContact({ email }) only — no userId (Loops userId is external system ID, not our Better Auth userId)
+- Plan 03: DELETE /api/me uses requireAuth guard then delegates to auth.api.deleteUser — Better Auth handles session cookie clearing and user row deletion internally
+- Plan 03: 353 total tests pass (6 new: 4 DELETE /api/me integration + 2 plan 02 loops tests)
+
 ### Phase 37.2 Execution Notes
 
 - workspaceId: f432290a-5b26-49f0-bde8-83825ffddd64 (needed in .infisical.json)
@@ -256,5 +268,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 37.3-05-PLAN.md — Cloudflare Worker keep-alive cron job (workers/keep-alive/); wrangler.toml cron=*/10 * * * *; README Cloudflare section added; eslint.config.ts workers override; 347 tests pass
+Stopped at: Completed 37.3-03-PLAN.md — DELETE /api/me account deletion endpoint with Better Auth deleteUser hook; Loops GDPR contact deletion; secrets.userId null-out defense-in-depth; 353 tests pass
 Resume file: None — Phase 37.3 Plan 06 is next
