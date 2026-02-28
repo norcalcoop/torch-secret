@@ -165,25 +165,13 @@ function createHeader(): HTMLElement {
       if (isAuthenticated) {
         authLink.textContent = 'Dashboard';
         authLink.href = '/dashboard';
-        authLink.onclick = (e: MouseEvent) => {
-          e.preventDefault();
-          navigate('/dashboard');
-        };
       } else {
         authLink.textContent = 'Login';
         authLink.href = '/login';
-        authLink.onclick = (e: MouseEvent) => {
-          e.preventDefault();
-          navigate('/login');
-        };
       }
     } catch {
       authLink.textContent = 'Login';
       authLink.href = '/login';
-      authLink.onclick = (e: MouseEvent) => {
-        e.preventDefault();
-        navigate('/login');
-      };
     }
   }
 
