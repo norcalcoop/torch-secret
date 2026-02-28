@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 37.2 of 38 (Infisical free tier integration — next phase)
-Plan: Phase 37.1 complete (3/3 plans done)
-Status: Phase 37.1 complete — PostHog cloud configured (Launch Dashboard with 5 widgets, 2 funnels, 3 cohorts) and all 4 critical events verified firing with correct properties in live browser session
-Last activity: 2026-02-27 — Phase 37.1 Plan 03 complete; PostHog end-to-end integration done; 347 tests pass
+Phase: 37.2 of 38 (Infisical free tier integration — in progress)
+Plan: 37.2-01 complete (1/3 plans done)
+Status: Plan 01 complete — Infisical project torch-secret-28-vs created; dev/staging/prod populated (20 secrets each); Universal Auth CI identity + GitHub Secrets set; Render Secret Sync active; smoke-test passed
+Last activity: 2026-02-27 — Phase 37.2 Plan 01 complete; moving to Plan 02 (code wiring)
 
 Progress: [████████░░] 89% (v5.0 phases — 8/9 phases complete)
 
@@ -180,6 +180,18 @@ Progress: [████████░░] 89% (v5.0 phases — 8/9 phases compl
 - Plan 03: sitemap.xml extended from 1 to 17 entries (root + pricing pre-existing + 14 new SEO pages)
 - Plan 03: SSR integration test pattern uses buildApp() + supertest with no DB setup block — SSR routes have no DB dependency
 - Plan 03: 302 total tests passing (31 new SEO tests + 271 pre-existing)
+
+### Phase 37.2 Execution Notes
+
+- workspaceId: f432290a-5b26-49f0-bde8-83825ffddd64 (needed in .infisical.json)
+- project-slug: torch-secret-28-vs (needed in ci.yml secrets-action)
+- Infisical CLI v0.43.58 — `projects list` command does not exist; use `--projectId` flag on all commands
+- `gh secret set --body "value"` is reliable; piped stdin (`echo -n "..." |`) works for some secrets but not others
+- Staging DATABASE_URL: postgresql://secureshare:secureshare@db:5432/secureshare (Docker-internal hostname)
+- BETTER_AUTH_TRUSTED_ORIGINS per-env: dev=torchsecret.localhost:1355, staging=localhost:5173, prod=torchsecret.com
+- NODE_ENV set per-environment in Infisical: development / staging / production
+- Render Secret Sync: prod environment → torch-secret Render service; Auto-Sync ON; status "Synced"
+- GitHub Secrets set: INFISICAL_CLIENT_ID + INFISICAL_CLIENT_SECRET (machine identity: github-actions-ci)
 
 ### Phase 37.1 Execution Notes
 
