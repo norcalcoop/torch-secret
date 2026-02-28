@@ -7,7 +7,7 @@
  * Session guard: redirects to /login on mount if there is no active session.
  */
 
-import { Circle, CheckCircle2, Clock, Trash2, Lock, Bell } from 'lucide';
+import { Circle, CheckCircle2, Clock, Trash2, Lock, Bell, TriangleAlert } from 'lucide';
 import { authClient } from '../api/auth-client.js';
 import {
   fetchDashboardSecrets,
@@ -215,6 +215,197 @@ function createConfirmModal(
   // Focus Cancel button on mount (safe default)
   requestAnimationFrame(() => {
     cancelBtn.focus();
+  });
+
+  return overlay;
+}
+
+// ---------------------------------------------------------------------------
+// Account deletion
+// ---------------------------------------------------------------------------
+
+/**
+ * Call DELETE /api/me. On success: show toast, navigate to home.
+ * On failure: show error toast and let the caller restore UI state.
+ */
+async function deleteAccount(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/me', { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Your account has been deleted');
+      navigate('/');
+      return true;
+    }
+    showToast('Failed to delete account. Please try again.');
+    return false;
+  } catch {
+    showToast('Failed to delete account. Please try again.');
+    return false;
+  }
+}
+
+/**
+ * Build an accessible account deletion confirmation modal.
+ *
+ * The confirm button remains disabled until the user types exactly "delete"
+ * into the confirmation input. Cancel and Escape dismiss without side effects.
+ * Focus is trapped inside the modal while open; returns to triggerEl on close.
+ *
+ * @param triggerEl - The element that opened the modal (receives focus on close)
+ */
+function createDeleteAccountModal(triggerEl: HTMLElement): HTMLElement {
+  const overlay = document.createElement('div');
+  overlay.className =
+    'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm motion-safe:animate-[fade-in-up_200ms_ease-out]';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'delete-account-modal-title');
+
+  const panel = document.createElement('div');
+  panel.className =
+    'bg-surface border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 shadow-xl';
+
+  // --- Header ---
+  const headerRow = document.createElement('div');
+  headerRow.className = 'flex items-start gap-3';
+
+  const dangerIconWrap = document.createElement('div');
+  dangerIconWrap.className =
+    'flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-danger/10';
+  const dangerIcon = createIcon(TriangleAlert, { size: 'sm', class: 'text-danger' });
+  dangerIconWrap.appendChild(dangerIcon);
+  headerRow.appendChild(dangerIconWrap);
+
+  const headerText = document.createElement('div');
+
+  const heading = document.createElement('h2');
+  heading.id = 'delete-account-modal-title';
+  heading.className = 'text-lg font-semibold text-text-primary';
+  heading.textContent = 'Delete account';
+  headerText.appendChild(heading);
+
+  const subtext = document.createElement('p');
+  subtext.className = 'mt-0.5 text-sm text-text-secondary';
+  subtext.textContent =
+    'This action is permanent and cannot be undone. All your data will be deleted.';
+  headerText.appendChild(subtext);
+
+  headerRow.appendChild(headerText);
+  panel.appendChild(headerRow);
+
+  // --- Confirmation input ---
+  const inputGroup = document.createElement('div');
+  inputGroup.className = 'space-y-1.5';
+
+  const inputLabel = document.createElement('label');
+  inputLabel.htmlFor = 'delete-account-confirm-input';
+  inputLabel.className = 'block text-sm text-text-secondary';
+
+  const labelSpan = document.createElement('span');
+  labelSpan.textContent = 'Type ';
+  inputLabel.appendChild(labelSpan);
+
+  const codeSpan = document.createElement('code');
+  codeSpan.className =
+    'px-1 py-0.5 rounded text-xs bg-surface-raised text-danger font-mono border border-border';
+  codeSpan.textContent = 'delete';
+  inputLabel.appendChild(codeSpan);
+
+  const labelEnd = document.createElement('span');
+  labelEnd.textContent = ' to confirm';
+  inputLabel.appendChild(labelEnd);
+
+  inputGroup.appendChild(inputLabel);
+
+  const confirmInput = document.createElement('input');
+  confirmInput.type = 'text';
+  confirmInput.id = 'delete-account-confirm-input';
+  confirmInput.className =
+    'w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-danger focus:border-danger transition-colors';
+  confirmInput.setAttribute('autocomplete', 'off');
+  confirmInput.setAttribute('autocorrect', 'off');
+  confirmInput.setAttribute('spellcheck', 'false');
+  confirmInput.placeholder = 'delete';
+  inputGroup.appendChild(confirmInput);
+
+  panel.appendChild(inputGroup);
+
+  // --- Buttons ---
+  const buttonRow = document.createElement('div');
+  buttonRow.className = 'flex justify-end gap-3 pt-1';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className =
+    'px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface focus:outline-hidden transition-all cursor-pointer';
+  cancelBtn.textContent = 'Cancel';
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.disabled = true;
+  confirmBtn.className =
+    'px-4 py-2 rounded-lg bg-danger text-white text-sm font-medium hover:bg-danger/90 focus:ring-2 focus:ring-danger focus:ring-offset-2 focus:ring-offset-surface focus:outline-hidden transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  confirmBtn.textContent = 'Delete account';
+
+  buttonRow.appendChild(cancelBtn);
+  buttonRow.appendChild(confirmBtn);
+  panel.appendChild(buttonRow);
+
+  overlay.appendChild(panel);
+
+  // --- Close helpers ---
+  function closeModal(): void {
+    document.removeEventListener('keydown', handleKeydown);
+    overlay.remove();
+    triggerEl.focus();
+  }
+
+  function handleKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  }
+
+  // --- Enable confirm button only when "delete" is typed ---
+  confirmInput.addEventListener('input', () => {
+    const isValid = confirmInput.value === 'delete';
+    confirmBtn.disabled = !isValid;
+  });
+
+  // --- Button event handlers ---
+  cancelBtn.addEventListener('click', () => {
+    closeModal();
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting\u2026';
+
+    // Show inline spinner in button
+    const spinner = document.createElement('span');
+    spinner.className =
+      'inline-block w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-2 align-middle';
+    spinner.setAttribute('aria-hidden', 'true');
+    confirmBtn.prepend(spinner);
+
+    void (async () => {
+      const success = await deleteAccount();
+      if (!success) {
+        // Restore button so user can retry
+        spinner.remove();
+        confirmBtn.textContent = 'Delete account';
+        // Re-evaluate disabled state from input value
+        confirmBtn.disabled = confirmInput.value !== 'delete';
+      }
+      // On success, deleteAccount() calls navigate('/') which tears down the page
+    })();
+  });
+
+  document.addEventListener('keydown', handleKeydown);
+
+  // Focus the input after mount so user can start typing immediately
+  requestAnimationFrame(() => {
+    confirmInput.focus();
   });
 
   return overlay;
@@ -551,6 +742,30 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
   }
 
   logoutCard.appendChild(billingRow);
+
+  // Danger zone: account deletion
+  const dangerRow = document.createElement('div');
+  dangerRow.className = 'mt-3 pt-3 border-t border-border flex items-center justify-between';
+
+  const dangerLabel = document.createElement('div');
+  dangerLabel.className = 'text-sm text-text-muted';
+  dangerLabel.textContent = 'Danger zone';
+
+  const deleteAccountBtn = document.createElement('button');
+  deleteAccountBtn.type = 'button';
+  deleteAccountBtn.className =
+    'px-3 py-1.5 rounded-lg border border-danger/40 text-danger text-sm font-medium hover:bg-danger/10 hover:border-danger focus:ring-2 focus:ring-danger focus:ring-offset-2 focus:ring-offset-surface focus:outline-hidden transition-all cursor-pointer';
+  deleteAccountBtn.textContent = 'Delete account';
+
+  deleteAccountBtn.addEventListener('click', () => {
+    const modal = createDeleteAccountModal(deleteAccountBtn);
+    document.body.appendChild(modal);
+  });
+
+  dangerRow.appendChild(dangerLabel);
+  dangerRow.appendChild(deleteAccountBtn);
+  logoutCard.appendChild(dangerRow);
+
   wrapper.appendChild(logoutCard);
   container.appendChild(wrapper);
 
