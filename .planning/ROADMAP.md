@@ -258,7 +258,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. After creating a secret, the confirmation page shows a visible feedback link that opens the Tally.so form in a new tab
   2. After viewing (revealing) a secret, the post-reveal page shows a visible feedback link that opens the Tally.so form in a new tab
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 38-01-PLAN.md — Shared feedback-link component + wire into confirmation and reveal pages + unit tests
 
 ## Progress
 
