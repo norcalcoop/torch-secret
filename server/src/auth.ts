@@ -1,9 +1,12 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { eq } from 'drizzle-orm';
 import { db } from './db/connection.js';
 import * as schema from './db/schema.js';
+import { secrets } from './db/schema.js';
 import { resend } from './services/email.js';
 import { env } from './config/env.js';
+import { loops } from './config/loops.js';
 import { enrollInOnboardingSequence } from './services/onboarding.service.js';
 import { logger } from './middleware/logger.js';
 
@@ -125,6 +128,25 @@ export const auth = betterAuth({
         required: false,
         defaultValue: false,
         input: true, // allows client to pass value during signUp.email()
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        // Step 1: GDPR — delete Loops contact (best-effort; deletion must succeed even if Loops is down)
+        // Pass only email — userId field in Loops API refers to external system ID, not our Better Auth userId
+        await loops.deleteContact({ email: user.email }).catch((err: unknown) => {
+          // ZK invariant: log only err.message — no userId alongside email in the same log line
+          logger.error(
+            { err: err instanceof Error ? err.message : String(err) },
+            'Loops deleteContact failed on account deletion',
+          );
+        });
+
+        // Step 2: ZK invariant — null secrets.user_id so existing shared links keep working
+        // FK is onDelete:'set null' (defense-in-depth: explicit null-out covers new secrets created
+        // between the beforeDelete call and the actual user row deletion)
+        await db.update(secrets).set({ userId: null }).where(eq(secrets.userId, user.id));
       },
     },
   },
