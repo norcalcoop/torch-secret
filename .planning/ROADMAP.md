@@ -233,12 +233,13 @@ Plans:
 **Goal:** Migrate all secrets from .env files into Infisical Cloud and wire every environment (local dev, CI, production on Render.com) to pull secrets via the Infisical CLI — making Infisical the single source of truth for all secrets with no application code changes.
 **Requirements**: none
 **Depends on:** Phase 37
-**Plans:** 2/3 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
-- [ ] 37.2-01-PLAN.md — Infisical project setup: create project + environments + Universal Auth machine identity + import secrets + Render Secret Sync (human-action checkpoint)
-- [ ] 37.2-02-PLAN.md — Code changes: .infisical.json + package.json script prefixes (infisical run --env=dev --) + staging:up script + ci.yml Universal Auth injection + .env.example cleanup + README update
-- [ ] 37.2-03-PLAN.md — End-to-end smoke tests: local dev without .env file, staging docker-compose config, CI pipeline pass, Render sync verified (human-action + verify checkpoints)
+- [x] 37.2-01-PLAN.md — Infisical project setup: create project + environments + Universal Auth machine identity + import secrets + Render Secret Sync (human-action checkpoint)
+- [x] 37.2-02-PLAN.md — Code changes: .infisical.json + package.json script prefixes (infisical run --env=dev --) + staging:up script + ci.yml Universal Auth injection + .env.example cleanup + README update
+- [ ] 37.2-03-PLAN.md — Per-environment credential differentiation: update dev/staging/prod with correct MUST-differ and SHOULD-differ values (human-action checkpoint)
+- [ ] 37.2-04-PLAN.md — End-to-end smoke tests: local dev without .env file, staging docker-compose config, CI pipeline pass, Render sync verified (human-action + verify checkpoints)
 
 ### Phase 37.3: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (INSERTED)
 
@@ -302,5 +303,5 @@ Plans:
 | 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
 | 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
-| 37.2. Infisical Free Tier Integration | 2/3 | In Progress|  | - |
+| 37.2. Infisical Free Tier Integration | v5.0 | 2/4 | In Progress | - |
 | 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
