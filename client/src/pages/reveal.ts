@@ -23,6 +23,7 @@ import { createTerminalBlock } from '../components/terminal-block.js';
 import { Shield, Lock, CircleCheck, Eye, EyeOff } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
+import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js';
 import { renderErrorPage } from './error.js';
 import { navigate } from '../router.js';
 
@@ -368,8 +369,10 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
  * Secret text is set via textContent inside the terminal block component
  * (NEVER innerHTML) to prevent XSS. The terminal block includes its own
  * copy button in the header bar, so no standalone copy button is needed.
+ *
+ * @internal — exported for test isolation only.
  */
-function renderRevealedSecret(container: HTMLElement, plaintext: string): void {
+export function renderRevealedSecret(container: HTMLElement, plaintext: string): void {
   clearContainer(container);
 
   const wrapper = document.createElement('div');
@@ -412,6 +415,10 @@ function renderRevealedSecret(container: HTMLElement, plaintext: string): void {
     navigate('/');
   });
   actions.appendChild(newSecretLink);
+
+  // -- Feedback link (Phase 38 -- opens Tally.so form in new tab) --
+  const feedbackLink = createFeedbackLink(TALLY_FEEDBACK_URL);
+  actions.appendChild(feedbackLink);
 
   // Element order: heading -> badge -> terminal -> actions
   wrapper.appendChild(heading);

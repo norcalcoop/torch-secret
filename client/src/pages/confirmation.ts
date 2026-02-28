@@ -19,6 +19,7 @@ import { ShieldCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { createShareButton } from '../components/share-button.js';
+import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js';
 import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
 import {
   captureConversionPromptShown,
@@ -290,6 +291,10 @@ export function renderConfirmationPage(
     navigate('/');
   });
   wrapper.appendChild(createAnotherButton);
+
+  // -- Feedback link (Phase 38 -- opens Tally.so form in new tab) --
+  const feedbackLink = createFeedbackLink(TALLY_FEEDBACK_URL);
+  wrapper.appendChild(feedbackLink);
 
   container.appendChild(wrapper);
 
