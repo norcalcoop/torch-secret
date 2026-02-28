@@ -83,7 +83,7 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 - [x] **Phase 35: SEO Content Pages (Express SSR)** — Server-rendered /vs/*, /alternatives/*, /use/* pages with JSON-LD visible to AI crawlers (completed 2026-02-26)
 - [x] **Phase 36: Email Capture** — GDPR-compliant homepage email list capture backed by Resend Audiences, with double opt-in (completed 2026-02-26)
 - [x] **Phase 37: Email Onboarding Sequence** — 3-email Loops.so sequence triggered on registration (welcome, key features, upgrade prompt) (completed 2026-02-27)
-- [ ] **Phase 38: Feedback Links** — Tally.so feedback link on confirmation and post-reveal pages
+- [x] **Phase 38: Feedback Links** — Tally.so feedback link on confirmation and post-reveal pages (completed 2026-02-28)
 
 ## Phase Details
 
@@ -306,4 +306,4 @@ Plans:
 | 37. Email Onboarding Sequence | 3/3 | Complete   | 2026-02-28 | 2026-02-27 |
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
-| 38. Feedback Links | v5.0 | 0/TBD | Not started | - |
+| 38. Feedback Links | 1/1 | Complete   | 2026-02-28 | - |

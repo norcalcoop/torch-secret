@@ -71,8 +71,8 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Feedback Links (FBCK)
 
-- [ ] **FBCK-01**: Confirmation page includes link to Tally.so feedback form (opens in new tab)
-- [ ] **FBCK-02**: Post-reveal page includes link to Tally.so feedback form (opens in new tab)
+- [x] **FBCK-01**: Confirmation page includes link to Tally.so feedback form (opens in new tab)
+- [x] **FBCK-02**: Post-reveal page includes link to Tally.so feedback form (opens in new tab)
 
 ## Future Requirements (v6.0+)
 
@@ -159,8 +159,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ESEQ-02 | Phase 37 | Complete |
 | ESEQ-03 | Phase 37 | Complete |
 | ESEQ-04 | Phase 37 | Complete |
-| FBCK-01 | Phase 38 | Pending |
-| FBCK-02 | Phase 38 | Pending |
+| FBCK-01 | Phase 38 | Complete |
+| FBCK-02 | Phase 38 | Complete |
 
 **Coverage:**
 - v5.0 requirements: 40 total
