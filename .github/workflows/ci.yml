@@ -1,7 +1,10 @@
 name: CI
 
 on:
-  workflow_dispatch: # temporarily disabled auto-triggers; re-enable push/pull_request when ready
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
