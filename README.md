@@ -55,37 +55,51 @@ When a secret is retrieved, the server performs an atomic three-step transaction
 
 ---
 
-## Getting Started
+## Local Development
 
-### Docker (recommended)
+### Prerequisites
+
+- Node.js 24.x
+- PostgreSQL 17+ running locally
+- [Infisical CLI](https://infisical.com/docs/cli/overview) installed
+
+### Setup
+
+1. **Install Infisical CLI:**
+
+   ```bash
+   brew install infisical/get-cli/infisical   # macOS
+   ```
+
+   See [Infisical CLI docs](https://infisical.com/docs/cli/overview) for Linux installation.
+
+2. **Authenticate with Infisical:**
+
+   ```bash
+   infisical login
+   ```
+
+   This opens a browser. Authenticate with your personal account. Session persists in `~/.infisical/` — only needed once per machine.
+
+3. **Request project access** from the project owner (needed to read secrets from the `torch-secret` Infisical project).
+
+4. **Start development servers:**
+   ```bash
+   npm run dev:server   # Terminal 1 — Express server on :3000, secrets injected by Infisical
+   npm run dev:client   # Terminal 2 — Vite dev server via portless
+   ```
+
+No `.env` file needed. Secrets are pulled automatically from the `dev` environment in Infisical.
+
+### Docker Staging
+
+To run the full stack with Docker Compose (staging mode):
 
 ```bash
-git clone https://github.com/norcalcoop/secureshare.git torch-secret
-cd torch-secret
-cp .env.example .env
-docker compose up
+npm run staging:up   # Wraps: infisical run --env=staging -- docker-compose up
 ```
 
-This starts PostgreSQL, Redis, runs migrations, and serves the app. Visit [http://localhost:3000](http://localhost:3000).
-
-### Manual setup
-
-```bash
-git clone https://github.com/norcalcoop/secureshare.git torch-secret
-cd torch-secret
-npm install
-cp .env.example .env
-# Edit .env — set DATABASE_URL and required auth vars (see .env.example for guidance)
-
-npm run db:migrate
-
-npm run dev:server   # Terminal 1: Express on :3000
-npm run dev:client   # Terminal 2: Vite on :5173 (proxies API to :3000)
-```
-
-Visit [http://localhost:5173](http://localhost:5173) for the Vite dev server with hot reload.
-
-**Prerequisites:** PostgreSQL 17+ and (optionally) Redis 7+ for distributed rate limiting.
+Requires `infisical login` completed. Pulls secrets from Infisical's `staging` environment.
 
 ---
 
