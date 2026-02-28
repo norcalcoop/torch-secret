@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { fromNodeHeaders } from 'better-auth/node';
 import { requireAuth } from '../middleware/require-auth.js';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { auth } from '../auth.js';
 import type { AuthUser } from '../auth.js';
 
 export const meRouter = Router();
@@ -40,4 +42,29 @@ meRouter.get('/', requireAuth, async (_req, res) => {
       subscriptionTier: dbUser?.subscriptionTier ?? 'free',
     },
   });
+});
+
+/**
+ * DELETE /api/me
+ *
+ * Account deletion endpoint. Requires authenticated session.
+ * Delegates to Better Auth's built-in deleteUser endpoint, which:
+ *   1. Runs beforeDelete hook (Loops GDPR delete + secrets.user_id null-out)
+ *   2. Deletes the user row (cascade-deletes sessions and accounts)
+ *   3. Clears the session cookie
+ *
+ * Returns { ok: true } on success.
+ *
+ * ZERO-KNOWLEDGE INVARIANT: Returns no userId or secretId in response body.
+ */
+meRouter.delete('/', requireAuth, async (req, res) => {
+  try {
+    await auth.api.deleteUser({
+      headers: fromNodeHeaders(req.headers),
+      body: {},
+    });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'deletion_failed' });
+  }
 });
