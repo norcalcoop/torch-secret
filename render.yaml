@@ -69,6 +69,39 @@ services:
       - key: VITE_POSTHOG_HOST
         sync: false
 
+      # === Application URL ===
+      # Set to your Render service URL, e.g. https://torchsecret.com (no trailing slash)
+      - key: APP_URL
+        sync: false
+      # Comma-separated trusted origins for CSRF protection — same as APP_URL for single-domain deploys
+      - key: BETTER_AUTH_TRUSTED_ORIGINS
+        sync: false
+
+      # === Loops email onboarding (Phase 37) ===
+      - key: LOOPS_API_KEY
+        sync: false
+
+      # === Stripe Billing (Phase 34) ===
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+
+      # === Email Capture (Phase 36) ===
+      - key: RESEND_AUDIENCE_ID
+        sync: false
+      # Salt for SHA-256 IP hashing — generate: node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+      - key: IP_HASH_SALT
+        sync: false
+
+      # === PostHog REST API — used for scripted dashboard setup (Phase 37.1), not required at runtime ===
+      # - key: POSTHOG_PERSONAL_API_KEY
+      #   sync: false
+      # - key: POSTHOG_PROJECT_ID
+      #   sync: false
+
   # Redis key-value store for distributed rate limiting
   - type: keyvalue
     name: torch-secret-redis
