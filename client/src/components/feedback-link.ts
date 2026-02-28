@@ -12,7 +12,7 @@
  */
 
 /** Tally.so feedback form URL. Update this constant when the real form is created. */
-export const TALLY_FEEDBACK_URL = 'https://tally.so/r/TODO';
+export const TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56';
 
 /**
  * Create an anchor element linking to the feedback form.
