@@ -1,6 +1,6 @@
 # Technology Stack
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2025-02-28
 
 ## Languages
 
@@ -13,11 +13,11 @@
 ## Runtime
 
 **Environment:**
-- Node.js 22.x LTS (no `.nvmrc` file; version determined by user/system)
+- Node.js 24.x LTS (Dockerfile uses `node:24-slim`)
 
 **Package Manager:**
-- npm (v10 or later, default with Node 22.x)
-- Lockfile: Present (`package-lock.json` expected)
+- npm (v10 or later)
+- Lockfile: Present (`package-lock.json`)
 
 ## Frameworks
 
@@ -55,10 +55,17 @@
 - rate-limit-redis 4.3.1 - Redis store for rate limiting
 - node-cron 4.2.1 - Scheduled task runner for expired secret cleanup
 - helmet 8.1.0 - HTTP security headers (CSP nonce per request)
+
+**Email & Marketing:**
 - resend 6.9.2 - Email delivery service (OAuth verification, password reset)
+- loops 6.2.0 - Email marketing and onboarding automation
+- posthog-js 1.352.0 - Product analytics and feature flags (client-side)
+
+**Payments & Billing:**
+- stripe 20.3.1 - Payment processing, subscriptions, and billing webhooks
 
 **UI/UX:**
-- lucide 0.564.0 - Icon library (ESM workaround in Vite config for broken module field)
+- lucide 0.575.0 - Icon library (ESM workaround in Vite config for broken module field)
 - @fontsource-variable/jetbrains-mono 5.2.8 - JetBrains Mono variable font
 
 **Utilities:**
@@ -80,16 +87,31 @@ Environment variables are validated at startup via Zod schema in `server/src/con
 - `NODE_ENV`: development | production | test (default: development)
 - `BETTER_AUTH_SECRET`: 32+ character hex string for auth encryption
 - `BETTER_AUTH_URL`: Base URL for auth redirects (e.g., `http://localhost:3000`)
+- `APP_URL`: Frontend origin for email links (Vite dev port or production domain)
+- `BETTER_AUTH_TRUSTED_ORIGINS`: CSRF trusted origins (comma-separated)
 - `RESEND_API_KEY`: Resend API key for email delivery
-- `RESEND_FROM_EMAIL`: "From" address for emails (e.g., `SecureShare <noreply@yourdomain.com>`)
+- `RESEND_FROM_EMAIL`: "From" address for emails (e.g., `Torch Secret <noreply@yourdomain.com>`)
+- `STRIPE_SECRET_KEY`: Stripe API secret key (starts with `sk_`)
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret (starts with `whsec_`)
+- `STRIPE_PRO_PRICE_ID`: Stripe price ID for Pro monthly plan (starts with `price_`)
+- `LOOPS_API_KEY`: Loops email marketing API key
+- `RESEND_AUDIENCE_ID`: Resend audience ID for email capture
+- `IP_HASH_SALT`: 16+ character salt for IP hashing (SHA-256)
 
 Optional vars:
 - `REDIS_URL`: Redis connection URL for distributed rate limiting (if omitted, in-memory store used)
 - `FORCE_HTTPS`: Set to `true` behind TLS-terminating reverse proxy (default: false)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Google OAuth (optional if disabled)
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: GitHub OAuth (optional if disabled)
+- `VITE_POSTHOG_KEY`: PostHog project API key (build-time, optional)
+- `VITE_POSTHOG_HOST`: PostHog API host (build-time, defaults to US cloud)
 
-See `.env.example` for template.
+See `.env.example` for full template.
+
+**Secrets Management:**
+- Infisical - CLI-based secrets injection for dev/staging environments (`infisical run --env=dev` in npm scripts)
+- `.env` file (loaded via `dotenv` 17.3.1 at startup) for local development
+- No `.env` committed to repo; see `.env.example` for template
 
 **Build:**
 
@@ -101,22 +123,37 @@ Configuration files:
 - `drizzle.config.ts` - PostgreSQL dialect, schema path, migration output
 - `eslint.config.ts` - Flat config with typescript-eslint, recommended rules, Prettier integration
 - `.prettierrc.json` - Single quotes, trailing commas, print width 100, Tailwind CSS class sorting
+- `docker-compose.yml` - Local PostgreSQL 17, Redis 7, and app service for development
+- `Dockerfile` - 3-stage build (deps → build frontend → production runtime)
 
 ## Platform Requirements
 
 **Development:**
-- PostgreSQL 17+ (at `DATABASE_URL`, no Docker Compose; start manually or via Docker)
-- Node.js 22.x LTS
-- Optional: Redis for distributed rate limiting (if `REDIS_URL` not set, in-memory store used)
+- PostgreSQL 17+ (via Docker Compose or manual setup)
+- Node.js 24.x LTS
+- Optional: Redis for distributed rate limiting (via Docker Compose or manual setup)
+- Optional: Infisical CLI for secrets injection
+- Optional: portless for multi-origin dev server testing (CSRF validation)
 
 **Production:**
 - PostgreSQL 17+ database
-- Node.js 22.x runtime
+- Node.js 24.x runtime
 - Reverse proxy with TLS termination (set `FORCE_HTTPS=true`)
-- Optional: Redis for multi-instance deployments
+- Optional: Redis for multi-instance deployments (rate limiting)
 - Email delivery: Resend API key required
+- Payments: Stripe API keys required (test or live)
+- Analytics: PostHog API key (optional, silent if unset)
+- Email marketing: Loops API key required
 - Optional: Google and/or GitHub OAuth credentials
+
+**Docker Deployment:**
+- Base image: `node:24-slim`
+- Build stages: deps (install all), build (frontend bundle), production (optimized runtime)
+- Non-root user: `node` (UID 1000)
+- Health check: GET /api/health endpoint
+- Environment: NODE_ENV=production by default
+- Port: 3000
 
 ---
 
-*Stack analysis: 2026-02-20*
+*Stack analysis: 2025-02-28*
