@@ -268,16 +268,23 @@ describe('Zero-knowledge invariant', () => {
 // Test Suite 7: OAuth redirect initiation (AUTH-06, AUTH-07)
 //
 // OAuth flows are browser-redirect-based and cannot be fully integration-tested
-// with Supertest. However, the initiation endpoint IS testable — it returns a
-// 3xx redirect to the provider. We capture the redirect without following it
-// using .redirects(0).
+// with Supertest. However, the initiation endpoint IS testable — it returns the
+// provider authorization URL.
+//
+// Better Auth 1.x POST /api/auth/sign-in/social behaviour:
+//   - Status: 200 (not 3xx — Better Auth returns JSON, not an HTTP redirect)
+//   - Body: { url: "https://accounts.google.com/...", redirect: true }
+//   - Header: Location set to the authorization URL
+//
+// We assert on res.body.url (the canonical place Better Auth returns the URL)
+// and also check the Location header as defense-in-depth.
 //
 // These tests are skipped gracefully when OAuth credentials are not configured
 // in the test environment. The human-verify checkpoint (Task 2) verifies the
 // complete round-trip flows manually.
 // ---------------------------------------------------------------------------
 describe('OAuth redirect initiation — AUTH-06, AUTH-07', () => {
-  test('POST /api/auth/sign-in/social with provider=google returns 3xx redirect to accounts.google.com', async () => {
+  test('POST /api/auth/sign-in/social with provider=google returns authorization URL for accounts.google.com', async () => {
     if (!process.env.GOOGLE_CLIENT_ID) {
       console.warn('Skipping Google OAuth test — GOOGLE_CLIENT_ID not set');
       return;
@@ -288,12 +295,14 @@ describe('OAuth redirect initiation — AUTH-06, AUTH-07', () => {
       .send({ provider: 'google', callbackURL: '/dashboard' })
       .redirects(0);
 
-    expect(res.status).toBeGreaterThanOrEqual(300);
-    expect(res.status).toBeLessThan(400);
+    // Better Auth 1.x returns 200 + JSON body with authorization URL (not 3xx)
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('url');
+    expect(res.body.url as string).toMatch(/accounts\.google\.com/);
     expect(res.headers['location']).toMatch(/accounts\.google\.com/);
   });
 
-  test('POST /api/auth/sign-in/social with provider=github returns 3xx redirect to github.com/login/oauth', async () => {
+  test('POST /api/auth/sign-in/social with provider=github returns authorization URL for github.com/login/oauth', async () => {
     if (!process.env.GITHUB_CLIENT_ID) {
       console.warn('Skipping GitHub OAuth test — GITHUB_CLIENT_ID not set');
       return;
@@ -304,8 +313,10 @@ describe('OAuth redirect initiation — AUTH-06, AUTH-07', () => {
       .send({ provider: 'github', callbackURL: '/dashboard' })
       .redirects(0);
 
-    expect(res.status).toBeGreaterThanOrEqual(300);
-    expect(res.status).toBeLessThan(400);
+    // Better Auth 1.x returns 200 + JSON body with authorization URL (not 3xx)
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('url');
+    expect(res.body.url as string).toMatch(/github\.com\/login\/oauth/);
     expect(res.headers['location']).toMatch(/github\.com\/login\/oauth/);
   });
 });
