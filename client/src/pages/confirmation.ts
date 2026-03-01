@@ -290,11 +290,16 @@ export function renderConfirmationPage(
   createAnotherButton.addEventListener('click', () => {
     navigate('/');
   });
-  wrapper.appendChild(createAnotherButton);
+
+  // -- Actions group: flex-col wrapper forces feedbackLink below createAnotherButton --
+  const actionsGroup = document.createElement('div');
+  actionsGroup.className = 'flex flex-col items-center gap-2';
+  actionsGroup.appendChild(createAnotherButton);
 
   // -- Feedback link (Phase 38 -- opens Tally.so form in new tab) --
   const feedbackLink = createFeedbackLink(TALLY_FEEDBACK_URL);
-  wrapper.appendChild(feedbackLink);
+  actionsGroup.appendChild(feedbackLink);
+  wrapper.appendChild(actionsGroup);
 
   container.appendChild(wrapper);
 
