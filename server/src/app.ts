@@ -66,6 +66,26 @@ export function buildApp() {
   // HTTP request logging (pino-http with secret ID redaction)
   app.use(httpLogger);
 
+  // Dev-only: bounce OAuth callbacks through the Vite proxy to fix state_mismatch.
+  // Google/GitHub redirect directly to localhost:3000/api/auth/callback/*, bypassing the Vite
+  // proxy. The OAuth state cookie was set on torchsecret.localhost:1355 (the Vite proxy domain),
+  // so it is absent on direct localhost:3000 requests → state_mismatch.
+  // Fix: intercept direct callbacks and 302-redirect them through APP_URL (the portless URL),
+  // where the state cookie IS present. Proxy-mediated requests (identified by Vite's
+  // X-Forwarded-Host header) skip this middleware and fall through to the Better Auth handler.
+  if (env.NODE_ENV === 'development' && env.APP_URL) {
+    app.get('/api/auth/callback/:provider', (req, res, next) => {
+      if (req.headers['x-forwarded-host']) {
+        // Arrived via Vite proxy — state cookie is present, let Better Auth handle it
+        return next();
+      }
+      // Direct callback from Google/GitHub — bounce through the portless Vite proxy URL
+      const qs = new URLSearchParams(req.query as Record<string, string>).toString();
+      const target = `${env.APP_URL}/api/auth/callback/${req.params.provider}${qs ? `?${qs}` : ''}`;
+      res.redirect(302, target);
+    });
+  }
+
   // Better Auth handler -- MUST be before express.json() to avoid body-stream conflict.
   // Better Auth parses its own bodies internally; if express.json() runs first,
   // the stream is consumed and all auth requests hang indefinitely.

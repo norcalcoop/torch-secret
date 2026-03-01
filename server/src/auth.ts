@@ -121,17 +121,6 @@ export const auth = betterAuth({
 
   trustedOrigins: [env.BETTER_AUTH_URL, ...(env.APP_URL ? [env.APP_URL] : [])],
 
-  advanced: {
-    // In dev, the Vite proxy serves the app on torchsecret.localhost:1355 while the
-    // OAuth callback lands on localhost:3000. Setting Domain=localhost on all auth cookies
-    // bridges this gap — the state cookie set during OAuth initiation (torchsecret.localhost)
-    // is visible when Google/GitHub redirect back to localhost:3000. Leave unset in production.
-    crossSubDomainCookies: {
-      enabled: !!env.BETTER_AUTH_COOKIE_DOMAIN,
-      domain: env.BETTER_AUTH_COOKIE_DOMAIN,
-    },
-  },
-
   user: {
     additionalFields: {
       marketingConsent: {
