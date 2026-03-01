@@ -1,24 +1,43 @@
 ---
 phase: 38-feedback-links
-verified: 2026-02-28T23:15:00Z
+verified: 2026-03-01T05:21:00Z
 status: passed
-score: 4/4 must-haves verified
-re_verification: false
+score: 6/6 must-haves verified
+re_verification:
+  previous_status: passed
+  previous_score: 4/4
+  context: "Initial verification passed automated checks. UAT then found both feedback links appeared side-by-side rather than stacking below their primary actions. Gap closure plan (38-02) applied two layout fixes. This re-verification confirms the fixes are live."
+  gaps_closed:
+    - "Share feedback link stacks BELOW (not beside) Create Another Secret on confirmation page at all viewport widths"
+    - "Share feedback link stacks BELOW (not beside) Create a New Secret on reveal page at all viewport widths including sm+ breakpoints"
+  gaps_remaining: []
+  regressions: []
 human_verification:
-  - test: "Feedback link visible on confirmation page below 'Create Another Secret' button"
-    expected: "A 'Share feedback' link appears as the last element in the wrapper, below the 'Create Another Secret' button, and opens https://tally.so/r/Y5ZV56 in a new tab"
-    why_human: "Visual placement and real-browser tab-opening behavior cannot be verified programmatically"
-  - test: "Feedback link visible on post-reveal page in actions row"
-    expected: "A 'Share feedback' link appears alongside 'Create a New Secret' in the actions row and opens https://tally.so/r/Y5ZV56 in a new tab"
-    why_human: "Visual placement and new-tab behavior require a browser; DOM tests confirm the anchor exists but not its visual position"
+  - test: "Feedback link stacks below primary action on confirmation page at all viewport widths"
+    expected: "At mobile, tablet (768px+), and desktop widths: 'Share feedback' appears below 'Create Another Secret', not beside it. Clicking opens https://tally.so/r/Y5ZV56 in a new tab."
+    why_human: "CSS flex-col stacking behavior and new-tab click behavior require a real browser. Code confirms actionsGroup has 'flex flex-col items-center gap-2' with no responsive breakpoint override — but visual rendering needs human confirmation."
+  - test: "Feedback link stacks below primary action on reveal page at all viewport widths"
+    expected: "At mobile, tablet (768px+), and desktop widths: 'Share feedback' appears below 'Create a New Secret', not beside it. Clicking opens https://tally.so/r/Y5ZV56 in a new tab."
+    why_human: "sm:flex-row has been removed from actions.className — verified in code. Visual confirmation at sm+ breakpoints requires browser rendering."
 ---
 
 # Phase 38: Feedback Links Verification Report
 
-**Phase Goal:** Add "Share feedback" links to the highest-intent moments in the product flow (confirmation page and reveal page), opening the Tally.so feedback form in a new tab.
-**Verified:** 2026-02-28T23:15:00Z
+**Phase Goal:** Add feedback links to confirmation and reveal pages so users can share feedback at peak engagement moments.
+**Verified:** 2026-03-01T05:21:00Z
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — after UAT gap closure (layout fix via 38-02-PLAN.md, commits ea5ab27 and 1c3eb25)
+
+---
+
+## Re-Verification Context
+
+The initial verification (2026-02-28) passed all automated checks but correctly flagged visual placement as needing human testing. UAT (run 2026-03-01) found both feedback links appeared side-by-side with their adjacent buttons rather than stacking below them. Two layout bugs were diagnosed:
+
+1. **Confirmation page:** `createAnotherButton` and `feedbackLink` were both `inline-block` elements appended directly to `wrapper` — browser placed them on the same line.
+2. **Reveal page:** `actions` container had `flex flex-col sm:flex-row` — at tablet/desktop widths this switched to horizontal layout, placing `feedbackLink` beside `newSecretLink`.
+
+Gap closure plan (38-02) applied targeted fixes. This re-verification confirms the fixes are correctly implemented and all tests continue to pass.
 
 ---
 
@@ -28,12 +47,14 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | After creating a secret, the confirmation page shows a visible "Share feedback" link | VERIFIED | `confirmation.ts` line 296-297: `createFeedbackLink(TALLY_FEEDBACK_URL)` appended to `wrapper` after `createAnotherButton`, before `container.appendChild(wrapper)`. Test `confirmation.test.ts` queries `a[href*="tally.so"]` and asserts non-null — passes GREEN. |
-| 2 | After viewing a secret, the post-reveal page shows a visible "Share feedback" link | VERIFIED | `reveal.ts` line 420-421: `createFeedbackLink(TALLY_FEEDBACK_URL)` appended as second child of `actions` row after `newSecretLink`. Test `reveal.test.ts` queries `a[href*="tally.so"]` and asserts non-null — passes GREEN. |
-| 3 | Both links open in a new tab (target=_blank) with rel=noopener noreferrer | VERIFIED | `feedback-link.ts` lines 26-27 set `feedbackLink.target = '_blank'` and `feedbackLink.rel = 'noopener noreferrer'`. Confirmed by 2 unit tests each (8 assertions total — all GREEN). |
-| 4 | Both links use the same Tally.so URL constant — no divergence between pages | VERIFIED | `TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56'` defined once in `feedback-link.ts` line 15. Both `confirmation.ts` (line 22) and `reveal.ts` (line 26) import this constant. No query parameters (ZK invariant: no `?` in value). |
+| 1 | After creating a secret, the confirmation page shows a "Share feedback" link | VERIFIED | `confirmation.ts` line 300-301: `createFeedbackLink(TALLY_FEEDBACK_URL)` appended to `actionsGroup`. Test `confirmation.test.ts` queries `a[href*="tally.so"]` — non-null. |
+| 2 | After viewing a secret, the post-reveal page shows a "Share feedback" link | VERIFIED | `reveal.ts` line 420-421: `createFeedbackLink(TALLY_FEEDBACK_URL)` appended to `actions`. Test `reveal.test.ts` queries `a[href*="tally.so"]` — non-null. |
+| 3 | Both links open in a new tab with target=_blank and rel=noopener noreferrer | VERIFIED | `feedback-link.ts` lines 26-27 set `target = '_blank'` and `rel = 'noopener noreferrer'`. 8 unit tests (4 per page) assert all four DOM attributes — all GREEN. |
+| 4 | Both links use the same Tally.so URL constant with no query parameters | VERIFIED | `TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56'` at `feedback-link.ts` line 15. No `?` character. Both pages import this constant — no divergence. ZK invariant satisfied. |
+| 5 | Confirmation page feedback link stacks BELOW "Create Another Secret" (not beside it) at all widths | VERIFIED | `confirmation.ts` lines 295-302: `actionsGroup` div with `className = 'flex flex-col items-center gap-2'` wraps both `createAnotherButton` and `feedbackLink`. No responsive breakpoint class overrides flex-col to flex-row. Commit ea5ab27 applied. |
+| 6 | Reveal page feedback link stacks BELOW "Create a New Secret" at all widths including sm+ | VERIFIED | `reveal.ts` line 405: `actions.className = 'flex flex-col items-center gap-4'`. `sm:flex-row` is absent — confirmed by grep returning zero matches. Commit 1c3eb25 applied. |
 
-**Score:** 4/4 truths verified
+**Score:** 6/6 truths verified
 
 ---
 
@@ -41,11 +62,11 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `client/src/components/feedback-link.ts` | `createFeedbackLink(url)` factory + `TALLY_FEEDBACK_URL` constant | VERIFIED | Exists, 33 lines, exports both symbols, returns a fully-configured `HTMLAnchorElement` via `document.createElement`. No stubs, no innerHTML. |
-| `client/src/pages/confirmation.ts` | Renders feedback link as last child of wrapper | VERIFIED | Exists, imports `createFeedbackLink` and `TALLY_FEEDBACK_URL` at line 22. Calls `wrapper.appendChild(feedbackLink)` at line 297, before `container.appendChild(wrapper)` at line 299. |
-| `client/src/pages/reveal.ts` | Renders feedback link as second child of actions row; exports `renderRevealedSecret` | VERIFIED | Exists, imports at line 26. Exports `renderRevealedSecret` at line 375 with `@internal` JSDoc. Appends feedback link at line 421 after `newSecretLink`, before `wrapper.appendChild(actions)`. |
-| `client/src/pages/confirmation.test.ts` | 4 DOM assertions for FBCK-01 | VERIFIED | Exists, 76 lines, 4 `it` blocks asserting `href*="tally.so"`, `target="_blank"`, `rel="noopener noreferrer"`, `textContent="Share feedback"`. All 4 pass GREEN. |
-| `client/src/pages/reveal.test.ts` | 4 DOM assertions for FBCK-02 | VERIFIED | Exists, 77 lines, 4 `it` blocks asserting same 4 attributes on `renderRevealedSecret`. All 4 pass GREEN. |
+| `client/src/components/feedback-link.ts` | `createFeedbackLink(url)` factory + `TALLY_FEEDBACK_URL` constant | VERIFIED | 33 lines. Exports both symbols. Sets `href`, `target='_blank'`, `rel='noopener noreferrer'`, `textContent='Share feedback'`. No innerHTML, no stubs. |
+| `client/src/pages/confirmation.ts` | `actionsGroup` div (`flex flex-col items-center gap-2`) wrapping button + feedbackLink | VERIFIED | Lines 294-302: `actionsGroup` div created, both elements appended to it, `actionsGroup` appended to `wrapper`. Gap closure fix from commit ea5ab27 confirmed live. |
+| `client/src/pages/reveal.ts` | `actions` div with `flex flex-col items-center gap-4` (no `sm:flex-row`) | VERIFIED | Line 405: `actions.className = 'flex flex-col items-center gap-4'`. No `sm:flex-row`. Gap closure fix from commit 1c3eb25 confirmed live. |
+| `client/src/pages/confirmation.test.ts` | 4 DOM assertions for FBCK-01 | VERIFIED | 4 `it` blocks: href contains `tally.so`, `target='_blank'`, `rel='noopener noreferrer'`, `textContent='Share feedback'`. All 4 GREEN. |
+| `client/src/pages/reveal.test.ts` | 4 DOM assertions for FBCK-02 | VERIFIED | 4 `it` blocks with same assertions on `renderRevealedSecret`. All 4 GREEN. |
 
 ---
 
@@ -53,9 +74,11 @@ human_verification:
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `client/src/pages/confirmation.ts` | `client/src/components/feedback-link.ts` | ES import `createFeedbackLink` | WIRED | Line 22: `import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js'`. Used at line 296. |
-| `client/src/pages/reveal.ts` | `client/src/components/feedback-link.ts` | ES import `createFeedbackLink` | WIRED | Line 26: `import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js'`. Used at line 420. |
-| `feedback-link anchor` | `tally.so` | `href` = `TALLY_FEEDBACK_URL` constant | WIRED | `TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56'` (real form, no query params). Factory sets `feedbackLink.href = url`. No identifying data appended — ZK invariant satisfied. |
+| `client/src/pages/confirmation.ts` | `client/src/components/feedback-link.ts` | ES import `createFeedbackLink` | WIRED | Line 22: `import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js'`. Called at line 300. |
+| `client/src/pages/reveal.ts` | `client/src/components/feedback-link.ts` | ES import `createFeedbackLink` | WIRED | Line 26: `import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js'`. Called at line 420. |
+| `confirmation.ts` actionsGroup | `createAnotherButton` + `feedbackLink` | `actionsGroup.appendChild(feedbackLink)` | WIRED | Lines 297 and 301: both elements appended to `actionsGroup` (flex-col div). `actionsGroup` appended to `wrapper` at line 302. Pattern `actionsGroup.*appendChild.*feedbackLink` confirmed. |
+| `reveal.ts` actions div | no `sm:flex-row` | `actions.className = 'flex flex-col items-center gap-4'` | WIRED | Line 405 contains exact pattern `flex flex-col items-center gap-4`. Zero grep matches for `sm:flex-row` in the file. |
+| `feedback-link anchor` | `https://tally.so/r/Y5ZV56` | `href = TALLY_FEEDBACK_URL` | WIRED | Constant value contains no `?` query params. Both pages use the constant — no inline URL strings. |
 
 ---
 
@@ -63,10 +86,10 @@ human_verification:
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| FBCK-01 | 38-01-PLAN.md | Confirmation page includes link to Tally.so feedback form (opens in new tab) | SATISFIED | `confirmation.ts` wires `createFeedbackLink(TALLY_FEEDBACK_URL)` as last child of wrapper. 4 unit tests in `confirmation.test.ts` assert href, target, rel, textContent — all GREEN. |
-| FBCK-02 | 38-01-PLAN.md | Post-reveal page includes link to Tally.so feedback form (opens in new tab) | SATISFIED | `reveal.ts` wires `createFeedbackLink(TALLY_FEEDBACK_URL)` as second child of actions row. 4 unit tests in `reveal.test.ts` assert href, target, rel, textContent — all GREEN. |
+| FBCK-01 | 38-01-PLAN.md, 38-02-PLAN.md | Confirmation page includes link to Tally.so feedback form (opens in new tab) | SATISFIED | `confirmation.ts` wires `createFeedbackLink(TALLY_FEEDBACK_URL)` inside `actionsGroup` (flex-col). 4 unit tests assert href, target, rel, textContent — GREEN. Marked `[x]` in REQUIREMENTS.md line 74. |
+| FBCK-02 | 38-01-PLAN.md, 38-02-PLAN.md | Post-reveal page includes link to Tally.so feedback form (opens in new tab) | SATISFIED | `reveal.ts` wires `createFeedbackLink(TALLY_FEEDBACK_URL)` as direct child of `actions` (flex-col only). 4 unit tests assert same attributes — GREEN. Marked `[x]` in REQUIREMENTS.md line 75. |
 
-Both FBCK-01 and FBCK-02 are marked `[x]` in `.planning/REQUIREMENTS.md` at lines 74-75. No orphaned requirements for Phase 38.
+No orphaned requirements. REQUIREMENTS.md lines 162-163 confirm both FBCK-01 and FBCK-02 are mapped to Phase 38 and marked Complete.
 
 ---
 
@@ -74,59 +97,70 @@ Both FBCK-01 and FBCK-02 are marked `[x]` in `.planning/REQUIREMENTS.md` at line
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `client/src/pages/reveal.ts` | 228, 233 | `placeholder` (input placeholder attribute) | Info | False positive — these are HTML `<input>` `placeholder` attributes for the passphrase input field, not stub placeholders. No impact. |
+| `client/src/pages/reveal.ts` | 228, 233 | `placeholder` keyword | Info | False positive — HTML `<input placeholder=` attribute for passphrase field; not a stub placeholder. Unchanged from previous verification. No impact. |
 
-No blockers or warnings found. All modified files are clean.
+No blockers or warnings. No TODO/FIXME in any modified file. No empty return stubs.
 
 ---
 
 ### Test Results
 
-**8 new tests — all GREEN:**
+**8 tests — all GREEN (verified live run 2026-03-01):**
 
 ```
 reveal page — feedback link (FBCK-02) > renders an anchor linking to tally.so      4ms
 reveal page — feedback link (FBCK-02) > opens in a new tab                          1ms
-reveal page — feedback link (FBCK-02) > has rel=noopener noreferrer                 0ms
+reveal page — feedback link (FBCK-02) > has rel=noopener noreferrer                 1ms
 reveal page — feedback link (FBCK-02) > has text content "Share feedback"           1ms
-confirmation page — feedback link (FBCK-01) > renders an anchor linking to tally.so 37ms
+confirmation page — feedback link (FBCK-01) > renders an anchor linking to tally.so 32ms
 confirmation page — feedback link (FBCK-01) > opens in a new tab                    1ms
 confirmation page — feedback link (FBCK-01) > has rel=noopener noreferrer           0ms
-confirmation page — feedback link (FBCK-01) > has text content "Share feedback"     0ms
+confirmation page — feedback link (FBCK-01) > has text content "Share feedback"     1ms
 
 Test Files: 2 passed (2)
 Tests:      8 passed (8)
 ```
 
-Commits verified in git log: `bb36a14` (TDD RED), `3257bb7` (TDD GREEN), `cec26a8` (real URL), `2662d33` (plan docs).
-
 ---
 
 ### Human Verification Required
 
-The following items require a running browser to confirm. Automated checks confirm the DOM structure and link attributes are correct — visual placement and actual tab-opening behavior are the remaining open items.
+The following items require browser rendering to fully confirm. All code evidence is consistent with correct behavior — these are visual/behavioral confirmations only.
 
-#### 1. Feedback link visible on confirmation page
+#### 1. Feedback link stacks below primary action on confirmation page at all viewport widths
 
-**Test:** Start dev server. Navigate to `/create`. Create a secret. On the confirmation page, verify a "Share feedback" link is visible below the "Create Another Secret" button.
-**Expected:** The link appears as the bottom element of the action group, opens `https://tally.so/r/Y5ZV56` in a new browser tab.
-**Why human:** Visual positioning (below vs. adjacent to button) and real tab-opening behavior cannot be confirmed without a browser. The SUMMARY.md notes Task 3 (visual verification) was approved, but the verifier does not treat SUMMARY claims as evidence.
+**Test:** Start dev server. Create a secret at http://torchsecret.localhost:1355/create. On the confirmation page, resize the browser from mobile to tablet (768px) and desktop widths.
+**Expected:** "Share feedback" appears below "Create Another Secret" at every viewport width — never side-by-side. Clicking the link opens https://tally.so/r/Y5ZV56 in a new tab.
+**Why human:** `actionsGroup` div uses `flex flex-col items-center gap-2` with no breakpoint override — code confirms vertical stacking — but rendered layout requires browser.
 
-#### 2. Feedback link visible on post-reveal page
+#### 2. Feedback link stacks below primary action on reveal page at all viewport widths
 
-**Test:** Create a secret, visit its reveal URL, click "Reveal Secret". On the post-reveal page, verify a "Share feedback" link is visible in the actions row alongside "Create a New Secret".
-**Expected:** The link appears in the same horizontal row as "Create a New Secret", opens `https://tally.so/r/Y5ZV56` in a new tab.
-**Why human:** Same rationale as above — visual placement in a flex row cannot be confirmed without rendering.
+**Test:** Create a secret, visit the reveal URL, click "Reveal Secret". On the post-reveal page, resize from mobile to tablet (768px) and desktop.
+**Expected:** "Share feedback" appears below "Create a New Secret" at every viewport width. Clicking opens https://tally.so/r/Y5ZV56 in a new tab.
+**Why human:** `actions` div is `flex flex-col items-center gap-4` with `sm:flex-row` removed — code confirms no horizontal breakpoint — but pixel-level rendering requires browser.
 
-_Note: The PLAN's Task 3 checkpoint was a human-verify gate that the SUMMARY.md reports was approved ("approved" signal received). Flagging these as human_verification items for completeness, not because there is evidence of failure._
+_Note: The 38-02-SUMMARY.md records that the human checkpoint (Task 3) was approved by the user after the gap closure commits. This flag is retained for completeness since the verifier treats SUMMARY claims as assertions to confirm, not as evidence._
 
 ---
 
 ## ZK Invariant Verification
 
-`TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56'` — verified to contain no `?` query parameters. No `userId`, `secretId`, or any identifying data appended. Both pages use the same static constant with no dynamic parameter injection.
+`TALLY_FEEDBACK_URL = 'https://tally.so/r/Y5ZV56'` — no `?` character present. No `userId`, `secretId`, or session identifiers appended dynamically. Both pages use the same static constant with no parameter injection at call sites. ZK invariant is satisfied.
 
 ---
 
-_Verified: 2026-02-28T23:15:00Z_
+## Gap Closure Summary
+
+Both UAT gaps are closed:
+
+| Gap | Root Cause | Fix Applied | Commit | Status |
+|-----|-----------|-------------|--------|--------|
+| Confirmation page: link beside button (not below) | Two `inline-block` elements as direct siblings in `wrapper` | `actionsGroup` div (`flex flex-col items-center gap-2`) wraps both elements | ea5ab27 | CLOSED |
+| Reveal page: link beside "Create a New Secret" at sm+ | `sm:flex-row` in `actions.className` switched to horizontal at tablet widths | Removed `sm:flex-row` from `actions.className` | 1c3eb25 | CLOSED |
+
+No regressions introduced. Anti-pattern scan clean. All 8 unit tests GREEN. FBCK-01 and FBCK-02 satisfied.
+
+---
+
+_Verified: 2026-03-01T05:21:00Z_
 _Verifier: Claude (gsd-verifier)_
