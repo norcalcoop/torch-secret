@@ -402,7 +402,7 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
 
   // Actions row (just "Create a New Secret" -- terminal block has its own copy)
   const actions = document.createElement('div');
-  actions.className = 'flex flex-col sm:flex-row items-center gap-4';
+  actions.className = 'flex flex-col items-center gap-4';
 
   // "Create a New Secret" link
   const newSecretLink = document.createElement('a');
