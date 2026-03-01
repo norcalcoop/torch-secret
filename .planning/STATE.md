@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-01T13:23:09.002Z"
+last_updated: "2026-03-01T15:38:43.675Z"
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 12
-  total_plans: 44
-  completed_plans: 44
+  total_plans: 47
+  completed_plans: 46
 ---
 
 # Session State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 38 of 38 (Feedback links — complete)
-Plan: 38-02 complete (2/2 plans done)
-Status: All tasks complete — feedback link layout fixed on confirmation + reveal pages; actionsGroup flex-col wrapper on confirmation page; sm:flex-row removed from reveal actions container; visual verification approved; FBCK-01 + FBCK-02 satisfied; 361 tests passing; v5.0 complete
-Last activity: 2026-03-01 — Phase 38 Plan 02 complete; layout fixes committed (ea5ab27, 1c3eb25); user visual verification approved
+Phase: 39 of 39 (Google + GitHub OAuth — in progress)
+Plan: 2/3 plans done
+Status: Plan 39-02 complete — GitHub OAuth credentials provisioned to Infisical (dev + prod); two GitHub OAuth Apps created. Plan 39-03 (UAT + integration test verification) is next.
+Last activity: 2026-03-01 — Phase 39 Plan 02 complete (GitHub OAuth credential provisioning)
 
-Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete)
+Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
 ## Performance Metrics
 
@@ -78,6 +78,8 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 38 P01 | 3 | 2 tasks | 5 files |
 | Phase 38 P02 | 5 | 3 tasks | 2 files |
 | Phase 38 P02 | 5 | 3 tasks | 2 files |
+| Phase 39 P01 | human-action | 2 tasks | 0 files |
+| Phase 39 P02 | 63 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -170,6 +172,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Phase 37.1 inserted after Phase 37: get the most out of posthog free tier integration (URGENT)
 - Phase 37.2 inserted after Phase 37: get the most out of infiscal free tier integration (URGENT)
 - Phase 37.3 inserted after Phase 37: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (URGENT)
+- Phase 39 added: complete, finish google auth and github auth
 
 ### Phase 35 Execution Notes
 
@@ -266,6 +269,16 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Build verified: confirm and unsubscribe emit as separate chunks (confirm-*.js, unsubscribe-*.js)
 - Plan 04 complete: human verification approved 2026-02-26; all 5 ECAP requirements confirmed by tester (form submission, consent enforcement, confirmation email, /confirm + /unsubscribe pages, NOINDEX headers, ip_hash integrity)
 
+### Phase 39 Execution Notes
+
+- Plan 01: Google OAuth credentials provisioned to Infisical dev + prod via `infisical secrets set` CLI; verified with `infisical secrets get`; no code changes needed — `server/src/auth.ts` socialProviders.google block was already conditional on env var presence
+- Single Google OAuth client covers dev + prod — both JS origins (localhost:3000, torchsecret.com) and redirect URIs registered on same client in Google Cloud Console
+- Google Cloud Console project: Torch Secret; OAuth client name: Torch Secret; callback URL pattern: `{BETTER_AUTH_URL}/api/auth/callback/google`
+- No trailing slashes on any registered URI — trailing slash is #1 cause of redirect_uri_mismatch errors
+- Plan 02: GitHub OAuth requires two separate apps (not one) — single callback URL field per app; dev app callback: `http://localhost:3000/api/auth/callback/github`; prod app callback: `https://torchsecret.com/api/auth/callback/github`
+- Dev GITHUB_CLIENT_ID: Ov23li5k0Yn5xDN5O9Ro (Torch Secret Dev app); Prod GITHUB_CLIENT_ID: Ov23liOofIzZDcPqxGrJ (Torch Secret prod app)
+- Do NOT set `disableDefaultScope: true` on GitHub provider — `user:email` scope is required for users with private email GitHub settings; without it, OAuth sign-up silently fails with redirect to /login?error=oauth
+
 ### Blockers/Concerns
 
 None — v4.0 clean ship, v5.0 roadmap finalized
@@ -273,5 +286,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 38-02-PLAN.md — feedback link layout fixed on confirmation + reveal pages; actionsGroup flex-col wrapper + sm:flex-row removal; visual verification approved; FBCK-01 + FBCK-02 satisfied; 361 tests passing; v5.0 fully shipped
-Resume file: None — Phase 38 Plan 02 is the final plan; v5.0 complete
+Stopped at: Completed 39-02-PLAN.md — GitHub OAuth credentials provisioned to Infisical dev + prod; two GitHub OAuth Apps created (Torch Secret Dev + Torch Secret prod); OAUTH-GITHUB requirement satisfied; no code changes (socialProviders.github already implemented)
+Resume file: None — next is 39-03-PLAN.md (UAT + integration test verification)

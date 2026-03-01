@@ -307,3 +307,16 @@ Plans:
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
 | 38. Feedback Links | 2/2 | Complete    | 2026-03-01 | - |
+
+
+### Phase 39: complete, finish google auth and github auth
+
+**Goal:** Google and GitHub OAuth sign-in are fully operational — credentials provisioned in Infisical for dev and prod, both provider round-trips manually verified, and AUTH-06 + AUTH-07 integration tests passing (not skipped).
+**Requirements**: OAUTH-GOOGLE, OAUTH-GITHUB
+**Depends on:** Phase 38
+**Plans:** 2/3 plans executed
+
+Plans:
+- [ ] 39-01-PLAN.md — Google OAuth 2.0 client creation in Google Cloud Console + credentials in Infisical (dev + prod)
+- [ ] 39-02-PLAN.md — GitHub OAuth Apps creation (dev + prod separate apps) + credentials in Infisical
+- [ ] 39-03-PLAN.md — End-to-end verification: AUTH-06 + AUTH-07 integration tests passing + manual Google + GitHub round-trip UAT
