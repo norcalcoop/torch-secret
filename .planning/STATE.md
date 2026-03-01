@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
-status: unknown
-last_updated: "2026-03-01T15:38:43.675Z"
+status: complete
+last_updated: "2026-03-01T19:00:00.000Z"
 progress:
   total_phases: 13
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 47
-  completed_plans: 46
+  completed_plans: 47
 ---
 
 # Session State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — Phase 38: Feedback Links
+**Current focus:** v5.0 Product Launch Checklist — COMPLETE
 
 ## Current Position
 
-Phase: 39 of 39 (Google + GitHub OAuth — in progress)
-Plan: 2/3 plans done
-Status: Plan 39-02 complete — GitHub OAuth credentials provisioned to Infisical (dev + prod); two GitHub OAuth Apps created. Plan 39-03 (UAT + integration test verification) is next.
-Last activity: 2026-03-01 — Phase 39 Plan 02 complete (GitHub OAuth credential provisioning)
+Phase: 39 of 39 — COMPLETE
+Plan: 3/3 plans done
+Status: Phase 39 complete — Google Auth and GitHub Auth fully operational. AUTH-06 + AUTH-07 integration tests passing. Google and GitHub OAuth round-trips manually verified (button click through provider consent to /dashboard). v5.0 Product Launch Checklist complete.
+Last activity: 2026-03-01 — Phase 39 complete; Google Auth and GitHub Auth operational; AUTH-06 + AUTH-07 passing; silent OAuth error bug fixed in login.ts; state_mismatch dev bug fixed via Vite proxy bounce middleware
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -80,6 +80,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 38 P02 | 5 | 3 tasks | 2 files |
 | Phase 39 P01 | human-action | 2 tasks | 0 files |
 | Phase 39 P02 | 63 | 2 tasks | 0 files |
+| Phase 39 P03 | ~90min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -278,6 +279,14 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Plan 02: GitHub OAuth requires two separate apps (not one) — single callback URL field per app; dev app callback: `http://localhost:3000/api/auth/callback/github`; prod app callback: `https://torchsecret.com/api/auth/callback/github`
 - Dev GITHUB_CLIENT_ID: Ov23li5k0Yn5xDN5O9Ro (Torch Secret Dev app); Prod GITHUB_CLIENT_ID: Ov23liOofIzZDcPqxGrJ (Torch Secret prod app)
 - Do NOT set `disableDefaultScope: true` on GitHub provider — `user:email` scope is required for users with private email GitHub settings; without it, OAuth sign-up silently fails with redirect to /login?error=oauth
+- Plan 03 Task 1: AUTH-06 (Google) and AUTH-07 (GitHub) both PASS when run with `infisical run --env=dev --`; full suite 361/361 green without Infisical (AUTH-06/07 skip gracefully)
+- Known side-effect: running `infisical run --env=dev --` sets NODE_ENV=development which enables email verification; this causes 5 email/password auth tests to fail (not regressions — they pass in normal test:run where NODE_ENV=test)
+- AUTH-06/07 test format: Better Auth 1.x returns 200+JSON body with {url, redirect:true} instead of 3xx redirect; test assertions updated accordingly in commit 77fa85d
+- Plan 03 Task 2 (manual UAT): state_mismatch bug fixed — Google/GitHub redirect directly to localhost:3000, bypassing Vite proxy; state cookie was set on torchsecret.localhost:1355; fix: dev-only Express middleware bounces direct callbacks through APP_URL (commits b0c2321, a31f659)
+- crossSubDomainCookies removed from auth.ts — bounce approach supersedes it and avoids Domain=localhost cookie security concerns; BETTER_AUTH_COOKIE_DOMAIN env var removed
+- createOAuthButton silent bug fixed: changed void signIn.social() to await + error check; surfaces initiation failures as /login?error=oauth instead of silent no-op
+- tsx watch requires full process restart to pick up new Infisical env vars — not a regression, just a dev workflow note
+- Phase 39 COMPLETE — v5.0 Product Launch Checklist fully shipped
 
 ### Blockers/Concerns
 
@@ -286,5 +295,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 39-02-PLAN.md — GitHub OAuth credentials provisioned to Infisical dev + prod; two GitHub OAuth Apps created (Torch Secret Dev + Torch Secret prod); OAUTH-GITHUB requirement satisfied; no code changes (socialProviders.github already implemented)
-Resume file: None — next is 39-03-PLAN.md (UAT + integration test verification)
+Stopped at: Phase 39 complete — Google Auth and GitHub Auth fully operational. AUTH-06 + AUTH-07 passing. v5.0 Product Launch Checklist complete.
+Resume file: None — all phases complete
