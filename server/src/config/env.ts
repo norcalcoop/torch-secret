@@ -23,6 +23,10 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
+  // Set to root domain (e.g. "localhost") in dev to enable cross-subdomain cookie sharing,
+  // allowing the OAuth state cookie set on torchsecret.localhost to reach the localhost:3000
+  // callback. Leave unset in production — Better Auth defaults to the request domain.
+  BETTER_AUTH_COOKIE_DOMAIN: z.string().optional(),
   RESEND_API_KEY: z.string().min(1),
   RESEND_FROM_EMAIL: z.string().min(1),
 
