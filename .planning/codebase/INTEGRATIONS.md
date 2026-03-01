@@ -1,216 +1,244 @@
 # External Integrations
 
-**Analysis Date:** 2025-02-28
+**Analysis Date:** 2025-03-01
 
 ## APIs & External Services
 
 **Authentication & OAuth:**
-- Google OAuth 2.0 - Sign-in provider (optional via `better-auth`)
-  - SDK/Client: `better-auth` 1.4.18
-  - Credentials: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (env vars, optional)
-  - Implementation: `server/src/auth.ts` — conditionally enabled if env vars present
-
-- GitHub OAuth 2.0 - Sign-in provider (optional via `better-auth`)
-  - SDK/Client: `better-auth` 1.4.18
-  - Credentials: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (env vars, optional)
-  - Implementation: `server/src/auth.ts` — conditionally enabled if env vars present
+- Better Auth 1.4.18 - Email/password + OAuth sign-in
+  - Env vars: `BETTER_AUTH_SECRET` (32+ chars), `BETTER_AUTH_URL`, `APP_URL`, `BETTER_AUTH_TRUSTED_ORIGINS`
+  - Implementation: `/api/auth/**` handler route
+  - OAuth providers (optional):
+    - Google OAuth 2.0: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+    - GitHub OAuth 2.0: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
+  - Features: Email verification, password reset, session management, automatic user creation
+  - Database: Drizzle adapter managing `users`, `sessions`, `accounts`, `verification` tables
+  - Cookie: `auth_token` (sameSite: lax, httpOnly, secure in prod)
 
 **Email Delivery:**
-- Resend API - Transactional email for authentication flows
-  - SDK/Client: `resend` 6.9.2
-  - Credentials: `RESEND_API_KEY` (required), `RESEND_FROM_EMAIL` (required)
-  - Implementation: `server/src/services/email.ts` — singleton initialized with API key
-  - Triggers: Email verification, password reset
-  - Format: Text emails with verification/reset URLs (via Better Auth token mechanism)
+- Resend - Transactional email service
+  - SDK: `resend` 6.9.2 (singleton in `server/src/services/email.ts`)
+  - Auth: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+  - Service: `server/src/services/email.ts` (sendEmail function)
+  - Events:
+    - Email verification (on signup via Better Auth)
+    - Password reset (on forgot-password request via Better Auth)
+    - Secret viewed notification (Phase 26, via `notification.service.ts`)
   - Pattern: Fire-and-forget (void awaited to prevent timing attacks)
+  - Audience API: Also used for marketing list management (Phase 36)
 
-**Email Capture & Marketing:**
-- Loops.so - Email marketing, onboarding sequences, and audience management
-  - SDK/Client: `loops` 6.2.0
-  - API Key: `LOOPS_API_KEY` (required)
-  - Configuration: `server/src/config/loops.ts` — singleton LoopsClient
-  - Implementation: `server/src/services/onboarding.service.ts` — enrollInOnboardingSequence()
-  - Trigger: Fired automatically on user registration (fire-and-forget, non-blocking)
-  - Event: `registered` event triggers the onboarding loop (welcome email, day-3 features, day-7 upgrade prompt)
-  - Contact Properties: firstName, marketingConsent, subscriptionTier (only non-identifying data)
-  - Also used by: `server/src/services/billing.service.ts` to sync Pro tier status on subscription upgrade
-  - ZERO-KNOWLEDGE: No userId, no secretId sent to Loops; email is non-identifying in this context
+**Email Automation & Onboarding:**
+- Loops.so - Email marketing and drip sequences
+  - SDK: `loops` 6.2.0 (singleton in `server/src/config/loops.ts`)
+  - Auth: `LOOPS_API_KEY`
+  - Service: `server/src/services/onboarding.service.ts` (enrollInOnboardingSequence)
+  - Trigger: Automatically fires on user registration (fire-and-forget, non-blocking)
+  - Sequences: Day-1 welcome, day-3 features, day-7 upgrade prompt
+  - Contact properties sent: firstName, marketingConsent, subscriptionTier (non-identifying)
+  - Gating: Skipped if `users.marketing_consent = false` at signup
+  - Also used by: `billing.service.ts` to sync Pro tier status on subscription upgrade
+  - Zero-knowledge: No userId, no secretId sent to Loops
 
 **Payments & Billing:**
-- Stripe - Payment processing, subscription management, and billing
-  - SDK/Client: `stripe` 20.3.1
-  - Credentials: `STRIPE_SECRET_KEY` (required, starts with `sk_`), `STRIPE_WEBHOOK_SECRET` (required, starts with `whsec_`), `STRIPE_PRO_PRICE_ID` (required)
-  - Configuration: `server/src/config/stripe.ts` — singleton Stripe SDK
-  - Implementation: `server/src/services/billing.service.ts` — getOrCreateStripeCustomer(), activatePro(), deactivatePro()
-  - Webhook Handler: Route at `/api/stripe/webhook` (receives Stripe events)
-  - Events Used: `customer.subscription.created`, `customer.subscription.deleted`, `invoice.payment_succeeded`
-  - Metadata: Customer records include only `email` and `app: 'torch-secret'` (no userId in Stripe metadata per ZK invariant)
-  - Lookup: Stripe operations key by `stripe_customer_id` (stored in `users.stripe_customer_id`)
-  - ZERO-KNOWLEDGE: Webhook handler never touches userId directly; uses stripe_customer_id as lookup key only
+- Stripe - Payment processing, subscriptions, webhooks
+  - SDK: `stripe` 20.3.1 (singleton in `server/src/config/stripe.ts`)
+  - Auth: `STRIPE_SECRET_KEY` (sk_test_... or sk_live_...), `STRIPE_WEBHOOK_SECRET` (whsec_...), `STRIPE_PRO_PRICE_ID` (price_...)
+  - Service: `server/src/services/billing.service.ts`
+    - getOrCreateStripeCustomer() - Creates customer record if needed
+    - activatePro(stripeCustomerId) - Sets subscription_tier to 'pro'
+    - deactivatePro(stripeCustomerId) - Reverts to 'free'
+  - Routes:
+    - `POST /api/billing/checkout` - Create checkout session (requires auth)
+    - `GET /api/billing/verify-checkout` - Verify post-redirect
+    - `POST /api/billing/portal` - Create customer portal session
+    - `POST /api/webhooks/stripe` - Webhook receiver (raw body, mounted before express.json)
+  - Webhook events: customer.subscription.updated, checkout.session.completed
+  - Customer ID: Stored in `users.stripe_customer_id` (nullable until checkout initiated)
+  - Metadata: Only email and app name (no userId per zero-knowledge invariant)
+  - Zero-knowledge: Webhook handler uses stripe_customer_id only; never joins userId + secretId
 
 **Product Analytics:**
-- PostHog - Analytics, feature flags, and funnel analysis
-  - SDK/Client: `posthog-js` 1.352.0
-  - API Key: `VITE_POSTHOG_KEY` (build-time env var, optional)
-  - API Host: `VITE_POSTHOG_HOST` (build-time, defaults to `https://us.i.posthog.com`)
-  - Implementation: `client/src/analytics/posthog.ts` — module with strict zero-knowledge enforcement
-  - Configuration: Auto-capture disabled, session recording disabled, manual pageview tracking
-  - Events Captured:
-    - `$pageview` - SPA route changes (manual via `capturePageview()`)
-    - `secret_created` - After encryption upload (expiresIn, hasPassword, protectionType)
-    - `secret_viewed` - After decryption (no details)
-    - `user_registered` - Account signup (method: email|google|github)
+- PostHog - Event capture, feature flags, user cohorts
+  - SDK: `posthog-js` 1.352.0 (client-side, browser)
+  - Auth: `VITE_POSTHOG_KEY` (build-time env var, optional)
+  - Host: `VITE_POSTHOG_HOST` (defaults to US cloud if unset)
+  - Module: `client/src/analytics/posthog.ts`
+  - Configuration: Auto-capture disabled, session recording disabled, manual event capture
+  - Events:
+    - `secret_created` - Encryption upload (expiresIn, hasPassword, protectionType)
+    - `secret_viewed` - Decryption (no sensitive details)
+    - `user_registered` - Signup (method: email|google|github)
     - `user_logged_in` - Authentication (method: email|google|github)
-    - `conversion_prompt_shown` - Upsell prompts (promptNumber: 1|3|'rate_limit')
-    - `conversion_prompt_clicked` - Upsell CTA click (promptNumber)
-    - `checkout_initiated` - Stripe Checkout started (source: dashboard|pricing_page|conversion_prompt)
+    - `checkout_initiated` - Stripe checkout start (source: dashboard|pricing_page|conversion_prompt)
     - `subscription_activated` - Pro upgrade success
-    - `dashboard_viewed` - Dashboard pageview
-  - Privacy Guard: `before_send` hook strips URL fragments (#...) from all events before transmission
-    - Prevents AES-256-GCM encryption key leakage from reveal-page URLs
-  - User Identification: `identifyUser(userId, tier?, registeredAt?)` called post-login
-    - Sets person properties: tier ('free'|'pro'), registered_at (ISO string)
-    - ZERO-KNOWLEDGE: No secretId, no email in event payload
-  - Reset: `resetAnalyticsIdentity()` called on logout
+    - `conversion_prompt_shown` - Upsell prompt display
+    - `conversion_prompt_clicked` - Upsell CTA click
+  - Security: before_send hook strips URL fragments (#...) from all events
+    - Prevents AES-256-GCM key leakage from `/secret/:id#key` URLs
+  - User identification: `identifyUser(userId, tier, registeredAt)` post-login
+    - Person properties: tier ('free'|'pro'), registered_at (ISO timestamp)
+  - Zero-knowledge: Enforced by module design — userId and secretId never coexist in same event
+  - Optional REST API credentials (Phase 37.1 scripted dashboard setup):
+    - `POSTHOG_PERSONAL_API_KEY` (personal access token)
+    - `POSTHOG_PROJECT_ID` (numeric project ID)
 
 ## Data Storage
 
 **Databases:**
-
-- PostgreSQL 17+ (primary)
-  - Connection: `DATABASE_URL` (env var, required)
-  - Client: `pg` 8.18.0 — Node.js PostgreSQL driver
-  - ORM: `drizzle-orm` 0.45.1 with Drizzle adapter
-  - Schema: `server/src/db/schema.ts` — users, sessions, accounts, verification, secrets, plus Stripe-related columns
-  - Initialization: `server/src/db/connection.ts` — singleton Pool + Drizzle instance
-  - Migrations: Generated by `drizzle-kit` → `drizzle/` folder, applied via `npm run db:migrate`
-  - Operations: All CRUD via Drizzle query builder, no raw SQL except in schemas
-  - User Schema: id, email, name, emailVerified, image, createdAt, stripeCustomerId, subscriptionTier (free|pro)
+- PostgreSQL 17+
+  - Connection: `DATABASE_URL` (postgresql://user:pass@host:5432/db)
+  - Client: `pg` 8.18.0 (Node.js native driver via pg.Pool)
+  - ORM: Drizzle ORM 0.45.1 (query builder, schema definitions)
+  - Schema: `server/src/db/schema.ts`
+    - `users` - id, email, name, emailVerified, image, createdAt, stripeCustomerId, subscriptionTier, marketingConsent
+    - `sessions` - Better Auth session tokens, expiration, IP, user agent
+    - `accounts` - OAuth account links (Google, GitHub)
+    - `verification` - Email verification and password reset tokens
+    - `secrets` - Encrypted blob storage, expiration, password hash, user FK, status tracking
+    - `marketing_subscribers` - GDPR email capture (separate from users, no FK)
+  - Connection pool: Singleton in `server/src/db/connection.ts`
+  - Migrations: Auto-generated in `drizzle/` directory, applied at startup via `npm run db:migrate`
 
 **File Storage:**
-- Local filesystem only — client/dist serves static assets in production
-- No S3, Cloud Storage, or CDN integration
+- None - Application is stateless; frontend assets served from `client/dist/` (built bundle)
 
 **Caching:**
-- Redis (optional, for rate limiting only)
-  - Connection: `REDIS_URL` (env var, optional)
+- Redis 7+ (optional; required for distributed rate limiting in multi-instance deployments)
+  - Connection: `REDIS_URL` (redis://localhost:6379)
   - Client: `ioredis` 5.9.3
-  - Purpose: Distributed rate limit counters (multi-instance deployments)
-  - Fallback: In-memory rate limiting if `REDIS_URL` not set
-  - Store: `rate-limit-redis` 4.3.1 with RedisStore adapter
-  - Keys: Prefixed with `rl:create:` (POST /api/secrets) and `rl:verify:` (POST /api/secrets/:id/verify)
-  - No session caching — sessions stored in PostgreSQL only
+  - Adapter: `rate-limit-redis` 4.3.1
+  - Use: Rate limit counters for POST /api/secrets and POST /api/secrets/:id/verify
+  - Fallback: In-memory rate limiting if `REDIS_URL` unset
+  - Key format: `rl:create:` (secret creation), `rl:verify:` (password verification)
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- better-auth 1.4.18 (self-hosted authentication framework)
-  - Implementation: `server/src/auth.ts` — email/password + optional OAuth
-  - Database Adapter: Drizzle adapter pointing to PostgreSQL
-  - Database Schema: `users`, `sessions`, `accounts`, `verification` tables (Better Auth managed)
-  - Email + Password: Enabled by default, email verification required (except in test env)
-  - OAuth: Google and GitHub (conditionally enabled based on env vars)
-  - Password Requirements: Min 8 characters
-  - Password Hashing: Argon2id via `argon2` 0.44.0 (OWASP parameters)
-  - Email Verification: Sends verification email via Resend on signup
-  - Password Reset: Sends reset email via Resend on request
-  - Sessions: Token-based, stored in PostgreSQL with `expiresAt`, `ipAddress`, `userAgent`
-  - Route Handler: `/api/auth/*` splat route via `toNodeHandler(auth)` in `server/src/app.ts`
-  - Additional Fields: `marketingConsent` (boolean, optional) — captured during signup, used for Loops segmentation
+- Better Auth 1.4.18 (self-hosted, open-source)
+  - Implementation: `/api/auth/**` splat route via `toNodeHandler(auth)`
+  - Strategies:
+    - Email/password (always enabled)
+    - Google OAuth (if `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set)
+    - GitHub OAuth (if `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` set)
+  - Password requirements: Min 8 characters
+  - Password hashing: Argon2id (OWASP parameters, handled by Better Auth)
+  - Email verification: Required by default; bypassed in test env
+  - Session: Token-based, stored in PostgreSQL with expiration and metadata
+
+**Password Hashing (User-Provided Per-Secret):**
+- Argon2id via `argon2` 0.44.0
+  - Service: `server/src/services/password.service.ts`
+  - Hash storage: `secrets.password_hash`
+  - Verification: `server/src/routes/secrets.ts` POST /api/secrets/:id/verify
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Not detected (no Sentry, Rollbar, or similar)
+- Not configured - Errors logged to stdout via Pino
 
 **Logs:**
-- Pino 10.3.1 (structured JSON logging)
-  - Configuration: Logger middleware in `server/src/middleware/logger.ts`
+- Pino 10.3.1 - Structured JSON logging
+  - Middleware: `server/src/middleware/logger.ts`
   - Level: Configurable via `LOG_LEVEL` env var (default: info)
-  - Output: JSON to stdout (machine-readable) or pretty-printed in dev via `pino-pretty`
-  - Redaction: Secret IDs redacted from URL paths via regex pattern — prevents data leakage
-  - Hostname/IP: Logged but never combined with secret IDs per zero-knowledge invariant
-  - Global HTTP request logging: `pino-http` 11.0.0 middleware
+  - Output: JSON to stdout (production) or pretty-printed via `pino-pretty` (development)
+  - Security: Secret IDs redacted from URL paths via regex (`/secret/[a-z0-9_-]+` → /secret/[REDACTED])
+  - HTTP logging: `pino-http` 11.0.0 middleware records all requests/responses
+  - Zero-knowledge: Never combines userId + secretId in same log line
+
+**Metrics & APM:**
+- None - Application stateless; metrics handled by hosting platform
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Not detected (application is build artifact — deployment platform agnostic)
-- Expected: Node.js 24.x runtime with PostgreSQL connection
-- Compatible with: Vercel, Render, Railway, Fly.io, self-hosted, Docker Compose, etc.
+- Docker container (multi-stage build)
+- Base image: `node:24-slim`
+- Non-root user: `node` (UID 1000)
+- Health check: `GET /api/health` endpoint
+- Environment: `NODE_ENV=production` by default
 
-**CI Pipeline:**
-- Not detected (no GitHub Actions, GitLab CI, or Jenkins config)
-- Playwright E2E tests present (`npm run test:e2e`); CI should execute with `process.env.CI=true`
-- Pre-commit hooks via Husky 9.1.7 + lint-staged 16.2.7
+**Deployment Platforms:**
+- Compatible with: Render, Vercel, Railway, Fly.io, AWS ECS, Docker Compose, Kubernetes, etc.
 
-**Secrets Management (Development):**
-- Infisical - CLI-based secrets injection
-  - Commands: `infisical run --env=dev -- [command]` wraps dev tasks
-  - Used in: `npm run dev:server`, `npm run dev:client`, `npm run staging:up`
-  - Purpose: Injects secrets from Infisical vault into process environment at runtime
+**Build Process:**
+1. Stage 1 (`deps`) - Install all dependencies (dev + prod, needed for build tools like Vite)
+2. Stage 2 (`build`) - Frontend bundle via `npm run build:client` (VITE_POSTHOG_KEY passed as build arg)
+3. Stage 3 (`production`) - Minimal image with prod deps only, tsx runtime, server code
+
+**Database Migrations:**
+- Drizzle Kit - Auto-generates SQL migrations
+- Run-on-startup: `node --import tsx server/src/db/migrate.ts` (in Docker CMD)
+- Development: `npm run db:generate` (detect schema changes) → `npm run db:migrate` (apply)
+
+**Pre-Commit Hooks:**
+- Husky 9.1.7 + lint-staged 16.2.7
+- Runs ESLint and Prettier on staged files
 
 ## Environment Configuration
 
-**Required env vars:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `BETTER_AUTH_SECRET` - 32+ character hex string for auth encryption
-- `BETTER_AUTH_URL` - Base URL for auth redirects (usually matches APP_URL)
-- `APP_URL` - Frontend origin for email links (Vite dev port or production domain)
-- `BETTER_AUTH_TRUSTED_ORIGINS` - CSRF trusted origins (comma-separated)
-- `RESEND_API_KEY` - Email delivery API key
-- `RESEND_FROM_EMAIL` - "From" address for emails
-- `STRIPE_SECRET_KEY` - Stripe API secret (test: sk_test_..., live: sk_live_...)
+**Required env vars (production):**
+- `DATABASE_URL` - PostgreSQL connection string (starts with `postgres://`)
+- `BETTER_AUTH_SECRET` - 32+ character secret for session signing
+- `BETTER_AUTH_URL` - Express URL reachable from browser (e.g., https://torchsecret.com)
+- `APP_URL` - Frontend origin for email reset/verify links (e.g., https://torchsecret.com)
+- `BETTER_AUTH_TRUSTED_ORIGINS` - Allowed CSRF origins (comma-separated)
+- `RESEND_API_KEY` - Transactional email API key
+- `RESEND_FROM_EMAIL` - Sender address (e.g., Torch Secret <noreply@torchsecret.com>)
+- `STRIPE_SECRET_KEY` - Stripe API secret (sk_live_... for production)
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret (whsec_...)
-- `STRIPE_PRO_PRICE_ID` - Stripe price ID (price_...)
-- `LOOPS_API_KEY` - Loops email marketing API key
-- `RESEND_AUDIENCE_ID` - Resend audience ID for email capture
-- `IP_HASH_SALT` - 16+ character salt for IP hashing
+- `STRIPE_PRO_PRICE_ID` - Stripe Product price ID (price_...)
+- `RESEND_AUDIENCE_ID` - Resend Audiences list ID
+- `IP_HASH_SALT` - 16+ character salt for SHA-256 IP hashing (GDPR)
+- `LOOPS_API_KEY` - Loops email automation API key
 
 **Optional env vars:**
-- `PORT` - HTTP port (default: 3000)
-- `LOG_LEVEL` - Pino level (default: info)
-- `NODE_ENV` - development | production | test (default: development)
-- `REDIS_URL` - Redis for distributed rate limiting
-- `FORCE_HTTPS` - Redirect HTTP to HTTPS (default: false)
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` - Google OAuth
-- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - GitHub OAuth
-- `VITE_POSTHOG_KEY` - PostHog project API key (build-time)
-- `VITE_POSTHOG_HOST` - PostHog API host (build-time)
+- `PORT` - HTTP listen port (default: 3000)
+- `LOG_LEVEL` - Pino level: fatal|error|warn|info|debug|trace (default: info)
+- `NODE_ENV` - development|production|test (default: development)
+- `REDIS_URL` - Redis connection (only needed for distributed rate limiting)
+- `FORCE_HTTPS` - Redirect HTTP to HTTPS (set to 'true' behind TLS proxy; default: false)
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` - Enable Google OAuth (optional)
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - Enable GitHub OAuth (optional)
+- `VITE_POSTHOG_KEY` - PostHog project API key (build-time; leave unset to disable analytics)
+- `VITE_POSTHOG_HOST` - PostHog API host (build-time, defaults to US cloud)
+- `POSTHOG_PERSONAL_API_KEY` - PostHog REST API credentials (optional, Phase 37.1)
+- `POSTHOG_PROJECT_ID` - PostHog project ID (optional, Phase 37.1)
 
 **Secrets location:**
-- Infisical vault (dev/staging, via `infisical run` CLI)
-- `.env` file (loaded via `dotenv` 17.3.1 at local startup)
-- No `.env` committed to repo; see `.env.example` for template
-- Env vars passed at runtime in production (via platform env, not files)
+- Local development: `.env` file (loaded via `dotenv`)
+- Staging/production: Infisical CLI (`infisical run --env=prod -- npm start`)
+- Docker: Environment variables via `docker run -e VAR=value` or `docker-compose.yml`
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- OAuth callback routes handled by `better-auth` (`/api/auth/callback/*`)
-- Stripe webhook route: `/api/stripe/webhook` (receives Stripe payment events)
-- No custom webhook endpoints for other external services
+- `POST /api/webhooks/stripe` - Stripe webhook receiver
+  - Events: customer.subscription.updated, checkout.session.completed
+  - Security: Signature verification via `stripe.webhooks.constructEvent()`
+  - Handler: `server/src/routes/webhooks.ts` → `server/src/services/billing.service.ts`
+  - Note: Must mount with `express.raw()` before `express.json()` in middleware stack
 
 **Outgoing:**
 - Email via Resend API (transactional, not webhooks)
-- Email marketing via Loops API (REST calls, not webhooks)
-- No outgoing webhooks to third-party services
+  - Password reset, email verification, secret viewed notifications
+  - Fire-and-forget delivery (no retry logic)
+  - Service: `server/src/services/email.ts`
+- Loops API calls (REST, not webhooks)
+  - Trigger onboarding sequence on user registration
+  - Service: `server/src/services/onboarding.service.ts`
 
-## Zero-Knowledge Invariant Enforcement
+## OAuth Callback URLs
 
-All integrations respect the zero-knowledge security model:
+**Google OAuth (if configured):**
+- Redirect URI: `{BETTER_AUTH_URL}/api/auth/callback/google`
+- Production example: `https://torchsecret.com/api/auth/callback/google`
+- Development example: `http://localhost:3000/api/auth/callback/google`
 
-- **Logging:** Secret IDs redacted from logs; never combined with user IDs in same log line
-- **Database:** `secrets.user_id` is nullable; `secrets.id` never stored in users/sessions rows
-- **Email:** Verification/reset URLs use `better-auth` token mechanism, not secret IDs
-- **OAuth:** User identity separated from secret metadata; no correlation stored
-- **Redis:** Rate limit keys include action type, not sensitive identifiers
-- **Stripe:** Customer metadata includes only email and app name; stripe_customer_id is lookup key, never userId in event payload
-- **Loops:** Only email and non-identifying properties (firstName, subscriptionTier) sent; no userId, no secretId
-- **PostHog:** Secret events contain no userId; user events contain no secretId; before_send hook strips URL fragments
-
-See `.planning/INVARIANTS.md` for complete rule and rationale.
+**GitHub OAuth (if configured):**
+- Redirect URI: `{BETTER_AUTH_URL}/api/auth/callback/github`
+- Production example: `https://torchsecret.com/api/auth/callback/github`
+- Development example: `http://localhost:3000/api/auth/callback/github`
 
 ---
 
-*Integration audit: 2025-02-28*
+*Integration audit: 2025-03-01*

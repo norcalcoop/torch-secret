@@ -1,6 +1,6 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-28
+**Analysis Date:** 2026-03-01
 
 ## Tech Debt
 
@@ -572,3 +572,92 @@ const customer = await stripe.customers.create({
 ---
 
 *Concerns audit: 2026-02-28*
+
+---
+
+## Additional Concerns (2026-03-01 Analysis)
+
+### Passphrase Generator Wordlist Bundle Size Bloat
+
+**Issue:** `client/src/crypto/passphrase.ts` is 7,840 lines (100% is the EFF Large Wordlist data). Creates a massive single-file artifact dominating bundle and slowing IDE language-server.
+
+**Files:** `client/src/crypto/passphrase.ts`
+
+**Impact:** Large unminified bundle (~280 KB); TypeScript type inference slow on large const arrays; difficult code reviews.
+
+**Fix approach:** Extract wordlist to separate `.json` or `.ts` file. Lazy-load wordlist only when passphrase generation is first requested (defer until needed). Consider Web Worker for entropy gathering if performance becomes critical.
+
+---
+
+### Rate Limiting Silent Degradation on Redis Failure
+
+**Issue:** All rate limiters set `passOnStoreError: true`, meaning if Redis is unavailable, rate limiting is silently disabled with no visibility or logging.
+
+**Files:** `server/src/middleware/rate-limit.ts` (lines 49, 81, 110, 142)
+
+**Impact:** Redis outage completely disables rate limiting without alerting operations. Attackers could brute-force or spam without being rate-limited during outages.
+
+**Fix approach:** Log `warn` level when store errors occur. Consider `passOnStoreError: false` in production (fail closed). Implement circuit-breaker pattern: once Redis is unavailable for 5 minutes, temporarily disable rate limiting and emit alerts rather than silently passing all requests through.
+
+---
+
+### E2E Test Rate Limit Bypass Environment Variable
+
+**Issue:** `E2E_TEST=true` flag sets all rate limits to 1000 (max 1000 req/sec). If this variable is set in staging/production by accident (deployment script error), rate limiting is completely disabled.
+
+**Files:** `server/src/middleware/rate-limit.ts` (lines 5-6, 40, 71, 101, 133)
+
+**Impact:** If `E2E_TEST=true` is ever set in production, rate limiting fails silently.
+
+**Fix approach:** Gate the bypass behind `NODE_ENV === 'test' && E2E_TEST === 'true'`, not just `E2E_TEST`. Alternatively use `VITEST_WORKER_THREADS` or `CI` environment variables which are less likely to be manually set.
+
+---
+
+### Expiration Worker Ciphertext Zeroing Simplified Pattern
+
+**Issue:** `server/src/workers/expiration-worker.ts` zeros all anonymous expired secrets with single `'0'` character (line 32, 38) instead of `'0'.repeat(originalLength)`. This simplification does not match SECR-08 data remanence mitigation described in comments.
+
+**Files:** `server/src/workers/expiration-worker.ts` (lines 32, 38)
+
+**Impact:** Zeroed ciphertext length is always 1 byte, revealing original length of plaintext via length inference. Violates documented SECR-08 mitigation intent (though threat model acceptance is documented).
+
+**Fix approach:** Either (a) query original ciphertext length before bulk update and zero to matching length, or (b) update security comments to clarify that length-revealing via zero pattern is an accepted trade-off for bulk-update performance. Document threat model explicitly (forensic disk recovery is out-of-scope; WAL/buffer remanence is in-scope).
+
+---
+
+### OAuth State Mismatch Workaround Fragile in Development
+
+**Issue:** `server/src/app.ts` lines 76-87 implement dev-only OAuth callback bounce middleware to work around Vite proxy state cookie mismatch. Fix checks for `X-Forwarded-Host` header and bounces direct callbacks through APP_URL.
+
+**Files:** `server/src/app.ts` (lines 76-87)
+
+**Impact:** If Vite proxy behavior changes or X-Forwarded-Host detection logic breaks, OAuth will fail silently in dev. Fix assumes APP_URL matches the proxy domain exactly.
+
+**Fix approach:** Move OAuth bounce logic to dedicated middleware module with explicit debug logging. Add feature flag to disable bounce if Vite behavior stabilizes in future versions. Document the assumption that `APP_URL` must match Vite proxy hostname.
+
+---
+
+### Stripe Singleton Initialization Fragility
+
+**Issue:** `server/src/config/stripe.ts` exports module-level Stripe singleton. If initialization fails or env vars are missing, the entire server fails to start with non-descriptive error at module load time.
+
+**Files:** `server/src/config/stripe.ts`
+
+**Impact:** Env var typos or missing values cause opaque startup errors. If STRIPE_SECRET_KEY is wrong, error occurs during require/import, not at route handler.
+
+**Fix approach:** Lazily initialize Stripe on first API call (POST /api/billing/checkout). Env vars are already validated in `config/env.ts` via Zod, so defer SDK instantiation to route handlers with explicit error boundaries.
+
+---
+
+### Console.error() Instead of Pino Logger
+
+**Issue:** Fire-and-forget email and Loops errors in notification.service.ts and subscribers.service.ts use `console.error()` instead of Pino logger.
+
+**Files:**
+- `server/src/services/notification.service.ts` (line 36)
+- `server/src/services/subscribers.service.ts` (lines 161, 197)
+
+**Impact:** Production error tracking (Sentry, Datadog) cannot see email delivery failures or Loops sync failures. Silent data loss.
+
+**Fix approach:** Replace `console.error()` with `logger.error()`. Ensure messages follow zero-knowledge invariant (no userId + secretId combinations). This is a straightforward 3-line fix.
+

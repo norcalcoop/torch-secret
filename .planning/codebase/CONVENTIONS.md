@@ -1,6 +1,6 @@
 # Coding Conventions
 
-**Analysis Date:** 2025-02-28
+**Analysis Date:** 2026-03-01
 
 ## Naming Patterns
 
@@ -13,14 +13,14 @@
 **Functions:**
 - camelCase: `createSecret()`, `verifyAndRetrieve()`, `hashPassword()`, `validateBody()`
 - Async functions return `Promise<T>`: `async function createSecret(...): Promise<Secret>`
-- Factory functions prefixed with `create`: `createSecretsRouter()`, `createAnonHourlyLimiter()`
+- Factory functions prefixed with `build`: `buildApp()`, `buildRouter()` (not `create`)
 - Middleware factories return `(req, res, next) => void`: `validateBody(schema)` returns middleware
 
 **Variables:**
 - camelCase for all variables: `redisClient`, `passwordHash`, `expiresAt`, `isAuthenticated`
-- Constants in UPPER_SNAKE_CASE: `MAX_PASSWORD_ATTEMPTS`, `DURATION_MS`, `ARGON2_OPTIONS`, `SECRET_NOT_AVAILABLE`
+- Constants in UPPER_SNAKE_CASE: `MAX_PASSWORD_ATTEMPTS`, `DURATION_MS`, `ARGON2_OPTIONS`, `IV_LENGTH`
 - Unused parameters prefixed with `_`: `(_req: Request, _next: NextFunction)`
-- Session/local storage use camelCase keys: `res.locals.user`, `anonymousSecretCount`
+- Session/local storage use camelCase keys: `res.locals.user`, `sessionCookie`
 
 **Types:**
 - PascalCase for interfaces and types: `CreateSecretRequest`, `SessionUser`, `AuthUser`, `ApiError`
@@ -98,7 +98,7 @@
 - Secret IDs redacted via regex: `/\/api\/secrets\/[A-Za-z0-9_-]+/g` → `/api/secrets/[REDACTED]`
 - Dashboard secrets also redacted: `/\/api\/dashboard\/secrets\/[A-Za-z0-9_-]+/g`
 - Sensitive headers redacted: `authorization`, `cookie`, `set-cookie`
-- Request/response bodies NOT logged (prevents ciphertext leakage): `autoLogging: true, wrapSerializers: false`
+- Request/response bodies NOT logged (prevents ciphertext leakage)
 - Error logging: `logger.error({ err: { message, stack } }, 'Unhandled error')`
 
 **When to Log:**
@@ -121,15 +121,14 @@
 - Function-level JSDoc for public API functions:
   ```typescript
   /**
-   * Creates a new secret with the given ciphertext and expiration.
+   * Atomically retrieves and destroys a secret using a three-step
+   * transaction: SELECT -> ZERO ciphertext -> DELETE (anonymous) or
+   * UPDATE status='viewed' (user-owned).
    *
-   * The server never inspects or transforms the ciphertext -- it is
-   * stored exactly as received from the client's encryption module.
-   *
-   * @param password - Optional password for password-protected secrets
-   * @returns The inserted row (contains nanoid ID, expiresAt, createdAt)
+   * @param id - The 21-character secret ID (nanoid)
+   * @returns Secret object or null if unavailable
    */
-  export async function createSecret(...): Promise<Secret>
+  export async function retrieveAndDestroy(id: string): Promise<Secret | null>
   ```
 - Parameter descriptions for non-obvious fields
 - Return type documentation
@@ -163,9 +162,9 @@
 - Types always exported as `export type` (separate from runtime exports)
 
 **Barrel Files:**
-- Client crypto module uses barrel: `client/src/crypto/index.ts` re-exports `encrypt`, `decrypt`, `generatePassphrase`, `generatePassword`, `base64ToUint8Array`, `uint8ArrayToBase64`
-- Reduces import paths: `import { encrypt } from '../crypto/index.js'` (not `../crypto/encrypt.js`)
-- Tests import directly from module: `import { encrypt } from '../encrypt'` (not the barrel)
+- Client crypto module uses barrel: `client/src/crypto/index.ts` re-exports `encrypt`, `decrypt`, `generatePassphrase`
+- Reduces import paths: `import { encrypt } from '../crypto/'` (not `../crypto/encrypt.js`)
+- Tests import directly from module to avoid re-export indirection
 
 **Database Schema:**
 - Drizzle ORM table definitions: `server/src/db/schema.ts`
@@ -188,7 +187,7 @@
 **Better Auth Type Guards:**
 - `getSession()` returns `any`; narrow with type guard to avoid unsafe member access
 - Session user typed as `SessionUser` interface before access
-- Example from create.ts: `const user = res.locals.user as AuthUser | undefined`
+- Example from secrets routes: `const user = res.locals.user as AuthUser | undefined`
 
 **CryptoKey Constraints:**
 - Imported keys are non-extractable: `extractable: false`
@@ -210,4 +209,4 @@ See `.planning/INVARIANTS.md` for complete enforcement table and extension proto
 
 ---
 
-*Convention analysis: 2025-02-28*
+*Convention analysis: 2026-03-01*
