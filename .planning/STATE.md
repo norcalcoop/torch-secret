@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T00:17:32.355Z"
+last_updated: "2026-03-02T00:23:12.839Z"
 progress:
   total_phases: 14
   completed_phases: 13
   total_plans: 52
-  completed_plans: 50
+  completed_plans: 51
 ---
 
 # Session State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 40 of 40 — IN PROGRESS
-Plan: 3/5 plans done
-Status: Phase 40 Plan 03 complete — Three test scaffold files created: notification.service.test.ts (3 ZK invariant tests PASS + 1 todo), auth.test.ts (2 test.todo: session logout/Pro-gate), webhooks.test.ts (3 test.todo: Stripe sig verification). Plan 04 unblocked.
-Last activity: 2026-03-02 — Phase 40 Plan 03 complete; notification ZK invariant confirmed green; auth + webhooks scaffolds with pool.end() cleanup committed
+Phase: 40 of 40 — COMPLETE
+Plan: 5/5 plans done
+Status: Phase 40 Plan 05 complete — console.error replaced with Pino logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment added to auth.ts (SR-004 closed). Phase 40 fully complete.
+Last activity: 2026-03-02 — Phase 40 Plan 05 complete; all 5 Phase 40 plans done; v5.0 Product Launch Checklist fully shipped
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -81,9 +81,11 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 39 P01 | human-action | 2 tasks | 0 files |
 | Phase 39 P02 | 63 | 2 tasks | 0 files |
 | Phase 39 P03 | ~90min | 2 tasks | 5 files |
+| Phase 40 P05 | 2min | 2 tasks | 3 files |
 | Phase 40 P03 | 3min | 3 tasks | 3 files |
 | Phase 40 P02 | 2min | 1 task | 1 file |
 | Phase 40 P01 | 4 | 2 tasks | 6 files |
+| Phase 40 P05 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -301,6 +303,15 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - tsx watch requires full process restart to pick up new Infisical env vars — not a regression, just a dev workflow note
 - Phase 39 COMPLETE — v5.0 Product Launch Checklist fully shipped
 
+### Phase 40 Plan 05 Execution Notes
+
+- Plan 05: console.error replaced with logger.error({ err: message }, 'event_name') in notification.service.ts (1 call) and subscribers.service.ts (3 calls: resend_contacts_create_failed_on_confirm, loops_subscribed_event_failed_on_confirm, resend_contacts_create_failed_on_unsubscribe)
+- Pino logger import: `import { logger } from '../middleware/logger.js'` — both service files in server/src/services/, logger at server/src/middleware/logger.ts
+- ZK invariant preserved: no userId or secretId in any logger.error object — only error.message strings
+- OAuth account-linking audit (SR-004/Item #10): Better Auth 1.x default confirmed secure — no account.accountLinking.trustedProviders config; linkAccountOnSignIn defaults false; two accounts with same email stay separate without explicit linking
+- Auth.ts audit comment pattern: JSDoc `/** */` above the socialProviders property with Finding/Evidence/Action required/Re-audit trigger structure
+- Phase 40 COMPLETE — all 5 plans shipped: rate-limit hardening (01), PostgreSQL pool hardening (02), test scaffolds (03), Stripe webhook tests (04), logging/audit (05)
+
 ### Phase 40 Execution Notes
 
 - Plan 01: createVerifyTightLimiter added to rate-limit.ts (5 req/min burst guard for POST /:id/verify, fires before Argon2id); wired as FIRST middleware before verifySecretLimiter in secrets.ts
@@ -321,5 +332,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 40-03-PLAN.md — Three test scaffold files created (notification ZK invariant 3 tests green, auth/webhooks test.todo stubs). Plan 04 unblocked.
-Resume file: .planning/phases/40-security-remediation-and-concerns-pre-launch/40-04-PLAN.md
+Stopped at: Completed 40-05-PLAN.md — console.error replaced with Pino logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment added to auth.ts (SR-004 closed). Phase 40 fully complete.
+Resume file: N/A — Phase 40 complete; v5.0 milestone fully shipped

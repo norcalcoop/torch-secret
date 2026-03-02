@@ -326,7 +326,7 @@ Plans:
 **Goal:** Raise the security posture score before public launch by remediating all 10 Immediate Action Items from the 2026-03-01 audit, closing all 7 test coverage gaps, and resolving CONCERNS.md quick wins — no new product features.
 **Requirements**: D1, D2, D3, SR-014, SR-015, SR-016, I4, SR-012, E1, SR-017, E2, SR-004, E3, SR-003, E4, SR-018
 **Depends on:** Phase 39
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [ ] 40-01-PLAN.md — Argon2id hardening: createVerifyTightLimiter (5/min), p-limit concurrency cap, payload limit 100KB (Zod + error-handler 413), E2E gate hardening, passOnStoreError warn logging
