@@ -81,6 +81,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 39 P01 | human-action | 2 tasks | 0 files |
 | Phase 39 P02 | 63 | 2 tasks | 0 files |
 | Phase 39 P03 | ~90min | 2 tasks | 5 files |
+| Phase 40 P03 | 3min | 3 tasks | 3 files |
 | Phase 40 P02 | 2min | 1 task | 1 file |
 | Phase 40 P01 | 4 | 2 tasks | 6 files |
 
@@ -273,6 +274,15 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Build verified: confirm and unsubscribe emit as separate chunks (confirm-*.js, unsubscribe-*.js)
 - Plan 04 complete: human verification approved 2026-02-26; all 5 ECAP requirements confirmed by tester (form submission, consent enforcement, confirmation email, /confirm + /unsubscribe pages, NOINDEX headers, ip_hash integrity)
 
+### Phase 40 Plan 03 Execution Notes
+
+- notification.service.test.ts: 3 ZK invariant tests run GREEN immediately — existing sendSecretViewedNotification already satisfies the invariant (no nanoid pattern in subject/body/JSON payload)
+- nanoid regex pattern `/[A-Za-z0-9_-]{21}/` used as the ZK invariant detector in email content tests
+- Scaffold test files use `// eslint-disable-next-line @typescript-eslint/no-unused-vars` per-import for symbols only used by Plan 04 test bodies; Plan 04 can remove these directives
+- `void expect` pattern rejected — ESLint warns on unused eslint-disable directive; per-import disable is correct
+- services/__tests__/ directory created (did not exist before Plan 03)
+- pool.end() in afterAll is mandatory for all DB-connected integration test files — prevents vitest hang
+
 ### Phase 39 Execution Notes
 
 - Plan 01: Google OAuth credentials provisioned to Infisical dev + prod via `infisical secrets set` CLI; verified with `infisical secrets get`; no code changes needed — `server/src/auth.ts` socialProviders.google block was already conditional on env var presence
@@ -311,5 +321,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 40 Plan 02 complete — PostgreSQL pool hardened (SR-016). Pool max:10, timeouts, statement_timeout, error listener. 51 secrets tests pass.
-Resume file: .planning/phases/40-security-remediation-and-concerns-pre-launch/40-03-PLAN.md
+Stopped at: Completed 40-03-PLAN.md — Three test scaffold files created (notification ZK invariant 3 tests green, auth/webhooks test.todo stubs). Plan 04 unblocked.
+Resume file: .planning/phases/40-security-remediation-and-concerns-pre-launch/40-04-PLAN.md
