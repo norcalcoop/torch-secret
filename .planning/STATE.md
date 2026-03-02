@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T16:16:35.515Z"
+last_updated: "2026-03-02T18:25:27Z"
 progress:
   total_phases: 15
   completed_phases: 15
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — COMPLETE
+**Current focus:** v5.0 Product Launch Checklist — COMPLETE; Phase 42 Resend account migration in progress
 
 ## Current Position
 
-Phase: 41 of 41 — COMPLETE
-Plan: 4/4 plans done
-Status: Phase 41 complete — all v5.0 launch documentation finalized: CHANGELOG v4+v5, package.json 5.0.0, CONTRIBUTING.md dual-path, SECURITY.md version table, README.md screenshots, stale URL sweep. Human verification approved all five documents.
-Last activity: 2026-03-02 — Plan 41-04 complete
+Phase: 42 — Resend account migration (in progress)
+Plan: 1/3 plans done
+Status: Plan 42-01 complete — new Resend credentials retrieved (API key, Audience ID a84875fb-9d4e-4a15-98a3-423df280c4ee, sender onboarding@resend.dev confirmed unchanged). Ready for Plan 42-02 Infisical injection.
+Last activity: 2026-03-02 — Plan 42-01 complete
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -189,6 +189,15 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Phase 41 added: Update README and stale documentation for Torch Secret v5.0 launch
 - Phase 42 added: We are switching resend accounts. We need to migrate all settings, capabilies, features, references for the current resend account to the new one I have already created.
 
+### Phase 42 Plan 01 Execution Notes
+
+- Plan 01 (human-action checkpoint): New Resend credentials retrieved from new account dashboard
+- New RESEND_AUDIENCE_ID: `a84875fb-9d4e-4a15-98a3-423df280c4ee` (Torch Secret audience, new account)
+- Old Audience ID `9ef8f5aa-97f3-4012-b26e-aad3f153cb7f` abandoned — no contact export needed (test contacts only)
+- RESEND_FROM_EMAIL: `onboarding@resend.dev` — unchanged between old and new accounts; no update needed in Plan 02
+- RESEND_API_KEY: obtained (starts re_FE52ML5m_) — raw value not recorded in planning docs; will be injected via Infisical CLI in Plan 02
+- Plan 02 can proceed immediately with `infisical secrets set` commands targeting both dev and prod environments
+
 ### Phase 35 Execution Notes
 
 - SSR template pattern: TypeScript string helpers (P/H1/H2/LI/STRONG/HR constants + CARD_OPEN/CARD_CLOSE) — zero new dependencies, nonce threading straightforward
@@ -351,5 +360,5 @@ None — v5.0 fully shipped; all phases complete
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 41-04-PLAN.md — human verification checkpoint approved; all Phase 41 docs confirmed accurate and production-ready; Phase 41 complete; v5.0 milestone fully shipped.
-Resume file: N/A — all phases complete
+Stopped at: Completed 42-01-PLAN.md — human-action checkpoint resolved; all three new Resend credentials confirmed (API key, Audience ID a84875fb-9d4e-4a15-98a3-423df280c4ee, sender onboarding@resend.dev unchanged). Phase 42 Plan 01 complete.
+Resume file: .planning/phases/42-we-are-switching-resend-accounts-we-need-to-migrate-all-settings-capabilies-features-references-for-the-current-resend-account-to-the-new-one-i-have-already-created/42-02-PLAN.md
