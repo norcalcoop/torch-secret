@@ -165,6 +165,18 @@ The Worker is deployed manually from a developer machine — it rarely needs upd
 
 ---
 
+## Screenshots
+
+![Torch Secret marketing homepage in dark mode — hero section with zero-knowledge tagline and one-click create CTA](screenshots/homepage-dark.png)
+
+![Torch Secret marketing homepage in light mode — same layout with light glassmorphism surfaces](screenshots/homepage-light.png)
+
+![Create a secret form — paste sensitive text, set expiration and optional passphrase protection](screenshots/create-flow.png)
+
+![Secret reveal page — terminal-style one-time display after the secret is viewed and destroyed](screenshots/reveal-flow.png)
+
+---
+
 ## Contributing
 
 We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding conventions, and the pull request process.
