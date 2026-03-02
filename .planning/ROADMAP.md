@@ -359,3 +359,23 @@ Plans:
 - [ ] 42-01-PLAN.md — Retrieve new Resend credentials from dashboard (API key, Audience ID, sender address)
 - [ ] 42-02-PLAN.md — Update local .env + Infisical dev/staging/prod with new credentials; verify each environment
 - [ ] 42-03-PLAN.md — Smoke test (Zod startup + test suite) + real email delivery verify + old API key revocation
+
+### Phase 43: Verify Email Onboarding Sequence (Phase 37 Gap Closure)
+
+**Goal:** Close the ESEQ-01 through ESEQ-04 orphan gap by running gsd-verifier against Phase 37 — producing a VERIFICATION.md that confirms the Loops.so onboarding sequence, auth hook, marketing_consent column, and registration checkbox all exist and are correctly wired.
+**Requirements**: ESEQ-01, ESEQ-02, ESEQ-03, ESEQ-04
+**Gap Closure:** Closes orphaned requirements identified in v5.0 audit (Phase 37 VERIFICATION.md missing)
+**Depends on:** Phase 42
+
+Plans:
+- [ ] 43-01-PLAN.md — Run gsd-verifier for Phase 37: verify onboarding.service.ts, auth.ts databaseHooks hook, marketing_consent schema column + migration, register form checkbox, Loops loop published status; produce 37-VERIFICATION.md
+
+### Phase 44: Verify PostHog Free Tier Enrichment (Phase 37.1 Gap Closure)
+
+**Goal:** Close the Phase 37.1 structural blocker by running gsd-verifier against Phase 37.1 — producing a VERIFICATION.md that confirms the three new events, two extended events, and all call-site wirings are present in posthog.ts, create.ts, and dashboard.ts.
+**Requirements**: none (no formal REQUIREMENTS.md entries; structural blocker only)
+**Gap Closure:** Closes unverified phase identified in v5.0 audit (Phase 37.1 VERIFICATION.md missing)
+**Depends on:** Phase 43
+
+Plans:
+- [ ] 44-01-PLAN.md — Run gsd-verifier for Phase 37.1: verify captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed, extended captureSecretCreated + identifyUser, all 5 events wired in create.ts/dashboard.ts; produce 37.1-VERIFICATION.md

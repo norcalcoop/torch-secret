@@ -58,10 +58,10 @@ Requirements for the Product Launch Checklist milestone. Each maps to roadmap ph
 
 ### Email Onboarding Sequence (ESEQ)
 
-- [x] **ESEQ-01**: New account holder automatically receives welcome email immediately after registration
-- [x] **ESEQ-02**: New account holder receives key features email on day 3 (marketing consent required)
-- [x] **ESEQ-03**: New account holder receives upgrade prompt email on day 7 linking to live Stripe Checkout (marketing consent required; skipped if already Pro)
-- [x] **ESEQ-04**: Marketing consent opt-in checkbox added to registration form (gates emails 2-3 per GDPR)
+- [ ] **ESEQ-01**: New account holder automatically receives welcome email immediately after registration
+- [ ] **ESEQ-02**: New account holder receives key features email on day 3 (marketing consent required)
+- [ ] **ESEQ-03**: New account holder receives upgrade prompt email on day 7 linking to live Stripe Checkout (marketing consent required; skipped if already Pro)
+- [ ] **ESEQ-04**: Marketing consent opt-in checkbox added to registration form (gates emails 2-3 per GDPR)
 
 ### Tech Debt (TECH)
 
@@ -155,10 +155,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ECAP-03 | Phase 36 | Complete |
 | ECAP-04 | Phase 36 | Complete |
 | ECAP-05 | Phase 36 | Complete |
-| ESEQ-01 | Phase 37 | Complete |
-| ESEQ-02 | Phase 37 | Complete |
-| ESEQ-03 | Phase 37 | Complete |
-| ESEQ-04 | Phase 37 | Complete |
+| ESEQ-01 | Phase 43 | Pending |
+| ESEQ-02 | Phase 43 | Pending |
+| ESEQ-03 | Phase 43 | Pending |
+| ESEQ-04 | Phase 43 | Pending |
 | FBCK-01 | Phase 38 | Complete |
 | FBCK-02 | Phase 38 | Complete |
 
@@ -169,4 +169,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after roadmap creation*
+*Last updated: 2026-03-02 after gap closure — ESEQ-01/02/03/04 reassigned to Phase 43 (Pending)*
