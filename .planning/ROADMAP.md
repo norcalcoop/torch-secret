@@ -376,6 +376,7 @@ Plans:
 **Requirements**: none (no formal REQUIREMENTS.md entries; structural blocker only)
 **Gap Closure:** Closes unverified phase identified in v5.0 audit (Phase 37.1 VERIFICATION.md missing)
 **Depends on:** Phase 43
+**Plans:** 1 plan
 
 Plans:
 - [ ] 44-01-PLAN.md — Run gsd-verifier for Phase 37.1: verify captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed, extended captureSecretCreated + identifyUser, all 5 events wired in create.ts/dashboard.ts; produce 37.1-VERIFICATION.md
