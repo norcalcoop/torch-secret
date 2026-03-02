@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T00:23:12.839Z"
+last_updated: "2026-03-02T00:25:39.291Z"
 progress:
   total_phases: 14
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 52
-  completed_plans: 51
+  completed_plans: 52
 ---
 
 # Session State
@@ -86,6 +86,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 40 P02 | 2min | 1 task | 1 file |
 | Phase 40 P01 | 4 | 2 tasks | 6 files |
 | Phase 40 P05 | 2 | 2 tasks | 3 files |
+| Phase 40 P04 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -324,6 +325,10 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - pool.on('error') logs err.message (not full Error object) via Pino warn with event label 'pg_pool_idle_client_error' — prevents uncaught EventEmitter exceptions from idle client disconnections
 - connectionTimeoutMillis:5000 fast-fail propagates to Plan 01's 503 circuit breaker in error-handler.ts
 - Pre-existing ESLint errors in auth.test.ts (lines 9+18) discovered and deferred — unrelated to pool hardening; logged in deferred-items.md
+- Plan 04: GET /api/me wraps subscriptionTier under { user: { subscriptionTier } } — flat proRes.body.subscriptionTier is undefined; tests use proRes.body.user.subscriptionTier
+- Plan 04: Race condition test (Gap 6) allows [403, 404] as valid concurrent verify responses — invariant is 0 DB rows after settle; first hit destroys secret, others may see wrong_password before destroy propagates
+- Plan 04: Rate limiter 429 integration test deferred to staging/E2E — isE2E guard sets limit=1000 in Vitest, making 429 structurally untriggerable at unit level
+- Plan 04: expiration-worker.test.ts already had 11 comprehensive soft/hard delete tests from Phase 6 — no new tests needed; verified green
 
 ### Blockers/Concerns
 
@@ -332,5 +337,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 40-05-PLAN.md — console.error replaced with Pino logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment added to auth.ts (SR-004 closed). Phase 40 fully complete.
+Stopped at: Completed 40-04-PLAN.md (executed after 40-05) — 11 new security tests across 5 files; all 7 coverage gaps verified green; Phase 40 fully complete.
 Resume file: N/A — Phase 40 complete; v5.0 milestone fully shipped
