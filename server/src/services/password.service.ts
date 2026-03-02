@@ -1,4 +1,17 @@
 import argon2 from 'argon2';
+import pLimit from 'p-limit';
+
+/**
+ * Max 4 simultaneous Argon2id operations (SR-015).
+ *
+ * Argon2id consumes ~19 MiB RAM per operation. Without a concurrency cap an attacker who
+ * bypasses the rate limiter via distributed IPs (or via passOnStoreError Redis failover) can
+ * simultaneously exhaust server memory. 4 parallel operations = ~76 MiB peak — safely within
+ * 512 MiB pod budget while still allowing legitimate concurrent users.
+ *
+ * Applied only to verifyPassword — hashPassword is already protected by creation rate limiters.
+ */
+const argon2Limit = pLimit(4);
 
 /**
  * OWASP-recommended Argon2id parameters for password hashing.
@@ -34,7 +47,10 @@ export async function hashPassword(password: string): Promise<string> {
  *
  * Uses `crypto.timingSafeEqual` internally (PASS-05) to prevent
  * timing side-channel attacks on the hash comparison.
+ *
+ * Wrapped with argon2Limit to cap concurrent Argon2id operations at 4 (SR-015).
+ * Excess requests queue until a slot is free — they are not rejected.
  */
 export async function verifyPassword(hash: string, password: string): Promise<boolean> {
-  return argon2.verify(hash, password);
+  return argon2Limit(() => argon2.verify(hash, password));
 }

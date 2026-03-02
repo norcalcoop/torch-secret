@@ -7,7 +7,7 @@ import { z } from 'zod';
  */
 export const CreateSecretSchema = z.object({
   /** Base64-encoded ciphertext (IV + ciphertext + auth tag) */
-  ciphertext: z.string().min(1).max(200_000),
+  ciphertext: z.string().min(1).max(100_000), // 100KB max (SR-014)
   /** How long until the secret expires */
   expiresIn: z.enum(['1h', '24h', '7d', '30d']),
   /** Optional password for password-protected secrets (Phase 5) */

@@ -7,6 +7,7 @@ import {
   createAnonDailyLimiter,
   createAuthedDailyLimiter,
   verifySecretLimiter,
+  createVerifyTightLimiter,
 } from '../middleware/rate-limit.js';
 import {
   CreateSecretSchema,
@@ -176,6 +177,7 @@ export function createSecretsRouter(redisClient?: Redis) {
    */
   router.post(
     '/:id/verify',
+    createVerifyTightLimiter(redisClient), // 5 req/min burst guard (fires BEFORE Argon2id)
     verifySecretLimiter(redisClient),
     validateParams(SecretIdParamSchema),
     validateBody(VerifySecretSchema),
