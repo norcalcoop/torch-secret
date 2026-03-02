@@ -1,8 +1,8 @@
 # Torch Secret
 
-[![CI](https://github.com/norcalcoop/secureshare/actions/workflows/ci.yml/badge.svg)](https://github.com/norcalcoop/secureshare/actions/workflows/ci.yml)
+[![CI](https://github.com/norcalcoop/torch-secret/actions/workflows/ci.yml/badge.svg)](https://github.com/norcalcoop/torch-secret/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-torchsecret.com-orange)](https://torchsecret.com)
-[![License](https://img.shields.io/github/license/norcalcoop/secureshare)](LICENSE)
+[![License](https://img.shields.io/github/license/norcalcoop/torch-secret)](LICENSE)
 
 Zero-knowledge, one-time secret sharing. Paste sensitive text, get an encrypted link, share it — the secret self-destructs after one view. No accounts required. The encryption key lives exclusively in the URL fragment and never reaches the server.
 

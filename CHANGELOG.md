@@ -114,9 +114,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accessibility foundations: skip links, aria-live route announcer, focus management
 - Vanilla TypeScript SPA with Vite and Tailwind CSS
 
-[Unreleased]: https://github.com/norcalcoop/secureshare/compare/v5.0...HEAD
-[5.0.0]: https://github.com/norcalcoop/secureshare/compare/v4.0...v5.0
-[4.0.0]: https://github.com/norcalcoop/secureshare/compare/v3.0...v4.0
-[3.0.0]: https://github.com/norcalcoop/secureshare/compare/v2.0...v3.0
-[2.0.0]: https://github.com/norcalcoop/secureshare/compare/v1.0...v2.0
-[1.0.0]: https://github.com/norcalcoop/secureshare/releases/tag/v1.0
+[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.0...HEAD
+[5.0.0]: https://github.com/norcalcoop/torch-secret/compare/v4.0...v5.0
+[4.0.0]: https://github.com/norcalcoop/torch-secret/compare/v3.0...v4.0
+[3.0.0]: https://github.com/norcalcoop/torch-secret/compare/v2.0...v3.0
+[2.0.0]: https://github.com/norcalcoop/torch-secret/compare/v1.0...v2.0
+[1.0.0]: https://github.com/norcalcoop/torch-secret/releases/tag/v1.0

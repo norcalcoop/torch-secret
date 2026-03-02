@@ -4,7 +4,9 @@
 
 | Version | Supported        |
 | ------- | ---------------- |
-| 3.x     | Yes              |
+| 5.x     | Yes (current)    |
+| 4.x     | No (end of life) |
+| 3.x     | No (end of life) |
 | 2.x     | No (end of life) |
 | 1.x     | No (end of life) |
 
@@ -14,7 +16,7 @@ If you discover a security vulnerability in Torch Secret, please report it respo
 
 **Preferred method:** Use GitHub's private vulnerability reporting:
 
-[Report a vulnerability](https://github.com/norcalcoop/secureshare/security/advisories/new)
+[Report a vulnerability](https://github.com/norcalcoop/torch-secret/security/advisories/new)
 
 When reporting, please include:
 
