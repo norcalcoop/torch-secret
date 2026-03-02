@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T02:07:05.188Z"
+last_updated: "2026-03-02T14:05:59.164Z"
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 14
-  total_plans: 52
-  completed_plans: 52
+  total_plans: 56
+  completed_plans: 53
 ---
 
 # Session State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 40 of 40 — COMPLETE
-Plan: 5/5 plans done
-Status: Phase 40 Plan 05 complete — console.error replaced with Pino logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment added to auth.ts (SR-004 closed). Phase 40 fully complete.
-Last activity: 2026-03-02 — Phase 40 Plan 05 complete; all 5 Phase 40 plans done; v5.0 Product Launch Checklist fully shipped
+Phase: 41 of 41 — IN PROGRESS
+Plan: 1/4 plans done
+Status: Plan 01 complete — CHANGELOG back-filled with v4.0.0 + v5.0.0 entries; package.json bumped to 5.0.0; Plan 02 (CONTRIBUTING.md dual-path + SECURITY.md + URL sweep) is next.
+Last activity: 2026-03-02 — Plan 41-01 complete
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -87,6 +87,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 40 P01 | 4 | 2 tasks | 6 files |
 | Phase 40 P05 | 2 | 2 tasks | 3 files |
 | Phase 40 P04 | 3min | 2 tasks | 5 files |
+| Phase 41 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -181,6 +182,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Phase 37.3 inserted after Phase 37: get the most out of cloudflare, render.com, loops.so, resend.com, socket.dev free tier integrations (URGENT)
 - Phase 39 added: complete, finish google auth and github auth
 - Phase 40 added: security remediation and concerns pre-launch
+- Phase 41 added: Update README and stale documentation for Torch Secret v5.0 launch
 
 ### Phase 35 Execution Notes
 
@@ -337,5 +339,5 @@ None — v4.0 clean ship, v5.0 roadmap finalized
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 40-04-PLAN.md (executed after 40-05) — 11 new security tests across 5 files; all 7 coverage gaps verified green; Phase 40 fully complete.
-Resume file: N/A — Phase 40 complete; v5.0 milestone fully shipped
+Stopped at: Completed 41-01-PLAN.md — CHANGELOG back-filled with v4.0.0 + v5.0.0 entries (2 tasks, 2 files, ~2 min); package.json bumped to 5.0.0.
+Resume file: N/A — Phase 41 Plan 02 is next

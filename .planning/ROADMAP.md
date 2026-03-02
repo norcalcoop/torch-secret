@@ -334,3 +334,16 @@ Plans:
 - [ ] 40-03-PLAN.md — Wave 0 test scaffolds: create notification.service.test.ts (ZK invariant tests green), auth.test.ts (stubs), webhooks.test.ts (stubs)
 - [ ] 40-04-PLAN.md — All 7 integration/unit tests: IDOR dashboard, session logout, Pro-gate re-validation, Stripe signature, race condition, expiration worker soft/hard delete
 - [ ] 40-05-PLAN.md — CONCERNS.md quick wins: console.error → logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment in auth.ts
+
+### Phase 41: Update README and stale documentation for Torch Secret v5.0 launch
+
+**Goal:** All public-facing documentation (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md) accurately reflects the current v5.0 state of the product — CHANGELOG back-filled for v4.0 + v5.0, contributor setup instructions updated with dual Infisical/env paths, version support table corrected, stale GitHub repo URLs swept, and README screenshots added
+**Requirements**: CHANGELOG_V4, CHANGELOG_V5, PKG_VERSION, CONTRIBUTING_DUAL_PATH, SECURITY_VERSION_TABLE, GITHUB_URL_SWEEP, README_SCREENSHOTS
+**Depends on:** Phase 40
+**Plans:** 1/4 plans executed
+
+Plans:
+- [ ] 41-01-PLAN.md — CHANGELOG back-fill (v4.0 + v5.0 feature-grouped entries) + package.json 5.0.0 bump
+- [ ] 41-02-PLAN.md — CONTRIBUTING.md dual-path rewrite + SECURITY.md version table + GitHub URL sweep (all 10 occurrences, 5 files)
+- [ ] 41-03-PLAN.md — Screenshots capture (screenshots/ dir) + README.md Screenshots section
+- [ ] 41-04-PLAN.md — Human verification checkpoint: all 5 documents reviewed and signed off
