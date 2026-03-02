@@ -187,6 +187,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Phase 39 added: complete, finish google auth and github auth
 - Phase 40 added: security remediation and concerns pre-launch
 - Phase 41 added: Update README and stale documentation for Torch Secret v5.0 launch
+- Phase 42 added: We are switching resend accounts. We need to migrate all settings, capabilies, features, references for the current resend account to the new one I have already created.
 
 ### Phase 35 Execution Notes
 
