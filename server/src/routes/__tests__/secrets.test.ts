@@ -998,3 +998,55 @@ describe('POST /api/secrets — protection_type tier enforcement', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// SR-014: POST /api/secrets with 101KB ciphertext → 413 payload_too_large
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets — payload size limit (SR-014)', () => {
+  test('ciphertext exceeding 100KB returns 413 with error payload_too_large', async () => {
+    // Generate a ciphertext string of 101KB (just over the limit)
+    const oversizeCiphertext = 'A'.repeat(101 * 1024);
+    const res = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: oversizeCiphertext, expiresIn: '1h' })
+      .expect(413);
+    expect((res.body as { error?: string }).error).toBe('payload_too_large');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gap 6: Race condition — concurrent verify requests when attemptsRemaining=1
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets/:id/verify — race condition (Gap 6)', () => {
+  test('concurrent requests when 1 attempt remaining all get non-200 and secret is destroyed exactly once', async () => {
+    // Create a password-protected secret
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
+      .expect(201);
+    const id = createRes.body.id as string;
+
+    // Exhaust to 1 attempt remaining: the default is 3 allowed attempts.
+    // 2 wrong attempts → 1 remaining.
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-1' }).expect(403);
+    await request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-2' }).expect(403);
+
+    // Fire 3 concurrent wrong-password requests — should trigger auto-destroy on the first one
+    // MUST use Promise.all — sequential requests won't test the race condition
+    const results = await Promise.all([
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-3' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-3' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'wrong-3' }),
+    ]);
+
+    // All responses should be non-200: either 404 (secret destroyed) or 403 (wrong password)
+    // The key invariant is that the secret is destroyed exactly once — not duplicated or lingering
+    for (const result of results) {
+      expect([403, 404]).toContain(result.status);
+    }
+
+    // The secret must be gone from the DB — exactly 0 rows
+    const rows = await db.select().from(secrets).where(eq(secrets.id, id));
+    expect(rows).toHaveLength(0);
+  });
+});
