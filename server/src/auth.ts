@@ -98,6 +98,24 @@ export const auth = betterAuth({
     sendOnSignIn: true,
   },
 
+  /**
+   * SECURITY AUDIT (Phase 40, Item #10, SR-004): OAuth account-linking behavior
+   *
+   * Finding: Better Auth 1.x does NOT automatically link an OAuth account to an
+   * existing email/password account without explicit user consent. The default
+   * behavior requires a separate sign-in flow — an OAuth provider claiming an
+   * existing email address cannot silently take over a pre-existing account.
+   *
+   * Evidence: No `account.accountLinking.trustedProviders` config is present in
+   * this betterAuth() call. Better Auth's linkAccountOnSignIn default is false.
+   * Two accounts with the same email but different providers remain separate
+   * unless the user explicitly links them via the account linking API.
+   *
+   * Action required: None. Default behavior is secure.
+   * Re-audit trigger: If account.accountLinking is added to this config in the
+   * future, ensure trustedProviders is carefully scoped and re-verification
+   * (requireEmailVerification on linking) is enforced.
+   */
   socialProviders: {
     // Only include Google provider when env vars are defined
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
