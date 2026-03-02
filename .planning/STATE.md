@@ -6,9 +6,9 @@ status: unknown
 last_updated: "2026-03-02T16:02:26.457Z"
 progress:
   total_phases: 15
-  completed_phases: 14
+  completed_phases: 15
   total_plans: 56
-  completed_plans: 55
+  completed_plans: 56
 ---
 
 # Session State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 41 of 41 — IN PROGRESS
-Plan: 3/4 plans done
-Status: Plan 03 complete — screenshots/ directory with 4 PNG captures committed; README.md Screenshots section embedded before Contributing; .gitignore *.png exception added; Plan 04 is next.
-Last activity: 2026-03-02 — Plan 41-03 complete
+Phase: 41 of 41 — COMPLETE
+Plan: 4/4 plans done
+Status: Phase 41 complete — all v5.0 launch documentation finalized: CHANGELOG v4+v5, package.json 5.0.0, CONTRIBUTING.md dual-path, SECURITY.md version table, README.md screenshots, stale URL sweep. Human verification approved all five documents.
+Last activity: 2026-03-02 — Plan 41-04 complete
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -91,7 +91,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 41 P02 | 8min | 2 tasks | 5 files |
 | Phase 41 P02 | 8min | 2 tasks | 5 files |
 | Phase 41 P03 | 8min | 2 tasks | 6 files |
-| Phase 41 P03 | 8min | 2 tasks | 6 files |
+| Phase 41 P04 | 2min | 1 task | 0 files |
 
 ## Accumulated Context
 
@@ -336,12 +336,19 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Plan 04: Rate limiter 429 integration test deferred to staging/E2E — isE2E guard sets limit=1000 in Vitest, making 429 structurally untriggerable at unit level
 - Plan 04: expiration-worker.test.ts already had 11 comprehensive soft/hard delete tests from Phase 6 — no new tests needed; verified green
 
+### Phase 41 Execution Notes
+
+- Plan 01: CHANGELOG.md v5.0 entry (Torch Secret brand, OAuth, marketing homepage, Infisical, Loops, SEO pages, security hardening) + v4.0 entry (Better Auth, dashboard, Stripe billing, passphrase protection, PostHog, email notifications) added; package.json bumped to 5.0.0
+- Plan 02: CONTRIBUTING.md rewritten with dual-path setup (Option A: Infisical, Option B: .env.example) with frontend URL http://torchsecret.localhost:1355; SECURITY.md updated (5.x current, 4.x EOL); stale norcalcoop/secureshare URL sweep across all 5 public docs
+- Plan 03: screenshots/ directory created with 4 PNG captures (homepage-dark.png, homepage-light.png, create-flow.png, reveal-flow.png); README.md Screenshots section embedded before Contributing; .gitignore !screenshots/*.png exception added
+- Plan 04: Human verification checkpoint approved — all five documents confirmed accurate and production-ready; Phase 41 complete; v5.0 milestone fully shipped
+
 ### Blockers/Concerns
 
-None — v4.0 clean ship, v5.0 roadmap finalized
+None — v5.0 fully shipped; all phases complete
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 41-03-PLAN.md — 4 screenshots (homepage dark/light, create flow, reveal flow) committed to screenshots/; README.md Screenshots section embedded with descriptive alt text; .gitignore !screenshots/*.png exception added (~8 min, 2 tasks, 6 files).
-Resume file: N/A — Phase 41 Plan 04 is next
+Stopped at: Completed 41-04-PLAN.md — human verification checkpoint approved; all Phase 41 docs confirmed accurate and production-ready; Phase 41 complete; v5.0 milestone fully shipped.
+Resume file: N/A — all phases complete
