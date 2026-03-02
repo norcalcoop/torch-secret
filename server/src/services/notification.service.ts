@@ -1,5 +1,6 @@
 import { resend } from './email.js';
 import { env } from '../config/env.js';
+import { logger } from '../middleware/logger.js';
 
 /**
  * Sends a "secret viewed" notification email fire-and-forget.
@@ -33,6 +34,6 @@ export async function sendSecretViewedNotification(
 
   if (error) {
     // Log failure without any identifying fields (no userEmail, no secretId)
-    console.error('Failed to send secret-viewed notification:', error.message);
+    logger.error({ err: error.message }, 'notification_send_failed');
   }
 }

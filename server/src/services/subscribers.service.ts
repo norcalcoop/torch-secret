@@ -15,6 +15,7 @@ import { marketingSubscribers } from '../db/schema.js';
 import { resend } from './email.js';
 import { loops } from '../config/loops.js';
 import { env } from '../config/env.js';
+import { logger } from '../middleware/logger.js';
 
 /**
  * The exact consent text snapshot stored with each subscriber record.
@@ -159,9 +160,9 @@ export async function confirmSubscriber(token: string): Promise<'confirmed' | 'e
       audienceId: env.RESEND_AUDIENCE_ID,
     })
     .catch((err: unknown) => {
-      console.error(
-        'Resend contacts.create failed on confirm:',
-        err instanceof Error ? err.message : String(err),
+      logger.error(
+        { err: err instanceof Error ? err.message : String(err) },
+        'resend_contacts_create_failed_on_confirm',
       );
     });
 
@@ -174,9 +175,9 @@ export async function confirmSubscriber(token: string): Promise<'confirmed' | 'e
       contactProperties: { source: 'email-capture' },
     })
     .catch((err: unknown) => {
-      console.error(
-        'Loops subscribed event failed on confirm:',
-        err instanceof Error ? err.message : String(err),
+      logger.error(
+        { err: err instanceof Error ? err.message : String(err) },
+        'loops_subscribed_event_failed_on_confirm',
       );
     });
 
@@ -210,9 +211,9 @@ export async function unsubscribeByToken(token: string): Promise<void> {
       audienceId: env.RESEND_AUDIENCE_ID,
     })
     .catch((err: unknown) => {
-      console.error(
-        'Resend contacts.create failed on unsubscribe:',
-        err instanceof Error ? err.message : String(err),
+      logger.error(
+        { err: err instanceof Error ? err.message : String(err) },
+        'resend_contacts_create_failed_on_unsubscribe',
       );
     });
 }
