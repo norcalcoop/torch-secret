@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-01T19:00:04.101Z"
+last_updated: "2026-03-02T00:17:32.355Z"
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 13
-  total_plans: 47
-  completed_plans: 47
+  total_plans: 52
+  completed_plans: 50
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 40 of 40 — IN PROGRESS
-Plan: 2/5 plans done
-Status: Phase 40 Plan 02 complete — PostgreSQL pool hardened with max:10, 5s connection timeout, 30s idle timeout, 10s statement_timeout, and pool.on('error') Pino warn listener. SR-016 satisfied.
-Last activity: 2026-03-02 — Phase 40 Plan 02 complete; pool hardening committed; 51 secrets tests pass; deferred-items.md created for pre-existing auth.test.ts ESLint issues
+Plan: 3/5 plans done
+Status: Phase 40 Plan 03 complete — Three test scaffold files created: notification.service.test.ts (3 ZK invariant tests PASS + 1 todo), auth.test.ts (2 test.todo: session logout/Pro-gate), webhooks.test.ts (3 test.todo: Stripe sig verification). Plan 04 unblocked.
+Last activity: 2026-03-02 — Phase 40 Plan 03 complete; notification ZK invariant confirmed green; auth + webhooks scaffolds with pool.end() cleanup committed
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -82,6 +82,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 39 P02 | 63 | 2 tasks | 0 files |
 | Phase 39 P03 | ~90min | 2 tasks | 5 files |
 | Phase 40 P02 | 2min | 1 task | 1 file |
+| Phase 40 P01 | 4 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -292,6 +293,12 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 
 ### Phase 40 Execution Notes
 
+- Plan 01: createVerifyTightLimiter added to rate-limit.ts (5 req/min burst guard for POST /:id/verify, fires before Argon2id); wired as FIRST middleware before verifySecretLimiter in secrets.ts
+- Plan 01: wrapStoreWithWarnOnError helper intercepts Store.increment — logs Pino warn before re-throwing so passOnStoreError can handle error silently while giving Redis observability
+- Plan 01: isE2E gate hardened from single `E2E_TEST=true` to dual `NODE_ENV=test && E2E_TEST=true` — prevents accidental production bypass if only one env var is set
+- Plan 01: p-limit installed; verifyPassword wrapped with pLimit(4) — caps concurrent Argon2id operations at 4 (~76 MiB peak); excess requests queue not reject
+- Plan 01: ciphertext Zod max reduced 200_000 → 100_000 chars to match existing express.json({ limit: '100kb' }) body parser enforcement (SR-014)
+- Plan 01: 413 entity.too.large and 503 pool timeout handlers added BEFORE logger.error in errorHandler — avoids polluting error logs with expected client/infra events
 - Plan 02: PostgreSQL pool hardened with max:10, idleTimeoutMillis:30000, connectionTimeoutMillis:5000, options:'-c statement_timeout=10000' (SR-016)
 - pool.on('error') logs err.message (not full Error object) via Pino warn with event label 'pg_pool_idle_client_error' — prevents uncaught EventEmitter exceptions from idle client disconnections
 - connectionTimeoutMillis:5000 fast-fail propagates to Plan 01's 503 circuit breaker in error-handler.ts
