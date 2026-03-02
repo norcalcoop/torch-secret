@@ -347,3 +347,15 @@ Plans:
 - [ ] 41-02-PLAN.md — CONTRIBUTING.md dual-path rewrite + SECURITY.md version table + GitHub URL sweep (all 10 occurrences, 5 files)
 - [ ] 41-03-PLAN.md — Screenshots capture (screenshots/ dir) + README.md Screenshots section
 - [ ] 41-04-PLAN.md — Human verification checkpoint: all 5 documents reviewed and signed off
+
+### Phase 42: We are switching resend accounts. We need to migrate all settings, capabilies, features, references for the current resend account to the new one I have already created.
+
+**Goal:** All Resend credentials (API key, Audience ID, sender address) are migrated from the old account to the new account across all environments — local .env, Infisical dev/staging/prod — with old API key revoked and end-to-end email delivery verified on the new account. Zero code changes required.
+**Requirements**: RESEND-MIGRATE-01, RESEND-MIGRATE-02, RESEND-MIGRATE-03
+**Depends on:** Phase 41
+**Plans:** 3 plans
+
+Plans:
+- [ ] 42-01-PLAN.md — Retrieve new Resend credentials from dashboard (API key, Audience ID, sender address)
+- [ ] 42-02-PLAN.md — Update local .env + Infisical dev/staging/prod with new credentials; verify each environment
+- [ ] 42-03-PLAN.md — Smoke test (Zod startup + test suite) + real email delivery verify + old API key revocation
