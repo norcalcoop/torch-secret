@@ -320,3 +320,17 @@ Plans:
 - [ ] 39-01-PLAN.md — Google OAuth 2.0 client creation in Google Cloud Console + credentials in Infisical (dev + prod)
 - [ ] 39-02-PLAN.md — GitHub OAuth Apps creation (dev + prod separate apps) + credentials in Infisical
 - [ ] 39-03-PLAN.md — End-to-end verification: AUTH-06 + AUTH-07 integration tests passing + manual Google + GitHub round-trip UAT
+
+### Phase 40: security remediation and concerns pre-launch
+
+**Goal:** Raise the security posture score before public launch by remediating all 10 Immediate Action Items from the 2026-03-01 audit, closing all 7 test coverage gaps, and resolving CONCERNS.md quick wins — no new product features.
+**Requirements**: D1, D2, D3, SR-014, SR-015, SR-016, I4, SR-012, E1, SR-017, E2, SR-004, E3, SR-003, E4, SR-018
+**Depends on:** Phase 39
+**Plans:** 1/5 plans executed
+
+Plans:
+- [ ] 40-01-PLAN.md — Argon2id hardening: createVerifyTightLimiter (5/min), p-limit concurrency cap, payload limit 100KB (Zod + error-handler 413), E2E gate hardening, passOnStoreError warn logging
+- [ ] 40-02-PLAN.md — PostgreSQL pool hardening: max 10, idleTimeoutMillis, connectionTimeoutMillis, statement_timeout, pool error logging
+- [ ] 40-03-PLAN.md — Wave 0 test scaffolds: create notification.service.test.ts (ZK invariant tests green), auth.test.ts (stubs), webhooks.test.ts (stubs)
+- [ ] 40-04-PLAN.md — All 7 integration/unit tests: IDOR dashboard, session logout, Pro-gate re-validation, Stripe signature, race condition, expiration worker soft/hard delete
+- [ ] 40-05-PLAN.md — CONCERNS.md quick wins: console.error → logger.error in notification.service.ts + subscribers.service.ts; OAuth account-linking audit comment in auth.ts

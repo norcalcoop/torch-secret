@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 39 of 39 — COMPLETE
-Plan: 3/3 plans done
-Status: Phase 39 complete — Google Auth and GitHub Auth fully operational. AUTH-06 + AUTH-07 integration tests passing. Google and GitHub OAuth round-trips manually verified (button click through provider consent to /dashboard). v5.0 Product Launch Checklist complete.
-Last activity: 2026-03-01 — Phase 39 complete; Google Auth and GitHub Auth operational; AUTH-06 + AUTH-07 passing; silent OAuth error bug fixed in login.ts; state_mismatch dev bug fixed via Vite proxy bounce middleware
+Phase: 40 of 40 — IN PROGRESS
+Plan: 2/5 plans done
+Status: Phase 40 Plan 02 complete — PostgreSQL pool hardened with max:10, 5s connection timeout, 30s idle timeout, 10s statement_timeout, and pool.on('error') Pino warn listener. SR-016 satisfied.
+Last activity: 2026-03-02 — Phase 40 Plan 02 complete; pool hardening committed; 51 secrets tests pass; deferred-items.md created for pre-existing auth.test.ts ESLint issues
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -81,6 +81,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 39 P01 | human-action | 2 tasks | 0 files |
 | Phase 39 P02 | 63 | 2 tasks | 0 files |
 | Phase 39 P03 | ~90min | 2 tasks | 5 files |
+| Phase 40 P02 | 2min | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -289,12 +290,19 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - tsx watch requires full process restart to pick up new Infisical env vars — not a regression, just a dev workflow note
 - Phase 39 COMPLETE — v5.0 Product Launch Checklist fully shipped
 
+### Phase 40 Execution Notes
+
+- Plan 02: PostgreSQL pool hardened with max:10, idleTimeoutMillis:30000, connectionTimeoutMillis:5000, options:'-c statement_timeout=10000' (SR-016)
+- pool.on('error') logs err.message (not full Error object) via Pino warn with event label 'pg_pool_idle_client_error' — prevents uncaught EventEmitter exceptions from idle client disconnections
+- connectionTimeoutMillis:5000 fast-fail propagates to Plan 01's 503 circuit breaker in error-handler.ts
+- Pre-existing ESLint errors in auth.test.ts (lines 9+18) discovered and deferred — unrelated to pool hardening; logged in deferred-items.md
+
 ### Blockers/Concerns
 
 None — v4.0 clean ship, v5.0 roadmap finalized
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Phase 39 complete — Google Auth and GitHub Auth fully operational. AUTH-06 + AUTH-07 passing. v5.0 Product Launch Checklist complete.
-Resume file: None — all phases complete
+Last session: 2026-03-02
+Stopped at: Phase 40 Plan 02 complete — PostgreSQL pool hardened (SR-016). Pool max:10, timeouts, statement_timeout, error listener. 51 secrets tests pass.
+Resume file: .planning/phases/40-security-remediation-and-concerns-pre-launch/40-03-PLAN.md
