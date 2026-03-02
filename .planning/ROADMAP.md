@@ -366,7 +366,7 @@ Plans:
 **Requirements**: ESEQ-01, ESEQ-02, ESEQ-03, ESEQ-04
 **Gap Closure:** Closes orphaned requirements identified in v5.0 audit (Phase 37 VERIFICATION.md missing)
 **Depends on:** Phase 42
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 43-01-PLAN.md — Run gsd-verifier for Phase 37: verify onboarding.service.ts, auth.ts databaseHooks hook, marketing_consent schema column + migration, register form checkbox, Loops loop published status; produce 37-VERIFICATION.md
 

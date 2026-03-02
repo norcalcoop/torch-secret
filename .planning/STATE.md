@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T20:59:27.978Z"
+last_updated: "2026-03-02T21:51:08.761Z"
 progress:
-  total_phases: 16
-  completed_phases: 16
-  total_plans: 59
-  completed_plans: 59
+  total_phases: 18
+  completed_phases: 17
+  total_plans: 60
+  completed_plans: 60
 ---
 
 # Session State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.0 Product Launch Checklist — COMPLETE; Phase 42 Resend account migration COMPLETE
+**Current focus:** v5.0 Product Launch Checklist — COMPLETE; Phase 43 ESEQ gap closure COMPLETE
 
 ## Current Position
 
-Phase: 42 — Resend account migration (COMPLETE)
-Plan: 3/3 plans done
-Status: Plan 42-03 complete — new Resend account delivery verified end-to-end (email ID 2a03dca8-e0ce-450d-9a24-b7c2804b4d04, last_event: "delivered"); 376 tests green; old API key re_hNmZgKfp_ revoked. Phase 42 fully closed. No code changes across entire phase — pure credentials migration.
-Last activity: 2026-03-02 — Plan 42-03 complete; Phase 42 complete
+Phase: 43 — Verify Phase 37 Email Onboarding Sequence (COMPLETE)
+Plan: 1/1 plans done
+Status: Plan 43-01 complete — 37-VERIFICATION.md written retroactively; all 10 Phase 37 tests GREEN (376 total); ESEQ-01/02/03/04 marked Complete in REQUIREMENTS.md. No production code changes — pure verification + documentation.
+Last activity: 2026-03-02 — Plan 43-01 complete; Phase 43 complete
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
 
@@ -94,6 +94,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 41 P04 | 2min | 1 task | 0 files |
 | Phase 42 P02 | 4 | 2 tasks | 1 files |
 | Phase 42 P03 | human-action | 3 tasks | 0 files |
+| Phase 43 P01 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -372,6 +373,16 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - Plan 03: screenshots/ directory created with 4 PNG captures (homepage-dark.png, homepage-light.png, create-flow.png, reveal-flow.png); README.md Screenshots section embedded before Contributing; .gitignore !screenshots/*.png exception added
 - Plan 04: Human verification checkpoint approved — all five documents confirmed accurate and production-ready; Phase 41 complete; v5.0 milestone fully shipped
 
+### Phase 43 Execution Notes
+
+- Plan 01: Pure verification phase — no production code changes
+- 37-VERIFICATION.md written retroactively: artifact inspection via Read + Grep (exact line numbers); all 10 Phase 37 tests GREEN live (6 onboarding + 1 billing + 3 register); full suite 376 tests passing
+- databaseHooks hook pattern: `after: (user) => { void enrollInOnboardingSequence(...).catch(...); return Promise.resolve(); }` — confirmed non-async with void+.catch fire-and-forget (correct per CLAUDE.md)
+- ZK invariant confirmed: onboarding.service.ts passes only email + non-identifying properties (firstName, marketingConsent, subscriptionTier) to Loops; userId comment on line 21 documents its absence
+- Both Phase 37 implementation commits (814ee1d, 9b2b25d) found in git history
+- ESEQ-01/02/03/04 changed from [ ] to [x] in REQUIREMENTS.md; Traceability table updated Pending → Complete
+- Verification approach: inspect source files directly — SUMMARY claims are assertions to confirm, not evidence
+
 ### Blockers/Concerns
 
 None — v5.0 fully shipped; all phases complete
@@ -379,5 +390,5 @@ None — v5.0 fully shipped; all phases complete
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 42-03-PLAN.md — smoke test green (376 tests, clean Zod startup), real email delivery confirmed via Resend API, old API key revoked. Phase 42 fully complete.
-Resume file: (none — Phase 42 complete; no active plan)
+Stopped at: Completed 43-01-PLAN.md — 37-VERIFICATION.md written, ESEQ-01/02/03/04 marked Complete in REQUIREMENTS.md, 376 tests green. Phase 43 fully complete.
+Resume file: (none — Phase 43 complete; no active plan)
