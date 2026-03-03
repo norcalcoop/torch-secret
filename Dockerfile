@@ -43,6 +43,10 @@ COPY server/tsconfig.json ./server/tsconfig.json
 # Copy Drizzle SQL migrations for ORM migrator (migrate.ts)
 COPY drizzle/ ./drizzle/
 
+# Copy startup script (runs migrations then starts the server)
+COPY scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
+
 # Copy built frontend from build stage
 COPY --from=build /app/client/dist ./client/dist
 
@@ -54,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 USER node
 
 EXPOSE 3000
-CMD ["node", "--import", "tsx", "server/src/server.ts"]
+CMD ["./scripts/start.sh"]
