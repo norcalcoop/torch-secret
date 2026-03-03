@@ -21,7 +21,7 @@ test.describe('Password-protected secret flow', () => {
     await page.goto(secret.url);
 
     // Wait for the password entry form
-    await expect(page.getByRole('heading', { name: 'Password Required' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Protection Required' })).toBeVisible();
 
     // Fill in the correct password
     await page.getByLabel('Password').fill('mypassword123');
@@ -45,7 +45,7 @@ test.describe('Password-protected secret flow', () => {
     await page.goto(secret.url);
 
     // Wait for the password entry form
-    await expect(page.getByRole('heading', { name: 'Password Required' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Protection Required' })).toBeVisible();
 
     // Fill in a wrong password
     await page.getByLabel('Password').fill('wrongpassword');

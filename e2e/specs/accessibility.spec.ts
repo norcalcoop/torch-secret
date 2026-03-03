@@ -10,7 +10,7 @@ import { test, expect } from '../fixtures/test';
 
 test.describe('Accessibility', () => {
   test('create page has no violations', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/');
+    await page.goto('/create');
     await expect(page.getByRole('heading', { name: 'Share a Secret' })).toBeVisible();
 
     const results = await makeAxeBuilder().analyze();
@@ -59,7 +59,7 @@ test.describe('Accessibility', () => {
     });
 
     await page.goto(secret.url);
-    await expect(page.getByRole('heading', { name: 'Password Required' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Protection Required' })).toBeVisible();
 
     const results = await makeAxeBuilder().analyze();
     expect(results.violations).toEqual([]);

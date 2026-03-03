@@ -79,6 +79,7 @@ jobs:
           echo "APP_URL=http://localhost:3000" >> $GITHUB_ENV
           echo "BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
           echo "FORCE_HTTPS=false" >> $GITHUB_ENV
+          echo "REDIS_URL=" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

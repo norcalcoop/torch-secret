@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Ensure the test runner process sees E2E_TEST, matching the webServer env below.
+// webServer.env only sets vars for the child server process; the test runner is a
+// separate process and won't inherit those values without this assignment.
+process.env.E2E_TEST = 'true';
+
 export default defineConfig({
   testDir: './specs',
   fullyParallel: false,
