@@ -54,7 +54,7 @@ jobs:
       NODE_ENV: test
       BETTER_AUTH_URL: http://localhost:3000
       APP_URL: http://localhost:3000
-      RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
+      RESEND_FROM_EMAIL: 'Torch Secret <noreply@torchsecret.com>'
 
     steps:
       - name: Checkout repository
@@ -63,13 +63,13 @@ jobs:
       - name: Import secrets from Infisical
         uses: Infisical/secrets-action@v1.0.9
         with:
-          method: "universal"
+          method: 'universal'
           client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
           client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
-          project-slug: "torch-secret-28-vs"
-          env-slug: "dev"
-          domain: "https://app.infisical.com"
-          export-type: "env"
+          project-slug: 'torch-secret-28-vs'
+          env-slug: 'dev'
+          domain: 'https://app.infisical.com'
+          export-type: 'env'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -128,7 +128,7 @@ jobs:
       NODE_ENV: test
       BETTER_AUTH_URL: http://localhost:3000
       APP_URL: http://localhost:3000
-      RESEND_FROM_EMAIL: "Torch Secret <noreply@torchsecret.com>"
+      RESEND_FROM_EMAIL: 'Torch Secret <noreply@torchsecret.com>'
 
     steps:
       - name: Checkout repository
@@ -137,13 +137,13 @@ jobs:
       - name: Import secrets from Infisical
         uses: Infisical/secrets-action@v1.0.9
         with:
-          method: "universal"
+          method: 'universal'
           client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
           client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
-          project-slug: "torch-secret-28-vs"
-          env-slug: "dev"
-          domain: "https://app.infisical.com"
-          export-type: "env"
+          project-slug: 'torch-secret-28-vs'
+          env-slug: 'dev'
+          domain: 'https://app.infisical.com'
+          export-type: 'env'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
