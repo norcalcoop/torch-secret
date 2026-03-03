@@ -307,7 +307,7 @@ Plans:
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
 | 38. Feedback Links | 2/2 | Complete    | 2026-03-01 | - |
-| 45. Billing Service Gap Closure | 2/2 | Complete   | 2026-03-03 | - |
+| 45. Billing Service Gap Closure | 2/2 | Complete    | 2026-03-03 | - |
 
 
 ### Phase 39: complete, finish google auth and github auth
