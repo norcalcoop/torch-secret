@@ -49,6 +49,28 @@ export async function deactivatePro(stripeCustomerId: string): Promise<void> {
     .update(users)
     .set({ subscriptionTier: 'free' })
     .where(eq(users.stripeCustomerId, stripeCustomerId));
+
+  // Sync free status to Loops so the day-7 re-engagement audience re-opens for churned users.
+  // ZK invariant: stripeCustomerId is the lookup key; userId is not in scope here.
+  // Fire-and-forget: billing must never be blocked by a Loops outage.
+  const [freedUser] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.stripeCustomerId, stripeCustomerId));
+
+  if (freedUser) {
+    void loops
+      .updateContact({
+        email: freedUser.email,
+        properties: { subscriptionTier: 'free' },
+      })
+      .catch((err: unknown) => {
+        logger.error(
+          { err: err instanceof Error ? err.message : String(err) },
+          'Loops contact update failed on Pro cancellation',
+        );
+      });
+  }
 }
 
 export async function getOrCreateStripeCustomer(user: AuthUser): Promise<string> {
