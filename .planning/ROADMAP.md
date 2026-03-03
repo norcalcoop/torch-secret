@@ -307,7 +307,7 @@ Plans:
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
 | 38. Feedback Links | 2/2 | Complete    | 2026-03-01 | - |
-| 45. Billing Service Gap Closure | 1/2 | In Progress|  | - |
+| 45. Billing Service Gap Closure | 2/2 | Complete   | 2026-03-03 | - |
 
 
 ### Phase 39: complete, finish google auth and github auth
@@ -388,7 +388,7 @@ Plans:
 **Requirements**: ESEQ-03 (secondary path), BILL-05 (race window)
 **Gap Closure:** Closes ESEQ-03-desync, BILL-05-race, and cancellation-loops-resync flow gap from v5.0 audit
 **Depends on:** Phase 44
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 45-01-PLAN.md — Make activatePro() idempotent + call from verify-checkout endpoint (eliminate BILL-05 race)

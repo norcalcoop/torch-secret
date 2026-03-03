@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-03T03:22:15.167Z"
+last_updated: "2026-03-03T19:25:00.000Z"
 progress:
   total_phases: 19
-  completed_phases: 18
+  completed_phases: 19
   total_plans: 63
-  completed_plans: 62
+  completed_plans: 63
 ---
 
 # Session State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 ## Current Position
 
 Phase: 45 — Billing Service Gap Closure
-Plan: 1/? plans done (45-01 complete)
-Status: Plan 45-01 complete — BILL-05 closed; verify-checkout now calls activatePro() directly; session_mismatch guard updated to tolerate null customer; 382 tests GREEN (6 new)
-Last activity: 2026-03-03 — Plan 45-01 complete
+Plan: 2/? plans done (45-01 and 45-02 complete)
+Status: Plan 45-02 complete — ESEQ-03 closed; deactivatePro() now syncs Loops subscriptionTier to 'free' on Pro cancellation; 385 tests GREEN (3 new deactivatePro tests)
+Last activity: 2026-03-03 — Plan 45-02 complete
 
 Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 45 is gap closure work)
 
@@ -98,6 +98,7 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 44 P01 | 3min | 2 tasks | 1 files |
 | Phase 45 P01 | 2min | 2 tasks | 3 files |
 | Phase 45 P01 | 2min | 2 tasks | 3 files |
+| Phase 45 P02 | 1 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -395,12 +396,21 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - TDD: 4 unit tests (billing.test.ts) + 2 idempotency tests (billing.service.test.ts) — all GREEN
 - 382 total tests pass (up from 376; 6 new tests added)
 
+### Phase 45 Plan 02 Execution Notes
+
+- ESEQ-03 closed: deactivatePro() now calls loops.updateContact({ email, properties: { subscriptionTier: 'free' } }) fire-and-forget after DB downgrade
+- Mirrors activatePro() Loops sync pattern exactly, substituting 'free' for 'pro'
+- Loops failure is caught via .catch(logger.error) — cancellation webhook never throws due to Loops outage
+- Empty-user guard: if no user found for stripeCustomerId, Loops call is skipped (graceful no-op)
+- ZK invariant preserved: stripeCustomerId is lookup key; userId never in scope alongside it
+- TDD: 3 unit tests (billing.service.test.ts) — all GREEN; 385 total tests pass (up from 382)
+
 ### Blockers/Concerns
 
-None — v5.0 fully shipped; all phases complete; Phase 45 gap closure in progress
+None — v5.0 fully shipped; all phases complete; Phase 45 gap closure COMPLETE (BILL-05 + ESEQ-03 both closed)
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 45-01-PLAN.md — BILL-05 closed; verify-checkout calls activatePro() directly; 382 tests GREEN.
-Resume file: (none — Phase 45 Plan 01 complete; Plan 02 is next)
+Stopped at: Completed 45-02-PLAN.md — ESEQ-03 closed; deactivatePro() syncs Loops subscriptionTier to 'free' on cancellation; 385 tests GREEN.
+Resume file: (none — Phase 45 complete)
