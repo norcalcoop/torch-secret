@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/require-auth.js';
 import { stripe } from '../config/stripe.js';
 import { env } from '../config/env.js';
-import { getOrCreateStripeCustomer } from '../services/billing.service.js';
+import { getOrCreateStripeCustomer, activatePro } from '../services/billing.service.js';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -68,10 +68,24 @@ billingRouter.get('/verify-checkout', requireAuth, async (req, res) => {
   }
 
   // Verify the session belongs to this user (CSRF/spoofing protection).
-  // Only check if the user already has a stripeCustomerId — new customers won't have one yet.
-  if (dbUser?.stripeCustomerId && session.customer !== dbUser.stripeCustomerId) {
+  // Only check if both the user has a stripeCustomerId AND the session has a customer —
+  // null session.customer (e.g. refunded / non-subscription session) skips the guard.
+  if (
+    dbUser?.stripeCustomerId &&
+    session.customer &&
+    session.customer !== dbUser.stripeCustomerId
+  ) {
     res.status(403).json({ error: 'session_mismatch' });
     return;
+  }
+
+  // Activate Pro in DB immediately — do not wait for webhook (BILL-05).
+  // Both the webhook and verify-checkout call activatePro(); the function is idempotent.
+  // ZK invariant: customerId is stripe_customer_id only; userId not passed to activatePro.
+  if (session.mode === 'subscription' && session.customer) {
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer.id;
+    await activatePro(customerId);
   }
 
   res.json({ status: 'active', tier: 'pro' });

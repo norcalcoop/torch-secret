@@ -54,3 +54,31 @@ describe('activatePro — Loops contact update (ESEQ-03)', () => {
     expect(args.properties.subscriptionTier).toBe('pro');
   });
 });
+
+describe('activatePro — idempotency (BILL-05)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUpdateContact.mockResolvedValue({ success: true });
+    mockSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ email: 'alice@example.com' }]),
+      }),
+    });
+    mockUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
+      }),
+    });
+  });
+
+  it('can be called twice with the same customerId without error', async () => {
+    await activatePro('cus_idempotent');
+    await expect(activatePro('cus_idempotent')).resolves.toBeUndefined();
+  });
+
+  it('calls db.update twice when invoked twice (no conditional guard needed)', async () => {
+    await activatePro('cus_idempotent');
+    await activatePro('cus_idempotent');
+    expect(mockUpdate).toHaveBeenCalledTimes(2);
+  });
+});
