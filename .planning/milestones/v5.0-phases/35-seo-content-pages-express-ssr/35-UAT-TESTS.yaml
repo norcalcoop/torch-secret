@@ -1,0 +1,127 @@
+phase: 35-seo-content-pages-express-ssr
+app: http://torchsecret.localhost:1355
+failures_dir: .planning/uat-failures
+
+tests:
+  # ── Test 1: VS Competitor Pages — SSR Content ────────────────────────────
+  - name: "VS Competitor Pages — SSR Content"
+    steps:
+      - open {app}/vs/onetimesecret
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # H1 present with correct competitor name (cross-referenced vs-pages.ts line 54)
+      - { type: eval_contains, js: "document.querySelector('h1')?.textContent?.trim() ?? 'NOT_FOUND'", expected: "Torch Secret vs. OneTimeSecret" }
+      # Feature comparison table wrapper present
+      - { type: eval_contains, js: "document.querySelector('.ssr-overflow') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # CTA link present
+      - { type: eval_contains, js: "document.querySelector('.ssr-cta') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # SSR check: H1 present in raw HTML source (no JS needed to render it)
+      - { type: eval_contains, js: "fetch('/vs/onetimesecret').then(r=>r.text()).then(t=>t.includes('<h1') ? 'SSR_OK' : 'NOT_SSR')", expected: "SSR_OK" }
+
+  # ── Test 2: Alternatives Pages — SSR Content ─────────────────────────────
+  - name: "Alternatives Pages — SSR Content"
+    steps:
+      - open {app}/alternatives/onetimesecret
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # H1 present with correct heading (cross-referenced alternatives-pages.ts line 55)
+      - { type: eval_contains, js: "document.querySelector('h1')?.textContent?.trim() ?? 'NOT_FOUND'", expected: "Best OneTimeSecret Alternatives in 2026" }
+      # Substantive prose content present (>100 chars)
+      - { type: eval_contains, js: "(document.querySelector('.ssr-main')?.textContent?.length ?? 0) > 100 ? 'CONTENT_OK' : 'NO_CONTENT'", expected: "CONTENT_OK" }
+      # SSR check: H1 in raw HTML source
+      - { type: eval_contains, js: "fetch('/alternatives/onetimesecret').then(r=>r.text()).then(t=>t.includes('<h1') ? 'SSR_OK' : 'NOT_SSR')", expected: "SSR_OK" }
+
+  # ── Test 3: Use-Case Hub Page ─────────────────────────────────────────────
+  - name: "Use-Case Hub Page"
+    steps:
+      - open {app}/use/
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # H1 present (cross-referenced use.ts line 35)
+      - { type: eval_contains, js: "document.querySelector('h1')?.textContent?.trim() ?? 'NOT_FOUND'", expected: "Credential Sharing" }
+      # Exactly 8 use-case cards in the grid (cross-referenced USE_CASE_HUB.cards)
+      - { type: eval_equals, js: "document.querySelectorAll('.ssr-grid-card').length.toString()", expected: "8" }
+      # Cards link to individual use-case URLs
+      - { type: eval_contains, js: "document.querySelector('.ssr-grid-card')?.href ?? 'NOT_FOUND'", expected: "/use/" }
+
+  # ── Test 4: Individual Use-Case Page — Content + FAQ ─────────────────────
+  - name: "Individual Use-Case Page — Content + FAQ"
+    steps:
+      - open {app}/use/share-api-keys
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # H1 present (cross-referenced use-case-pages.ts line 1337)
+      - { type: eval_contains, js: "document.querySelector('h1')?.textContent?.trim() ?? 'NOT_FOUND'", expected: "How to Share API Keys Securely" }
+      # FAQ definition list present (class from use.ts template)
+      - { type: eval_contains, js: "document.querySelector('.ssr-dl') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # FAQ has question (dt) and answer (dd) elements
+      - { type: eval_contains, js: "document.querySelector('.ssr-dt') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      - { type: eval_contains, js: "document.querySelector('.ssr-dd') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+
+  # ── Test 5: Visual Design — Dark Theme, Nav, Styling ─────────────────────
+  - name: "Visual Design — Dark Theme, Nav, Styling"
+    steps:
+      - open {app}/vs/pwpush
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # Navigation bar present (cross-referenced layout.ts id="site-header")
+      - { type: eval_contains, js: "document.querySelector('#site-header') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # Footer present
+      - { type: eval_contains, js: "document.querySelector('#site-footer') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # Main content area present (not plain unstyled HTML)
+      - { type: eval_contains, js: "document.querySelector('.ssr-main') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # Styled heading class present (not plain <h1> without class)
+      - { type: eval_contains, js: "document.querySelector('.ssr-h1') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+
+  # ── Test 6: Mobile Responsiveness ────────────────────────────────────────
+  - name: "Mobile Responsiveness"
+    steps:
+      - open {app}/alternatives/pwpush
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # Mobile bottom tab bar element exists in DOM (cross-referenced layout.ts id="ssr-mobile-nav")
+      - { type: eval_contains, js: "document.querySelector('#ssr-mobile-nav') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      # At desktop viewport it is hidden (confirms responsive CSS is applied)
+      - { type: eval_equals, js: "window.getComputedStyle(document.querySelector('#ssr-mobile-nav') ?? document.body).display", expected: "none" }
+      # No horizontal overflow at desktop width (basic reflow check)
+      - { type: eval_equals, js: "(document.body.scrollWidth <= window.innerWidth + 1) ? 'OK' : 'OVERFLOW'", expected: "OK" }
+
+  # ── Test 7: Pro Pricing — $7/month ───────────────────────────────────────
+  - name: "Pro Pricing — $7/month"
+    steps:
+      - open {app}/vs/onetimesecret
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # Page body contains $7/month (cross-referenced vs-pages.ts line 116)
+      - { type: eval_contains, js: "document.body.innerText", expected: "$7/month" }
+
+  # ── Test 8: Sitemap.xml — 17 URLs ─────────────────────────────────────────
+  - name: "Sitemap.xml — 17 URLs"
+    steps:
+      - open {app}/sitemap.xml
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # Count <url> entries in raw XML — expected 17
+      - { type: eval_equals, js: "fetch('/sitemap.xml').then(r=>r.text()).then(t=>(t.match(/<url>/g)??[]).length.toString())", expected: "17" }
+
+  # ── Test 9: SEO Pages Are Indexable — No noindex ─────────────────────────
+  - name: "SEO Pages Are Indexable — No noindex"
+    steps:
+      - open {app}/vs/privnote
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # X-Robots-Tag header must NOT contain noindex (SSR pages are indexable)
+      - { type: eval_not_contains, js: "fetch('/vs/privnote',{method:'HEAD'}).then(r=>r.headers.get('x-robots-tag')??'NONE')", expected: "noindex" }
+      # Meta robots tag must NOT contain noindex
+      - { type: eval_not_contains, js: "document.querySelector('meta[name=\"robots\"]')?.content ?? 'NONE'", expected: "noindex" }
+
+  # ── Test 10: Unknown Slug Returns 404 JSON ────────────────────────────────
+  - name: "Unknown Slug Returns 404 JSON"
+    steps:
+      - open {app}/vs/unknowncompetitor
+      - wait --load networkidle --timeout 10000
+    assertions:
+      # HTTP 404 status (cross-referenced vs.ts lines 20-23)
+      - { type: eval_equals, js: "fetch('/vs/unknowncompetitor').then(r=>r.status.toString())", expected: "404" }
+      # JSON body contains error: not_found
+      - { type: eval_contains, js: "fetch('/vs/unknowncompetitor').then(r=>r.json()).then(j=>j.error??'MISSING')", expected: "not_found" }
