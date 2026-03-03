@@ -1,0 +1,142 @@
+phase: e2e-journeys
+app: http://torchsecret.localhost:1355
+failures_dir: e2e/uat-failures
+
+tests:
+  # Journey 1 — Public navigation
+  # Validates the marketing home page renders correctly and the nav links work.
+  # Multi-step: home → Pricing (via nav) → home (via logo).
+  - name: 'Public navigation — home loads and nav links work'
+    steps:
+      - open {app}/
+      - wait --load networkidle --timeout 10000
+      - find role link click --name "Pricing"
+      - wait --load networkidle --timeout 10000
+      - find role link click --name "Torch Secret"
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: url_contains, expected: '/' }
+      - {
+          type: eval_contains,
+          js: "document.querySelector('h1')?.textContent ?? ''",
+          expected: 'Share sensitive info in seconds',
+        }
+      - { type: eval_contains, js: 'document.title', expected: 'Torch Secret' }
+
+  # Journey 2 — Auth guard
+  # Unauthenticated visits to /dashboard must redirect to /login.
+  # Uses `close` to ensure a clean session (no residual cookies from Journey 1).
+  - name: 'Auth guard — /dashboard redirects unauthenticated users to login'
+    steps:
+      - close
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: url_contains, expected: '/login' }
+      - {
+          type: eval_contains,
+          js: "document.querySelector('h1')?.textContent ?? ''",
+          expected: 'Sign In',
+        }
+
+  # Journey 3 — Sign in
+  # Returns user authenticates with email/password and reaches the dashboard.
+  # Session is saved to e2e/uat-auth-session.json for Journeys 6 and 7.
+  # Note: IDs #login-email / #login-password used directly — avoids strict-mode
+  # violations from "Password" label matching both input and "Show password" toggle.
+  - name: 'Returning user signs in and reaches dashboard'
+    steps:
+      - open {app}/login
+      - wait --load networkidle --timeout 10000
+      - fill "#login-email" "uat-browser-free@test.local"
+      - fill "#login-password" "UATpass99"
+      - click "button[type=submit]"
+      - wait --load networkidle --timeout 15000
+      - state save e2e/uat-auth-session.json
+    assertions:
+      - { type: url_contains, expected: '/dashboard' }
+      - {
+          type: eval_contains,
+          js: "document.querySelector('h1')?.textContent ?? ''",
+          expected: 'My Secrets',
+        }
+
+  # Journey 4 — Core feature: create + reveal (end-to-end)
+  # The full zero-knowledge flow: anonymous user creates a secret, the browser
+  # encrypts it client-side, the server stores only ciphertext, the confirmation
+  # page shows the shareable link, and the recipient decrypts + views plaintext.
+  # `eval` step extracts the URL from the <code> block and navigates to it —
+  # the only way to follow a dynamically-generated secret link in a single journey.
+  - name: 'Create secret and reveal it end-to-end'
+    steps:
+      - close
+      - open {app}/create
+      - wait --load networkidle --timeout 10000
+      - find label "Your secret" fill "E2E reveal test — safe to ignore"
+      - find role button click --name "Create Secure Link"
+      - wait --load networkidle --timeout 15000
+      - eval "const url = document.querySelector('code')?.textContent?.trim(); if (url) window.location.assign(url)"
+      - wait --load networkidle --timeout 10000
+      - find role button click --name "Reveal Secret"
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - {
+          type: eval_contains,
+          js: "document.querySelector('h1')?.textContent ?? ''",
+          expected: 'Secret Revealed',
+        }
+      - { type: text_present, expected: 'permanently deleted from our servers' }
+      - { type: text_present, expected: 'E2E reveal test' }
+
+  # Journey 5 — Error path: invalid credentials
+  # Submitting the login form with wrong credentials stays on /login
+  # and renders the inline "Invalid email or password." alert.
+  - name: 'Invalid login credentials show inline error message'
+    steps:
+      - open {app}/login
+      - wait --load networkidle --timeout 10000
+      - fill "#login-email" "nobody@invalid.example"
+      - fill "#login-password" "wrongpassword"
+      - click "button[type=submit]"
+      - wait 3000
+    assertions:
+      - { type: url_contains, expected: '/login' }
+      - { type: text_present, expected: 'Invalid email or password' }
+
+  # Journey 6 — Authenticated dashboard
+  # Restores session from Journey 3 and verifies the dashboard renders
+  # the secrets table with filter tabs visible.
+  - name: 'Authenticated dashboard shows secret history and filter tabs'
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: url_contains, expected: '/dashboard' }
+      - {
+          type: eval_contains,
+          js: "document.querySelector('h1')?.textContent ?? ''",
+          expected: 'My Secrets',
+        }
+      - { type: snapshot_contains, expected: 'All' }
+      - { type: snapshot_contains, expected: 'Active' }
+
+  # Journey 7 — Sign out
+  # Authenticated user clicks "Log out" on the dashboard and is redirected
+  # to the home page. Nav reverts to showing the "Login" link (no "Dashboard").
+  - name: 'Sign out returns to home page'
+    steps:
+      - close
+      - state load e2e/uat-auth-session.json
+      - open {app}/dashboard
+      - wait --load networkidle --timeout 10000
+      - find role button click --name "Log out"
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: url_contains, expected: '/' }
+      - {
+          type: eval_contains,
+          js: 'document.querySelector(''a[href="/login"]'')?.textContent?.trim() ?? ''''',
+          expected: 'Login',
+        }

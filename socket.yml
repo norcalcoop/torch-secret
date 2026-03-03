@@ -1,0 +1,27 @@
+# Socket.dev supply chain security configuration
+# https://docs.socket.dev/docs/socket-yml
+# Version 2 format (v1 issueRules is deprecated)
+#
+# GitHub App: github.com/apps/socket-security
+# Scans package.json + package-lock.json on every PR for supply chain risk.
+# After installing the GitHub App, Socket will post PR comments and checks.
+version: 2
+
+githubApp:
+  enabled: true
+  pullRequestAlertsEnabled: true
+  dependencyOverviewEnabled: true
+  projectReportsEnabled: true
+
+# Suppress known false positives from legitimate packages that ship pre-bundled dist files.
+# Socket flags minified/bundled output as "obfuscatedFile" — these are all well-known packages.
+issueRules:
+  obfuscatedFile:
+    - action: ignore
+      package: ioredis # Official Redis client — bundled dist is expected
+    - action: ignore
+      package: posthog-js # PostHog analytics SDK — ships minified bundle
+    - action: ignore
+      package: lucide # Lucide icon library — bundled icon definitions
+    - action: ignore
+      package: entities # HTML entity parser — compiled output

@@ -1,5 +1,5 @@
 /**
- * Extended Playwright test fixtures for SecureShare E2E tests.
+ * Extended Playwright test fixtures for Torch Secret E2E tests.
  *
  * Provides:
  * - createTestSecret: Creates a real encrypted secret via the API (bypasses UI)

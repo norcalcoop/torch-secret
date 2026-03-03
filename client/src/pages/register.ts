@@ -151,7 +151,28 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
   submitButton.textContent = 'Create Account';
   form.appendChild(submitButton);
 
-  // Consent line (LEGAL-01, LEGAL-02) — inserted after submit button
+  // Marketing consent checkbox — unchecked by default (GDPR, ESEQ-04)
+  const marketingConsentGroup = document.createElement('div');
+  marketingConsentGroup.className = 'flex items-start gap-2.5 pt-1';
+
+  const marketingConsentCheckbox = document.createElement('input');
+  marketingConsentCheckbox.type = 'checkbox';
+  marketingConsentCheckbox.id = 'marketing-consent';
+  marketingConsentCheckbox.name = 'marketing-consent';
+  marketingConsentCheckbox.checked = false; // unchecked by default — GDPR (ESEQ-04)
+  marketingConsentCheckbox.className =
+    'mt-0.5 h-4 w-4 accent-accent rounded border-border cursor-pointer';
+
+  const marketingConsentLabel = document.createElement('label');
+  marketingConsentLabel.htmlFor = 'marketing-consent';
+  marketingConsentLabel.className =
+    'text-sm text-text-secondary leading-tight cursor-pointer select-none';
+  marketingConsentLabel.textContent = 'Send me product tips and updates';
+
+  marketingConsentGroup.appendChild(marketingConsentCheckbox);
+  marketingConsentGroup.appendChild(marketingConsentLabel);
+
+  // Consent line (LEGAL-01, LEGAL-02) — inserted after marketing consent checkbox
   const consentLine = document.createElement('p');
   consentLine.className = 'text-xs text-text-muted text-center';
 
@@ -187,6 +208,8 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
   consentLine.appendChild(privacyLink);
   consentLine.appendChild(periodText);
   form.appendChild(consentLine);
+  // Insert marketing consent checkbox before consent line
+  form.insertBefore(marketingConsentGroup, consentLine);
 
   // Submit handler
   form.addEventListener('submit', (e) => {
@@ -213,7 +236,14 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
       }
 
       // Loading state
-      setFormLoading(true, submitButton, nameInput, emailInput, passwordInput);
+      setFormLoading(
+        true,
+        submitButton,
+        nameInput,
+        emailInput,
+        passwordInput,
+        marketingConsentCheckbox,
+      );
 
       try {
         const { data, error } = await authClient.signUp.email({
@@ -221,6 +251,7 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
           password,
           name,
           callbackURL: '/dashboard',
+          marketingConsent: marketingConsentCheckbox.checked,
         });
 
         if (error) {
@@ -236,7 +267,14 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
           } else {
             showError(errorArea, msg || 'Registration failed. Please try again.');
           }
-          setFormLoading(false, submitButton, nameInput, emailInput, passwordInput);
+          setFormLoading(
+            false,
+            submitButton,
+            nameInput,
+            emailInput,
+            passwordInput,
+            marketingConsentCheckbox,
+          );
           return;
         }
 
@@ -248,11 +286,25 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
           showEmailVerificationState(card, email);
         } else {
           showError(errorArea, 'Registration failed. Please try again.');
-          setFormLoading(false, submitButton, nameInput, emailInput, passwordInput);
+          setFormLoading(
+            false,
+            submitButton,
+            nameInput,
+            emailInput,
+            passwordInput,
+            marketingConsentCheckbox,
+          );
         }
       } catch {
         showError(errorArea, 'Something went wrong. Please try again.');
-        setFormLoading(false, submitButton, nameInput, emailInput, passwordInput);
+        setFormLoading(
+          false,
+          submitButton,
+          nameInput,
+          emailInput,
+          passwordInput,
+          marketingConsentCheckbox,
+        );
       }
     })();
   });
@@ -385,11 +437,13 @@ function setFormLoading(
   nameInput: HTMLInputElement,
   emailInput: HTMLInputElement,
   passwordInput: HTMLInputElement,
+  marketingConsentCheckbox: HTMLInputElement,
 ): void {
   submitButton.disabled = loading;
   nameInput.disabled = loading;
   emailInput.disabled = loading;
   passwordInput.disabled = loading;
+  marketingConsentCheckbox.disabled = loading;
   submitButton.textContent = loading ? 'Creating account...' : 'Create Account';
 }
 

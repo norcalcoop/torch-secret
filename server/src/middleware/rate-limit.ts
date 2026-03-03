@@ -1,9 +1,14 @@
 import { type Store, rateLimit } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { Redis } from 'ioredis';
+import { logger } from './logger.js';
 
-/** E2E tests share one server across 3 browsers; raise limits to prevent 429s during test runs. */
-const isE2E = process.env.E2E_TEST === 'true';
+/**
+ * E2E tests share one server across 3 browsers; raise limits to prevent 429s during test runs.
+ * Requires BOTH NODE_ENV=test AND E2E_TEST=true to activate — prevents accidental bypass in
+ * production if only one variable is set (SR-014 safety gate).
+ */
+const isE2E = process.env.NODE_ENV === 'test' && process.env.E2E_TEST === 'true';
 
 /**
  * Create a RedisStore for rate limiting when a Redis client is provided,
@@ -18,6 +23,27 @@ function createStore(redisClient?: Redis, prefix?: string): Store | undefined {
       redisClient.call(...(args as [string, ...string[]])) as Promise<RedisReply>,
     prefix: prefix ?? 'rl:',
   });
+}
+
+/**
+ * Wraps a rate-limit Store so that any increment error is logged as a Pino warn
+ * before re-throwing. The re-throw allows passOnStoreError to pass the request
+ * through, while the warn gives observability into Redis outages.
+ *
+ * Returns undefined unchanged (MemoryStore path — no wrap needed).
+ */
+function wrapStoreWithWarnOnError(store: Store | undefined): Store | undefined {
+  if (!store) return undefined;
+  const original = store.increment.bind(store);
+  store.increment = async (...args: Parameters<Store['increment']>) => {
+    try {
+      return await original(...args);
+    } catch (err) {
+      logger.warn({ err: (err as Error).message }, 'rate_limit_store_error');
+      throw err;
+    }
+  };
+  return store;
 }
 
 /**
@@ -45,7 +71,7 @@ export function createAnonHourlyLimiter(redisClient?: Redis) {
       error: 'rate_limited',
       message: 'Too many secrets created. Create a free account for higher limits.',
     },
-    store: createStore(redisClient, 'rl:anon:h:'),
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:anon:h:')),
     passOnStoreError: true,
     // Skip authenticated users — they have their own daily limiter
     skip: (_req, res) => !!(res.locals.user as unknown),
@@ -77,7 +103,7 @@ export function createAnonDailyLimiter(redisClient?: Redis) {
       message:
         'Daily limit reached for anonymous sharing. Create a free account for higher limits.',
     },
-    store: createStore(redisClient, 'rl:anon:d:'),
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:anon:d:')),
     passOnStoreError: true,
     // Skip authenticated users — they have their own daily limiter
     skip: (_req, res) => !!(res.locals.user as unknown),
@@ -106,7 +132,7 @@ export function createAuthedDailyLimiter(redisClient?: Redis) {
       error: 'rate_limited',
       message: 'Daily limit reached. You can create 20 secrets per day.',
     },
-    store: createStore(redisClient, 'rl:authed:d:'),
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:authed:d:')),
     passOnStoreError: true,
     // Skip anonymous users — they use the anon hourly/daily limiters
     skip: (_req, res) => !(res.locals.user as unknown),
@@ -138,7 +164,36 @@ export function verifySecretLimiter(redisClient?: Redis) {
       error: 'rate_limited',
       message: 'Too many password attempts. Please try again later.',
     },
-    store: createStore(redisClient, 'rl:verify:'),
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:verify:')),
+    passOnStoreError: true,
+  });
+}
+
+/**
+ * Tight rate limiter for POST /api/secrets/:id/verify: 5 req/min/IP.
+ *
+ * Applied as the FIRST middleware in the POST /:id/verify chain — BEFORE validateParams,
+ * validateBody, and the Argon2id verifyAndRetrieve call. Rate limiting must fire before
+ * the expensive Argon2id computation, not after.
+ *
+ * Complements verifySecretLimiter (15/15min) with a tighter burst guard (5/1min).
+ * Both limiters apply; this tight one fires first to catch burst attacks.
+ *
+ * Dual-condition isE2E guard (NODE_ENV=test AND E2E_TEST=true) is intentional: neither
+ * variable alone is sufficient to raise the limit, preventing accidental bypass (SR-014).
+ */
+export function createVerifyTightLimiter(redisClient?: Redis) {
+  return rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    limit: isE2E ? 1000 : 5, // 5 req/min/IP in production (1000 in test/E2E)
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    statusCode: 429,
+    message: {
+      error: 'rate_limited',
+      message: 'Too many password attempts. Please wait before trying again.',
+    },
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:verify:tight:')),
     passOnStoreError: true,
   });
 }

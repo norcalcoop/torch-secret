@@ -1,5 +1,5 @@
 /**
- * Playwright screenshot automation for SecureShare README.
+ * Playwright screenshot automation for Torch Secret README.
  *
  * Captures dark-theme screenshots of the create and reveal pages.
  * Run: npx tsx scripts/screenshots.ts
@@ -113,7 +113,7 @@ async function captureScreenshots(): Promise<void> {
     console.log('Capturing reveal page...');
 
     // Encrypt a sample message using the real crypto module
-    const sampleMessage = 'This is a secret message shared securely with SecureShare.';
+    const sampleMessage = 'This is a secret message shared securely with Torch Secret.';
     const { payload, keyBase64Url } = await encrypt(sampleMessage);
 
     // Create a secret via the API

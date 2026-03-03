@@ -1,304 +1,212 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2026-03-01
 
 ## Naming Patterns
 
 **Files:**
-- Kebab-case for all files and directories: `secrets.ts`, `error-handler.ts`, `password.service.ts`
-- Test files: `*.test.ts` or `__tests__` directory alongside source code
-- Service files: `*.service.ts` (e.g., `secrets.service.ts`, `password.service.ts`)
-- Route files: `routes/[name].ts` (e.g., `routes/secrets.ts`, `routes/health.ts`, `routes/me.ts`)
-- Middleware files: `middleware/[name].ts` (e.g., `middleware/error-handler.ts`, `middleware/validate.ts`)
-- Worker files: `workers/[name].ts` (e.g., `workers/expiration-worker.ts`)
-- Configuration: `config/env.ts`, `drizzle.config.ts`, `vite.config.ts`, `.prettierrc.json`, `eslint.config.ts`
+- Kebab-case for all files: `secrets.service.ts`, `rate-limit.ts`, `password-generator.test.ts`
+- Directories use kebab-case: `crypto/`, `__tests__/`, `middleware/`
+- Service files follow pattern: `{domain}.service.ts` (e.g., `secrets.service.ts`, `password.service.ts`)
+- Test directories use `__tests__/` (co-located with source) or inline `*.test.ts` suffix
 
 **Functions:**
-- camelCase for all functions: `createSecret`, `retrieveAndDestroy`, `verifyAndRetrieve`, `redactUrl`, `startExpirationWorker`
-- Exported service functions are async: `export async function createSecret(...)`
-- Middleware factories return closures: `validateBody<T>(schema)` returns `(req, res, next) => void`
-- Worker functions prefixed with action: `startExpirationWorker()`, `stopExpirationWorker()`, `cleanExpiredSecrets()`
-- Route factories prefixed with `create`: `createSecretsRouter(redisClient?)`, `buildApp()`
+- camelCase: `createSecret()`, `verifyAndRetrieve()`, `hashPassword()`, `validateBody()`
+- Async functions return `Promise<T>`: `async function createSecret(...): Promise<Secret>`
+- Factory functions prefixed with `build`: `buildApp()`, `buildRouter()` (not `create`)
+- Middleware factories return `(req, res, next) => void`: `validateBody(schema)` returns middleware
 
 **Variables:**
-- camelCase for all variables: `ciphertext`, `expiresAt`, `passwordHash`, `redisClient`, `secret`, `result`
-- Constants in UPPER_SNAKE_CASE at module scope:
-  - Duration maps: `DURATION_MS: Record<string, number>`
-  - Thresholds: `MAX_PASSWORD_ATTEMPTS = 3`
-  - Configuration objects: `ARGON2_OPTIONS`, `SECRET_NOT_AVAILABLE`
-  - Test constants: `VALID_CIPHERTEXT`, `NONEXISTENT_ID`, `URL_SAFE_REGEX`
-- Numeric literals use underscores for readability: `19_456`, `3_600_000`, `604_800_000`
+- camelCase for all variables: `redisClient`, `passwordHash`, `expiresAt`, `isAuthenticated`
+- Constants in UPPER_SNAKE_CASE: `MAX_PASSWORD_ATTEMPTS`, `DURATION_MS`, `ARGON2_OPTIONS`, `IV_LENGTH`
+- Unused parameters prefixed with `_`: `(_req: Request, _next: NextFunction)`
+- Session/local storage use camelCase keys: `res.locals.user`, `sessionCookie`
 
-**Types & Interfaces:**
-- PascalCase for all type names:
-  - Request/response types: `CreateSecretRequest`, `SecretResponse`, `MetaResponse`, `VerifySecretResponse`
-  - Error types: `ApiError`, `ErrorResponse`, `VerifyErrorResponse`
-  - Domain types: `Secret`, `NewSecret`, `User`, `PageMeta`, `PageRenderer`
-  - Inferred session types: `AuthSession`, `AuthUser`, `AuthSessionData`
-- Zod schemas in PascalCase with "Schema" suffix: `CreateSecretSchema`, `SecretIdParamSchema`, `VerifySecretSchema`, `EnvSchema`
-- Type inference from Zod: `type CreateSecretRequest = z.infer<typeof CreateSecretSchema>`
-- Database inferred types: `type Secret = typeof secrets.$inferSelect`, `type NewSecret = typeof secrets.$inferInsert`
+**Types:**
+- PascalCase for interfaces and types: `CreateSecretRequest`, `SessionUser`, `AuthUser`, `ApiError`
+- Zod schemas follow request naming: `CreateSecretSchema`, `SecretIdParamSchema`, `VerifySecretSchema`
+- Response types suffix with "Response": `CreateSecretResponse`, `SecretResponse`, `VerifySecretResponse`
+- Error/meta response types suffix with "Response": `ErrorResponse`, `MetaResponse`
 
 ## Code Style
 
 **Formatting:**
-- Prettier enforced via `.prettierrc.json`:
-  - Single quotes: `'string'` not `"string"`
-  - Trailing commas: `{ a: 1, b: 2, }` in multiline
-  - Print width: 100 characters
-  - Tab width: 2 spaces
-  - Semicolons required
-  - Tailwind CSS class reordering: prettier-plugin-tailwindcss auto-sorts in client code
-- Line length target: 100 characters (soft guideline)
-- Indentation: 2 spaces consistently
+- Tool: Prettier 3.x with `prettier-plugin-tailwindcss`
+- Print width: 100 characters
+- Tabs: 2 spaces
+- Trailing commas: `all` (comma after last list item)
+- Single quotes: enabled (`'string'` not `"string"`)
+- Semicolons: enabled
 
 **Linting:**
-- ESLint with TypeScript support via `typescript-eslint` (ESM flat config in `eslint.config.ts`)
-- Rules:
-  - `@typescript-eslint/no-unused-vars`: Error for unused variables/params unless prefixed with `_`
-  - `@typescript-eslint/no-unsafe-assignment/member-access/argument`: Disabled in test files (`.test.ts`, `__tests__/**`, scripts, e2e)
-  - Type-checked linting enabled for all source files (`projectService: true`)
-- Pre-commit hook via husky: runs `eslint --fix` then `prettier --write` on staged files
-- Lint script: `npm run lint` to check, `npm run lint:fix` to auto-fix
+- Tool: ESLint 10.x with `typescript-eslint` v8+
+- Config: `eslint.config.ts` (flat config format, ESLint v10+)
+- Key rules:
+  - `@typescript-eslint/no-unused-vars`: error, allows `_` prefix for intentional params
+  - Recommended TypeScript checks: `@typescript-eslint/recommended-type-checked`
+  - Test files relax unsafe type rules (`no-unsafe-assignment`, `no-unsafe-member-access`, `unbound-method`)
+  - Config files disable type checking
 
-**Comment Headers:**
-- Module-level JSDoc blocks describe purpose (present in all key modules)
-- Security-critical comments use block format:
-  ```typescript
-  /**
-   * ZERO-KNOWLEDGE INVARIANT — canonical rule
-   * No database record may contain BOTH userId AND secretId
-   */
-  ```
+**Pre-commit Hooks:**
+- Tool: Husky + lint-staged
+- Staged file checks:
+  - `*.{ts,js,mjs,cjs}`: `eslint --fix` then `prettier --write`
+  - `*.{json,css,md,html}`: `prettier --write` only
 
 ## Import Organization
 
-**Order:**
-1. Node.js built-in modules with `node:` prefix: `import { resolve } from 'node:path'`, `import { readFileSync } from 'node:fs'`
-2. Third-party packages: `import express from 'express'`, `import { z } from 'zod'`, `import { Redis } from 'ioredis'`
-3. Type-only imports from third-party: `import type { Request, Response, NextFunction } from 'express'`
-4. Relative imports with explicit `.js` extension: `import { buildApp } from './app.js'`
-5. Type-only relative imports: `import type { Secret } from '../db/schema.js'`
+**Order (strictly enforced by linting):**
+1. Node.js built-ins: `import { readFileSync } from 'node:fs'`
+2. Third-party dependencies: `import express from 'express'`
+3. Type imports: `import type { Express } from 'express'` (separate `type` keyword)
+4. Local module imports: `import { buildApp } from './app.js'`
+5. Relative imports: `import { createIcon } from '../components/icons.js'`
 
 **Path Aliases:**
-- No path aliases in server code
-- Vite aliases in client (used mainly in e2e tests): `~` for `client/src`
-- All relative imports use explicit `.js` file extension (ESM requirement)
+- No path aliases configured (imports use relative paths with `../` or explicit `./`)
+- All imports must include `.js` extension for ESM compatibility (Node 20+ NodeNext resolution)
 
-**Import Syntax:**
-- Named imports preferred: `import { createSecret } from './services/secrets.service.js'`
-- Type-only imports: `import type { CreateSecretRequest } from '../../../shared/types/api.js'`
-- Namespace imports for utilities: `import * as matchers from 'vitest-axe/matchers'`
-- Default imports only for third-party libraries: `import express from 'express'`
-- Module interop workaround for CJS packages:
-  ```typescript
-  import pg from 'pg';
-  const { Pool } = pg;  // pg exports default that is namespace
-  ```
+**Module Exports:**
+- Named exports for utilities: `export function validateBody<T>(schema: ZodType<T>)`
+- Default exports for page renderers: `export function renderCreatePage(container: HTMLElement)`
+- Type exports use `export type`: `export type CreateSecretRequest = z.infer<typeof CreateSecretSchema>`
+- Barrel files combine related exports: `/crypto/index.ts` re-exports `encrypt`, `decrypt`, `generatePassphrase`
 
 ## Error Handling
 
 **Patterns:**
-- Custom error classes: `export class ApiError extends Error` with properties `.status`, `.body`
-- Service functions return `null` for missing resources (never throw for expected cases):
-  - `retrieveAndDestroy(id): Promise<Secret | null>`
-  - `getSecretMeta(id): Promise<{ requiresPassword, passwordAttemptsRemaining } | null>`
-- Discriminated unions for multi-case outcomes:
-  ```typescript
-  verifyAndRetrieve(id, password): Promise<
-    | { success: true; secret: Secret }
-    | { success: false; attemptsRemaining: number }
-    | null
-  >
-  ```
-- Validation via Zod `.safeParse()`: `{ success: boolean, data?: T, error?: ZodError }`
-- Route handlers respond with structured error objects:
-  ```typescript
-  res.status(400).json({ error: 'validation_error', details: result.error.flatten() })
-  res.status(404).json({ error: 'not_found', message: '...' })
-  res.status(403).json({ error: 'wrong_password', attemptsRemaining: N })
-  ```
-- Global error handler in `server/src/middleware/error-handler.ts`: logs error but returns generic 500 response
-- **Anti-enumeration:** Identical error response for all "secret unavailable" cases prevents timing/content enumeration:
-  ```typescript
-  const SECRET_NOT_AVAILABLE = {
-    error: 'not_found',
-    message: 'This secret does not exist, has already been viewed, or has expired.',
-  } as const;
-  ```
+- Custom error class `ApiError` with status, body, and optional `rateLimitReset` field
+- Global error handler catches unhandled errors: `server/src/middleware/error-handler.ts`
+- Error responses follow standard shape: `{ error: 'error_code', message?: 'human-readable' }`
+- Validation errors use `{ error: 'validation_error', details: ZodError.flatten() }`
+- Identical error response for all "not found" cases (no enumeration leakage): `{ error: 'not_found', message: 'This secret does not exist, has already been viewed, or has expired.' }`
+- Password verification errors: `{ error: 'wrong_password', attemptsRemaining: number }`
+- Async operations in try-catch with meaningful error logging (NOT client-facing details)
+
+**Security Notes:**
+- Server never logs request details that could contain secret IDs (see logger.ts redaction)
+- Error responses never leak stack traces to the client
+- Status codes are meaningful but don't reveal internal state (429 for rate limit, not 403)
 
 ## Logging
 
-**Framework:** Pino with pino-http middleware (`server/src/middleware/logger.ts`)
+**Framework:** Pino 10.x with `pino-http`
 
 **Patterns:**
-- Base logger with redaction rules for sensitive headers:
-  ```typescript
-  export const logger = pino({
-    level: env.LOG_LEVEL,
-    redact: {
-      paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
-      censor: '[REDACTED]',
-    },
-  });
-  ```
-- HTTP logger with custom serializer: logs method + redacted URL (secret IDs masked)
-  - Secret ID redaction via regex: `/api/secrets/[A-Za-z0-9_-]+` → `/api/secrets/[REDACTED]`
-  - Request/response bodies never logged (could contain ciphertext)
+- Logger instance: `export const logger = pino({ ... })` in `server/src/middleware/logger.ts`
+- HTTP request logging via `pinoHttp` middleware with request/response serialization
+- Secret IDs redacted via regex: `/\/api\/secrets\/[A-Za-z0-9_-]+/g` → `/api/secrets/[REDACTED]`
+- Dashboard secrets also redacted: `/\/api\/dashboard\/secrets\/[A-Za-z0-9_-]+/g`
+- Sensitive headers redacted: `authorization`, `cookie`, `set-cookie`
+- Request/response bodies NOT logged (prevents ciphertext leakage)
 - Error logging: `logger.error({ err: { message, stack } }, 'Unhandled error')`
-- Log level via `LOG_LEVEL` env var (default: `'info'`)
-- **Never logged:** Secret IDs, ciphertext, plaintext passwords, IP addresses, PII
+
+**When to Log:**
+- Health checks: database connectivity, uptime
+- Route entry/exit: method, redacted URL, status code (handled by pino-http)
+- Errors with internal context: message and stack only
+- Never: secret IDs, plaintext, ciphertext, user IPs, PII
 
 ## Comments
 
 **When to Comment:**
-- Block comments for security-critical code: transaction steps, expiration guards, anti-enumeration logic
-- JSDoc for all exported functions describing purpose, parameters, return value, side effects
-- Inline comments for non-obvious logic or important invariants
-- Test file headers document coverage scope:
-  ```typescript
-  /**
-   * Tests for the encrypt module.
-   *
-   * Covers: return shape, IV prepending, key/IV uniqueness,
-   * padding tier verification, edge cases (empty, large, unicode).
-   */
-  ```
+- Explain *why*, not *what* (code explains what)
+- Document security invariants: "SECR-07 — prevent enumeration attacks"
+- Explain non-obvious algorithm choices: "PADME padding — max 12% overhead"
+- Middleware order dependency: "cspNonce MUST run before helmet so nonce is available"
+- Phase references: "Phase 26: Mock notification service to avoid real HTTP calls"
+- Database transaction invariants: "Atomic 3-step transaction: SELECT → zero ciphertext → DELETE"
 
 **JSDoc/TSDoc:**
-- Every exported function has JSDoc with:
-  - Purpose (first line)
-  - `@param` tags if behavior non-obvious
-  - `@returns` describing return type and when null/undefined occurs
-- Examples from codebase:
+- Function-level JSDoc for public API functions:
   ```typescript
   /**
    * Atomically retrieves and destroys a secret using a three-step
-   * transaction: SELECT -> ZERO ciphertext -> DELETE.
+   * transaction: SELECT -> ZERO ciphertext -> DELETE (anonymous) or
+   * UPDATE status='viewed' (user-owned).
    *
-   * Returns null for nonexistent, expired, already-consumed, or
-   * password-protected secrets.
+   * @param id - The 21-character secret ID (nanoid)
+   * @returns Secret object or null if unavailable
    */
   export async function retrieveAndDestroy(id: string): Promise<Secret | null>
   ```
-- Type definitions include inline comments:
-  ```typescript
-  /** Duration string to milliseconds mapping */
-  const DURATION_MS: Record<string, number> = { '1h': 3_600_000, ... };
-  ```
-- Section separators in long files:
-  ```typescript
-  // ---------------------------------------------------------------------------
-  // Phase 5: Password Protection
-  // ---------------------------------------------------------------------------
-  ```
+- Parameter descriptions for non-obvious fields
+- Return type documentation
+- No JSDoc on trivial getters/setters
 
 ## Function Design
 
 **Size:**
-- Target: under 40 lines for readability
-- Exception: transaction handlers can be 50-70 lines with clear step comments
-- Extract helpers if function body exceeds logical scope
+- Target: < 50 lines per function (exception: route handlers with complex middleware ordering)
+- Break long functions into smaller named helpers
+- Route handlers document middleware order in comments
 
 **Parameters:**
-- Explicit parameters for 1-3 args: `createSecret(ciphertext, expiresIn, password?)`
-- Optional params typed with `?`: `password?: string`
-- Type literals for constrained values: `expiresIn: '1h' | '24h' | '7d' | '30d'` (not generic string)
-- Generic constraints: `function validateBody<T>(schema: ZodType<T>)`
+- Type all parameters (no implicit `any`)
+- Destructure objects instead of positional params: `{ ciphertext, expiresIn }`
+- Optional params use `?` and `undefined` defaults, not overloading
+- Async functions always return `Promise<T>`, never `undefined` (use `Promise<T | null>` for optional results)
 
 **Return Values:**
-- Explicit return type on all functions (no implicit `any`)
-- Async functions: `Promise<T>`
-- Void for side-effect operations: middleware handlers, worker initialization
-- Early return for guard clauses:
-  ```typescript
-  if (!meta) {
-    res.status(404).json(SECRET_NOT_AVAILABLE);
-    return;  // Early return, not else
-  }
-  ```
-- Prefer returning structures over exceptions for expected errors
-- Use discriminated unions for multi-branch results
-
-**Null vs Undefined:**
-- `null` for "not found" from queries: `retrieveAndDestroy(id): Promise<Secret | null>`
-- `undefined` for optional config/parameters: `redisClient?: Redis`
-- Never use `null` as default return value (prefer explicit return shape)
+- Explicit return type annotation on all functions
+- Use `void` for functions that don't return (middleware, handlers)
+- Use `Promise<T | null>` to indicate a value might not exist: `Promise<Secret | null>`
+- Throw errors rather than return error objects (service layer convention)
 
 ## Module Design
 
 **Exports:**
-- Service modules export only functions: `export async function createSecret(...)`
-- Route factories export factory function: `export function createSecretsRouter(redisClient?)`
-- Middleware exports named functions: `export function errorHandler(...)`, `export const httpLogger = ...`
-- Database exports schema types and instances: `export type Secret`, `export const db`, `export const pool`
-- Config exports validated object: `export const env: Env`
+- Services export functions, not classes: `export function createSecret()`
+- Middleware exports factory functions: `export function validateBody<T>(schema: ZodType<T>)`
+- Pages/components export a single default render function: `export function renderCreatePage()`
+- Types always exported as `export type` (separate from runtime exports)
 
 **Barrel Files:**
-- Not used for domain code (prefer explicit imports)
-- Crypto module exception: `client/src/crypto/index.ts` re-exports public API
-- Shared types: `shared/types/api.ts` exports all schemas and interfaces (single source of truth)
+- Client crypto module uses barrel: `client/src/crypto/index.ts` re-exports `encrypt`, `decrypt`, `generatePassphrase`
+- Reduces import paths: `import { encrypt } from '../crypto/'` (not `../crypto/encrypt.js`)
+- Tests import directly from module to avoid re-export indirection
 
-**Module Organization:**
-- One main export per file or cohesive set of related functions
-- Services group related operations: `secrets.service.ts` has `createSecret`, `retrieveAndDestroy`, `getSecretMeta`, `verifyAndRetrieve`
-- Middleware factories co-located: `rate-limit.ts` exports `createSecretLimiter` and `verifySecretLimiter`
-- Types and schemas co-located in shared file: `shared/types/api.ts`
+**Database Schema:**
+- Drizzle ORM table definitions: `server/src/db/schema.ts`
+- All tables exported as named exports: `export const secrets`, `export const users`
+- Type inference from Drizzle: `type Secret = typeof secrets.$inferSelect`
 
-## Constants & Magic Numbers
+**Middleware:**
+- Each middleware is a separate file in `server/src/middleware/`
+- Middleware factories accept config and return Express middleware: `(req, res, next) => void`
+- Middleware order is critical; documented in `app.ts` with numbered comments
 
-**Storage:**
-- Module-scope constants in UPPER_SNAKE_CASE
-- Documented with inline comments explaining purpose/unit
-- Example: `const MAX_PASSWORD_ATTEMPTS = 3` (auto-destroy after 3 failures)
-- Example: `const DURATION_MS: Record<string, number> = { '1h': 3_600_000, ... }` (human-readable with underscores)
+## Type Safety Patterns
 
-**Type Safety:**
-- Constants with limited values use union types in function signatures
-- Example: `expiresIn: '1h' | '24h' | '7d' | '30d'` (not a generic string)
-- Zod enum schemas enforce at validation boundary: `z.enum(['1h', '24h', '7d', '30d'])`
-- TypeScript compiler ensures exhaustiveness checking on switch/if statements
+**Zod for Runtime Validation:**
+- All request bodies validated with Zod schemas: `CreateSecretSchema`, `VerifySecretSchema`
+- Type inference from schemas: `type CreateSecretRequest = z.infer<typeof CreateSecretSchema>`
+- Middleware validates and replaces `req.body`: `req.body = result.data` (now type-safe)
+- Params validation: `validateParams(SecretIdParamSchema)` for route `:id` validation
 
-## Async/Await
+**Better Auth Type Guards:**
+- `getSession()` returns `any`; narrow with type guard to avoid unsafe member access
+- Session user typed as `SessionUser` interface before access
+- Example from secrets routes: `const user = res.locals.user as AuthUser | undefined`
 
-**Patterns:**
-- All async operations use `async`/`await` (no `.then()` chains)
-- Service functions are async: `export async function createSecret(...): Promise<Secret>`
-- Route handlers are async: `router.post('/', async (req, res) => { ... })`
-- Database transactions use async context: `await db.transaction(async (tx) => { ... })`
-- Error handling via global Express error handler (unhandled errors caught)
+**CryptoKey Constraints:**
+- Imported keys are non-extractable: `extractable: false`
+- Decrypt-only keys: algorithm set in `importKey()` but usage limited to `'decrypt'`
+- Prevents key material from being read back from CryptoKey
 
-## Security-Conscious Conventions
+## Zero-Knowledge Invariant (Mandatory Convention)
 
-**Password Hashing:**
-- Always hash on server using Argon2id with OWASP-minimum params:
-  ```typescript
-  const ARGON2_OPTIONS = {
-    type: argon2.argon2id,
-    memoryCost: 19_456,  // 19 MiB (OWASP minimum)
-    timeCost: 2,         // 2 iterations
-    parallelism: 1,      // Single thread
-  };
-  ```
-- Hash verification uses constant-time comparison (built into argon2.verify)
+**Read `.planning/INVARIANTS.md` before modifying database, logs, or analytics.**
 
-**Encryption:**
-- Client-side only: Web Crypto API in `client/src/crypto/` module
-- IV generated fresh per encryption: `crypto.getRandomValues(new Uint8Array(12))`
-- Keys generated fresh per encryption: `crypto.subtle.generateKey(...)`
-- Keys are non-extractable (cannot be exported after creation)
-- No `Math.random()` for security operations
+The zero-knowledge security model requires strict separation:
+- **Rule:** No database record, log line, or analytics event may contain both `userId` AND `secretId`
+- **Enforcement in code:**
+  - `secrets.user_id` is nullable FK; `users` table never stores secret IDs
+  - Logger redacts secret IDs via regex (see `logger.ts`)
+  - `ApiClient` sanitizes URL fragments before analytics events (Phase 25+)
 
-**Zero-Knowledge Invariant:**
-- **MANDATORY:** Never combine userId and secretId in same database record or log line
-- Enforcement points documented in `server/src/db/schema.ts` and `.planning/INVARIANTS.md`
-- Update INVARIANTS.md when adding new systems (PostHog events, analytics, etc.)
-
-**Response Standardization:**
-- Identical error responses for all "not available" cases (prevents enumeration)
-- No timing differences between success/failure (use constant-time verification)
-- No sensitive data in error messages to unauthenticated users
+See `.planning/INVARIANTS.md` for complete enforcement table and extension protocol.
 
 ---
 
-*Convention analysis: 2026-02-20*
+*Convention analysis: 2026-03-01*

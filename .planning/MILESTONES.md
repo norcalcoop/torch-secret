@@ -1,5 +1,31 @@
 # Milestones
 
+## v5.0 Product Launch Checklist (Shipped: 2026-03-03)
+
+**Phases completed:** 19 phases (31-45), 63 plans
+**Timeline:** 9 days (2026-02-22 → 2026-03-03)
+**Codebase:** ~30,287 LOC TypeScript, 385 tests passing (1 todo)
+**Git range:** feat(31-01) → feat(45-02), 295 commits
+
+**Key accomplishments:**
+- Torch Secret rebrand — SecureShare renamed to Torch Secret + torchsecret.com across all user-facing surfaces, SEO assets, canonical URLs, and developer docs
+- Marketing homepage at `/` with hero, zero-knowledge proof points, How It Works, and email capture; create-secret form moved to `/create` with full nav overhaul
+- Stripe Pro billing — checkout, webhook lifecycle, customer portal, and 30-day expiration unlock gated by subscription tier (Free/Pro)
+- 14 server-rendered SEO pages (Express SSR) for `/vs/*`, `/alternatives/*`, and `/use/*` — immediately visible to AI crawlers and Googlebot without JavaScript rendering
+- GDPR-compliant email capture with double opt-in and Loops.so 3-email onboarding sequence (welcome + day-3 features + day-7 upgrade) triggered on registration
+- Google + GitHub OAuth fully provisioned in Infisical across dev/staging/prod with OAuth bounce middleware fix for local dev state_mismatch
+- Pre-launch security hardening: Argon2id tight rate limiter, PostgreSQL pool hardening, Stripe webhook test suite, ZK invariant tests, and CONCERNS.md quick wins
+- PostHog event enrichment with `checkout_initiated`, `subscription_activated`, `dashboard_viewed` + Launch Dashboard, two conversion funnels, and three user cohorts
+
+**Delivered:** A launch-ready product — Torch Secret is publicly brandable at torchsecret.com with a full marketing funnel (homepage → pricing → checkout), SEO content engine (14 SSR pages), GDPR-compliant email list + onboarding sequence, Google/GitHub OAuth, and pre-launch security hardening.
+
+**Archives:**
+- [Roadmap](milestones/v5.0-ROADMAP.md)
+- [Requirements](milestones/v5.0-REQUIREMENTS.md)
+- [Audit](milestones/v5.0-MILESTONE-AUDIT.md)
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-15)
 
 **Phases completed:** 8 phases, 22 plans

@@ -1,5 +1,6 @@
 import { resend } from './email.js';
 import { env } from '../config/env.js';
+import { logger } from '../middleware/logger.js';
 
 /**
  * Sends a "secret viewed" notification email fire-and-forget.
@@ -21,9 +22,9 @@ export async function sendSecretViewedNotification(
   const { error } = await resend.emails.send({
     from: env.RESEND_FROM_EMAIL,
     to: userEmail,
-    subject: 'Your SecureShare secret was viewed',
+    subject: 'Your Torch Secret secret was viewed',
     text: [
-      'A secret you created on SecureShare was viewed and permanently deleted.',
+      'A secret you created on Torch Secret was viewed and permanently deleted.',
       '',
       `Viewed at: ${viewedAt.toUTCString()}`,
       '',
@@ -33,6 +34,6 @@ export async function sendSecretViewedNotification(
 
   if (error) {
     // Log failure without any identifying fields (no userEmail, no secretId)
-    console.error('Failed to send secret-viewed notification:', error.message);
+    logger.error({ err: error.message }, 'notification_send_failed');
   }
 }

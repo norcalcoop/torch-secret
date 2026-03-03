@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SecureShare is a zero-knowledge, one-time secret sharing web app. Users paste sensitive text, get an encrypted link, share it, and the secret self-destructs after one view. No accounts, no signup. The encryption key lives exclusively in the URL fragment (`#key`) and never reaches the server.
+Torch Secret is a zero-knowledge, one-time secret sharing web app. Users paste sensitive text, get an encrypted link, share it, and the secret self-destructs after one view. No accounts, no signup. The encryption key lives exclusively in the URL fragment (`#key`) and never reaches the server.
 
 ## Tech Stack
 
@@ -15,6 +15,10 @@ SecureShare is a zero-knowledge, one-time secret sharing web app. Users paste se
 - **Encryption:** Web Crypto API (AES-256-GCM), no third-party crypto libraries
 - **Security:** Helmet (CSP with per-request nonce), express-rate-limit (Redis-backed or in-memory), Argon2id password hashing, HTTPS redirect
 - **Background jobs:** node-cron (expired secret cleanup worker)
+- **Payments:** Stripe (subscription billing, webhooks, customer portal)
+- **Analytics:** PostHog (event capture with ZK-safe URL sanitization)
+- **Email:** Loops (onboarding sequences), Resend (transactional + marketing list + Audiences)
+- **Secrets management:** Infisical (per-environment secrets injection via CLI; replaces .env files)
 - **Testing:** Vitest 4.x (multi-project: client=happy-dom, server=node), Supertest, vitest-axe, Playwright (E2E + axe-core)
 - **Validation:** Zod 4.x for env vars, API request schemas, and shared type contracts
 - **Code quality:** ESLint 10.x (typescript-eslint), Prettier 3.x (prettier-plugin-tailwindcss), Husky + lint-staged
@@ -32,30 +36,45 @@ secureshare/
 │       ├── theme.ts            # Light/dark/system theme with localStorage persistence
 │       ├── styles.css          # Tailwind CSS 4 with @theme tokens (OKLCH color system)
 │       ├── api/client.ts       # Typed fetch wrapper for API calls
+│       ├── analytics/          # PostHog client (sanitizeEventUrls, identifyUser, captureSecretCreated, etc.)
 │       ├── crypto/             # AES-256-GCM encrypt/decrypt (self-contained module)
-│       ├── components/         # UI components (layout, copy-button, share-button, toast, terminal-block, theme-toggle, icons, loading-spinner, expiration-select)
-│       └── pages/              # create, confirmation, reveal, error, dashboard, login, register, forgot-password, reset-password
+│       ├── components/         # UI components (layout, copy-button, share-button, toast, terminal-block, theme-toggle, icons, loading-spinner, expiration-select, feedback-link)
+│       └── pages/              # home, create, confirmation, reveal, error, dashboard, login, register, forgot-password, reset-password, pricing, privacy, terms, confirm, unsubscribe
 ├── server/src/
 │   ├── app.ts                  # Express app factory (middleware order is critical — see comments)
 │   ├── server.ts               # HTTP server startup, graceful shutdown
-│   ├── config/env.ts           # Zod-validated env vars
+│   ├── config/
+│   │   ├── env.ts              # Zod-validated env vars
+│   │   ├── stripe.ts           # Stripe SDK singleton (never new Stripe() in service files)
+│   │   └── loops.ts            # Loops email SDK singleton
 │   ├── db/
 │   │   ├── schema.ts           # Drizzle schema: secrets + Better Auth tables (users, sessions, accounts, verifications)
 │   │   ├── connection.ts       # PostgreSQL pool + Drizzle instance
 │   │   └── migrate.ts          # Migration runner script
 │   ├── routes/
 │   │   ├── secrets.ts          # Secret CRUD (4 endpoints)
+│   │   ├── billing.ts          # Stripe checkout, portal, verify-checkout
+│   │   ├── subscribers.ts      # GDPR email list capture + confirm/unsubscribe
+│   │   ├── webhooks.ts         # Stripe webhook (raw body; MUST mount before express.json)
+│   │   ├── dashboard.ts        # Authenticated user dashboard secrets
 │   │   ├── me.ts               # GET /api/me — current authenticated user
-│   │   └── health.ts           # GET /api/health
+│   │   ├── health.ts           # GET /api/health
+│   │   └── seo/                # Express SSR routes: /vs/*, /alternatives/*, /use/* (not SPA — bots need SSR)
 │   ├── middleware/
 │   │   ├── security.ts         # CSP nonce, helmet, HTTPS redirect
 │   │   ├── rate-limit.ts       # Redis-backed rate limiters
 │   │   ├── validate.ts         # Zod request validation
 │   │   ├── logger.ts           # Pino with secret ID redaction
 │   │   ├── require-auth.ts     # Better Auth session guard middleware
+│   │   ├── optional-auth.ts    # Better Auth session loader (no gate — attaches user if present)
 │   │   └── error-handler.ts    # Global error handler (must be last middleware)
 │   ├── services/
 │   │   ├── secrets.service.ts  # createSecret, retrieveAndDestroy, verifyAndRetrieve
+│   │   ├── billing.service.ts  # Stripe customer management, activatePro, deactivatePro
+│   │   ├── email.ts            # Resend transactional email sender + Audiences sync
+│   │   ├── notification.service.ts  # Secret-viewed emails (ZK-safe: no secretId in body)
+│   │   ├── onboarding.service.ts    # Loops email onboarding (welcome + drip sequence)
+│   │   ├── subscribers.service.ts   # GDPR marketing list (no FK to users/secrets)
 │   │   └── password.service.ts # Argon2id hashing (OWASP params)
 │   └── workers/
 │       └── expiration-worker.ts  # Cron job for expired secret cleanup
@@ -83,22 +102,30 @@ Two trust boundaries define the entire security model:
 
 ## API Endpoints
 
-| Method | Path                      | Purpose                                                  |
-| ------ | ------------------------- | -------------------------------------------------------- |
-| POST   | `/api/secrets`            | Create secret (receives encrypted blob, never plaintext) |
-| GET    | `/api/secrets/:id`        | Retrieve + atomic delete (no password)                   |
-| GET    | `/api/secrets/:id/meta`   | Check if password required (does NOT consume secret)     |
-| POST   | `/api/secrets/:id/verify` | Password verify + retrieve + atomic delete               |
-| GET    | `/api/me`                 | Current authenticated user (null if anonymous)           |
-| GET    | `/api/health`             | Health check                                             |
-| ANY    | `/api/auth/**`            | Better Auth handler (login, register, OAuth, sessions)   |
+| Method | Path                           | Purpose                                                   |
+| ------ | ------------------------------ | --------------------------------------------------------- |
+| POST   | `/api/secrets`                 | Create secret (receives encrypted blob, never plaintext)  |
+| GET    | `/api/secrets/:id`             | Retrieve + atomic delete (no password)                    |
+| GET    | `/api/secrets/:id/meta`        | Check if password required (does NOT consume secret)      |
+| POST   | `/api/secrets/:id/verify`      | Password verify + retrieve + atomic delete                |
+| GET    | `/api/me`                      | Current authenticated user (null if anonymous)            |
+| GET    | `/api/health`                  | Health check                                              |
+| ANY    | `/api/auth/**`                 | Better Auth handler (login, register, OAuth, sessions)    |
+| POST   | `/api/billing/checkout`        | Create Stripe checkout session (requires auth)            |
+| GET    | `/api/billing/verify-checkout` | Verify Stripe checkout session post-redirect              |
+| POST   | `/api/billing/portal`          | Create Stripe customer portal session                     |
+| POST   | `/api/webhooks/stripe`         | Stripe webhook (raw body; MUST mount before express.json) |
+| POST   | `/api/subscribers`             | GDPR marketing email capture                              |
+| GET    | `/api/subscribers/confirm`     | Email confirmation via token                              |
+| GET    | `/api/subscribers/unsubscribe` | One-click unsubscribe via token                           |
 
 ## Development Commands
 
 ```bash
 npm install                        # Install dependencies
-npm run dev:server                 # Backend dev server (tsx watch, requires PostgreSQL)
-npm run dev:client                 # Frontend dev server (Vite, proxies /api to :3000)
+npm run dev:server                 # Backend dev server (tsx watch, Infisical injects env vars)
+npm run dev:client                 # Frontend dev server (Vite via portless → http://torchsecret.localhost:1355)
+npm run staging:up                 # Start staging environment via Docker Compose (Infisical staging env)
 npm run build:client               # Production frontend build
 npm run preview:client             # Preview production build locally
 npm test                           # All tests in watch mode
@@ -113,7 +140,7 @@ npm run db:generate                # Generate migration from schema changes
 npm run db:migrate                 # Apply migrations
 ```
 
-**Prerequisites:** PostgreSQL 17+ at `DATABASE_URL` (see `.env.example`). Optional `REDIS_URL` for distributed rate limiting. No Docker Compose — start PostgreSQL manually or via Docker.
+**Prerequisites:** PostgreSQL 17+ at `DATABASE_URL`. Infisical CLI — run `infisical login` once; env vars inject automatically. Optional `REDIS_URL` for distributed rate limiting. See `.env.example` for required key names.
 
 **Test setup:** Vitest uses multi-project config — client tests run in happy-dom, server tests run in node with `fileParallelism: false` (sequential). `dotenv/config` loads env vars. Integration tests require a running PostgreSQL instance (real DB, not mocks).
 
@@ -133,11 +160,12 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 - **v1.0 MVP** (8 phases, 22 plans) — SHIPPED: Crypto, DB/API, security hardening, frontend, password protection, expiration worker, accessibility
 - **v2.0 UI & SEO** (6 phases, 14 plans) — SHIPPED: Visual design, glassmorphism, SEO, theme toggle
 - **v3.0 Production-Ready Delivery** (6 phases, 15 plans) — SHIPPED: ESLint/Prettier, Docker, Playwright E2E, CI/CD, GitHub polish
-- **v4.0 Hybrid Anonymous + Account Model** (7 phases, in progress) — Schema foundation + Better Auth complete (Phase 22); Phase 23 (Secret Dashboard) is next
+- **v4.0 Hybrid Anonymous + Account Model** (10 phases, 38 plans) — SHIPPED: Dashboard, Stripe billing, PostHog analytics, pricing page, SSR SEO pages, email capture, notification emails, rate-limit conversion prompts
+- **v5.0 Product Launch Checklist** (13 phases) — SHIPPED: Brand rename (Torch Secret), marketing home page, Loops email onboarding, Infisical secrets management, Google + GitHub OAuth; Phase 39 complete
 
 ## Key Design Decisions
 
-- **Vanilla TS over React:** 4 pages total. Performance target <1s load on 3G. Smaller bundle = smaller attack surface.
+- **Vanilla TS over React:** 15 pages, no framework overhead. Performance target <1s load on 3G. Smaller bundle = smaller attack surface.
 - **Server-side password hashing:** Argon2id on the server (OWASP-recommended params). HTTPS protects transit.
 - **nanoid over UUID:** 21-char URL-safe IDs. Cryptographically secure, shorter URLs.
 - **PADME padding:** Max 12% overhead vs 100% for power-of-2. Prevents length leakage.
@@ -158,10 +186,13 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 - **Better Auth `getSession()` typing:** Returns `any`; use an `isSession()` type guard to safely narrow the result and avoid `@typescript-eslint/no-unsafe-member-access` throughout the codebase.
 - **Better Auth email verification bypass:** Use `requireEmailVerification: env.NODE_ENV !== 'test'` to skip the email gate in test environments.
 - **Drizzle bug #4147:** After `db:generate`, inspect the generated SQL. If a migration adds both a new column and a FK constraint on that column in the same file, split into two separate migration files (ADD COLUMN first, then ADD CONSTRAINT). Failing to split causes the migration to fail.
+- **Stripe webhook ordering:** `stripeWebhookHandler` with `express.raw()` MUST be mounted before `express.json()` in `app.ts`. Mounting after causes silent signature verification failures ("No signatures found matching the expected signature").
+- **@better-auth/stripe:** Do NOT use the `@better-auth/stripe` billing webhook plugin — 4 open bugs (#2440, #4957, #5976, #4801 as of Feb 2026) break subscription lifecycle. Use raw Stripe SDK with a hand-written webhook handler.
+- **SEO SSR requirement:** `/vs/*`, `/alternatives/*`, `/use/*` pages MUST be Express SSR (`server/src/routes/seo/`). SPA routes are invisible to AI crawlers (GPTBot, ClaudeBot, PerplexityBot) and delay Googlebot indexing by days-to-weeks on a new domain.
 
 ## Zero-Knowledge Invariant (Hard Convention)
 
-**MANDATORY CHECK:** Before writing any code that touches the database schema, application logger, or analytics events, read `.planning/INVARIANTS.md`. This invariant governs all of v4.0 and must not be violated.
+**MANDATORY CHECK:** Before writing any code that touches the database schema, application logger, or analytics events, read `.planning/INVARIANTS.md`. This invariant governs all phases and must not be violated.
 
 ### The Rule
 
@@ -171,13 +202,17 @@ No database record, log line, or analytics event may contain **both** a `userId`
 
 Combining `userId` + `secretId` in any shared record creates a deanonymization attack surface — an attacker with DB or log access could correlate which user created which secret, violating the zero-knowledge security model.
 
-### Current Enforcement (as of Phase 21)
+### Current Enforcement (as of Phase 37.1)
 
-| System                 | Rule                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `secrets.user_id` (DB) | Nullable FK to users.id; `secrets.id` is NEVER stored in users/sessions rows |
-| Pino logger            | Redacts secret IDs from URL paths via regex — no secretId in log output      |
-| PostHog (Phase 25)     | `sanitize_properties` must strip URL fragments before any event fires        |
+| System                 | Rule                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `secrets.user_id` (DB) | Nullable FK to users.id; `secrets.id` is NEVER stored in users/sessions rows    |
+| Pino logger            | Redacts secret IDs from URL paths via regex — no secretId in log output         |
+| PostHog analytics      | `sanitize_properties` strips URL fragments before any event fires               |
+| Stripe webhooks        | Webhook handler uses `stripe_customer_id` only — no userId+secretId co-location |
+| marketing_subscribers  | Standalone table — no FK to users or secrets; no JOIN with secrets permitted    |
+
+_(Excerpt — see `.planning/INVARIANTS.md` for all 10 enforcement points.)_
 
 ### When Adding New Systems
 

@@ -1,8 +1,14 @@
-# SecureShare
+# Torch Secret
+
+## Current Milestone: v6.0 (Planning)
+
+**Status:** v5.0 Product Launch Checklist shipped 2026-03-03. Planning next milestone.
+
+**To start next milestone:** `/gsd:new-milestone`
 
 ## What This Is
 
-SecureShare is a production-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. Optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel from anonymous use — while preserving the zero-knowledge invariant: no log, DB record, or analytics event may contain both a userId and a secretId together. Dark terminal-inspired UI with glassmorphism surfaces, multi-browser E2E tests, containerized deployment, and CI/CD pipeline.
+Torch Secret is a launch-ready, zero-knowledge web application for sharing passwords, API keys, and sensitive text via one-time, self-destructing links. It uses client-side AES-256-GCM encryption so the server never sees plaintext secrets. The product has a full marketing funnel (homepage → `/pricing` → Stripe Pro checkout), 14 server-rendered SEO pages visible to AI crawlers, GDPR-compliant email capture and Loops.so onboarding sequence, Google/GitHub OAuth, Infisical secrets management, and PostHog analytics with conversion funnels. Optional free accounts unlock a secret dashboard, email notifications, extended expiration, and a progressive conversion funnel — while the zero-knowledge invariant is preserved in every DB record, log, and analytics event.
 
 ## Core Value
 
@@ -54,17 +60,23 @@ Users can share sensitive information once, securely, without accounts or comple
 - ✓ Legal documents: Privacy Policy (/privacy) and Terms of Service (/terms) with noindex — v4.0
 - ✓ Server-side X-Robots-Tag noindex for auth and dashboard routes — v4.0
 - ✓ Docker build CI job + package.json version 4.0.0 — v4.0
+- ✓ Rebrand from SecureShare → Torch Secret across all user-facing surfaces, SEO assets, and developer docs — v5.0
+- ✓ Marketing homepage at `/` with hero, ZK proof points, How It Works, email capture; create-secret form at `/create` — v5.0
+- ✓ Pricing page at `/pricing` with Free/Pro comparison, billing toggle, FAQ, FAQPage JSON-LD — v5.0
+- ✓ Stripe Pro billing — checkout, webhooks, customer portal, 30-day expiration unlock, tier enforcement — v5.0
+- ✓ 14 server-rendered SEO pages (`/vs/*`, `/alternatives/*`, `/use/*`) with JSON-LD — visible to AI crawlers — v5.0
+- ✓ GDPR-compliant email capture with double opt-in, Resend Audiences, and one-click unsubscribe — v5.0
+- ✓ Loops.so 3-email onboarding sequence: welcome (transactional) + day-3 features + day-7 upgrade (marketing consent gated) — v5.0
+- ✓ Google + GitHub OAuth wired through Infisical secrets management across dev/staging/prod — v5.0
+- ✓ PostHog event enrichment: checkout_initiated, subscription_activated, dashboard_viewed, extended secret_created and identifyUser — v5.0
+- ✓ Pre-launch security hardening: Argon2id tight limiter, PostgreSQL pool hardening, Stripe webhook + ZK invariant tests — v5.0
+- ✓ CHANGELOG back-filled (v4.0 + v5.0), CONTRIBUTING dual-path (Infisical/env), SECURITY.md updated, README screenshots added — v5.0
+- ✓ Feedback links on confirmation and post-reveal pages (Tally.so, new tab) — v5.0
+- ✓ verify-checkout race window closed (idempotent activatePro) + deactivatePro Loops sync on cancellation — v5.0
 
 ### Active
 
-<!-- v5.0 Pro Tier + Advanced Features -->
-
-- [ ] Stripe subscription billing at $7/month (Pro tier)
-- [ ] Pro users get extended expiration up to 90 days
-- [ ] Pro users receive webhook notifications on secret view (POST to user-configured URL)
-- [ ] Pro user can upload files up to 25MB, encrypted client-side before upload
-- [ ] File uploads stored via Cloudflare R2 with presigned PUT URL flow
-- [ ] 6-word Diceware passphrases (higher entropy: ~77 bits) for Pro users
+<!-- v6.0 requirements TBD — run /gsd:new-milestone to define -->
 
 ### Out of Scope
 
@@ -79,25 +91,31 @@ Users can share sensitive information once, securely, without accounts or comple
 - Claiming anonymous secrets on account creation — privacy risk: linking browser session to user identity
 - Real-time push notifications — email-on-view is sufficient; websocket notifications not warranted
 - Custom domains — Enterprise tier; not planned
-- "Notify if expires unviewed" email option — ADV feature deferred with Pro tier
+- "Notify if expires unviewed" email option — deferred to future Pro features
+- Webhook notifications on secret view — v6.0+ Pro feature
+- File uploads (25MB, Cloudflare R2) — v6.0+ Pro feature
+- 6-word Diceware passphrases — v6.0+ Pro feature
+- Extended expiration beyond 30 days (90-day option) — v6.0+ Pro feature
+- Team tier — launch with Free + Pro only; add Team when organic team patterns emerge
 
 ## Context
 
-Shipped v4.0 with ~21,775 LOC TypeScript across 30 phases, 89 plans total (22 in v1.0 + 14 in v2.0 + 15 in v3.0 + 38 in v4.0).
+Shipped v5.0 with ~30,287 LOC TypeScript across 49 total phases, 152 plans total (22 in v1.0 + 14 in v2.0 + 15 in v3.0 + 38 in v4.0 + 63 in v5.0). 385 tests passing (1 todo).
 
-Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Better Auth 1.x, Resend, PostHog.
+Tech stack: Node.js 24, Express 5, Vite 7, Tailwind CSS 4, Drizzle ORM, PostgreSQL 17, Better Auth 1.x, Stripe, Loops.so, Resend, PostHog, Infisical.
 Crypto: Web Crypto API (AES-256-GCM), PADME padding, Argon2id password hashing, EFF Diceware, rejection-sampling.
-Tests: 163+ Vitest unit/integration tests, Playwright E2E across Chromium, Firefox, WebKit.
-CI/CD: GitHub Actions lint → test → E2E → docker-build → auto-deploy to Render.com.
-Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphism surfaces.
+Tests: 385 Vitest unit/integration tests + Playwright E2E across Chromium, Firefox, WebKit.
+CI/CD: GitHub Actions lint → test (Infisical) → E2E → docker-build → auto-deploy to Render.com (checksPass gate).
+Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphism surfaces, JetBrains Mono.
+Secrets: Infisical CLI injection for dev/staging/prod — no .env file in dev.
 
-**Known tech debt (post-v4.0):**
-- Placeholder domain `secureshare.example.com` in SEO assets (needs production domain)
-- Lucide ESM workaround via Vite resolve.alias (upstream bug)
-- CI test/e2e jobs missing BETTER_AUTH_SECRET et al. (server integration tests use env vars; recommended fix: add placeholder values to ci.yml, same as docker-compose.yml pattern)
-- /privacy and /terms absent from NOINDEX_PREFIXES in app.ts (X-Robots-Tag not sent; meta noindex is set client-side; low severity)
-- schema.ts inline zero-knowledge comment lists 3 enforcement points; INVARIANTS.md canonical has 6 (documentation staleness only)
-- PostHog live transmission requires VITE_POSTHOG_KEY (human verification pending for live env)
+**Known tech debt (post-v5.0):**
+- `BETTER_AUTH_TRUSTED_ORIGINS` in .env.example + render.yaml has no consumer in env.ts Zod schema — silently ignored at runtime (OAuth works via APP_URL)
+- Three post-action CTAs call `navigate('/')` routing to marketing homepage instead of `/create` (confirmation.ts:291, dashboard.ts:868, reveal.ts:409) — UX friction
+- `notification.service.test.ts:58` — 1 `test.todo` (logger.error migration); ZK invariant tests already cover the invariant
+- ROADMAP.md Phase 40 plan checkboxes show `[ ]` — documentation only, 9 commits confirm all plans shipped
+- STRIPE_SECRET_KEY is sk_test_ in Infisical prod pre-launch — requires manual swap to sk_live_ before going public (documented in 37.2-03-SUMMARY launch-day checklist)
+- Lucide ESM workaround via Vite resolve.alias (upstream bug — ongoing)
 
 ## Constraints
 
@@ -159,6 +177,15 @@ Design system: OKLCH semantic color tokens, dual light/dark themes, glassmorphis
 | Protection panel as 4-tab tablist/tab/tabpanel | ARIA pattern with arrow-key navigation; combined password field; clear mode separation | ✓ Good |
 | EFF Diceware rejection sampling cutoff 4294964736 | Eliminates modulo bias for n=7776; rejection probability ~0.0000006 per word | ✓ Good |
 | docker-build CI job uses needs: [lint] (parallel) | Runs parallel with test/e2e after lint; does not extend critical path | ✓ Good |
+| Express SSR for /vs/*, /alternatives/*, /use/* (not SPA) | AI crawlers (GPTBot, ClaudeBot) don't execute JS; SSR required for immediate indexing on new domains | ✓ Good |
+| Raw Stripe SDK with handwritten webhook handler (no @better-auth/stripe) | 4 open bugs in the plugin (#2440, #4957, #5976, #4801 as of Feb 2026) break subscription lifecycle | ✓ Good |
+| Loops.so for email onboarding (over Resend sequences) | Visual loop builder, GDPR filter nodes evaluated at send time — consent changes before day-7 take effect | ✓ Good |
+| Infisical CLI injection for secrets (no .env in dev) | Single source of truth for secrets across dev/staging/prod; Render Secret Sync auto-propagates prod | ✓ Good |
+| Two separate GitHub OAuth apps for dev and prod | GitHub: single redirect URI per app constraint — dev and prod apps registered separately | ✓ Good |
+| activatePro() + deactivatePro() receive stripe_customer_id only | ZK constraint: webhook handler never has userId in scope alongside customer data | ✓ Good |
+| Dev-only OAuth bounce middleware (localhost:3000 → APP_URL) | Fixes state_mismatch: OAuth redirects to Express host, bypassing Vite proxy; bounce restores correct origin | ✓ Good |
+| Non-async databaseHooks.after handler (void+.catch pattern) | Better Auth's after hook: async without await triggers @typescript-eslint/require-await; fire-and-forget avoids it | ✓ Good |
+| activatePro() idempotent — called from both verify-checkout and webhook | Eliminates race window where user sees success before webhook arrives; DB UPDATE WHERE is a no-op if already Pro | ✓ Good |
 
 ---
-*Last updated: 2026-02-22 after v4.0 milestone*
+*Last updated: 2026-03-03 after v5.0 milestone*

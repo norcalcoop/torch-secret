@@ -1,4 +1,4 @@
-# Roadmap: SecureShare
+# Roadmap: Torch Secret
 
 ## Milestones
 
@@ -6,6 +6,7 @@
 - ✅ **v2.0 Developer-Grade UI & SEO** — Phases 9-14 (shipped 2026-02-16)
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
 - ✅ **v4.0 Hybrid Anonymous + Account Model** — Phases 21-30 (shipped 2026-02-22)
+- ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 
 ## Phases
 
@@ -71,6 +72,33 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 
 </details>
 
+<details>
+<summary>✅ v5.0 Product Launch Checklist (Phases 31-45) — SHIPPED 2026-03-03</summary>
+
+- [x] Phase 31: Rebrand + Tech Debt (4/4 plans) — completed 2026-02-22
+- [x] Phase 32: Marketing Homepage + /create Split (4/4 plans) — completed 2026-02-23
+- [x] Phase 33: Pricing Page (3/3 plans) — completed 2026-02-23
+- [x] Phase 34: Stripe Pro Billing (5/5 plans) — completed 2026-02-26
+- [x] Phase 34.1: Passphrase/Password Tier Enforcement (2/2 plans) — completed 2026-02-26
+- [x] Phase 35: SEO Content Pages (Express SSR) (4/4 plans) — completed 2026-02-26
+- [x] Phase 36: Email Capture (4/4 plans) — completed 2026-02-26
+- [x] Phase 37: Email Onboarding Sequence (3/3 plans) — completed 2026-02-27
+- [x] Phase 37.1: PostHog Free Tier Enrichment (3/3 plans) — completed 2026-02-27
+- [x] Phase 37.2: Infisical Free Tier Integration (4/4 plans) — completed 2026-02-28
+- [x] Phase 37.3: Free Tier Integrations (6/6 plans) — completed 2026-02-28
+- [x] Phase 38: Feedback Links (2/2 plans) — completed 2026-03-01
+- [x] Phase 39: Google + GitHub OAuth (3/3 plans) — completed 2026-03-01
+- [x] Phase 40: Security Hardening (5/5 plans) — completed 2026-03-02
+- [x] Phase 41: Documentation Update (4/4 plans) — completed 2026-03-02
+- [x] Phase 42: Resend Account Migration (3/3 plans) — completed 2026-03-02
+- [x] Phase 43: Phase 37 Gap Closure (1/1 plan) — completed 2026-03-02
+- [x] Phase 44: Phase 37.1 Gap Closure (1/1 plan) — completed 2026-03-03
+- [x] Phase 45: Billing Service Gap Closure (2/2 plans) — completed 2026-03-03
+
+See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full phase details.
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -105,3 +133,28 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 | 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
 | 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
 | 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
+| 31. Rebrand + Tech Debt | v5.0 | 4/4 | Complete | 2026-02-22 |
+| 32. Marketing Homepage + /create Split | v5.0 | 4/4 | Complete | 2026-02-23 |
+| 33. Pricing Page | v5.0 | 3/3 | Complete | 2026-02-23 |
+| 34. Stripe Pro Billing | v5.0 | 5/5 | Complete | 2026-02-26 |
+| 34.1. Passphrase/Password Tier Enforcement | v5.0 | 2/2 | Complete | 2026-02-26 |
+| 35. SEO Content Pages (Express SSR) | v5.0 | 4/4 | Complete | 2026-02-26 |
+| 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
+| 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
+| 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
+| 37.2. Infisical Free Tier Integration | v5.0 | 4/4 | Complete | 2026-02-28 |
+| 37.3. Free Tier Integrations | v5.0 | 6/6 | Complete | 2026-02-28 |
+| 38. Feedback Links | v5.0 | 2/2 | Complete | 2026-03-01 |
+| 39. Google + GitHub OAuth | v5.0 | 3/3 | Complete | 2026-03-01 |
+| 40. Security Hardening | v5.0 | 5/5 | Complete | 2026-03-02 |
+| 41. Documentation Update | v5.0 | 4/4 | Complete | 2026-03-02 |
+| 42. Resend Account Migration | v5.0 | 3/3 | Complete | 2026-03-02 |
+| 43. Phase 37 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-02 |
+| 44. Phase 37.1 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-03 |
+| 45. Billing Service Gap Closure | v5.0 | 2/2 | Complete | 2026-03-03 |
+
+_See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
+
+---
+
+<!-- v6.0 phases will be added here after /gsd:new-milestone -->

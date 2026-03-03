@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-03-02
+
+### Added
+
+- Google OAuth and GitHub OAuth sign-in (Better Auth social providers; two separate GitHub OAuth Apps for dev and prod environments)
+- Marketing homepage at `/` with hero section, zero-knowledge proof points, use-case sections, and GDPR-compliant email capture form
+- Pricing page at `/pricing` with Free vs Pro tier cards, monthly/annual billing toggle, FAQ accordion, and FAQPage JSON-LD in `<head>`
+- SEO content pages (Express SSR): `/vs/*`, `/alternatives/*`, `/use/*` — server-rendered so content is visible to AI crawlers and Googlebot without JavaScript execution
+- GDPR-compliant email capture: homepage form with explicit consent checkbox, double opt-in confirmation, Resend Audiences sync, one-click unsubscribe
+- Loops.so email onboarding sequence: welcome email on registration, day-3 key features email, day-7 upgrade prompt (marketing consent gated)
+- PostHog enrichment: `checkout_initiated`, `subscription_activated`, `dashboard_viewed` events; launch dashboard, conversion funnels, and user cohorts configured in PostHog Cloud
+- Security hardening: Argon2id concurrency cap via p-limit (max 4 concurrent), tighter rate limiting on password-verify endpoint (5 req/min), PostgreSQL pool hardening (max 10 connections, statement timeout 10s), payload size cap enforcement (100KB)
+- Infisical secrets management: all secrets stored in Infisical Cloud; no `.env` file required for team development
+- Supply chain security scanning via Socket.dev on every pull request
+
+### Changed
+
+- App renamed from SecureShare to Torch Secret across all user-facing surfaces, canonical URLs, structured data, and source code
+- All canonical URLs, sitemap entries, JSON-LD `@id`/`url` fields, and OG image URLs updated to `torchsecret.com`
+- Create-secret form moved from `/` to `/create`; `/` now serves the marketing homepage
+- `.env.example` stripped to keys-only reference; all values managed via Infisical
+- Package version bumped to 5.0.0
+
+## [4.0.0] - 2026-02-22
+
+### Added
+
+- User accounts with email/password registration, login, session management, and email verification (Better Auth 1.x)
+- Secret dashboard: authenticated users can view, track, and manage all their created secrets with expiration status
+- EFF Diceware passphrase generator for secret protection (client-side generation, word list bundled, offline-capable)
+- Optional password or passphrase protection for secrets (Argon2id server-side hashing, OWASP-recommended parameters)
+- Passphrase/password tier enforcement: anonymous users blocked from all protection options; free users limited to generated passphrases; Pro users unlock custom passwords
+- Privacy-safe PostHog analytics with URL fragment stripping before every event — no plaintext secrets or keys can appear in analytics data
+- Email notification: optional secret-viewed alert sent to the creator (zero-knowledge safe — no secretId in email body)
+- Stripe Pro billing: subscription checkout, Customer Portal, webhook lifecycle handler (`customer.subscription.created/deleted`), 30-day expiration unlock for Pro subscribers
+- Rate-limit conversion prompts: anonymous users see account upgrade CTA after hitting rate limits
+- Legal pages: `/privacy` and `/terms` with server-side `noindex` header enforcement
+- Feedback links on confirmation and reveal pages (Tally.so embedded link)
+
+### Changed
+
+- Package version bumped to 4.0.0
+
 ## [3.0.0] - 2026-02-18
 
 ### Added
@@ -71,7 +114,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accessibility foundations: skip links, aria-live route announcer, focus management
 - Vanilla TypeScript SPA with Vite and Tailwind CSS
 
-[Unreleased]: https://github.com/norcalcoop/secureshare/compare/v3.0...HEAD
-[3.0.0]: https://github.com/norcalcoop/secureshare/compare/v2.0...v3.0
-[2.0.0]: https://github.com/norcalcoop/secureshare/compare/v1.0...v2.0
-[1.0.0]: https://github.com/norcalcoop/secureshare/releases/tag/v1.0
+[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.0...HEAD
+[5.0.0]: https://github.com/norcalcoop/torch-secret/compare/v4.0...v5.0
+[4.0.0]: https://github.com/norcalcoop/torch-secret/compare/v3.0...v4.0
+[3.0.0]: https://github.com/norcalcoop/torch-secret/compare/v2.0...v3.0
+[2.0.0]: https://github.com/norcalcoop/torch-secret/compare/v1.0...v2.0
+[1.0.0]: https://github.com/norcalcoop/torch-secret/releases/tag/v1.0

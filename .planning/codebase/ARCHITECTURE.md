@@ -1,399 +1,275 @@
 # Architecture
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2026-03-01
 
 ## Pattern Overview
 
-**Overall:** Zero-Knowledge Encryption SPA with Untrusted Server Storage + Optional User Accounts (Phase 22)
+**Overall:** Layered architecture with zero-knowledge client-server trust boundary. The application implements strict separation between encryption logic (client-only), storage (server-only), and shared contracts (Zod schemas).
 
 **Key Characteristics:**
-- **Trust Boundary 1:** Browser vs. Server — Server never touches plaintext; only stores encrypted blobs
-- **Trust Boundary 2:** Server vs. Database — PostgreSQL stores only ciphertext + metadata; encryption keys exist only in URL fragments (`#base64key`)
-- **Atomic Destruction:** Secrets self-destruct on first retrieval (three-step transaction: SELECT → ZERO → DELETE)
-- **No Key Reuse:** Every encryption generates fresh 256-bit key + fresh 96-bit IV
-- **Zero-Knowledge Invariant:** No database record, log line, or analytics event may contain BOTH `userId` AND `secretId` together (enforced across DB, logger, and analytics)
-- **Authentication Optional:** Users can create/share secrets anonymously (userId NULL); optional accounts for dashboard history (Phase 22)
+- **Zero-knowledge encryption model:** The server never touches plaintext. Encryption keys live exclusively in the URL fragment (`#base64key`) and never reach the server per HTTP spec (RFC 3986).
+- **Atomic three-step transactions:** Secret retrieval uses SELECT → zero ciphertext → DELETE transactions to prevent data remanence and ensure one-time consumption.
+- **Defensive error responses:** All secret-unavailable cases (not found, expired, viewed, wrong password) return identical error messages to prevent enumeration attacks.
+- **Explicit separation of concerns:** Crypto module (`client/src/crypto/`) is the sole importer of Web Crypto API. Services (`server/src/services/`) handle business logic independent of routes.
 
 ## Layers
 
 **Presentation Layer (Client):**
-- Purpose: User interface rendered in browser via SPA router; handles encryption/decryption entirely client-side
+- Purpose: User-facing SPA with zero-knowledge frontend. Handles encryption/decryption locally in the browser. Never sends plaintext or keys to the server.
 - Location: `client/src/`
-- Contains: Pages (create, reveal, confirmation, error, login, register, dashboard, reset-password, forgot-password), components (layout, copy-button, share-button, toast, theme-toggle, loading-spinner, expiration-select, terminal-block, icons), router (History API with dynamic imports), theme system (light/dark/system)
-- Depends on: Web Crypto API (native), Lucide icons, Tailwind CSS, BetterAuth client
-- Used by: End users via browser
+- Contains: Page renderers (`pages/`), UI components (`components/`), crypto module (`crypto/`), analytics (`analytics/`), API client (`api/`), theme system (`theme.ts`), router (`router.ts`)
+- Depends on: Shared API types (`shared/types/api.ts`), Web Crypto API (native), PostHog SDK (analytics)
+- Used by: End users via HTTP(S)
 
-**Encryption Module (Client):**
-- Purpose: Performs all AES-256-GCM encryption/decryption with crypto.subtle; NEVER exported to pages except through `crypto/index.ts` barrel
-- Location: `client/src/crypto/` (encrypt.ts, decrypt.ts, keys.ts, padding.ts, encoding.ts, constants.ts)
-- Contains: Key generation, PADME padding, base64 encoding, AES-GCM cipher operations
-- Depends on: Web Crypto API only (no third-party crypto)
-- Used by: Pages (create.ts, reveal.ts)
+**Application Layer (Client):**
+- Purpose: SPA routing, page lifecycle, theme management, and analytics event capture.
+- Location: `client/src/router.ts`, `client/src/app.ts`, `client/src/theme.ts`, `client/src/analytics/`
+- Contains: History API router, SEO meta management, route-to-page-renderer mapping, localStorage-persisted theme state
+- Depends on: Page modules (lazy-loaded), crypto module (for encryption/decryption), API client (for remote calls)
+- Used by: Pages at render time
 
-**API Client Layer (Client):**
-- Purpose: Typed fetch wrapper for HTTP calls; never caches GET requests (one-shot operations)
-- Location: `client/src/api/client.ts`
-- Contains: createSecret(), getSecret(), getSecretMeta(), verifySecretPassword(), ApiError class
-- Depends on: Fetch API, shared/types/api.ts for type contracts
-- Used by: Pages (create.ts, reveal.ts, login.ts, register.ts, dashboard.ts, etc.)
+**API Contract Layer (Shared):**
+- Purpose: Zod schemas + TypeScript interfaces that enforce request/response shapes across client and server.
+- Location: `shared/types/api.ts`
+- Contains: CreateSecretSchema, VerifySecretSchema, MetaResponse, DashboardSecretItem, MeResponse, BillingCheckoutResponse, etc.
+- Depends on: Zod 4.x
+- Used by: Routes (server validation), API client (TypeScript typing)
 
-**Routing Layer (Client):**
-- Purpose: History API router with per-request SEO metadata management
-- Location: `client/src/router.ts`
-- Contains: navigate(), initRouter(), updatePageMeta() (manages title, description, canonical, robots, OG/Twitter tags), handleRoute(), focusPageHeading()
-- Depends on: Native History API, DOM APIs
-- Used by: app.ts (initialization), all pages (navigation)
-
-**Security Middleware (Server):**
-- Purpose: Enforce cryptographic and HTTP-level security guarantees
-- Location: `server/src/middleware/`
-- Contains:
-  - `security.ts`: CSP nonce generation, Helmet (HSTS, referrer-policy, cross-origin isolation), HTTPS redirect
-  - `rate-limit.ts`: Redis-backed (with MemoryStore fallback) rate limiters for POST /api/secrets and POST /api/secrets/:id/verify
-  - `logger.ts`: Pino HTTP logger with secret ID redaction (regex: `/\/api\/secrets\/[A-Za-z0-9_-]+/g` → `[REDACTED]`)
-  - `validate.ts`: Zod body/param validation factories
-  - `error-handler.ts`: Global error handler (must be last middleware)
-- Depends on: Express, Helmet, ioredis, Pino
-- Used by: Express app (app.ts middleware chain)
-
-**API Routes Layer (Server):**
-- Purpose: HTTP endpoint handlers for secret CRUD, metadata checks, password verification, authentication, user info
+**API Layer (Server):**
+- Purpose: HTTP endpoint definitions. Each route file maps HTTP verbs + paths to handlers. Validates input, calls services, returns JSON.
 - Location: `server/src/routes/`
-- Contains:
-  - `secrets.ts`: POST / (create), GET /:id (retrieve+destroy), GET /:id/meta (non-destructive metadata), POST /:id/verify (password verify+retrieve)
-  - `health.ts`: GET /api/health (liveness probe)
-  - `me.ts`: GET /api/me (returns authenticated user info, requires auth session)
-- Route Order Critical: secrets router matches routes top-down: POST / → GET /:id/meta → POST /:id/verify → GET /:id
-- Depends on: Express, services layer, shared types
-- Used by: Express app (app.ts), browser client
+- Contains: `secrets.ts` (create, retrieve, verify, metadata), `dashboard.ts` (user secret list), `billing.ts` (Stripe checkout/portal), `subscribers.ts` (GDPR email capture), `me.ts` (current user), `health.ts` (liveness), `seo/` (server-rendered comparison pages)
+- Depends on: Middleware (validation, auth, rate-limit), services (business logic), Zod schemas (validation)
+- Used by: Express app routing
 
-**Service Layer (Server):**
-- Purpose: Business logic isolated from HTTP concerns
+**Middleware Layer (Server):**
+- Purpose: Cross-cutting concerns applied to all or filtered routes.
+- Location: `server/src/middleware/`
+- Contains: Security (CSP nonce, Helmet, HTTPS redirect), rate-limit (Redis-backed or in-memory per-route limiters), validation (Zod request body/params), logger (Pino with secret ID redaction), optional/required auth (Better Auth session), error-handler (global error catching)
+- Depends on: Express, Helmet, Pino, Redis/ioredis, Zod, Better Auth
+- Used by: `app.ts` middleware chain
+
+**Business Logic Layer (Server):**
+- Purpose: Core operations independent of HTTP. Handles secret lifecycle, password hashing, email sending, billing, onboarding.
 - Location: `server/src/services/`
-- Contains:
-  - `secrets.service.ts`: createSecret(), retrieveAndDestroy() [3-step atomic transaction], getSecretMeta(), verifyAndRetrieve()
-  - `password.service.ts`: hashPassword() (Argon2id with OWASP params), verifyPassword()
-  - `email.service.ts`: Resend email client for verification and password reset
-- Depends on: Drizzle ORM, db/schema.ts, argon2, resend
-- Used by: Routes (secrets.ts), auth (auth.ts), background workers
+- Contains: `secrets.service.ts` (createSecret, retrieveAndDestroy, verifyAndRetrieve, getSecretMeta), `password.service.ts` (Argon2id hashing), `billing.service.ts` (Stripe customer setup, tier activation), `notification.service.ts` (secret-viewed emails), `onboarding.service.ts` (Loops email sequences), `subscribers.service.ts` (GDPR marketing list), `email.ts` (Resend transactional sender)
+- Depends on: Database layer, external SDKs (Stripe, Resend, Loops), logger
+- Used by: Routes, workers
 
-**Database Layer (Server):**
-- Purpose: PostgreSQL schema definition and connection management
+**Data Access Layer (Server):**
+- Purpose: Database abstraction. Schema definition + connection pooling. No raw SQL; all queries via Drizzle ORM.
 - Location: `server/src/db/`
-- Contains:
-  - `schema.ts`: 5 tables (secrets, users, sessions, accounts, verification) with indices and type definitions
-  - `connection.ts`: PostgreSQL pool + Drizzle ORM instance
-  - `migrate.ts`: Migration runner
-- Secrets Table Structure:
-  - `id` (text PK): 21-char nanoid
-  - `ciphertext` (text): Base64-encoded blob (IV 12 bytes + encrypted payload + auth tag 16 bytes)
-  - `expiresAt` (timestamp): Expiration deadline
-  - `createdAt` (timestamp): Creation timestamp
-  - `passwordHash` (text, nullable): Argon2id hash for optional password protection
-  - `passwordAttempts` (int): Counter for auto-destroy after 3 failures
-  - `userId` (text FK, nullable): Reference to users.id; NULL means anonymous secret; Drizzle uses `onDelete: 'set null'` to preserve links when user deleted
-  - Index: `secrets_user_id_created_at_idx` (partial, WHERE userId IS NOT NULL) for dashboard queries
-- Users/Sessions/Accounts/Verification Tables: BetterAuth schema for authentication (Phase 22)
-- Depends on: PostgreSQL 17+, node-postgres, drizzle-orm
-- Used by: Service layer, expiration worker, authentication layer
+- Contains: `schema.ts` (table definitions: users, sessions, accounts, verification, secrets, marketing_subscribers), `connection.ts` (PostgreSQL pool + Drizzle instance), `migrate.ts` (migration runner)
+- Depends on: Drizzle ORM, PostgreSQL driver (pg), nanoid (ID generation)
+- Used by: Services (for all data access)
+
+**Background Job Layer (Server):**
+- Purpose: Scheduled tasks run outside the HTTP request/response cycle.
+- Location: `server/src/workers/`
+- Contains: `expiration-worker.ts` (node-cron job that hard-deletes expired anonymous secrets every 5 minutes)
+- Depends on: Database layer, logger, node-cron
+- Used by: Server startup (started by `server.ts`)
+
+**Configuration Layer (Server):**
+- Purpose: Environment validation and SDK singletons.
+- Location: `server/src/config/`
+- Contains: `env.ts` (Zod-validated environment variables), `stripe.ts` (Stripe SDK singleton), `loops.ts` (Loops email SDK singleton)
+- Depends on: Zod, environment variables
+- Used by: All layers that need config or external SDKs
 
 **Authentication Layer (Server):**
-- Purpose: Session-based authentication with email/password, OAuth2 (Google/GitHub), email verification, password reset
+- Purpose: User identity and session management via Better Auth 1.x.
 - Location: `server/src/auth.ts`
-- Contains: BetterAuth instance with Drizzle adapter, email handlers (Resend), session management
-- Features:
-  - Email/password signup and signin
-  - OAuth2 providers (Google, GitHub)
-  - Email verification (required in production, bypassed in test)
-  - Password reset via email link
-  - Session tokens stored in HTTPOnly cookies
-- Depends on: better-auth, resend, db schema (users, sessions, accounts, verification)
-- Used by: Routes (/api/auth/*), me.ts endpoint, BetterAuth middleware in app.ts
-
-**Background Worker (Server):**
-- Purpose: Periodic cleanup of expired secrets
-- Location: `server/src/workers/expiration-worker.ts`
-- Contains: cleanExpiredSecrets() (bulk zero-then-delete), cron schedule (every 5 minutes), start/stop control
-- Depends on: node-cron, Drizzle ORM, db connection, logger
-- Used by: server.ts (startup/shutdown)
-
-**Application Factory (Server):**
-- Purpose: Express app assembly with middleware ordered for correctness
-- Location: `server/src/app.ts`
-- Middleware Order (CRITICAL):
-  1. trust proxy (enables req.ip correction behind reverse proxy)
-  2. httpsRedirect (HTTP→HTTPS 301 when FORCE_HTTPS=true)
-  3. cspNonceMiddleware (generates per-request 32-byte hex nonce)
-  4. helmet (CSP with nonce, HSTS, referrer-policy, cross-origin isolation)
-  5. httpLogger (Pino with secret ID redaction)
-  6. auth handler (Better Auth — must be before express.json() to avoid body-stream conflict)
-  7. express.json (100kb size limit)
-  8. routes (health, secrets, me, catch-all /api 404)
-  9. static assets + SPA catch-all (when client/dist exists — injects CSP nonce into HTML template)
-  10. errorHandler (must be last)
-- Depends on: Express, all middleware + routes
-- Used by: server.ts
-
-**HTTP Server (Server):**
-- Purpose: Startup, graceful shutdown, logging
-- Location: `server/src/server.ts`
-- Contains: buildApp() call, HTTP listener, signal handlers (SIGTERM/SIGINT), pool.end()
-- Depends on: app.ts, logger, db pool
-- Used by: npm scripts (dev:server)
+- Contains: Better Auth config with email/password, Google OAuth, GitHub OAuth, email verification, session management
+- Depends on: Better Auth SDK, database layer
+- Used by: Middleware (session validation), routes (user context)
 
 ## Data Flow
 
-**Create Anonymous Secret (Browser → Server → DB):**
+**Anonymous Secret Creation Flow:**
 
-1. User enters plaintext into `create.ts` textarea (no login required)
-2. `create.ts` calls `encrypt(plaintext)` from `crypto/encrypt.ts`:
-   - UTF-8 encode plaintext
-   - PADME-pad to prevent length leakage
-   - Generate fresh 256-bit AES-GCM key
-   - Generate fresh 96-bit IV
-   - Encrypt with crypto.subtle.encrypt
-   - Prepend IV to ciphertext: [IV 12 bytes][encrypted payload][auth tag 16 bytes]
-   - Base64 encode result
-   - Return: { payload: { ciphertext }, key, keyBase64Url }
-3. `create.ts` calls `createSecret(ciphertext, expiresIn, password?)` from `api/client.ts`:
-   - POST /api/secrets with JSON: { ciphertext, expiresIn, password? }
-   - Server receives request through middleware chain:
-     - Rate limiter checks IP limit (10 req/hour, or 1000 in E2E tests)
-     - validateBody ensures Zod schema match
-   - `secrets.ts` route calls `secrets.service.createSecret(ciphertext, expiresIn, password)`
-   - Service hashes password (if provided) via `password.service.hashPassword()`
-   - Service DOES NOT capture userId; anonymous secrets have userId=NULL
-   - Drizzle INSERT with nanoid-generated ID
-   - Returns: { id, expiresAt }
-4. API response contains ID only; key remains in browser memory + URL fragment
-5. `create.ts` calls `renderConfirmationPage(container, shareUrl, expiresAt)` from `confirmation.ts`:
-   - `shareUrl` = `${window.location.origin}/secret/${id}#${keyBase64Url}`
-   - Key in fragment never sent to server per HTTP spec
-6. Confirmation page displays shareable URL, copy button, native share button, expiration info
+1. User enters plaintext on `/create` page
+2. Client crypto module (`client/src/crypto/encrypt.ts`) generates random 256-bit key and 96-bit IV
+3. Web Crypto API (AES-256-GCM) encrypts plaintext with key + IV → ciphertext
+4. IV + ciphertext + auth tag are base64-encoded together → `payload.ciphertext`
+5. API client (`client/src/api/client.ts`) POSTs ciphertext + expiresIn to `/api/secrets`
+6. Server route (`server/src/routes/secrets.ts`) validates body (Zod CreateSecretSchema)
+7. Rate limiter middleware checks anonymous hourly/daily quotas (3/hr, 10/day)
+8. Route handler calls `createSecret()` service
+9. Service inserts row into `secrets` table with encrypted ciphertext, null userId, expiresAt
+10. Database returns nanoid ID
+11. Route responds with { id, expiresAt }
+12. Client constructs shareable URL: `https://torchsecret.app/secret/{id}#base64urlkey`
+13. Key stays in fragment; URL is shared
+14. **Key never reaches server** (fragment not sent per RFC 3986)
 
-**Create Authenticated Secret (With User Account):**
+**Secret Retrieval Flow (No Password):**
 
-1. User logs in via `/login` page (BetterAuth email/password or OAuth2)
-2. Session token stored in HTTPOnly cookie
-3. User accesses `/create` page (same UI as anonymous)
-4. When posting to /api/secrets, Express middleware automatically populates `req.user` from BetterAuth session
-5. Service layer can optionally capture userId in secrets table (for dashboard history in Phase 24)
-6. Secret remains queryable on user's /dashboard for account holders
+1. Recipient visits URL `/secret/{id}#base64urlkey`
+2. Client `reveal.ts` page extracts ID from path, key from fragment
+3. Client calls `/api/secrets/{id}` GET endpoint
+4. Server route enters transaction: SELECT secret WHERE id = {id}
+5. If not found, expired, already viewed, or has password → return standard 404/403 (SECR-07 anti-enumeration)
+6. If found and active: UPDATE secret SET ciphertext = '' (zero with spaces), then DELETE row (anonymous) or UPDATE status='viewed' (user-owned)
+7. Route returns { ciphertext, expiresAt }
+8. **Ciphertext is already zeroed on server; client never processes it again**
+9. Client receives ciphertext, imports key from fragment, calls `decrypt(ciphertext, key)` in crypto module
+10. Web Crypto API decrypts → plaintext
+11. Page displays plaintext in terminal-like block
 
-**Retrieve Secret (Browser → Server → Browser → DB delete):**
+**Password-Protected Secret Flow:**
 
-1. Recipient opens shareable URL `/secret/{id}#key`
-2. `reveal.ts` extracts key from `window.location.hash.slice(1)` IMMEDIATELY
-3. `reveal.ts` strips fragment via `history.replaceState()` — key exists only in memory
-4. `reveal.ts` shows loading spinner and calls `getSecretMeta(id)` from `api/client.ts`:
-   - GET /api/secrets/{id}/meta (non-destructive)
-   - Service queries database: returns { requiresPassword, passwordAttemptsRemaining }
-5. If password required: `reveal.ts` renders password entry form
-   - On submit: calls `verifySecretPassword(id, password)` from `api/client.ts`
-   - POST /api/secrets/{id}/verify with { password }
-   - Service queries secret, compares hash, increments passwordAttempts, returns ciphertext if valid
-   - If invalid: throws ApiError, decrements attempts, shows "N attempts remaining"
-   - If 3 attempts exceeded: Service returns null (triggers 404 response)
-6. If no password or password verified: User clicks "Reveal Secret" button
-   - `reveal.ts` calls `getSecret(id)` from `api/client.ts`
-   - GET /api/secrets/{id}
-   - Service executes 3-step atomic transaction:
-     - SELECT secret by id
-     - ZERO ciphertext (replace with '0' repeated) for data remanence mitigation
-     - DELETE the row
-     - Return original secret object (with real ciphertext from step 1)
-7. `reveal.ts` receives ciphertext and calls `decrypt(ciphertext, keyBase64Url)` from `crypto/decrypt.ts`:
-   - Base64 decode ciphertext
-   - Split: IV (first 12 bytes) + encrypted payload + auth tag (remaining)
-   - Import key from keyBase64Url
-   - Decrypt with crypto.subtle.decrypt
-   - Unpad plaintext via PADME unpad logic
-   - Return plaintext string
-8. `reveal.ts` displays plaintext in terminal-block component
-9. Secret is now destroyed on server; re-accessing URL returns 404 (identical response for expired/viewed/nonexistent)
+1. Same as anonymous creation, but with password parameter in POST body
+2. `createSecret()` service calls `hashPassword(password)` (Argon2id, OWASP params)
+3. Hash stored in `passwordHash` column
+4. Recipient visits URL, client checks `/api/secrets/{id}/meta` endpoint first
+5. Meta route returns { requiresPassword: true, passwordAttemptsRemaining: 3 } without consuming secret
+6. Client shows password prompt
+7. User submits password via POST `/api/secrets/{id}/verify`
+8. Route calls `verifyAndRetrieve()` service
+9. Service calls `verifyPassword(submitted, hash)` (timing-constant comparison)
+10. If wrong: increment `passwordAttempts`, respond 403 with { error: 'wrong_password', attemptsRemaining }
+11. If 3 attempts exceeded: call `hardDeleteSecret()` (hard-delete user-owned rows too)
+12. If correct: transaction reads → zeros → deletes (same as non-password flow)
+13. Route returns { ciphertext, expiresAt }
+14. Client decrypts with key from fragment
 
-**Expiration Worker (Background):**
+**Authenticated User Dashboard Flow:**
 
-1. Runs every 5 minutes via node-cron
-2. Calls `cleanExpiredSecrets()` from `expiration-worker.ts`
-3. Two-step bulk operation:
-   - UPDATE secrets SET ciphertext = '0' WHERE expiresAt <= NOW
-   - DELETE FROM secrets WHERE expiresAt <= NOW
-4. Returns deletedCount; logs only count (never logs secret IDs per SECR-09)
+1. User navigates to `/dashboard`
+2. Client `pages/dashboard.ts` calls `getMe()` API
+3. `require-auth` middleware validates Better Auth session cookie
+4. `/api/me` route queries `users` table, returns current user + subscriptionTier
+5. If authenticated, client calls `/api/dashboard/secrets`
+6. `dashboard.ts` route queries `secrets` where userId = current_user_id
+7. **Returns metadata only** (id, label, createdAt, expiresAt, status, notify, viewedAt) — **never ciphertext**
+8. Page renders list of user's secrets with status badges (active/viewed/expired)
+9. User can soft-delete (UPDATE status='deleted') or click to view ciphertext counts
+10. Dashboard queries use partial index `secrets_user_id_created_at_idx` for fast filtering
 
-**Authentication Flow (Phase 22):**
+**Billing Flow (Stripe Webhook):**
 
-1. Anonymous users access `/` (create page) without login
-2. Authenticated users can access `/dashboard` (shows their shared secrets)
-3. Login/Register pages route through `/api/auth/sign-up` and `/api/auth/sign-in` (Better Auth)
-4. Email verification via link in verification email
-5. Password reset via `/api/auth/forgot-password` and `/api/auth/reset-password`
-6. Session token stored in HTTPOnly cookie; BetterAuth middleware populates `req.user`
-7. GET /api/me returns authenticated user profile
-8. Zero-Knowledge Invariant: req.user.id and secretId NEVER combined in logs/events/DB records
+1. Authenticated user clicks "Upgrade to Pro"
+2. Client calls `initiateCheckout()` → POST `/api/billing/checkout`
+3. Route creates Stripe Checkout session, stores session ID in memory (stateless per request), returns { url }
+4. Browser redirects to Stripe Checkout
+5. User completes payment
+6. Stripe redirects browser to `/api/billing/verify-checkout?session_id=...`
+7. Route queries Stripe SDK for session status (calls `stripe.checkout.sessions.retrieve()`)
+8. If status='complete': calls `activatePro(stripeCustomerId)` service
+9. Service updates `users` set subscriptionTier='pro' where stripeCustomerId matches
+10. Route returns { status: 'active', tier: 'pro' }
+11. **Separate webhook handler** at POST `/api/webhooks/stripe` (mounted before express.json()) listens for Stripe events
+12. On `customer.subscription.updated` or `customer.subscription.deleted`: calls `deactivatePro()` to downgrade tier
+13. No userId + secretId co-location in webhook (uses stripe_customer_id only per INVARIANTS.md)
 
-**State Management:**
+**Email Notification Flow (Secret Viewed):**
 
-- **Client-side routing state:** SPA router maintains page state in memory + History API; no persistent state except localStorage for theme preference
-- **Authentication state:** BetterAuth session cookies + server-side session table; authenticated requests include session token
-- **Theme state:** localStorage key 'theme' (light/dark/system); FOWT prevention script in `client/index.html` applies theme before DOM renders
-- **Secret state:** Immutable; deleted on first retrieval (no edit operations)
+1. Authenticated user creates secret with notify=true
+2. Secret row stored with notify column = true
+3. Recipient retrieves secret → route calls `retrieveAndDestroy()`
+4. Service executes transaction, then calls `sendSecretViewedNotification(userEmail, viewedAt)` **outside transaction**
+5. `notification.service.ts` calls `sendEmail()` with Resend SDK
+6. **Email body contains ONLY viewed-at timestamp** — no secretId, ciphertext, or label (SECR-04 + INVARIANTS.md Phase 26)
+7. Background job / async handler sends Resend request
+8. Email arrives at user
+
+**Rate Limiting Flow:**
+
+1. Anonymous user makes first POST `/api/secrets` request
+2. `createAnonHourlyLimiter` middleware (created by factory in `rate-limit.ts`) fires
+3. Redis client (if REDIS_URL set) or in-memory store increments IP-based counter
+4. If count < 3 in the last 1 hour: pass to next middleware
+5. If count ≥ 3: respond 429 with RateLimit-Reset header (delta in seconds)
+6. Client receives 429, reads header to show countdown timer on upsell prompt
 
 ## Key Abstractions
 
-**Encryption Abstraction:**
-- Purpose: Encapsulate all Web Crypto operations into a clean public API
-- Examples: `client/src/crypto/index.ts`, `encrypt.ts`, `decrypt.ts`, `keys.ts`
-- Pattern: Barrel export (index.ts) exposes only public functions; internal utilities (padding.ts, encoding.ts) are implementation details
-- Security Invariant: The crypto module is the ONLY code that imports crypto.subtle or crypto.getRandomValues
+**Crypto Module (`client/src/crypto/`):**
+- Purpose: Self-contained encryption/decryption via Web Crypto API. No third-party crypto libraries. Defense in depth: imported keys are non-extractable.
+- Examples: `encrypt.ts` (AES-256-GCM), `decrypt.ts`, `keys.ts` (key import/export), `padding.ts` (PADME padding), `password-generator.ts` (secure random passwords), `passphrase.ts` (BIP-39 word lists)
+- Pattern: Pure async functions that accept plaintext/ciphertext strings, return Promise<result>. All randomness via `crypto.getRandomValues()`.
 
-**Service Abstraction:**
-- Purpose: Isolate business logic from HTTP routing and middleware concerns
-- Examples: `server/src/services/secrets.service.ts`, `password.service.ts`, `email.service.ts`
-- Pattern: Pure async functions that take primitive types (strings, dates) and return typed objects; no req/res handling
-- Benefit: Enables reuse across routes and background workers (e.g., cleanExpiredSecrets used by both route and expiration-worker)
+**Service Classes (`server/src/services/`):**
+- Purpose: Stateless functions that encapsulate business logic. No HTTP context. Testable in isolation.
+- Examples: `createSecret()`, `retrieveAndDestroy()`, `hashPassword()`, `activatePro()`, `sendSecretViewedNotification()`
+- Pattern: Async functions with clear inputs/outputs. Database access via Drizzle ORM. External SDK calls (Stripe, Resend) via config singletons, never instantiated inline.
 
-**Type Contracts (Shared):**
-- Purpose: Single source of truth for API request/response shapes and validation
-- Examples: `shared/types/api.ts` (Zod schemas: CreateSecretSchema, SecretIdParamSchema, VerifySecretSchema)
-- Pattern: Zod objects → exported to both client (for typesafe fetch wrapper) and server (for middleware validation)
-- Benefit: Client type-checks API calls; server enforces requests match schema before business logic runs
+**Route Handlers (`server/src/routes/`):**
+- Purpose: Map HTTP verbs + paths to middleware chains + handlers. Validation + service orchestration + response formatting.
+- Examples: POST `/api/secrets` (create), GET `/api/secrets/:id` (retrieve), POST `/api/billing/checkout` (initiate Stripe)
+- Pattern: Router factories (e.g., `createSecretsRouter(redisClient?)`) that return Express Router instances. Each route has explicit middleware order. Handlers call services, catch errors, respond.
 
-**Rate Limiter Abstraction:**
-- Purpose: Factory functions that return fresh middleware instances per app, with optional Redis backing
-- Examples: `createSecretLimiter(redisClient?)`, `verifySecretLimiter(redisClient?)`
-- Pattern: RedisStore when REDIS_URL provided; MemoryStore fallback; passOnStoreError=true for availability
-- Benefit: Multi-instance deployments share limits via Redis; single-instance development uses in-memory store
+**Better Auth Adapter (`server/src/auth.ts`):**
+- Purpose: Unified authentication with session management. Email/password signup/login, Google + GitHub OAuth, email verification.
+- Examples: User registration with email verification, OAuth callback handling, session refresh
+- Pattern: Single Better Auth config object. Session stored in `sessions` table. OAuth accounts stored in `accounts` table. Each login creates a session token.
 
-**Router Abstraction:**
-- Purpose: Decouple page rendering from URL state; provide programmatic navigation with SEO metadata
-- Examples: `navigate(path)`, `updatePageMeta(meta)`, `handleRoute()`
-- Pattern: History API with dynamic imports; routes map to page renderer functions that build DOM
-- Benefit: Code-splitting via Vite; SEO meta tags updated per-navigation; no framework dependency
+**Zod Schemas (`shared/types/api.ts`):**
+- Purpose: Single source of truth for request/response shapes. Shared between client (TypeScript) and server (validation).
+- Examples: `CreateSecretSchema`, `VerifySecretSchema`, `MetaResponse`, `DashboardSecretItem`
+- Pattern: Each endpoint has a Schema for input (POST body or GET params) and an interface for output. Server validates, client types.
 
 ## Entry Points
 
-**Browser Entry:**
+**Browser Entry Point (`client/index.html`):**
 - Location: `client/index.html`
-- Triggers: User opens https://secureshare.app
-- Responsibilities:
-  - Render initial HTML shell with SEO meta tags (JSON-LD, OG, Twitter)
-  - Include FOWT prevention script that applies theme from localStorage before DOM renders
-  - Include `__CSP_NONCE__` placeholder for per-request nonce injection by server
-  - Reference app.ts via script tag
+- Triggers: Page load (HTTP GET /)
+- Responsibilities: Serves SPA shell with FOWT prevention script (applies theme before first paint), JSON-LD structured data, Open Graph tags, CSP meta. Loads Vite-bundled app.ts.
 
-**Client App Entry:**
+**Client Application Init (`client/src/app.ts`):**
 - Location: `client/src/app.ts`
 - Triggers: DOMContentLoaded event
-- Responsibilities:
-  1. Import CSS (Tailwind)
-  2. Initialize theme listener via `initThemeListener()`
-  3. Create layout shell (header, footer, dot-grid) via `createLayoutShell()`
-  4. Initialize SPA router via `initRouter()`
+- Responsibilities: Initializes PostHog analytics, theme listener, layout shell (header/footer/dot-grid), then SPA router. Order matters: router must fire last so listeners are registered.
 
-**Server App Entry:**
+**SPA Router (`client/src/router.ts`):**
+- Location: `client/src/router.ts`
+- Triggers: Page load (handleRoute() called immediately by initRouter()), popstate events (browser back/forward), programmatic navigate() calls
+- Responsibilities: Matches pathname to page module, dynamically imports page renderer, lazy-loads chunks, updates SEO meta tags, announces route change via aria-live, focuses h1 heading.
+
+**Express App Factory (`server/src/app.ts`):**
+- Location: `server/src/app.ts`
+- Triggers: Called once at startup by `server.ts` buildApp()
+- Responsibilities: Constructs Express app with middleware chain in critical order: proxy trust → HTTPS redirect → CSP nonce → Helmet → logger → auth handler → Stripe webhook → JSON parser → routes → static/SPA → error handler. Returns app (server.ts calls app.listen()).
+
+**HTTP Server Startup (`server/src/server.ts`):**
 - Location: `server/src/server.ts`
-- Triggers: `npm run dev:server` or container startup
-- Responsibilities:
-  1. Import and build Express app via `buildApp()`
-  2. Start HTTP listener on PORT env var
-  3. Start expiration worker via `startExpirationWorker()`
-  4. Install signal handlers (SIGTERM/SIGINT) to gracefully shutdown
+- Triggers: Node.js process startup
+- Responsibilities: Builds Express app, listens on PORT, starts expiration worker, registers SIGTERM/SIGINT handlers for graceful shutdown (closes HTTP server, database pool, stops worker).
 
-**API Entry Points:**
-- POST /api/secrets → `createSecretsRouter` → creates route instance with rate limiter → `secrets.ts` route handler
-- GET /api/secrets/:id → `retrieveAndDestroy()` service
-- GET /api/secrets/:id/meta → `getSecretMeta()` service
-- POST /api/secrets/:id/verify → `verifyAndRetrieve()` service
-- GET /api/health → health check (no auth required)
-- /api/auth/{*splat} → Better Auth handler (email/password, OAuth2)
-- GET /api/me → authenticated user info (requires auth session)
-- GET {*path} → SPA catch-all (serves index.html with CSP nonce injected)
+**Expiration Worker (`server/src/workers/expiration-worker.ts`):**
+- Location: `server/src/workers/expiration-worker.ts`
+- Triggers: Every 5 minutes (node-cron schedule '*/5 * * * *')
+- Responsibilities: Queries `secrets` table WHERE expiresAt < NOW, hard-deletes anonymous rows, soft-deletes (UPDATE status='expired') user-owned rows. Logs errors, never crashes the server.
 
 ## Error Handling
 
-**Strategy:** Defense-in-depth with consistent error responses to prevent enumeration
+**Strategy:** Defensive default responses. All errors that leak information (secret exists, was viewed, has wrong password) collapse into identical "not found" responses.
 
 **Patterns:**
 
-1. **Secret Unavailability (SECR-07 anti-enumeration):**
-   - Nonexistent ID, expired secret, already-viewed secret, wrong password, password attempts exceeded
-   - All return identical response: `{ error: 'not_found', message: 'This secret does not exist, has already been viewed, or has expired.' }`
-   - HTTP Status: 404
-   - Prevents attacker from distinguishing between scenarios
+- **Secret Retrieval Errors:** GET `/api/secrets/:id` returns identical error for not-found, expired, already-viewed, and password-protected cases. Response: `{ error: 'not_found', message: 'This secret does not exist, has already been viewed, or has expired.' }` (SECR-07).
 
-2. **Validation Errors:**
-   - Zod schema mismatch (body or params)
-   - HTTP Status: 400
-   - Response: `{ error: 'validation_error', details: { ... } }` with flattened Zod errors
+- **Password Verification Errors:** Wrong password increments attempt counter. After 3 attempts, secret is hard-deleted. Response includes `attemptsRemaining` to show user countdown (e.g., "2 attempts left"). Timing-constant comparison prevents timing attacks.
 
-3. **Rate Limiting:**
-   - POST /api/secrets: 10 per hour per IP (1000 in E2E tests)
-   - POST /api/secrets/:id/verify: 5 attempts per secret before auto-destroy
-   - HTTP Status: 429
-   - Response: `{ error: 'rate_limited', message: '...' }`
+- **Global Error Handler:** `middleware/error-handler.ts` catches unhandled async errors. Returns `{ error: 'internal_error', message: 'Something went wrong.' }`. Logs full error with Pino (secret IDs redacted). Never leaks stack traces to client.
 
-4. **Crypto Errors:**
-   - Wrong key or tampered ciphertext in decrypt()
-   - Error message: `'Decryption failed: invalid key or corrupted data'` (generic, no internals exposed)
-   - No stack trace leaked to browser
+- **Rate Limit Errors:** 429 response with `RateLimit-Reset` header (delta in seconds). Client reads header to show countdown timer before retry. Used to drive upsell prompts on free tier.
 
-5. **Authentication Errors:**
-   - Missing/invalid session token
-   - HTTP Status: 401 (Unauthorized)
-   - Better Auth handles response shape
+- **Authentication Errors:** Unauthenticated requests to protected routes (e.g., `/api/dashboard`, `/api/me`) get 401. No 403 (Forbidden) — just redirect to login.
 
-6. **Password Wrong (POST /api/secrets/:id/verify):**
-   - HTTP Status: 401 (Unauthorized)
-   - Response: `{ error: 'wrong_password', attemptsRemaining: N }`
-   - Increments passwordAttempts counter; returns null (404 response) if >= 3
-
-7. **Global Error Handler:**
-   - Location: `server/src/middleware/error-handler.ts`
-   - Catches all middleware/route errors
-   - Never exposes stack traces to client
-   - Logs error with Pino (secret IDs redacted)
-   - Returns appropriate HTTP status + generic error message
+- **Validation Errors:** Zod schema failures (invalid expiresIn enum, ciphertext too long) respond 400 with error message. Example: "Anonymous sharing is limited to 1-hour expiration."
 
 ## Cross-Cutting Concerns
 
-**Logging:**
-- Framework: Pino (structured JSON logging)
-- Location: `server/src/middleware/logger.ts`
-- Redaction: Secret IDs redacted via regex `/\/api\/secrets\/[A-Za-z0-9_-]+/g` → `[REDACTED]`
-- Level: Configurable via LOG_LEVEL env var (default: info)
-- Serializers: Custom serializers for req (method, redacted URL) to prevent sensitive header/body logging
-- Zero-Knowledge: Never logs userId + secretId together; app logs secrets.user_id as nullable FK
+**Logging:** Pino logger (`middleware/logger.ts`) with pinoHttp integration. Secret IDs redacted from URL paths via regex. IP addresses logged for rate-limit context. No plaintext ciphertext, user passwords, or PII in logs. Every request/response duration tracked.
 
-**Validation:**
-- Framework: Zod
-- Locations:
-  - API schemas: `shared/types/api.ts` (CreateSecretSchema, SecretIdParamSchema, VerifySecretSchema)
-  - Environment: `server/src/config/env.ts` (EnvSchema for DATABASE_URL, REDIS_URL, auth secrets, etc.)
-  - Middleware: `server/src/middleware/validate.ts` (validateBody, validateParams factories)
-- Pattern: safeParse → respond 400 with flattened errors if validation fails
+**Validation:** Zod schemas at `shared/types/api.ts` define all request/response contracts. Server middleware (`middleware/validate.ts`) validates POST bodies and URL params before handlers execute. Catches validation errors early, returns 400.
 
-**Authentication:**
-- Framework: BetterAuth
-- Features: Email/password, OAuth2 (Google, GitHub), email verification, password reset
-- Session Storage: PostgreSQL `sessions` table; session token in HTTPOnly cookie
-- Server Reads: `req.user` populated by Better Auth middleware for protected routes
-- Zero-Knowledge: Session.userId and secret.id NEVER combined in logs/events/DB records (enforced in schema.ts block comment)
+**Authentication:** Better Auth 1.x manages sessions via httpOnly cookies. Each login creates session token in `sessions` table. Middleware (`optional-auth.ts`, `require-auth.ts`) extracts session, validates expiry, populates `res.locals.user`. OAuth callbacks (Google, GitHub) create users + accounts rows automatically.
 
-**Encryption:**
-- Framework: Web Crypto API (native, no third-party libraries)
-- Algorithm: AES-256-GCM
-- Key Gen: crypto.subtle.generateKey (256-bit)
-- IV Gen: crypto.getRandomValues (96-bit, fresh per encryption)
-- Transport: Base64-encoded; IV prepended to ciphertext
-- Decryption: Fails generically if key wrong or ciphertext tampered
-
-**CSP (Content Security Policy):**
-- Per-request nonce generation: `server/src/middleware/security.ts` → cspNonceMiddleware
-- Nonce insertion: `app.ts` injects res.locals.cspNonce into HTML template via replaceAll
-- Directives: script-src/style-src require nonce; no unsafe-inline or unsafe-eval; img/font/connect restricted
-- Vite Build: Tailwind CSS + Lucide icons loaded via nonce (no external CDN)
+**Authorization:** Routes explicitly check `res.locals.user` presence. Protected routes (dashboard, billing, me) fail 401 if `res.locals.user` is undefined. No role-based access control (RBAC) yet — only authenticated vs. anonymous.
 
 ---
 
-*Architecture analysis: 2026-02-20*
+*Architecture analysis: 2026-03-01*

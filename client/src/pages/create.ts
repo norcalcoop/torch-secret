@@ -27,7 +27,7 @@
  */
 
 import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
-import { createSecret, ApiError } from '../api/client.js';
+import { createSecret, ApiError, getMe } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
 import {
   captureSecretCreated,
@@ -232,19 +232,42 @@ function showRateLimitUpsell(container: HTMLElement, resetTimestamp: number | un
  *   3. Custom password — masked text input with eye toggle
  *   4. Passphrase — EFF diceware passphrase with masked input, eye toggle
  *
- * Returns the panel element and two accessors:
+ * Accepts tier parameters to lock tabs based on the user's authentication
+ * and subscription status. Locked tabs show a tier badge and inline popover
+ * with a CTA to upgrade, without changing the active selection.
+ *
+ * Returns the panel element and accessors:
  *   - getPassword(): string | undefined — the value to send to the API
  *   - getPassphrase(): string | undefined — the passphrase to display on the
  *     confirmation card (only truthy when passphrase mode is active)
+ *   - getProtectionType(): 'none' | 'passphrase' | 'password' — the protection
+ *     type to send as protection_type in the API request body
  *
  * Phase 28 (refactored per second UAT iteration): horizontal tab strip with
  * ARIA tablist/tab/tabpanel pattern replaces the radio button vertical list.
+ * Phase 34.1: tier-aware lock states with inline popovers.
  */
-function createProtectionPanel(): {
+function createProtectionPanel(
+  opts: { isAuthenticated: boolean; isPro: boolean } = { isAuthenticated: false, isPro: false },
+): {
   element: HTMLElement;
   getPassword: () => string | undefined;
   getPassphrase: () => string | undefined;
+  getProtectionType: () => 'none' | 'passphrase' | 'password';
+  getActiveTabId: () => 'none' | 'generate' | 'custom' | 'passphrase';
 } {
+  const { isAuthenticated, isPro } = opts;
+
+  // ---- Lock level helper ----
+  type LockLevel = 'none' | 'free' | 'pro';
+
+  function getLockLevel(tabId: ActiveTab): LockLevel {
+    if (tabId === 'none') return 'none';
+    if (tabId === 'passphrase') return isAuthenticated ? 'none' : 'free';
+    // 'generate' and 'custom' are password-class: require Pro
+    return isPro ? 'none' : 'pro';
+  }
+
   // ---- Closure state ----
   type ActiveTab = 'none' | 'generate' | 'custom' | 'passphrase';
   let activeTab: ActiveTab = 'none';
@@ -272,7 +295,7 @@ function createProtectionPanel(): {
     checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
     const label = document.createElement('label');
     label.htmlFor = id;
-    label.className = 'text-xs font-mono text-white/60 cursor-pointer select-none';
+    label.className = 'text-xs font-mono text-text-secondary cursor-pointer select-none';
     label.textContent = labelText;
     wrapper.appendChild(checkbox);
     wrapper.appendChild(label);
@@ -281,14 +304,21 @@ function createProtectionPanel(): {
 
   // ---- Root container ----
   const root = document.createElement('div');
-  root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md overflow-hidden';
+  root.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+
+  // Inner wrapper clips the tab strip and panels with rounded corners.
+  // overflow-hidden lives here (not on root) so absolutely-positioned popovers
+  // appended to root are not clipped when they extend below the tab strip.
+  const inner = document.createElement('div');
+  inner.className = 'overflow-hidden rounded-lg';
+  root.appendChild(inner);
 
   // ---- Tab strip ----
   const tabList = document.createElement('div');
   tabList.setAttribute('role', 'tablist');
   tabList.setAttribute('aria-label', 'Protection mode');
-  tabList.className = 'flex border-b border-white/10';
-  root.appendChild(tabList);
+  tabList.className = 'flex border-b border-border';
+  inner.appendChild(tabList);
 
   const tabDefs: Array<{ id: ActiveTab; label: string }> = [
     { id: 'none', label: 'No protection' },
@@ -298,46 +328,148 @@ function createProtectionPanel(): {
   ];
 
   const tabInactiveCls =
-    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white/40 border-b-2 border-transparent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-text-muted border-b-2 border-transparent -mb-px transition-colors duration-150 cursor-pointer hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
   const tabActiveCls =
-    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-white border-b-2 border-b-accent -mb-px transition-colors duration-150 cursor-pointer hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
+    'flex-1 px-2 py-2.5 text-xs font-mono font-medium text-text-primary border-b-2 border-b-accent -mb-px transition-colors duration-150 cursor-pointer hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent';
 
   const tabButtons: Record<ActiveTab, HTMLButtonElement> = {} as Record<
     ActiveTab,
     HTMLButtonElement
   >;
 
+  // Popovers for locked tabs — collected during the loop and appended to root
+  // after the tablist. This avoids ARIA violations: tablist must only own tab
+  // elements; tab elements must not contain interactive descendants.
+  // Root must be position:relative so absolute popovers anchor correctly.
+  root.style.position = 'relative';
+  const lockedPopovers: HTMLElement[] = [];
+
   for (const def of tabDefs) {
+    const lockLevel = getLockLevel(def.id);
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.role = 'tab';
     btn.id = `tab-btn-${def.id}`;
     btn.setAttribute('aria-controls', `tab-${def.id}`);
-    btn.setAttribute('aria-selected', def.id === 'none' ? 'true' : 'false');
-    btn.className = def.id === 'none' ? tabActiveCls : tabInactiveCls;
-    btn.textContent = def.label;
+
+    if (lockLevel === 'none') {
+      // Unlocked tab — standard interactive tab
+      btn.setAttribute('aria-selected', def.id === 'none' ? 'true' : 'false');
+      btn.className = def.id === 'none' ? tabActiveCls : tabInactiveCls;
+      btn.textContent = def.label;
+    } else {
+      // Locked tab — the button sits directly in the tablist (required by ARIA tablist
+      // ownership rules). The popover is positioned relative to the root container and
+      // appended AFTER the tablist to avoid nested-interactive and aria-required-children
+      // violations (axe 4.11: tablist children must be tab elements only; tab elements
+      // must not contain interactive descendants).
+      btn.setAttribute('aria-disabled', 'true');
+      btn.setAttribute('aria-selected', 'false');
+      btn.className = tabInactiveCls;
+
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = def.label;
+      btn.appendChild(labelSpan);
+
+      const badge = document.createElement('span');
+      badge.className =
+        'ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ' +
+        'bg-surface-raised text-text-muted border border-border';
+      badge.textContent = lockLevel === 'free' ? 'Free' : 'Pro';
+      btn.appendChild(badge);
+
+      // Popover — appended to `root` (outside the tablist) after setup.
+      // Uses `position: absolute` relative to the root container (position: relative).
+      const popoverId = `lock-popover-${def.id}`;
+      const popover = document.createElement('div');
+      popover.id = popoverId;
+      popover.hidden = true;
+      popover.className =
+        'absolute z-50 mt-1 w-56 rounded-lg border border-border ' +
+        'bg-surface shadow-lg p-3 space-y-2 text-left';
+
+      const desc = document.createElement('p');
+      desc.className = 'text-xs text-text-secondary';
+      desc.textContent =
+        lockLevel === 'free'
+          ? 'Create a free account to generate secure passphrases.'
+          : 'Upgrade to Pro to set custom passwords.';
+      popover.appendChild(desc);
+
+      const ctaLink = document.createElement('a');
+      ctaLink.href = lockLevel === 'free' ? '/register' : '/pricing';
+      ctaLink.className = 'inline-block text-xs font-medium text-accent hover:underline';
+      ctaLink.textContent = lockLevel === 'free' ? 'Sign up free \u2192' : 'Upgrade \u2192';
+      ctaLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigate(lockLevel === 'free' ? '/register' : '/pricing');
+      });
+      popover.appendChild(ctaLink);
+
+      // Position popover below the locked tab button on open.
+      // Uses getBoundingClientRect relative to the root container's position.
+      function positionPopover(): void {
+        const btnRect = btn.getBoundingClientRect();
+        const rootRect = root.getBoundingClientRect();
+        popover.style.top = `${btnRect.bottom - rootRect.top}px`;
+        popover.style.left = `${btnRect.left - rootRect.left}px`;
+      }
+
+      // Toggle popover on locked tab click; stop propagation to avoid immediate close
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !popover.hidden;
+        if (!isOpen) positionPopover();
+        popover.hidden = isOpen;
+      });
+
+      // Close popover on outside click (capture phase, same pattern as expiration-select.ts)
+      document.addEventListener(
+        'click',
+        () => {
+          if (!popover.hidden) popover.hidden = true;
+        },
+        { capture: true },
+      );
+
+      // Append popover to root AFTER tablist is built (deferred via closure reference).
+      // We collect popovers here and append them after the loop.
+      lockedPopovers.push(popover);
+    }
+
     tabButtons[def.id] = btn;
     tabList.appendChild(btn);
   }
 
-  // Arrow key navigation between tabs
+  // Append locked tab popovers to root (outside the tablist, for ARIA compliance)
+  for (const p of lockedPopovers) {
+    root.appendChild(p);
+  }
+
+  // Arrow key navigation between tabs (skips locked tabs)
   tabList.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     e.preventDefault();
-    const tabOrder: ActiveTab[] = ['none', 'generate', 'custom', 'passphrase'];
-    const currentIndex = tabOrder.indexOf(activeTab);
+    // Only navigate among unlocked tabs
+    const allTabs: ActiveTab[] = ['none', 'generate', 'custom', 'passphrase'];
+    const unlockedTabs = allTabs.filter((id) => getLockLevel(id) === 'none');
+    if (unlockedTabs.length === 0) return;
+    const currentIndex = unlockedTabs.indexOf(activeTab);
+    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
     const nextIndex =
       e.key === 'ArrowRight'
-        ? (currentIndex + 1) % tabOrder.length
-        : (currentIndex - 1 + tabOrder.length) % tabOrder.length;
-    const nextTab = tabOrder[nextIndex];
-    activateTab(nextTab);
-    tabButtons[nextTab].focus();
+        ? (safeIndex + 1) % unlockedTabs.length
+        : (safeIndex - 1 + unlockedTabs.length) % unlockedTabs.length;
+    const nextTab = unlockedTabs[nextIndex];
+    if (nextTab) {
+      activateTab(nextTab);
+      tabButtons[nextTab].focus();
+    }
   });
 
   // ---- Tab panels ----
   const panelsContainer = document.createElement('div');
-  root.appendChild(panelsContainer);
+  inner.appendChild(panelsContainer);
 
   // Helper: create a tabpanel wrapper
   function createTabPanel(id: ActiveTab): HTMLDivElement {
@@ -353,7 +485,7 @@ function createProtectionPanel(): {
   // ---- Panel 1: No protection ----
   const nonePanel = createTabPanel('none');
   const noneNote = document.createElement('p');
-  noneNote.className = 'text-xs font-mono text-white/40';
+  noneNote.className = 'text-xs font-mono text-text-muted';
   noneNote.textContent = 'Secret will be accessible to anyone with the link.';
   nonePanel.appendChild(noneNote);
   panelsContainer.appendChild(nonePanel);
@@ -368,7 +500,7 @@ function createProtectionPanel(): {
   generatePanel.appendChild(tierRow);
 
   const tierLabel = document.createElement('p');
-  tierLabel.className = 'text-xs font-medium text-white/60';
+  tierLabel.className = 'text-xs font-medium text-text-secondary';
   tierLabel.textContent = 'Strength';
   tierRow.appendChild(tierLabel);
 
@@ -433,7 +565,7 @@ function createProtectionPanel(): {
 
   // d) Entropy line
   const entropyLine = document.createElement('p');
-  entropyLine.className = 'text-xs font-mono text-white/40';
+  entropyLine.className = 'text-xs font-mono text-text-muted';
   entropyLine.setAttribute('aria-live', 'polite');
   generatePanel.appendChild(entropyLine);
 
@@ -556,7 +688,7 @@ function createProtectionPanel(): {
 
   // State label below field
   const genStateLabel = document.createElement('p');
-  genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+  genStateLabel.className = 'text-xs font-mono text-text-muted mt-1';
   genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
   combinedFieldGroup.appendChild(genStateLabel);
 
@@ -776,7 +908,7 @@ function createProtectionPanel(): {
       combinedPasswordWrapper.classList.add('ring-1', 'ring-accent/50');
     } else {
       genStateLabel.textContent = 'Preview \u2014 click \u201cUse this password\u201d to confirm';
-      genStateLabel.className = 'text-xs font-mono text-white/40 mt-1';
+      genStateLabel.className = 'text-xs font-mono text-text-muted mt-1';
       combinedPasswordWrapper.classList.remove('ring-1', 'ring-accent/50');
     }
   }
@@ -871,6 +1003,7 @@ function createProtectionPanel(): {
 
   // ---- Tab activation ----
   function activateTab(tab: ActiveTab): void {
+    if (getLockLevel(tab) !== 'none') return; // locked tab — ignore
     const previousTab = activeTab;
     activeTab = tab;
 
@@ -936,10 +1069,22 @@ function createProtectionPanel(): {
     return activeTab === 'passphrase' ? currentPassphrase || undefined : undefined;
   }
 
+  function getProtectionType(): 'none' | 'passphrase' | 'password' {
+    if (activeTab === 'passphrase') return 'passphrase';
+    if (activeTab === 'generate' || activeTab === 'custom') return 'password';
+    return 'none';
+  }
+
+  function getActiveTabId(): 'none' | 'generate' | 'custom' | 'passphrase' {
+    return activeTab;
+  }
+
   return {
     element: root,
     getPassword,
     getPassphrase,
+    getProtectionType,
+    getActiveTabId,
   };
 }
 
@@ -960,6 +1105,15 @@ function createProtectionPanel(): {
  * protectionPanel.getPassphrase() as the 5th argument (undefined when password
  * mode or no protection).
  */
+/**
+ * Export for testing only — allows accessibility and integration tests to render
+ * a tier-aware protection panel in isolation (e.g. with isPro=true to test
+ * generate-tab UI without going through the auth IIFE in renderCreatePage).
+ *
+ * @internal
+ */
+export { createProtectionPanel };
+
 export function renderCreatePage(container: HTMLElement): void {
   // -- Page wrapper --
   const wrapper = document.createElement('div');
@@ -1051,11 +1205,12 @@ export function renderCreatePage(container: HTMLElement): void {
   expirationGroup.appendChild(expirationSelectResult.element);
   form.appendChild(expirationGroup);
 
-  // -- Protection panel (Phase 28) --
+  // -- Protection panel (Phase 28 / Phase 34.1) --
   // 4 radio options: No protection (default) / Generate password / Custom password / Passphrase.
   // DOM order: textarea → expiration → [label — injected by auth IIFE] →
   //   [notify toggle — injected by auth IIFE] → protection panel → error area → submit.
-  const protectionPanel = createProtectionPanel();
+  // Declared `let` (not `const`) so the auth IIFE can replace it with a tier-aware version.
+  let protectionPanel = createProtectionPanel();
   form.appendChild(protectionPanel.element);
 
   // -- Error display area --
@@ -1101,6 +1256,22 @@ export function renderCreatePage(container: HTMLElement): void {
       // Get password from protection panel (undefined when no protection selected)
       const password = protectionPanel.getPassword();
 
+      // Get protection type from active tab (sent as protection_type in API request body)
+      const protectionType = protectionPanel.getProtectionType();
+
+      // Map the 4-tab UI state to the analytics protection_type value.
+      // getProtectionType() collapses 'generate' and 'custom' both to 'password';
+      // getActiveTabId() returns the raw tab ID so we can distinguish them.
+      const activeTabId = protectionPanel.getActiveTabId();
+      const analyticsProtectionType: 'none' | 'passphrase' | 'password' | 'generated' =
+        activeTabId === 'generate'
+          ? 'generated'
+          : activeTabId === 'custom'
+            ? 'password'
+            : activeTabId === 'passphrase'
+              ? 'passphrase'
+              : 'none';
+
       // Get optional label (only present for authenticated users)
       const label = labelInput?.value.trim() || undefined;
 
@@ -1124,13 +1295,14 @@ export function renderCreatePage(container: HTMLElement): void {
           password,
           label,
           getNotifyEnabled(),
+          protectionType,
         );
 
         // Step 3: Build share URL with key in fragment
         const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
 
         // Step 4: Fire analytics before navigating away from create context
-        captureSecretCreated(expiresIn, !!password);
+        captureSecretCreated(expiresIn, !!password, analyticsProtectionType);
 
         // Step 5: Determine conversion prompt number for anonymous users.
         // Authenticated users never see conversion prompts.
@@ -1195,10 +1367,27 @@ export function renderCreatePage(container: HTMLElement): void {
         // Mark authenticated for prompt suppression in submit handler
         isAuthenticated = true;
 
-        // Upgrade expiration select to authenticated mode (1h/24h/7d options)
+        // Fetch full profile to determine subscription tier
+        // (subscriptionTier is not on the Better Auth session object)
+        let isPro = false;
+        try {
+          const meData = await getMe();
+          isPro = meData.user.subscriptionTier === 'pro';
+        } catch {
+          // Fallback: treat as free tier on API error (safe degradation)
+          isPro = false;
+        }
+
+        // Upgrade expiration select to authenticated mode with Pro awareness
         expirationSelectResult.element.remove();
-        expirationSelectResult = createExpirationSelect(true);
+        expirationSelectResult = createExpirationSelect(true, isPro);
         expirationGroup.appendChild(expirationSelectResult.element);
+
+        // Replace protection panel with tier-aware version (Phase 34.1)
+        const oldPanel = protectionPanel.element;
+        protectionPanel = createProtectionPanel({ isAuthenticated: true, isPro });
+        oldPanel.parentElement?.insertBefore(protectionPanel.element, oldPanel);
+        oldPanel.remove();
 
         const labelField = createLabelField();
         // Insert label field before the protection panel (stable anchor)

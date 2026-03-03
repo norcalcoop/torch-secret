@@ -502,6 +502,28 @@ describe('INVARIANTS.md enforcement table', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Gap 2 / E1 / SR-017: IDOR protection — user cannot see other users' secrets
+// ---------------------------------------------------------------------------
+describe('GET /api/dashboard/secrets — IDOR protection (Gap 2, SR-017)', () => {
+  test('user B cannot see user A secrets in their dashboard', async () => {
+    // User A creates a secret
+    const secretId = await insertTestSecret({ userId: userAId, label: 'user-a-secret' });
+
+    // User B requests their own dashboard
+    const res = await request(app)
+      .get('/api/dashboard/secrets')
+      .set('Cookie', userBSessionCookie)
+      .expect(200);
+
+    // User B's dashboard must not contain User A's secret
+    const secretIds = (res.body.secrets as { id: string }[]).map((s) => s.id);
+    expect(secretIds).not.toContain(secretId);
+    // Sanity check: secrets is a valid array (not undefined/null)
+    expect(Array.isArray(res.body.secrets)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Cross-user isolation: User B cannot affect User A's secrets
 // ---------------------------------------------------------------------------
 describe('cross-user isolation', () => {

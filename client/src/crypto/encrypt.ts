@@ -1,5 +1,5 @@
 /**
- * Encrypt module for SecureShare.
+ * Encrypt module for Torch Secret.
  *
  * Encrypts plaintext using AES-256-GCM with a fresh key and IV per call.
  * Integrates: keys (generateKey), padding (padPlaintext), encoding (uint8ArrayToBase64).

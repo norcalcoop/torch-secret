@@ -6,7 +6,7 @@
 
 name: Privnote
 url: https://privnote.com
-tagline: "Send notes that will self-destruct after being read"
+tagline: 'Send notes that will self-destruct after being read'
 open_source: false
 source_repo: null
 
@@ -93,10 +93,10 @@ not_ideal_for:
 
 common_complaints:
   - "Not open source — can't verify the security claims"
-  - "Ads on a security tool feel wrong"
-  - "Too many phishing clones with similar domains — hard to tell the real one"
+  - 'Ads on a security tool feel wrong'
+  - 'Too many phishing clones with similar domains — hard to tell the real one'
   - "No API means can't integrate into workflows"
-  - "No real password protection — just a reference phrase"
+  - 'No real password protection — just a reference phrase'
 
 seo_terms:
   - privnote alternative

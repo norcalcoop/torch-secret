@@ -1,333 +1,344 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2026-03-01
 
 ## Directory Layout
 
 ```
 secureshare/
-├── client/                 # Browser-side SPA (vanilla TypeScript + Vite)
-│   ├── src/               # Client source code
-│   ├── public/            # Static assets (favicons, manifest, robots.txt, sitemap)
-│   └── dist/              # Vite build output (served by Express in production)
-├── server/                # Express 5 backend
-│   └── src/               # Server source code
-├── shared/                # Code shared between client and server
-│   └── types/             # API contracts (Zod schemas + TypeScript types)
-├── .planning/             # GSD workflow documents (roadmap, phases, codebase analysis)
-├── e2e/                   # Playwright end-to-end tests
-│   ├── specs/            # Test files
-│   └── fixtures/         # Test fixtures and data
-├── scripts/               # Build/deploy scripts
-├── node_modules/          # npm dependencies
-├── package.json           # Dependencies and scripts
-├── tsconfig.json          # TypeScript config (ESM, bundler resolution)
-├── vite.config.ts         # Vite build config (Tailwind plugin, CSP nonce)
-├── vitest.config.ts       # Vitest test config (node environment)
-├── drizzle.config.ts      # Drizzle ORM migration config
-├── eslint.config.ts       # ESLint config
-├── CLAUDE.md              # Project context for Claude Code
-└── drizzle/              # Generated migrations (committed to git)
+├── .github/                    # GitHub workflows (CI/CD), issue templates
+├── .husky/                     # Git hooks (pre-commit, commit-msg via lint-staged)
+├── .planning/                  # GSD workflow docs (PROJECT.md, ROADMAP.md, STATE.md, INVARIANTS.md)
+├── client/                     # Frontend SPA (Vite, Vanilla TS)
+│   ├── index.html              # HTML shell with FOWT prevention, JSON-LD, CSP meta
+│   ├── public/                 # Static assets (favicon, fonts, images)
+│   ├── src/
+│   │   ├── app.ts              # Application entry point (initializes analytics, theme, layout, router)
+│   │   ├── router.ts           # SPA router (History API, dynamic imports, SEO meta management)
+│   │   ├── theme.ts            # Theme system (light/dark/system modes, localStorage persistence)
+│   │   ├── styles.css          # Tailwind CSS 4 with @theme OKLCH tokens, glassmorphism
+│   │   ├── vite-env.d.ts       # Vite type definitions
+│   │   ├── vitest.d.ts         # Vitest type augmentation
+│   │   ├── api/
+│   │   │   └── client.ts       # Typed fetch wrapper for API calls (createSecret, getSecret, getMe, etc.)
+│   │   ├── analytics/          # PostHog client wrapper
+│   │   │   ├── posthog.ts      # SDK initialization, event capture, identity tracking, URL sanitization
+│   │   │   └── ...
+│   │   ├── crypto/             # Web Crypto API (AES-256-GCM, no third-party libs)
+│   │   │   ├── index.ts        # Barrel export (public API)
+│   │   │   ├── encrypt.ts      # AES-256-GCM encryption with PADME padding
+│   │   │   ├── decrypt.ts      # AES-256-GCM decryption with padding removal
+│   │   │   ├── keys.ts         # Key generation, import/export (non-extractable, decrypt-only)
+│   │   │   ├── encoding.ts     # Base64 / Uint8Array conversion
+│   │   │   ├── padding.ts      # PADME padding (max 12% overhead)
+│   │   │   ├── constants.ts    # Crypto algorithm parameters (256-bit key, 96-bit IV, AES-256-GCM)
+│   │   │   ├── types.ts        # EncryptedPayload, EncryptResult types
+│   │   │   ├── password-generator.ts  # Secure random password generation (length-tiered)
+│   │   │   ├── passphrase.ts   # BIP-39 word list + passphrase generation
+│   │   │   └── __tests__/      # Unit tests
+│   │   ├── components/         # Reusable UI components
+│   │   │   ├── layout.ts       # Header, footer, dot-grid background layout shell
+│   │   │   ├── copy-button.ts  # Copy-to-clipboard with visual feedback
+│   │   │   ├── share-button.ts # Share via native Share API or copy link
+│   │   │   ├── toast.ts        # Toast notification system (position-managed)
+│   │   │   ├── terminal-block.ts  # Monospaced secret display block
+│   │   │   ├── theme-toggle.ts # Light/dark/system theme switcher
+│   │   │   ├── loading-spinner.ts  # Animated spinner component
+│   │   │   ├── expiration-select.ts  # Dropdown for 1h/24h/7d/30d expiration tiers
+│   │   │   ├── icons/          # Lucide icon wrapper (resolves ESM entry point bug)
+│   │   │   └── ...
+│   │   ├── pages/              # SPA pages (lazy-loaded by router)
+│   │   │   ├── home.ts         # / (marketing homepage)
+│   │   │   ├── create.ts       # /create (secret creation form)
+│   │   │   ├── confirmation.ts # /confirmation (post-creation summary)
+│   │   │   ├── reveal.ts       # /secret/:id (secret reveal + decryption)
+│   │   │   ├── error.ts        # 404 and generic error pages
+│   │   │   ├── login.ts        # /login (email + password, OAuth buttons)
+│   │   │   ├── register.ts     # /register (signup form, email verification)
+│   │   │   ├── forgot-password.ts  # /forgot-password (reset flow initiation)
+│   │   │   ├── reset-password.ts   # /reset-password (new password form after email link)
+│   │   │   ├── dashboard.ts    # /dashboard (authenticated user secret list)
+│   │   │   ├── pricing.ts      # /pricing (free/pro tier comparison)
+│   │   │   ├── privacy.ts      # /privacy (privacy policy)
+│   │   │   ├── terms.ts        # /terms (terms of service)
+│   │   │   ├── confirm.ts      # /confirm (email verification from link)
+│   │   │   ├── unsubscribe.ts  # /unsubscribe (GDPR one-click unsubscribe)
+│   │   └── __tests__/          # Client unit/integration tests
+│   └── dist/                   # Built SPA (generated by `npm run build:client`, served by Express in production)
+├── server/                     # Backend API (Express, Drizzle ORM, PostgreSQL)
+│   └── src/
+│       ├── app.ts              # Express app factory (middleware chain setup)
+│       ├── server.ts           # HTTP server startup, graceful shutdown, worker start
+│       ├── auth.ts             # Better Auth configuration (email/password, Google/GitHub OAuth)
+│       ├── config/
+│       │   ├── env.ts          # Zod-validated environment variables (NODE_ENV, PORT, DATABASE_URL, etc.)
+│       │   ├── stripe.ts       # Stripe SDK singleton (never instantiate in service files)
+│       │   └── loops.ts        # Loops email SDK singleton
+│       ├── db/
+│       │   ├── schema.ts       # Drizzle table definitions (users, sessions, accounts, verification, secrets, marketing_subscribers)
+│       │   ├── connection.ts   # PostgreSQL pool + Drizzle db instance
+│       │   └── migrate.ts      # Migration runner script (drizzle-kit generate, apply)
+│       ├── middleware/
+│       │   ├── security.ts     # CSP nonce generation, Helmet headers, HTTPS redirect
+│       │   ├── logger.ts       # Pino HTTP logger with secret ID redaction regex
+│       │   ├── rate-limit.ts   # Factory functions: createAnonHourlyLimiter, createAnonDailyLimiter, createAuthedDailyLimiter
+│       │   ├── validate.ts     # Zod schema validation middleware (validateBody, validateParams)
+│       │   ├── optional-auth.ts    # Better Auth session extraction (populates res.locals.user if valid)
+│       │   ├── require-auth.ts     # Fails 401 if res.locals.user is undefined
+│       │   └── error-handler.ts    # Global error handler (must be last middleware)
+│       ├── routes/
+│       │   ├── secrets.ts      # Factory createSecretsRouter() — POST / (create), GET /:id (retrieve), GET /:id/meta, POST /:id/verify
+│       │   ├── dashboard.ts    # GET /api/dashboard/secrets, DELETE /api/dashboard/secrets/:id
+│       │   ├── billing.ts      # POST /api/billing/checkout, GET /api/billing/verify-checkout, POST /api/billing/portal
+│       │   ├── me.ts           # GET /api/me (current user + subscription tier)
+│       │   ├── health.ts       # GET /api/health (liveness check)
+│       │   ├── subscribers.ts  # POST /api/subscribers (email capture), GET /api/subscribers/confirm, GET /api/subscribers/unsubscribe
+│       │   ├── webhooks.ts     # POST /api/webhooks/stripe (raw body, Stripe event handling)
+│       │   ├── seo/            # Express SSR routes (NOT SPA — render HTML server-side for crawlers)
+│       │   │   ├── index.ts    # Router for /vs/*, /alternatives/*, /use/* comparison pages
+│       │   │   └── templates/  # HTML template files for SEO pages
+│       │   └── __tests__/      # Route integration tests
+│       ├── services/
+│       │   ├── secrets.service.ts  # createSecret(), retrieveAndDestroy(), getSecretMeta(), verifyAndRetrieve()
+│       │   ├── password.service.ts # hashPassword() (Argon2id), verifyPassword() (timing-constant)
+│       │   ├── billing.service.ts  # activatePro(), deactivatePro() (Stripe tier management)
+│       │   ├── notification.service.ts  # sendSecretViewedNotification() (Resend email)
+│       │   ├── onboarding.service.ts    # Loops email sequences (welcome, day-3, day-7 drips)
+│       │   ├── subscribers.service.ts   # GDPR email list capture, confirmation, unsubscribe
+│       │   ├── email.ts        # sendEmail() helper (Resend wrapper)
+│       │   └── __tests__/      # Service unit tests
+│       ├── workers/
+│       │   ├── expiration-worker.ts  # node-cron job (*/5 * * * * schedule) — deletes expired secrets
+│       │   └── __tests__/
+│       └── tests/              # Server integration test utilities
+├── shared/
+│   └── types/
+│       └── api.ts              # Zod schemas + TypeScript interfaces (CreateSecretSchema, DashboardSecretItem, etc.)
+├── drizzle/                    # Generated migrations (auto-generated by drizzle-kit generate)
+├── scripts/                    # Utility scripts (not part of main app)
+├── docs/                       # Documentation and screenshots
+├── e2e/                        # Playwright E2E tests + UAT YAML specs
+├── workers/                    # Cloudflare Workers (keep-alive pings, background jobs)
+├── .env.example                # Template for required env vars (never commit .env)
+├── .eslintrc.js               # ESLint config (typescript-eslint, stricter rules)
+├── .prettierrc.json           # Prettier config (80 col, single quote, trailing comma)
+├── tsconfig.json              # Root TypeScript config (ESM, strict mode)
+├── tsconfig.server.json       # Server-specific overrides (NodeNext, excludes DOM types)
+├── vite.config.ts             # Vite build config (SPA, portless dev proxy, lucide alias)
+├── vitest.config.ts           # Vitest config (multi-project: client/happy-dom, server/node)
+├── package.json               # Dependencies, dev scripts (npm run dev:server, npm run dev:client, etc.)
+├── package-lock.json          # Locked dependency versions
+├── docker-compose.yml         # Local dev + staging PostgreSQL, Redis
+└── Dockerfile                 # Production image (Node.js 24, pnpm)
 ```
 
 ## Directory Purposes
 
-**client/src:**
-- Purpose: All browser-side code (UI, routing, crypto, API client)
-- Contains: TypeScript modules for SPA
-- Key files: `app.ts` (entry point), `router.ts` (History API router), `styles.css` (Tailwind), `theme.ts` (light/dark mode)
+**`client/`:**
+- Purpose: Vanilla TypeScript SPA (no React). All browser logic, crypto, UI components.
+- Key files: `app.ts` (init), `router.ts` (SPA routing), `styles.css` (Tailwind), `crypto/` (encryption), `pages/` (page renderers), `components/` (UI)
 
-**client/src/crypto:**
-- Purpose: Zero-knowledge cryptography module (AES-256-GCM with Web Crypto API)
-- Contains: Key generation, encryption, decryption, PADME padding, base64 encoding
-- Key files: `encrypt.ts`, `decrypt.ts`, `keys.ts`, `padding.ts`, `encoding.ts`, `constants.ts`, `types.ts`, `index.ts` (public API)
-- Critical: Only module that imports Web Crypto API; never uses Math.random or third-party crypto libraries
+**`client/src/`:**
+- Purpose: Frontend source code.
+- Key files: `app.ts` (entry), `router.ts` (SPA router), theme/analytics setup, pages, components, crypto
 
-**client/src/pages:**
-- Purpose: Top-level page modules (one per route)
-- Contains: `create.ts` (secret creation form), `reveal.ts` (secret display with password prompt), `confirmation.ts` (shareable link display), `error.ts` (404/error page), `login.ts`, `register.ts`, `dashboard.ts` (shows user's secrets), `reset-password.ts`, `forgot-password.ts`
-- Key files: Each exports `renderPageName(container: HTMLElement)` function
+**`client/src/pages/`:**
+- Purpose: SPA page renderers. Each file exports a render function called by router.
+- Contains: 15+ pages (home, create, reveal, login, register, forgot-password, reset-password, dashboard, pricing, privacy, terms, confirm, unsubscribe, error)
+- Pattern: Each page is a `renderXPage(container: HTMLElement)` async function. Router dynamically imports + executes.
 
-**client/src/components:**
-- Purpose: Reusable UI components
-- Contains: `layout.ts` (header/footer shell), `theme-toggle.ts`, `copy-button.ts`, `share-button.ts`, `terminal-block.ts`, `loading-spinner.ts`, `expiration-select.ts`, `toast.ts`, `icons.ts` (Lucide wrapper)
-- Key files: Each exports `createComponentName()` factory function returning HTMLElement
+**`client/src/components/`:**
+- Purpose: Reusable UI building blocks.
+- Contains: layout shell, copy button, share button, toast, terminal block, theme toggle, loading spinner, expiration select, icons wrapper
+- Pattern: Each component exports a function or class that creates and returns DOM elements.
 
-**client/src/api:**
-- Purpose: Typed fetch wrapper for server communication
-- Contains: `client.ts` (API functions for secrets endpoints)
-- Key files: `client.ts` exports `createSecret()`, `getSecret()`, `getSecretMeta()`, `verifySecretPassword()` + `ApiError` class
+**`client/src/crypto/`:**
+- Purpose: Self-contained encryption/decryption module. SOLE importer of Web Crypto API.
+- Key files: `encrypt.ts`, `decrypt.ts`, `keys.ts`, `padding.ts`, `password-generator.ts`, `passphrase.ts`
+- Pattern: Async functions. All randomness via `crypto.getRandomValues()`. No third-party crypto libs.
 
-**client/public:**
-- Purpose: Static assets copied to `client/dist` during build
-- Contains: `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `og-image.png`, `robots.txt`, `site.webmanifest`, `sitemap.xml`
-- Key files: All files served at root path in production
+**`server/src/`:**
+- Purpose: Backend Express API.
+- Key files: `app.ts` (middleware chain), `server.ts` (startup), `auth.ts` (Better Auth config)
 
-**client/dist:**
-- Purpose: Vite build output (generated by `npm run build:client`)
-- Generated: Yes (not in git)
-- Committed: No
-- Contains: Bundled JS chunks, CSS, HTML template with `__CSP_NONCE__` placeholder, static assets
+**`server/src/routes/`:**
+- Purpose: HTTP endpoint handlers. Each route file is a factory that returns an Express Router.
+- Key files: `secrets.ts` (CRUD), `dashboard.ts`, `billing.ts`, `me.ts`, `health.ts`, `subscribers.ts`, `webhooks.ts`, `seo/`
+- Pattern: Factory function pattern. Explicit middleware order. Middleware → validation → service call → response.
 
-**server/src:**
-- Purpose: Express backend with REST API
-- Contains: TypeScript modules for HTTP server
-- Key files: `server.ts` (entry point), `app.ts` (Express app factory), `auth.ts` (BetterAuth config)
+**`server/src/services/`:**
+- Purpose: Business logic independent of HTTP. Testable in isolation.
+- Key files: `secrets.service.ts`, `password.service.ts`, `billing.service.ts`, `notification.service.ts`, `onboarding.service.ts`, `subscribers.service.ts`, `email.ts`
+- Pattern: Stateless async functions. No HTTP context. Database via Drizzle ORM. SDKs via config singletons.
 
-**server/src/routes:**
-- Purpose: Express route handlers
-- Contains: `secrets.ts` (secrets router factory), `health.ts` (health check), `me.ts` (user profile)
-- Key files: `secrets.ts` exports `createSecretsRouter(redisClient?)` with routes: POST /, GET /:id/meta, POST /:id/verify, GET /:id
+**`server/src/middleware/`:**
+- Purpose: Cross-cutting concerns (security, logging, validation, auth, rate-limiting, errors).
+- Key files: `security.ts` (CSP nonce, Helmet, HTTPS), `logger.ts` (Pino), `rate-limit.ts`, `validate.ts`, `optional-auth.ts`, `require-auth.ts`, `error-handler.ts`
+- Pattern: Express middleware functions. Factories for rate limiters. Global error handler is last.
 
-**server/src/services:**
-- Purpose: Business logic layer (no HTTP concerns)
-- Contains: `secrets.service.ts` (secret lifecycle), `password.service.ts` (Argon2id hashing), `email.service.ts` (Resend email client)
-- Key files: `secrets.service.ts` exports `createSecret()`, `retrieveAndDestroy()`, `getSecretMeta()`, `verifyAndRetrieve()`, `cleanExpiredSecrets()`
+**`server/src/db/`:**
+- Purpose: Database abstraction (Drizzle ORM).
+- Key files: `schema.ts` (table defs), `connection.ts` (pool + db instance), `migrate.ts` (migration runner)
+- Contains: Tables: users, sessions, accounts, verification, secrets, marketing_subscribers
 
-**server/src/middleware:**
-- Purpose: Express middleware for cross-cutting concerns
-- Contains: `security.ts` (helmet, CSP, HTTPS), `logger.ts` (pino), `validate.ts` (Zod), `rate-limit.ts` (express-rate-limit), `error-handler.ts`
-- Key files: Each exports middleware function or factory
+**`server/src/config/`:**
+- Purpose: Environment validation + SDK singletons.
+- Key files: `env.ts` (Zod validation), `stripe.ts` (Stripe SDK singleton), `loops.ts` (Loops SDK singleton)
+- Pattern: Config singletons imported throughout, never instantiated inline.
 
-**server/src/db:**
-- Purpose: Database layer (PostgreSQL + Drizzle ORM)
-- Contains: `connection.ts` (pg Pool + Drizzle instance), `schema.ts` (table definitions), `migrate.ts` (migration runner script)
-- Key files: `connection.ts` exports `pool` and `db`, `schema.ts` exports `secrets` table and types
+**`server/src/workers/`:**
+- Purpose: Background jobs (run outside HTTP request cycle).
+- Key files: `expiration-worker.ts` (node-cron, 5-min schedule, hard-deletes expired secrets)
+- Pattern: Started by `server.ts` at startup. Runs independently.
 
-**server/src/config:**
-- Purpose: Environment variable validation
-- Contains: `env.ts` (Zod schema for .env)
-- Key files: `env.ts` exports `env` object with validated config
+**`shared/types/`:**
+- Purpose: Shared API contracts (Zod schemas + TypeScript interfaces).
+- Key files: `api.ts` (all request/response types)
+- Pattern: Single source of truth. Server validates, client types.
 
-**server/src/workers:**
-- Purpose: Background jobs (scheduled cleanup)
-- Contains: `expiration-worker.ts` (node-cron job)
-- Key files: `expiration-worker.ts` exports `startExpirationWorker()`, `stopExpirationWorker()`
+**`drizzle/`:**
+- Purpose: Generated migrations (auto-generated by `drizzle-kit generate`).
+- Contains: `.sql` migration files and metadata.
 
-**shared/types:**
-- Purpose: API contracts shared between client and server
-- Contains: `api.ts` (Zod schemas + TypeScript interfaces)
-- Key files: `api.ts` exports request/response schemas and types
+**`.planning/`:**
+- Purpose: GSD workflow documentation (external to this codebase mapper; included for context).
+- Key files: `PROJECT.md` (project summary), `ROADMAP.md` (version history), `STATE.md` (current phase), `INVARIANTS.md` (zero-knowledge rule)
 
-**e2e:**
-- Purpose: End-to-end Playwright tests (Phase 23)
-- Contains: `specs/` (test files), `fixtures/` (test data)
-- Config: `playwright.config.ts`
-
-**.planning:**
-- Purpose: GSD workflow documentation (not part of app code)
-- Contains: `ROADMAP.md`, `STATE.md`, phase plans, codebase analysis docs
-- Subdirectories: `milestones/`, `phases/`, `todos/`, `research/`, `codebase/`, `debug/`
-
-**drizzle:**
-- Purpose: Generated SQL migrations from schema changes
-- Generated: Yes (via `npm run db:generate`)
-- Committed: Yes (migrations are source code)
-- Contents: `*.sql` migration files, `meta/` directory
-
-**scripts:**
-- Purpose: Build/deploy automation scripts
-- Contains: Reserved for future use
+**`e2e/`:**
+- Purpose: Playwright E2E tests + Gherkin-style UAT YAML specs.
+- Key files: UAT specs, Playwright test files, uat-auth-session.json (session cache)
 
 ## Key File Locations
 
 **Entry Points:**
-- `server/src/server.ts`: Backend entry point (starts HTTP server, worker, graceful shutdown)
-- `client/src/app.ts`: Frontend entry point (DOMContentLoaded handler, initializes theme + layout + router)
-- `client/index.html`: HTML template with `__CSP_NONCE__` placeholder (injected at runtime by server)
+- `client/index.html`: HTML shell (served by Express in production)
+- `client/src/app.ts`: Client application init (DOMContentLoaded listener)
+- `server/src/server.ts`: HTTP server startup (node process entry point)
+- `server/src/app.ts`: Express app factory (buildApp())
 
 **Configuration:**
-- `package.json`: Dependencies, scripts, `"type": "module"` for ESM
-- `tsconfig.json`: TypeScript config (ES2022, ESNext modules, bundler resolution)
-- `vite.config.ts`: Vite config (root: client, Tailwind plugin, CSP nonce placeholder, dev proxy)
-- `vitest.config.ts`: Test config (node environment, dotenv setup file, multi-project for client+server)
-- `drizzle.config.ts`: Drizzle migration config (PostgreSQL connection, output dir)
-- `eslint.config.ts`: ESLint rules (TypeScript, imports, best practices)
-- `server/src/config/env.ts`: Runtime env var validation (Zod)
-- `.env`: Environment variables (DATABASE_URL, PORT, LOG_LEVEL, NODE_ENV, REDIS_URL, auth secrets)
-- `.env.example`: Template for required env vars
+- `.env.example`: Required env var names (never commit .env; use Infisical in production)
+- `tsconfig.json`: Root TypeScript config
+- `tsconfig.server.json`: Server-specific overrides (NodeNext module resolution)
+- `vitest.config.ts`: Test runner config (multi-project: client/happy-dom, server/node)
+- `vite.config.ts`: Frontend build config
+- `package.json`: All npm scripts + dependencies
 
 **Core Logic:**
-- `client/src/crypto/encrypt.ts`: AES-256-GCM encryption with fresh key + IV
-- `client/src/crypto/decrypt.ts`: AES-256-GCM decryption with padding removal
-- `server/src/services/secrets.service.ts`: Atomic read-and-destroy transactions
-- `server/src/services/password.service.ts`: Argon2id password hashing
-- `client/src/router.ts`: SPA routing with History API + dynamic imports
-- `server/src/auth.ts`: BetterAuth configuration (Phase 22)
+- `server/src/db/schema.ts`: Database schema (users, secrets, sessions, etc.)
+- `server/src/services/secrets.service.ts`: Secret CRUD (createSecret, retrieveAndDestroy, etc.)
+- `client/src/crypto/`: Encryption/decryption (encrypt.ts, decrypt.ts, keys.ts)
+- `client/src/router.ts`: SPA router (route → page mapping, SEO meta)
+- `shared/types/api.ts`: API request/response contracts (Zod schemas)
 
 **Testing:**
-- `client/src/crypto/__tests__/`: Crypto module unit tests (5 files, 21+ tests)
-- `server/src/routes/__tests__/`: API integration tests (real PostgreSQL, Supertest)
-- `server/src/workers/__tests__/`: Worker tests
-- `client/src/components/__tests__/`: Component tests
-- `e2e/`: End-to-end Playwright tests (Phase 23)
+- `vitest.config.ts`: Test runner configuration
+- `client/src/__tests__/`: Client unit tests
+- `server/src/__tests__/`: Server unit tests
+- `server/src/routes/__tests__/`: Route integration tests
+- `e2e/`: Playwright E2E tests + UAT YAML specs
+
+**Middleware:**
+- `server/src/middleware/security.ts`: CSP nonce, Helmet, HTTPS redirect
+- `server/src/middleware/logger.ts`: Pino HTTP logging with secret ID redaction
+- `server/src/middleware/rate-limit.ts`: Anonymous + authenticated rate limiters
+- `server/src/middleware/validate.ts`: Zod request validation
+- `server/src/middleware/optional-auth.ts`: Better Auth session extraction (optional)
+- `server/src/middleware/require-auth.ts`: Better Auth session guard (required)
 
 ## Naming Conventions
 
 **Files:**
-- kebab-case: All files use kebab-case (e.g., `expiration-select.ts`, `copy-button.ts`, `secrets.service.ts`)
-- Test files: `*.test.ts` (co-located in `__tests__/` subdirectories)
-- Config files: `*.config.ts` (root level)
+- Pages: `client/src/pages/{name}.ts` (renderNamePage function)
+- Components: `client/src/components/{name}.ts`
+- Services: `server/src/services/{name}.service.ts`
+- Routes: `server/src/routes/{name}.ts`
+- Tests: `{source-file}.test.ts` (co-located with source, same directory)
+- Middleware: `server/src/middleware/{name}.ts`
 
 **Functions:**
-- camelCase: `createSecret()`, `renderCreatePage()`, `validateBody()`
-- Factory functions: Prefix with `create` or `build` (e.g., `createSecretsRouter()`, `buildApp()`)
-- Page renderers: Prefix with `render` (e.g., `renderCreatePage()`, `renderRevealPage()`)
-- Component factories: Prefix with `create` (e.g., `createIcon()`, `createExpirationSelect()`)
-
-**Variables:**
-- camelCase: `ciphertext`, `secretId`, `redisClient`
-- Constants: UPPER_SNAKE_CASE (e.g., `MAX_LENGTH`, `ALGORITHM`, `IV_LENGTH`, `DURATION_MS`)
+- Page renderers: `renderCreatePage()`, `renderRevealPage()`, `renderDashboardPage()`
+- Component factories: `createLayoutShell()`, `createCopyButton()`, `createThemeToggle()`
+- Service functions: `createSecret()`, `verifyAndRetrieve()`, `activatePro()`, `hashPassword()`
+- Middleware factories: `createAnonHourlyLimiter()`, `createSecretsRouter()`
+- Router factories: `createSecretsRouter()`, `createDashboardRouter()`
 
 **Types:**
-- PascalCase: `EncryptResult`, `Secret`, `CreateSecretResponse`, `ApiError`
-- Interfaces: PascalCase (e.g., `PageMeta`, `EncryptedPayload`)
-- Zod schemas: PascalCase with `Schema` suffix (e.g., `CreateSecretSchema`, `SecretIdParamSchema`)
+- Camel case for interfaces: `CreateSecretRequest`, `SecretResponse`, `DashboardSecretItem`
+- Zod schema naming: `CreateSecretSchema`, `VerifySecretSchema`, `SecretIdParamSchema`
+- Union types: `'active' | 'viewed' | 'expired' | 'deleted'` for status field
 
-**CSS Classes:**
-- Tailwind utility classes (no custom CSS classes defined)
-- BEM not used (Tailwind-first approach)
+**Variables:**
+- Camel case: `userId`, `secretId`, `passwordHash`, `ciphertext`
+- Constants: UPPER_SNAKE_CASE: `MAX_PASSWORD_ATTEMPTS`, `DURATION_MS`
+
+**Directories:**
+- Kebab-case (underscores for DB/config): `client/src/`, `server/src/`, `shared/types/`
+- Feature grouping: `middleware/`, `services/`, `routes/`, `pages/`, `components/`, `crypto/`
 
 ## Where to Add New Code
 
-**New Feature (full-stack):**
-- Primary code:
-  - Client page: `client/src/pages/feature-name.ts`
-  - Client API function: `client/src/api/client.ts` (add function to existing file)
-  - Server route: `server/src/routes/feature-name.ts` (or extend existing routes)
-  - Server service: `server/src/services/feature-name.service.ts`
-  - Shared types: `shared/types/api.ts` (add Zod schema + interfaces)
-  - Database schema: `server/src/db/schema.ts` (add table or columns)
-- Tests:
-  - Client: `client/src/pages/__tests__/feature-name.test.ts`
-  - Server: `server/src/routes/__tests__/feature-name.test.ts`
-  - E2E: `e2e/specs/feature-name.spec.ts`
-- Router: Update `client/src/router.ts` to add route pattern
+**New Feature (e.g., "expiring links after N views"):**
+- Primary logic: `server/src/services/secrets.service.ts` (add function like `viewCountSecret()`)
+- API endpoint: `server/src/routes/secrets.ts` (add new route handler)
+- Client page: `client/src/pages/reveal.ts` (update to display view count)
+- Database schema: `server/src/db/schema.ts` (add `viewCount` column if needed)
+- Type contract: `shared/types/api.ts` (add field to SecretResponse)
+- Tests: Co-locate test files (e.g., `secrets.service.test.ts`, `secrets.ts` test in `__tests__/`)
 
 **New Component/Module:**
-- Implementation: `client/src/components/component-name.ts`
-- Tests: `client/src/components/__tests__/component-name.test.ts`
-- Pattern: Export factory function `createComponentName()` returning HTMLElement
-
-**New Middleware:**
-- Implementation: `server/src/middleware/middleware-name.ts`
-- Tests: Co-locate in `server/src/middleware/__tests__/` or test via integration tests
-- Mounting: Add to middleware pipeline in `server/src/app.ts` (order matters!)
-
-**New Background Worker:**
-- Implementation: `server/src/workers/worker-name.ts`
-- Tests: `server/src/workers/__tests__/worker-name.test.ts`
-- Lifecycle: Start in `server/src/server.ts`, stop in graceful shutdown handler
+- Reusable UI: `client/src/components/{name}.ts`
+- Business logic: `server/src/services/{name}.service.ts`
+- HTTP handler: `server/src/routes/{name}.ts`
+- Middleware: `server/src/middleware/{name}.ts`
+- Config/singleton: `server/src/config/{name}.ts`
 
 **Utilities:**
-- Shared helpers: `shared/utils/` (create if needed)
-- Client-only helpers: `client/src/utils/` (create if needed)
-- Server-only helpers: `server/src/utils/` (create if needed)
+- Client-side helpers: `client/src/{folder}/` (e.g., `client/src/analytics/`, `client/src/api/`)
+- Server-side helpers: `server/src/services/` for business logic, `server/src/middleware/` for cross-cutting concerns
+- Shared utilities: `shared/types/` for type contracts only (no runtime code)
 
-**API Endpoint:**
-- Route handler: Add to `server/src/routes/secrets.ts` or create new router file
-- Service function: Add to `server/src/services/secrets.service.ts` or create new service
-- Types: Add Zod schema + interface to `shared/types/api.ts`
-- Client wrapper: Add function to `client/src/api/client.ts`
-
-**Database Changes:**
-- Schema: Edit `server/src/db/schema.ts`
-- Migration: Run `npm run db:generate` to create migration in `drizzle/` directory
-- Apply: Run `npm run db:migrate` to apply migration to database
+**New Page:**
+- File: `client/src/pages/{name}.ts`
+- Export function: `export function renderNamePage(container: HTMLElement): void | Promise<void>`
+- Router mapping: Add case in `client/src/router.ts` handleRoute() switch
+- API call (if needed): Use API client from `client/src/api/client.ts`
+- Tests: `client/src/pages/{name}.test.ts`
 
 ## Special Directories
 
-**node_modules:**
-- Purpose: npm dependencies
-- Generated: Yes (via `npm install`)
-- Committed: No (in .gitignore)
+**`drizzle/`:**
+- Purpose: Generated migration files (auto-created by `drizzle-kit generate`)
+- Generated: Yes (run `npm run db:generate` after schema changes)
+- Committed: Yes (migrations are part of version control)
+- Manual edits: Only if `drizzle-kit` generates broken SQL (see CLAUDE.md for Drizzle bug #4147)
 
-**client/dist:**
-- Purpose: Vite build output (production assets)
-- Generated: Yes (via `npm run build:client`)
-- Committed: No (in .gitignore)
+**`node_modules/`:**
+- Purpose: Installed npm dependencies
+- Generated: Yes (npm install)
+- Committed: No (.gitignore)
 
-**drizzle:**
-- Purpose: Generated SQL migrations from schema changes
-- Generated: Yes (via `npm run db:generate`)
-- Committed: Yes (migrations are source code)
+**`.env`, `Infisical/`:**
+- Purpose: Environment variables and secrets
+- Status: `.env` never committed; Infisical CLI injects vars at dev/deploy time
+- Manual: Yes, set locally for development (see .env.example)
 
-**.planning:**
-- Purpose: GSD workflow documentation and codebase analysis
-- Generated: Partially (created by `/gsd:*` commands)
-- Committed: Yes (workflow state is tracked)
+**`client/dist/`:**
+- Purpose: Built SPA (Vite output)
+- Generated: Yes (`npm run build:client`)
+- Committed: No (.gitignore)
+- Served: Yes, by Express in production (via `express.static()` + SPA catch-all)
 
-**.claude:**
-- Purpose: Claude Code internal state
-- Generated: Yes (by Claude Code)
-- Committed: No (in .gitignore)
+**`coverage/`:**
+- Purpose: Test coverage reports (V8)
+- Generated: Yes (`npm run test:run`)
+- Committed: No (.gitignore)
 
-**.git:**
-- Purpose: Git repository metadata
-- Generated: Yes (by git)
-- Committed: No (git internal directory)
-
-## Import Patterns
-
-**Client imports:**
-- Local modules: Relative paths with `.js` extension (e.g., `from './crypto/index.js'`)
-- Shared types: `from '../../../shared/types/api.js'` (relative path from client to shared)
-- External: `from 'lucide'` (npm package with Vite alias to fix broken module field)
-- CSS: `import './styles.css'` (processed by Vite)
-
-**Server imports:**
-- Local modules: Relative paths with `.js` extension (e.g., `from './db/connection.js'`)
-- Shared types: `from '../../../shared/types/api.js'` (relative path from server to shared)
-- External: Standard npm imports (e.g., `import express from 'express'`)
-- Node builtins: `node:` prefix (e.g., `from 'node:fs'`, `from 'node:path'`)
-
-**ESM quirks:**
-- `.js` extension required: Even though files are `.ts`, imports use `.js` (TypeScript + Node ESM requirement)
-- `import.meta.dirname`: Used instead of `__dirname` (ESM alternative)
-- Default imports: `express` is default import, `pinoHttp` is named export (CJS interop)
-- Pool import: `pg` destructured from default import (`const { Pool } = pg`)
-
-**Path aliases:**
-- None defined: All imports use relative paths (no `@/` or `~/` aliases in tsconfig)
-- Vite alias: Only `lucide` aliased to fix broken npm package
-
-## File Organization
-
-**Co-located tests:**
-- Pattern: Tests live in `__tests__/` subdirectories alongside source code
-- Example: `client/src/crypto/__tests__/encrypt.test.ts` tests `client/src/crypto/encrypt.ts`
-- Naming: `filename.test.ts` for unit tests, `filename.integration.test.ts` for integration tests
-
-**Barrel files:**
-- Usage: `client/src/crypto/index.ts` exports public API (encrypt, decrypt, constants, types)
-- Not used elsewhere: Other directories do not use barrel files (explicit imports)
-
-**Single-responsibility files:**
-- Pattern: One primary export per file (e.g., `encrypt.ts` exports `encrypt()` function)
-- Exceptions: `api.ts` exports multiple schemas/types (API contract), `icons.ts` exports `createIcon()` + icon map
-
-**Module boundaries:**
-- Client never imports from server (enforced by Vite build)
-- Server never imports from client (enforced by TypeScript config)
-- Both import from shared (common types)
-
-## Multi-Project Test Config
-
-**client tests (vitest):**
-- Environment: happy-dom
-- Include: `client/src/**/*.test.ts`
-- Runs in parallel
-
-**server tests (vitest):**
-- Environment: node
-- Include: `server/src/**/*.test.ts`
-- fileParallelism: false (sequential to avoid database lock conflicts)
-
-**e2e tests (playwright):**
-- Environment: Chromium/Firefox/WebKit browsers
-- Include: `e2e/specs/**/*.spec.ts`
-- Config: `e2e/playwright.config.ts`
+**`playwright-report/`:**
+- Purpose: HTML report from Playwright E2E test runs
+- Generated: Yes (`npm run test:e2e`)
+- Committed: No (.gitignore)
 
 ---
 
-*Structure analysis: 2026-02-20*
+*Structure analysis: 2026-03-01*

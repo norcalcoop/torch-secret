@@ -16,8 +16,8 @@ test.describe.serial('Create and reveal secret', () => {
   let shareUrl: string;
 
   test('create a secret via the browser UI', async ({ page }) => {
-    // Navigate to the home page
-    await page.goto('/');
+    // Navigate to the create page
+    await page.goto('/create');
 
     // Wait for the page to fully load
     await expect(page.getByRole('heading', { name: 'Share a Secret' })).toBeVisible();

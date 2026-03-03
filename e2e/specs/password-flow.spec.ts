@@ -21,10 +21,10 @@ test.describe('Password-protected secret flow', () => {
     await page.goto(secret.url);
 
     // Wait for the password entry form
-    await expect(page.getByRole('heading', { name: 'Password Required' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Protection Required' })).toBeVisible();
 
     // Fill in the correct password
-    await page.getByLabel('Password').fill('mypassword123');
+    await page.locator('#reveal-password').fill('mypassword123');
 
     // Submit the form
     await page.getByRole('button', { name: 'Verify Password' }).click();
@@ -45,10 +45,10 @@ test.describe('Password-protected secret flow', () => {
     await page.goto(secret.url);
 
     // Wait for the password entry form
-    await expect(page.getByRole('heading', { name: 'Password Required' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Protection Required' })).toBeVisible();
 
     // Fill in a wrong password
-    await page.getByLabel('Password').fill('wrongpassword');
+    await page.locator('#reveal-password').fill('wrongpassword');
 
     // Submit the form
     await page.getByRole('button', { name: 'Verify Password' }).click();

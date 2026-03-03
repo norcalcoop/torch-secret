@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, integer, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, text, timestamp, integer, boolean, index } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
+
+export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro']);
 
 /**
  * ZERO-KNOWLEDGE INVARIANT — canonical rule (see also CLAUDE.md and .planning/INVARIANTS.md)
@@ -13,9 +15,16 @@ import { nanoid } from 'nanoid';
  * violating the zero-knowledge security model.
  *
  * Current enforcement points (update .planning/INVARIANTS.md when adding new systems):
- *   DB:        secrets.user_id is nullable; secrets.id is never stored in users or sessions rows
- *   Logger:    server/src/middleware/logger.ts redacts secret IDs from URL paths via regex
- *   Analytics: PostHog events must strip URL fragments (sanitize_properties) — Phase 25
+ *   DB — secrets table:       secrets.user_id is nullable FK; secrets.id is never stored in users, sessions, or accounts rows
+ *   DB — users table:         No secret_id or last_secret_id column. User rows contain no secret identifiers.
+ *   Logger:                   server/src/middleware/logger.ts redacts secret IDs from URL paths via regex
+ *   Analytics:                PostHog sanitize_properties must strip URL fragments before any event fires — Phase 25
+ *   Logger — dashboard route: redactUrl regex extended to cover /api/dashboard/secrets/:id paths — Phase 23
+ *   Email (Resend):           notification email body contains only viewed-at timestamp; no secretId, label, or ciphertext — Phase 26
+ *   Rate limits + prompts:    429 responses and conversion prompt events contain no userId or secretId — Phase 27
+ *   Stripe billing:         webhook handler receives stripe_customer_id; activatePro/deactivatePro look up by stripe_customer_id only — no code path joins userId + secretId — Phase 34
+ *   Email capture:          marketing_subscribers stores email + GDPR evidence; no userId or secretId column — Phase 36
+ *   Loops onboarding:     databaseHooks hook logs only err.message on failure — no userId in Loops error logs — Phase 37
  *
  * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
  */
@@ -31,6 +40,12 @@ export const users = pgTable('users', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  /** Stripe customer ID for billing — nullable until user initiates checkout (Phase 34) */
+  stripeCustomerId: text('stripe_customer_id'),
+  /** Subscription tier — 'free' by default, 'pro' after successful payment (Phase 34) */
+  subscriptionTier: subscriptionTierEnum('subscription_tier').notNull().default('free'),
+  /** Whether user opted in to marketing emails at registration — gates day-3/day-7 Loops sequence (Phase 37) */
+  marketingConsent: boolean('marketing_consent').notNull().default(false),
 });
 
 export const sessions = pgTable('sessions', {
@@ -163,3 +178,47 @@ export type NewAccount = typeof accounts.$inferInsert;
 
 export type Verification = typeof verification.$inferSelect;
 export type NewVerification = typeof verification.$inferInsert;
+
+/**
+ * Marketing subscribers table: GDPR-compliant email capture for newsletters.
+ *
+ * Zero-knowledge invariant: this table has NO FK to users or secrets tables.
+ * No query may JOIN marketing_subscribers with secrets in the same result set.
+ * ip_hash is SHA-256(IP_HASH_SALT + req.ip) — never stores plain IP addresses.
+ * See .planning/INVARIANTS.md for the full enforcement rule (Phase 36).
+ */
+export const marketingSubscribers = pgTable(
+  'marketing_subscribers',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    email: text('email').notNull().unique(),
+    /** 'pending' | 'confirmed' | 'unsubscribed' */
+    status: text('status').notNull().default('pending'),
+    /** 21-char nanoid — cleared after confirmation; NULL if confirmed or unsubscribed */
+    confirmationToken: text('confirmation_token'),
+    /** Expiry for confirmationToken (24h from creation) */
+    tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
+    /** 21-char nanoid — generated at confirmation time; used in unsubscribe links (persists permanently) */
+    unsubscribeToken: text('unsubscribe_token').unique(),
+    /** Snapshot of the consent text shown at signup — GDPR evidence of what user consented to */
+    consentText: text('consent_text').notNull(),
+    /** UTC timestamp when consent was given */
+    consentAt: timestamp('consent_at', { withTimezone: true }).notNull().defaultNow(),
+    /** SHA-256(IP_HASH_SALT + req.ip) — pseudonymous; never plain IP address (GDPR ECAP-05) */
+    ipHash: text('ip_hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('marketing_subscribers_confirmation_token_idx').on(table.confirmationToken),
+    index('marketing_subscribers_unsubscribe_token_idx').on(table.unsubscribeToken),
+  ],
+);
+
+export type MarketingSubscriber = typeof marketingSubscribers.$inferSelect;
+export type NewMarketingSubscriber = typeof marketingSubscribers.$inferInsert;

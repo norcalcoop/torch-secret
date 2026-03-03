@@ -1,0 +1,171 @@
+phase: 33-pricing-page
+app: http://torch-secret.localhost:1355
+failures_dir: .planning/phases/33-pricing-page/uat-failures
+
+tests:
+  # Test 1: Pricing page loads
+  # Source: client/src/pages/pricing.ts
+  #   createPageHeader() → h1.textContent = 'Simple, transparent pricing'
+  #   createBillingToggle() → button role="switch" aria-label="Toggle billing period"
+  #   createFreeCard() + createProCard() → h2 'Free' + h2 'Pro'
+  #   createFaqSection() → section aria-labelledby="faq-heading"
+  - name: "Pricing page loads"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.querySelector('h1')?.textContent ?? 'NOT_FOUND'", expected: "Simple, transparent pricing" }
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('h2')).map(h => h.textContent.trim()).join('|')", expected: "Free" }
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('h2')).map(h => h.textContent.trim()).join('|')", expected: "Pro" }
+      - { type: eval_contains, js: "document.querySelector('[role=\"switch\"]') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      - { type: eval_contains, js: "document.querySelector('[aria-labelledby=\"faq-heading\"]') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+
+  # Test 2: Annual billing default
+  # Source: createBillingToggle() → isAnnual = true on init → aria-checked="true"
+  #   createProCard() → proAmountEl = '$65', proPeriodEl = '/year' (initial values)
+  #   proSubLabelEl.textContent = '$5.42/mo equivalent' (no 'hidden' class on init)
+  #   savingsBadge.textContent = '22% savings' (no 'invisible' class on init)
+  - name: "Annual billing default"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_equals, js: "document.querySelector('[role=\"switch\"]')?.getAttribute('aria-checked') ?? 'NOT_FOUND'", expected: "true" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "$65" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "/year" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "$5.42/mo equivalent" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "22% savings" }
+
+  # Test 3a: Billing toggle — switch to monthly
+  # Source: toggle click handler → isAnnual = false → aria-checked="false"
+  #   updatePrice(false) → proAmountEl = '$7', proPeriodEl = '/month'
+  #   proSubLabelEl.classList.add('hidden') → hidden from innerText (display: none)
+  #   savingsBadge.classList.toggle('invisible', true) → invisible (visibility: hidden → excluded from innerText)
+  - name: "Billing toggle — switch to monthly"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+      - find role switch click --name "Toggle billing period"
+      - wait 300
+    assertions:
+      - { type: eval_equals, js: "document.querySelector('[role=\"switch\"]')?.getAttribute('aria-checked') ?? 'NOT_FOUND'", expected: "false" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "$7" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "month" }
+      - { type: eval_not_contains, js: "document.body.innerText", expected: "$65" }
+      - { type: eval_not_contains, js: "document.body.innerText", expected: "$5.42/mo equivalent" }
+
+  # Test 3b: Billing toggle — switch back to annual
+  # Source: second click → isAnnual = true → $65/year restored; savings badge visible
+  - name: "Billing toggle — switch back to annual"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+      - find role switch click --name "Toggle billing period"
+      - wait 300
+      - find role switch click --name "Toggle billing period"
+      - wait 300
+    assertions:
+      - { type: eval_equals, js: "document.querySelector('[role=\"switch\"]')?.getAttribute('aria-checked') ?? 'NOT_FOUND'", expected: "true" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "$65" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "/year" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "22% savings" }
+
+  # Test 4: Free tier card
+  # Source: createFreeCard() → priceAmount = '$0', pricePeriod = '/forever'
+  #   FREE_FEATURES: 4 included (check icons), 2 excluded (minus icons)
+  #   card class includes 'backdrop-blur-md' → glassmorphism surface
+  - name: "Free tier card"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "$0" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "/forever" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "One-time encrypted secrets" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Up to 7-day expiration" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Password protection" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Anonymous — no account required" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "30-day expiration" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Secret dashboard & history" }
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('h2')).find(h => h.textContent.trim() === 'Free')?.parentElement?.className?.includes('backdrop-blur') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+
+  # Test 5: Pro tier card
+  # Source: createProCard() → badgeInner.textContent = 'Recommended'
+  #   card class: 'border-2 border-accent shadow-xl' → accent border + shadow
+  #   CTA: <a href="/register?plan=pro"> textContent = 'Get Pro'
+  #   PRO_FEATURES: 6 items, all included
+  - name: "Pro tier card"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Recommended" }
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('h2')).find(h => h.textContent.trim() === 'Pro')?.parentElement?.className?.includes('border-accent') ? 'FOUND' : 'NOT_FOUND'", expected: "FOUND" }
+      - { type: eval_contains, js: "document.querySelector('a[href=\"/register?plan=pro\"]')?.textContent ?? 'NOT_FOUND'", expected: "Get Pro" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Unlimited secrets" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Up to 30-day expiration" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Secret dashboard & history" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Email notification on view" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Priority support" }
+
+  # Test 6: Trust strip
+  # Source: createTrustStrip() → signals = ['Cancel any time', 'No contracts', 'Powered by Stripe']
+  #   Each rendered as <span> in a flex row between tier cards and FAQ
+  - name: "Trust strip"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "document.body.innerText", expected: "Cancel any time" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "No contracts" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Powered by Stripe" }
+
+  # Test 7a: FAQ accordion — 6 items
+  # Source: createFaqSection() → iterates FAQ_ITEMS (6 items) → each a <details> element
+  #   h2#faq-heading.textContent = 'Frequently asked questions'
+  - name: "FAQ accordion — 6 items"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_equals, js: "document.querySelectorAll('details').length.toString()", expected: "6" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Frequently asked questions" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Can I cancel my Pro subscription at any time?" }
+
+  # Test 7b: FAQ accordion — expand on click
+  # Source: createFaqItem() → <details> receives [open] attribute when summary is clicked (native behavior)
+  #   answer text: 'Cancel anytime from your billing settings...'
+  - name: "FAQ accordion — expand on click"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+      - find text "Can I cancel my Pro subscription at any time?" click
+      - wait 300
+    assertions:
+      - { type: eval_contains, js: "document.querySelector('details[open]') ? 'OPEN' : 'CLOSED'", expected: "OPEN" }
+      - { type: eval_contains, js: "document.body.innerText", expected: "Cancel anytime from your billing settings" }
+
+  # Test 7c: FAQ accordion — collapse on second click
+  # Source: native <details>/<summary> toggle — second click removes [open] attribute
+  - name: "FAQ accordion — collapse on second click"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+      - find text "Can I cancel my Pro subscription at any time?" click
+      - wait 300
+      - find text "Can I cancel my Pro subscription at any time?" click
+      - wait 300
+    assertions:
+      - { type: eval_equals, js: "document.querySelector('details[open]') ? 'OPEN' : 'CLOSED'", expected: "CLOSED" }
+
+  # Test 8: FAQPage JSON-LD statically embedded in HTML
+  # Source: client/index.html → <script type="application/ld+json" nonce="__CSP_NONCE__"> block
+  #   with "@type": "FAQPage" — present in static HTML, not injected by SPA JS.
+  #   Readable via document.querySelectorAll('script[type="application/ld+json"]').textContent
+  - name: "FAQPage JSON-LD — statically embedded in HTML"
+    steps:
+      - open {app}/pricing
+      - wait --load networkidle --timeout 10000
+    assertions:
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(s => s.textContent).join('')", expected: "FAQPage" }
+      - { type: eval_contains, js: "Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(s => s.textContent).join('')", expected: "Can I cancel my Pro subscription at any time?" }

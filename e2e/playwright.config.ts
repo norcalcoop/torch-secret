@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Ensure the test runner process sees E2E_TEST, matching the webServer env below.
+// webServer.env only sets vars for the child server process; the test runner is a
+// separate process and won't inherit those values without this assignment.
+process.env.E2E_TEST = 'true';
+
 export default defineConfig({
   testDir: './specs',
   fullyParallel: false,
@@ -15,7 +20,11 @@ export default defineConfig({
   },
 
   webServer: {
-    command: 'npm run build:client && npm run dev:server',
+    // In CI, secrets are already injected by the Infisical GitHub Action, so we
+    // run the server directly with tsx. Locally we use dev:server (infisical run).
+    command: process.env.CI
+      ? 'npm run build:client && tsx ../server/src/server.ts'
+      : 'npm run build:client && npm run dev:server',
     url: 'http://localhost:3000/api/health',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

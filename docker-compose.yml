@@ -32,23 +32,34 @@ services:
     ports:
       - '3000:3000'
     environment:
+      # --- Internal Docker network addresses (always hardcoded; not Infisical-managed) ---
       DATABASE_URL: postgresql://secureshare:secureshare@db:5432/secureshare
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
       FORCE_HTTPS: 'false'
       PORT: '3000'
       LOG_LEVEL: info
-      # --- Auth (required by Zod; replace with real values to test auth locally) ---
-      BETTER_AUTH_SECRET: 'local-development-secret-must-be-at-least-32-chars'
-      BETTER_AUTH_URL: 'http://localhost:3000'
-      # --- Email (placeholder satisfies z.string().min(1); emails won't deliver) ---
-      RESEND_API_KEY: 'placeholder-not-sent-in-docker-local-dev'
-      RESEND_FROM_EMAIL: 'SecureShare <noreply@localhost>'
-      # --- OAuth (commented out; buttons won't appear — correct for local dev) ---
-      # GOOGLE_CLIENT_ID:
-      # GOOGLE_CLIENT_SECRET:
-      # GITHUB_CLIENT_ID:
-      # GITHUB_CLIENT_SECRET:
+      # --- Auth — passed through from host (Infisical staging) or local-dev placeholders ---
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-development-secret-must-be-at-least-32-chars}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      # --- Email ---
+      RESEND_API_KEY: ${RESEND_API_KEY:-placeholder-not-sent-in-docker-local-dev}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-Torch Secret <noreply@localhost>}
+      RESEND_AUDIENCE_ID: ${RESEND_AUDIENCE_ID:-placeholder-not-sent-in-docker-local-dev}
+      # --- Stripe (placeholders satisfy Zod startsWith checks; billing won't work locally) ---
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder_not_functional}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder_not_functional_00000000}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-price_placeholder_not_functional}
+      # --- Security ---
+      IP_HASH_SALT: ${IP_HASH_SALT:-placeholder-ip-hash-salt-32chars-ok}
+      # --- Loops onboarding emails ---
+      LOOPS_API_KEY: ${LOOPS_API_KEY:-placeholder-not-sent-in-docker-local-dev}
+      # --- OAuth (empty default disables providers; Infisical provides real values in staging) ---
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       # --- PostHog is a build-time var; set VITE_POSTHOG_KEY before docker build ---
       # VITE_POSTHOG_KEY is baked in during docker build — not a runtime env var
     depends_on:

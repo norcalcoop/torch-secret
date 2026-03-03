@@ -37,7 +37,7 @@ test.describe.serial('Anonymous rate-limit countdown', () => {
     // 3 secrets created — next creation via the UI should trigger 429.
 
     // Navigate to the create page
-    await page.goto('/');
+    await page.goto('/create');
     await expect(page.getByRole('heading', { name: 'Share a Secret' })).toBeVisible();
 
     // Fill in the secret and submit
@@ -118,7 +118,7 @@ test.describe('Anonymous expiration cap enforcement', () => {
     // anonymous users (createExpirationSelect(false) — see expiration-select.ts).
     // Anonymous mode renders a <div> wrapper (not a <select>) containing "1 hour" text.
     // Authenticated mode renders a <select id="expiration"> with 1h/24h/7d options.
-    await page.goto('/');
+    await page.goto('/create');
     await expect(page.getByRole('heading', { name: 'Share a Secret' })).toBeVisible();
 
     // Check whether the page renders a <select> element for expiration

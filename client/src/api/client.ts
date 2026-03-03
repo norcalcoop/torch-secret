@@ -1,5 +1,5 @@
 /**
- * Typed fetch wrapper for the SecureShare secrets API.
+ * Typed fetch wrapper for the Torch Secret secrets API.
  *
  * IMPORTANT: GET requests are never cached -- each call atomically
  * destroys the secret on the server. There is no retry or cache logic.
@@ -12,6 +12,10 @@ import type {
   VerifySecretResponse,
   DashboardListResponse,
   DashboardDeleteResponse,
+  MeResponse,
+  BillingCheckoutResponse,
+  VerifyCheckoutResponse,
+  BillingPortalResponse,
 } from '../../../shared/types/api.js';
 
 /**
@@ -44,6 +48,10 @@ export class ApiError extends Error {
  *
  * On 429 Too Many Requests, throws ApiError with rateLimitReset set from
  * the RateLimit-Reset draft-6 header (delta in seconds, time remaining) for countdown display.
+ *
+ * @param protectionType - The protection mode selected by the user ('none' | 'passphrase' | 'password').
+ *   Serialized as `protection_type` (snake_case) in the JSON body per API contract.
+ *   Defaults to 'none' (no server-side password protection).
  */
 export async function createSecret(
   ciphertext: string,
@@ -51,6 +59,7 @@ export async function createSecret(
   password?: string,
   label?: string,
   notify?: boolean,
+  protectionType: 'none' | 'passphrase' | 'password' = 'none',
 ): Promise<CreateSecretResponse> {
   const res = await fetch('/api/secrets', {
     method: 'POST',
@@ -61,6 +70,7 @@ export async function createSecret(
       ...(password ? { password } : {}),
       ...(label ? { label } : {}),
       ...(notify !== undefined ? { notify } : {}),
+      protection_type: protectionType,
     }),
   });
 
@@ -154,4 +164,59 @@ export async function deleteDashboardSecret(id: string): Promise<DashboardDelete
     throw new ApiError(res.status, await res.json());
   }
   return res.json() as Promise<DashboardDeleteResponse>;
+}
+
+/**
+ * Fetch the authenticated user profile including subscription tier.
+ * Returns MeResponse { user: { ..., subscriptionTier: 'free' | 'pro' } }.
+ * Throws ApiError 401 if unauthenticated.
+ */
+export async function getMe(): Promise<MeResponse> {
+  const res = await fetch('/api/me');
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<MeResponse>;
+}
+
+/**
+ * Initiate a Stripe Checkout session for the Pro subscription.
+ * Returns { url } to redirect the browser to Stripe Checkout.
+ * Throws ApiError 401 if unauthenticated.
+ */
+export async function initiateCheckout(): Promise<BillingCheckoutResponse> {
+  const res = await fetch('/api/billing/checkout', { method: 'POST' });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<BillingCheckoutResponse>;
+}
+
+/**
+ * Verify a completed Stripe Checkout session by session ID.
+ * Called immediately after the user returns from Stripe Checkout (BILL-05).
+ * Returns { status: 'active', tier: 'pro' } on success.
+ * Throws ApiError 402 if payment is incomplete, 403 if session mismatch.
+ */
+export async function verifyCheckoutSession(sessionId: string): Promise<VerifyCheckoutResponse> {
+  const res = await fetch(
+    `/api/billing/verify-checkout?session_id=${encodeURIComponent(sessionId)}`,
+  );
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<VerifyCheckoutResponse>;
+}
+
+/**
+ * Create a Stripe Customer Portal session for subscription management (BILL-04).
+ * Returns { url } to open in a new tab via window.open(url, '_blank').
+ * Throws ApiError 404 if user has no Stripe subscription.
+ */
+export async function createPortalSession(): Promise<BillingPortalResponse> {
+  const res = await fetch('/api/billing/portal', { method: 'POST' });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.json());
+  }
+  return res.json() as Promise<BillingPortalResponse>;
 }

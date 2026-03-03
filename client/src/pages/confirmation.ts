@@ -19,6 +19,7 @@ import { ShieldCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { createShareButton } from '../components/share-button.js';
+import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js';
 import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
 import {
   captureConversionPromptShown,
@@ -178,7 +179,7 @@ export function renderConfirmationPage(
   );
   buttonRow.appendChild(copyButton);
 
-  const shareBtn = createShareButton(shareUrl, 'SecureShare - Your secure link');
+  const shareBtn = createShareButton(shareUrl, 'Torch Secret - Your secure link');
   if (shareBtn) {
     buttonRow.appendChild(shareBtn);
   }
@@ -289,7 +290,16 @@ export function renderConfirmationPage(
   createAnotherButton.addEventListener('click', () => {
     navigate('/');
   });
-  wrapper.appendChild(createAnotherButton);
+
+  // -- Actions group: flex-col wrapper forces feedbackLink below createAnotherButton --
+  const actionsGroup = document.createElement('div');
+  actionsGroup.className = 'flex flex-col items-center gap-2';
+  actionsGroup.appendChild(createAnotherButton);
+
+  // -- Feedback link (Phase 38 -- opens Tally.so form in new tab) --
+  const feedbackLink = createFeedbackLink(TALLY_FEEDBACK_URL);
+  actionsGroup.appendChild(feedbackLink);
+  wrapper.appendChild(actionsGroup);
 
   container.appendChild(wrapper);
 

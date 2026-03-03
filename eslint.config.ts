@@ -54,6 +54,8 @@ export default defineConfig([
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      // vi.mocked() objects are not real class instances — this-binding concern does not apply
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 
@@ -90,6 +92,13 @@ export default defineConfig([
 
   {
     files: ['*.config.ts', '*.config.mjs', 'e2e/*.config.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+
+  // Cloudflare Workers use their own global types (ScheduledController, ExecutionContext)
+  // not included in root tsconfig — disable type-checked rules for the workers dir.
+  {
+    files: ['workers/**/*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
   },
 

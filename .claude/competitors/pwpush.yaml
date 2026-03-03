@@ -7,7 +7,7 @@ url: https://pwpush.com
 alt_urls:
   - https://us.pwpush.com
   - https://eu.pwpush.com
-tagline: "Securely share sensitive information"
+tagline: 'Securely share sensitive information'
 open_source: true
 source_repo: https://github.com/pglombardo/PasswordPusher
 tech_stack: Ruby on Rails
@@ -117,11 +117,11 @@ not_ideal_for:
   - Non-technical users (UX is more complex)
 
 common_complaints:
-  - "Still server-side encryption — not truly zero-knowledge"
-  - "No free hosted option — you either pay or self-host"
-  - "Premium pricing is high for individuals"
-  - "UI feels dated / cluttered compared to simpler alternatives"
-  - "View count expiration can be confusing for non-technical recipients"
+  - 'Still server-side encryption — not truly zero-knowledge'
+  - 'No free hosted option — you either pay or self-host'
+  - 'Premium pricing is high for individuals'
+  - 'UI feels dated / cluttered compared to simpler alternatives'
+  - 'View count expiration can be confusing for non-technical recipients'
 
 seo_terms:
   - pwpush alternative

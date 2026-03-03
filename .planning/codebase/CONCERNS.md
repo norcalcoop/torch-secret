@@ -1,6 +1,6 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2026-03-01
 
 ## Tech Debt
 
@@ -42,23 +42,39 @@
 
 ---
 
-### Rate Limiting MemoryStore Reset (v1.0 finding, unresolved)
+### Rate Limiting MemoryStore Growth and Reset (Phase 27 finding)
 
-**Issue:** Rate limiter uses in-memory storage by default (RedisStore is opt-in via `REDIS_URL`). Server restart clears all rate limit counters.
+**Issue:** When `REDIS_URL` is not set, rate limiter falls back to MemoryStore which:
+1. Grows unbounded in memory (never expires old entries)
+2. Is cleared on server restart (resets all rate limit counters)
 
-**Files:** `server/src/middleware/rate-limit.ts`, `server/src/app.ts`
+**Files:** `server/src/middleware/rate-limit.ts` (lines 14-20), `server/src/app.ts` (lines 49-51)
 
-**Impact:** Degrades brute-force protection in single-instance deployments. Production deployments must set `REDIS_URL` to enable persistent rate limiting.
+**Impact:** Long-running instances accumulate memory without bound. On restart, all rate limits reset, allowing burst attacks immediately after deployment.
 
-**Fix approach:** Not a bug (documented expected behavior). For production, set `REDIS_URL` environment variable to enable persistent rate limiting across restarts and instances.
+**Fix approach:** Either (a) require Redis in production and document as mandatory, (b) use `node-cache` library with TTL instead of MemoryStore, or (c) accept single-instance deployment model and document explicitly.
 
 ---
 
-### Trust Proxy Single-Hop Assumption (v1.0 finding, unresolved)
+### console.error() Instead of Structured Logging (Phase 37 finding)
+
+**Issue:** Fire-and-forget email and Loops errors use `console.error()` instead of Pino logger, making them invisible to log aggregation systems.
+
+**Files:**
+- `server/src/services/notification.service.ts` (line 36)
+- `server/src/services/subscribers.service.ts` (lines 161, 197)
+
+**Impact:** Production error tracking (Sentry, Datadog, etc.) misses email delivery failures and Loops sync failures. Silent data loss in subscriber sync.
+
+**Fix approach:** Replace `console.error()` with `logger.error()`. Ensure log messages follow zero-knowledge invariant (no userId + secretId combination).
+
+---
+
+### Trust Proxy Single-Hop Assumption (v1.0 finding, still valid)
 
 **Issue:** `app.set('trust proxy', 1)` assumes exactly one proxy hop (load balancer → Express). Incorrect hop count breaks rate limiting and HTTPS redirect.
 
-**Files:** `server/src/app.ts` (line 48)
+**Files:** `server/src/app.ts` (line 55)
 
 **Impact:** Multi-hop deployments (e.g., CDN → LB → Express) will use wrong IP for rate limiting, allowing bypass. Setting too high allows X-Forwarded-For spoofing.
 
@@ -66,104 +82,126 @@
 
 ---
 
-### No E2E Test Coverage for Fragment Handling (v1.0 finding, resolved in v3.0)
+## Known Bugs
 
-**Issue:** E2E tests were missing. Fragment handling in reveal page relies on `window.location.hash`.
+### Password Attempt Counter May Show Wrong State to Client (Phase 34 finding)
 
-**Files:** Originally `client/src/router.ts`, `client/src/pages/reveal.ts`
+**Symptoms:** If client retries password verification while server is processing, `attemptsRemaining` shown to client may not match actual server count.
 
-**Status:** RESOLVED in Phase 17 (v3.0). Playwright E2E tests now cover create-reveal-decrypt flow.
+**Files:**
+- `server/src/services/secrets.service.ts` (lines 302-306) — password attempts incremented in DB
+- `server/src/routes/secrets.ts` (lines 193-196) — response returns attemptsRemaining
+
+**Trigger:** Race condition under high concurrent load on single password-protected secret.
+
+**Workaround:** Client respects server-sent `attemptsRemaining` in response; eventual consistency is achieved within one request.
+
+**Fix approach:** Already mitigated by returning server-authoritative `attemptsRemaining` in all `verifyAndRetrieve()` responses. No additional action needed.
 
 ---
 
-## Known Bugs
+### Expiration Worker Bulk Zero May Not Match Original Length (Phase 37 finding)
 
-**None detected in v4.0 phases 21-22.**
+**Symptoms:** Anonymous expired secrets are zeroed with single `'0'` character, not original ciphertext length.
 
-All tests pass (19/19 automated checks in Phase 22 auth integration tests). No TODO/FIXME/HACK comments found in new Phase 21-22 source code. Verification documents explicitly checked for anti-patterns and found none.
+**Files:** `server/src/workers/expiration-worker.ts` (lines 32, 38)
 
-Earlier v1.0-v3.0 concerns (linting, deployment, health checks, graceful shutdown) have been resolved:
-- ✅ ESLint 10 flat config (Phase 15)
-- ✅ Dockerfile + docker-compose.yml (Phase 16)
-- ✅ `/api/health` endpoint (Phase 16)
-- ✅ Graceful shutdown + SIGTERM handler (Phase 16)
+**Trigger:** When expiration worker runs, all anonymous expired secrets get `ciphertext = '0'` regardless of original length.
+
+**Issue:** Security comment says "this still mitigates data remanence" but single `'0'` does not prevent length inference; SECR-08 mitigation is incomplete.
+
+**Workaround:** Intentional simplification for performance; accepted trade-off documented in code.
+
+**Fix approach:** Either (a) query original ciphertext length before bulk update and zero to matching length, or (b) update security comment to clarify length-revealing is acceptable.
+
+---
+
+### getSecretMeta() Does Not Clean Up Expired Secrets (Phase 34 finding)
+
+**Symptoms:** Expired password-protected secrets checked via `/api/secrets/:id/meta` return null but are not deleted from DB until expiration worker runs.
+
+**Files:** `server/src/services/secrets.service.ts` (lines 164-191)
+
+**Trigger:** User repeatedly checks expired secret metadata; rows accumulate up to 5 minutes until worker cleanup.
+
+**Issue:** Inconsistent with `retrieveAndDestroy()` and `verifyAndRetrieve()` which clean up inline. Creates stale rows in DB.
+
+**Workaround:** Expiration worker runs every 5 minutes; cleanup is best-effort.
+
+**Fix approach:** Either (a) add opportunistic cleanup in `getSecretMeta()` transaction, or (b) accept lazy cleanup and document it.
+
+---
+
+### CSP Nonce Generation Failure Not Caught in SPA Catch-All (Phase 37 finding)
+
+**Symptoms:** If `crypto.randomBytes()` fails in `cspNonceMiddleware`, the nonce remains undefined but SPA catch-all still tries to inject it.
+
+**Files:** `server/src/middleware/security.ts` (lines 14-23), `server/src/app.ts` (line 133)
+
+**Trigger:** Extremely rare OS-level crypto failure; would block normal requests via error handler.
+
+**Issue:** Type assertion `res.locals.cspNonce as string` bypasses null check; if error handler doesn't catch, injection injects `undefined` into HTML.
+
+**Workaround:** Express error handler catches unhandled errors; CSP header is missing for that request.
+
+**Fix approach:** Add guard: `if (!res.locals.cspNonce) return res.status(500).json({error: 'internal_error'})`
 
 ---
 
 ## Security Considerations
 
-### Zero-Knowledge Invariant Enforcement Coverage (Phase 21-22 enhancement)
+### Zero-Knowledge Invariant Enforcement Coverage (Phase 37.1 update)
 
 **Area:** User-Secret Correlation Prevention
 
 **Risk:** Any code path that logs, stores in DB, or sends to analytics both a `userId` and `secretId` in the same record violates the zero-knowledge security model.
 
 **Files:**
-- `.planning/INVARIANTS.md` — canonical enforcement rule
-- `server/src/db/schema.ts` (lines 5-21) — schema-level enforcement with block comment
+- `.planning/INVARIANTS.md` — canonical enforcement rule (updated Phase 37)
+- `server/src/db/schema.ts` (lines 8-30) — schema-level enforcement with block comment
 - `server/src/middleware/logger.ts` (line 28) — regex redaction of secret IDs from URL paths
-- `server/src/auth.ts` (lines 8-14) — cross-reference to invariant
+- `client/src/analytics/posthog.ts` (lines 1-16) — before_send hook strips URL fragments
 
-**Current mitigation (Phase 21-22):**
+**Current mitigation (Phase 37.1):**
 - DB: `secrets.user_id` is nullable FK with `onDelete: 'set null'` — preserves already-shared links if user deletes account
-- Logger: Regex `/\/api\/secrets\/[A-Za-z0-9_-]+/g` redacts all secret IDs in logged URLs before any output
-- Analytics: PostHog phase (25) will enforce `sanitize_properties` stripping URL fragments
+- Logger: Pino redacts secret IDs via regex from `/api/secrets/` and `/api/dashboard/secrets/` paths
+- Analytics: PostHog `before_send` hook strips URL fragments (`#key`) before any event transmission
+- Stripe billing: Webhook handler uses `stripe_customer_id` lookup only, never joins `userId` + `secretId`
+- Email notifications: Fire-and-forget; email body contains only timestamp, no secretId
+- Rate limits: 429 responses contain no userId (anonymous by definition) or secretId
 
-**Recommendations:**
-- During Phase 25 (PostHog Analytics), add `sanitize_properties` rule to strip `#` fragment before sending any event to PostHog
-- During Phase 23+ (when dashboard queries secrets by userId), audit new query paths to ensure dashboard never returns `secrets.id` in the same response object alongside `userId`
-
----
-
-### Better Auth Email Verification Bypass in Test Environment (Phase 22 finding)
-
-**Area:** Test Infrastructure
-
-**Risk:** Email verification gate is disabled in test environment (`NODE_ENV=test`) via `requireEmailVerification: env.NODE_ENV !== 'test'` in `server/src/auth.ts` (line 42). This allows unverified users to log in during testing but creates a potential gap if this configuration leaks to production.
-
-**Files:**
-- `server/src/auth.ts` (line 42)
-- `server/src/config/env.ts` (NODE_ENV validation)
-
-**Impact:** Integration tests can validate auth flows without real email delivery infrastructure. If NODE_ENV is accidentally set to 'test' in production, email verification is silently bypassed.
-
-**Mitigation:** Current enforcement is correct—ENV_SCHEMA ensures NODE_ENV must be one of ['development', 'production', 'test']. The bypass is intentional and properly scoped. Risk is LOW if deployment ensures NODE_ENV is never 'test' on production servers.
+**Status:** ENFORCED across all systems as of Phase 37.1. No violations detected in code audit.
 
 ---
 
-### Password Hashing on Server Side (v1.0 security finding, still valid)
+### Stripe Customer Creation Missing Idempotency Key (Phase 34 finding)
 
-**Risk:** Passwords for password-protected secrets are transmitted to server in plaintext (over HTTPS) and hashed with Argon2id server-side. Compromised TLS or server logs could expose passwords.
+**Risk:** If network fails after Stripe customer creation but before DB update completes, retry creates duplicate customer.
 
-**Files:** `server/src/services/password.service.ts`, `client/src/pages/create.ts`
+**Files:** `server/src/services/billing.service.ts` (lines 63-66)
 
-**Current mitigation:** HTTPS required in production (`httpsRedirect` middleware). Passwords never logged (redaction verified in Phase 22 integration tests).
+**Current mitigation:** stripe_customer_id is stored as unique constraint alternative (lookup by email); duplicate customers are harmless.
 
-**Status:** Acceptable trade-off per design doc. Client-side hashing would leak hash to URL fragment, defeating password purpose.
-
----
-
-### No CSRF Protection (v1.0 security finding, still valid)
-
-**Risk:** API endpoints do not implement CSRF tokens. Malicious sites could POST to `/api/secrets` from victim's browser.
-
-**Files:** All routes in `server/src/routes/secrets.ts`
-
-**Current mitigation:** No sensitive state changes exist (no user accounts harmed by creating throwaway encrypted blob). CSRF creates throwaway encrypted blob—low impact.
-
-**Status:** Risk is LOW for anonymous phase. Phase 27 (when conversion prompts target account creation) should reassess CSRF risk if account creation becomes attack target.
+**Recommendations:** Add idempotency key to Stripe customer create call for explicit deduplication:
+```typescript
+const customer = await stripe.customers.create({
+  email: user.email,
+  idempotency_key: `torch-secret-${user.id}`,
+  metadata: { app: 'torch-secret' },
+});
+```
 
 ---
 
 ### Rate Limit Bypass via IP Rotation (v1.0 security finding, still valid)
 
-**Risk:** Rate limiting is per-IP. Attackers with botnets or VPN services can rotate IPs to bypass 10 req/hr limit on secret creation.
+**Risk:** Rate limiting is per-IP. Attackers with botnets or VPN services can rotate IPs to bypass 10 req/day limit on anonymous secret creation.
 
 **Files:** `server/src/middleware/rate-limit.ts`
 
-**Current mitigation:** Per-secret password attempts (3 max) limit brute-force on individual secrets. Redis-backed rate limiting shares state across instances.
+**Current mitigation:** Per-secret password attempts (3 max) limit brute-force on individual secrets. Per-user rate limiting for authenticated users (keyGenerator uses userId, not IP).
 
-**Status:** Acceptable for MVP. Phase 27 will tighten anonymous limits to 3 secrets/hour + 10/day with explicit upsell messaging for higher limits.
+**Status:** Acceptable for current phase. Anonymous limits are already tight (3/hr, 10/day); further tightening requires paywall.
 
 ---
 
@@ -179,126 +217,91 @@ Earlier v1.0-v3.0 concerns (linting, deployment, health checks, graceful shutdow
 
 ---
 
+### Email Notification Fire-and-Forget With No Retry (Phase 26 finding, Phase 37 update)
+
+**Risk:** Secret-viewed notification emails use best-effort delivery with no retry mechanism. If Resend is down when notification is sent, user never receives email.
+
+**Files:** `server/src/services/notification.service.ts` (lines 17-38), `server/src/services/secrets.service.ts` (lines 144-149)
+
+**Current mitigation:** Fire-and-forget pattern is intentional (don't block secret retrieval on email delivery). Resend has 99.9% uptime SLA.
+
+**Recommendations:** (1) Implement background job queue (Bull, MQ) for email retry; (2) Track delivery status in DB; (3) Add email delivery retry endpoint for user to manually trigger resend; (4) Monitor Resend delivery rates and alert on failures.
+
+---
+
 ## Performance Bottlenecks
 
-### Argon2 Password Hashing Blocks Event Loop (v1.0 finding, still valid)
+### Dashboard Secret List Fetches All Rows, No Pagination (Phase 23 finding, Phase 37 update)
 
-**Problem:** `argon2.hash()` and `argon2.verify()` are CPU-intensive synchronous operations that block Node.js event loop
+**Problem:** `getUserSecrets()` returns all secrets for the user; no limit or offset.
 
-**Files:** `server/src/services/password.service.ts`
+**Files:** `server/src/services/secrets.service.ts` (lines 318-344)
 
-**Cause:** Argon2 intentionally uses high memory and CPU to resist brute-force. Single-threaded Node.js blocks all requests during hash computation.
+**Cause:** Frontend pagination is client-side; large secret counts load entire table into memory.
 
-**Improvement path:** Use `@phc/argon2` async bindings or move password operations to worker threads. Current impact is LOW (password-protected secrets are rate-limited to 3 attempts; password reset/verification uses fire-and-forget email callbacks).
+**Impact:** Users with 10K+ secrets experience slow dashboard load and high memory usage.
 
----
-
-### Database Connection Pool Not Tuned (v1.0 finding, still valid)
-
-**Problem:** PostgreSQL connection pool uses default `pg` settings (max 10 connections)
-
-**Files:** `server/src/db/connection.ts`
-
-**Cause:** No explicit pool configuration.
-
-**Improvement path:** Add `max`, `min`, `idleTimeoutMillis` pool config based on production workload. Monitor connection usage metrics. For current deployment with single instance and moderate traffic, default is acceptable.
+**Improvement path:** Implement cursor-based pagination in service: add `limit: 50` and `offset` parameters; update response to include `hasMore` flag.
 
 ---
 
-### Secrets Table Lacks Index on expiresAt (v1.0 finding, resolved in v3.0)
+### Expiration Worker Runs on Every Instance (Phase 37 finding)
 
-**Previous issue:** Expiration worker queries `SELECT id FROM secrets WHERE expires_at <= $1` without index
+**Problem:** If multiple instances are deployed (horizontal scaling), each runs the cleanup job independently.
 
-**Status:** RESOLVED in Phase 2. Schema includes expiration cleanup logic with proper transaction handling. Monitor performance as secret count grows.
+**Files:** `server/src/workers/expiration-worker.ts` (line 57)
 
----
+**Cause:** node-cron is instance-local; no coordination across processes.
 
-### Dashboard Query Scaling (Phase 23 Ahead-of-Schedule Concern)
+**Impact:** N instances = N× database load; wasted CPU cycles on duplicate bulk updates.
 
-**Area:** Secret History Retrieval
-
-**Issue:** Phase 23 will implement dashboard showing a user's secret history. Current schema includes partial index `secrets_user_id_created_at_idx` (lines 127-131 in schema.ts), which filters and sorts by user + creation date.
-
-**Files:** `server/src/db/schema.ts` (lines 126-131)
-
-**Current status:** Index exists and is correctly designed. No implementation yet (Phase 23 pending).
-
-**Scaling path:**
-- Index on `(userId, createdAt DESC) WHERE userId IS NOT NULL` is efficient for < 100M secrets per user
-- If user base reaches 1M+ users, implement cursor-based pagination on dashboard (fetch 50 secrets per request, not all)
-- At 10M+ users, consider read replicas for dashboard queries
-
-**No action needed for v4.0** — Phase 23 spec already calls for pagination.
+**Improvement path:** (1) Use distributed lock (Redis SET with EX) before running cleanup, or (2) Move to async job queue (Bull, Temporal), or (3) Document that single-instance deployment only.
 
 ---
 
-### Playwright E2E Test Webserver Timeout (Phase 20 finding, still valid)
+### Rate Limit MemoryStore Grows Unbounded in Memory (Phase 37 finding)
 
-**Area:** CI/CD Pipeline Stability
+**Problem:** When REDIS_URL is not set, rate-limit-redis falls back to MemoryStore which never expires old entries.
 
-**Issue:** Playwright webServer in `e2e/playwright.config.ts` (line 21) has 30-second timeout before declaring startup failed. On slow CI runners, building client + starting server could exceed this.
+**Files:** `server/src/middleware/rate-limit.ts` (lines 14-20)
 
-**Files:** `e2e/playwright.config.ts` (line 21)
+**Cause:** express-rate-limit MemoryStore has no TTL; uses process memory for all keys.
 
-**Impact:** E2E tests fail if webServer startup takes > 30s. Not a code defect—a testing infrastructure constraint.
+**Impact:** Long-running instances accumulate memory over weeks; potential OOM on server with 100K+ unique IPs.
 
-**Recommendation:** If CI times out, pre-build client in CI job BEFORE running Playwright, or increase timeout to 60s. Current 30s is appropriate for local development.
-
----
-
-## Expiration Worker Coverage (v1.0-v3.0 finding, still valid)
-
-### No Inline Cleanup on getSecretMeta()
-
-**Area:** Expired Secret Cleanup Timing
-
-**Issue:** `getSecretMeta()` in `server/src/services/secrets.service.ts` (lines 127-129) detects expired secrets but does not delete them — it just returns null. Inline cleanup happens in `retrieveAndDestroy()` and `verifyAndRetrieve()` (they're in transactions).
-
-**Files:** `server/src/services/secrets.service.ts` (lines 127-129)
-
-**Impact:** Expired secrets stick around in DB until either someone tries to retrieve them (cleanup happens in transaction), or the 5-minute expiration worker runs.
-
-**Status:** Intentional per code comment. The worker ensures cleanup even if no one tries to access an expired secret. Design is sound—lazy deletion + periodic cleanup is a good pattern.
+**Improvement path:** (1) Always require Redis in production (document in README), (2) Use `node-cache` library with TTL, or (3) Accept single-instance deployment model.
 
 ---
 
-## Test Coverage Gaps
+### Ciphertext Size Not Limited to Reasonable Maximum (Phase 37 finding)
 
-### Integration Tests Require Live PostgreSQL (Phase 22 finding)
+**Problem:** CreateSecretSchema allows ciphertext up to 200KB (line 10 of shared/types/api.ts).
 
-**Area:** Test Database Setup
+**Files:** `shared/types/api.ts` (line 10)
 
-**Issue:** Integration tests in `server/src/tests/auth.test.ts` and `server/src/routes/__tests__/*.test.ts` use a real PostgreSQL instance — they do not use mocks or SQLite in-memory.
+**Cause:** Web Crypto API has no hard limit; arbitrary size is accepted.
 
-**Files:**
-- `server/src/tests/auth.test.ts`
-- `server/src/routes/__tests__/secrets.test.ts`
-- `server/src/routes/__tests__/expiration.test.ts`
-- `vitest.config.ts` (server project config)
+**Impact:** Attacker can upload 200KB × rate limit (20/day Pro) = 4MB/day/user; disk space accumulates.
 
-**Impact:** CI must provide a PostgreSQL instance. Local development requires manual PostgreSQL setup or Docker Compose.
-
-**Recommendation:** Document that `npm test` requires PostgreSQL running. Docker Compose in repo provides quick setup: `docker-compose up` starts PostgreSQL on localhost:5432. GitHub Actions CI includes PostgreSQL service.
-
----
-
-### Frontend Accessibility Testing Limited to Static Analysis (Phase 15 finding, partially resolved)
-
-**Area:** Runtime Accessibility Validation
-
-**Issue:** `client/src/__tests__/accessibility.test.ts` uses vitest-axe for static ARIA violation checks. Dynamic form interactions (password field validation, focus management during async auth flows) are not covered in unit tests.
-
-**Files:** `client/src/__tests__/accessibility.test.ts`
-
-**Current coverage:** Phase 17 E2E tests include accessibility assertions via Playwright. E2E specs verify focus management, screen reader announcements, and keyboard navigation.
-
-**Status:** Unit tests cover static violations. E2E tests cover dynamic interactions. Coverage is adequate for v4.0.
+**Improvement path:** (1) Reduce max to 10KB (typical text sharing), (2) Add storage quota per user (Pro gets 1GB/month), (3) Enforce quota at API layer with 413 Payload Too Large response.
 
 ---
 
 ## Fragile Areas
 
-### Better Auth Library Dependency Risk (Phase 22 finding)
+### Atomic Secret Retrieval Relies on 3-Step Transaction Ordering (v1.0 finding, still valid)
+
+**Files:** `server/src/services/secrets.service.ts` (lines 80-154, 207-310)
+
+**Why fragile:** If transaction isolation level changes, or if Drizzle ORM behavior changes, the atomic guarantee breaks.
+
+**Safe modification:** (1) Add tests that verify isolation (phantom reads not possible), (2) Document transaction isolation level in code comments, (3) Consider using explicit SELECT FOR UPDATE to make locking visible.
+
+**Test coverage:** `server/src/routes/__tests__/secrets.test.ts` has tests for basic cases but not race condition tests under load.
+
+---
+
+### Better Auth Library Dependency Risk (Phase 22 finding, Phase 37 update)
 
 **Files:**
 - `server/src/auth.ts`
@@ -307,162 +310,239 @@ Earlier v1.0-v3.0 concerns (linting, deployment, health checks, graceful shutdow
 - `server/src/db/schema.ts` (Better Auth table definitions)
 
 **Why fragile:**
-- Better Auth is a relatively new library (0.x versions indicate active development)
+- Better Auth is actively developed (currently 1.x stable but still iterating)
 - Session cookie must use `sameSite: 'lax'` for OAuth callbacks; any regression could break OAuth
-- Email callbacks use non-async fire-and-forget pattern (`void Promise.resolve()`) to satisfy TypeScript—unconventional approach that could break if Better Auth changes callback type expectations
-- drizzleAdapter requires explicit schema mappings (`user: schema.users`, `verifications: schema.verification`) due to Better Auth's singular naming—migration to different auth library would require substantial refactoring
+- Email callbacks use fire-and-forget pattern (`void sendEmail()`) to satisfy TypeScript
+- drizzleAdapter requires explicit schema mappings (`user: schema.users`, `verifications: schema.verification`)
 
 **Safe modification:**
 - Updates to Better Auth: review changelog for cookie handling or session schema changes
 - Test all 7 auth flows (registration, login, password reset, OAuth Google, OAuth GitHub, logout, session persistence) after any Better Auth upgrade
-- Document current session cookie settings in case future phases need to adjust sameSite policy
+- Document current session cookie settings in CLAUDE.md
 
 ---
 
-### Incomplete Dashboard Implementation (Phase 23 Prerequisite, Phase 22 finding)
+### SEO Routes Mounted Before SPA Catch-All, Route Overlap Possible (Phase 37 finding)
 
-**Files:**
-- `client/src/pages/dashboard.ts` (stub only—shows user name + logout button)
-- No secret history UI yet
-- No label creation yet
-- No secret deletion from dashboard yet
+**Files:** `server/src/app.ts` (lines 115-119), `server/src/routes/seo/index.ts`
 
-**Why fragile:**
-- Phase 23 will add secret history, labels, and delete buttons—substantial feature addition
-- Dashboard queries will use `secrets_user_id_created_at_idx` partial index; incorrect query construction could cause table scans instead of index usage
-- Zero-knowledge requirement: dashboard must NOT expose any secret material (ciphertext, IV, encryption keys, or secret ID in metadata responses)
+**Why fragile:** If a new `/vs/*` or `/use/*` page is added to SPA before SEO routes are aware, the SPA route will never be reached due to ordering.
 
-**Safe modification:**
-- When implementing Phase 23, audit dashboard queries to ensure they filter by `userId IS NOT NULL` so the partial index is used
-- Write tests verifying dashboard does NOT return ciphertext, encryption keys, or secret ID in metadata responses
-- Use cursor-based pagination from the start (don't load all secrets at once)
+**Safe modification:** (1) Document in STRUCTURE.md that SEO routes are exhaustive, (2) Add test verifying no route pattern overlaps, (3) Consider using shared route registry to prevent additions.
+
+**Test coverage:** `server/src/routes/__tests__/seo.test.ts` exists but doesn't verify overlap prevention.
 
 ---
 
-### Client-Side Routing and URL Fragment Handling (v3.0 finding, still valid)
+### Crypto Module Has No Length Validation on Imported Key (Phase 37 finding)
 
-**Files:** `client/src/router.ts`, `client/src/pages/reveal.ts`
+**Files:** `client/src/crypto/keys.ts`
 
-**Why fragile:** Encryption key extraction relies on `window.location.hash` and `history.replaceState`. Browser extensions, proxies, or non-standard user agents may interfere.
+**Why fragile:** If key import validation is bypassed, decryption fails with generic error; debugging is hard.
 
-**Safe modification:** Always test changes with multiple browsers (Chrome, Firefox, Safari). Fragment MUST be stripped immediately before any async operations. E2E tests verify fragment handling end-to-end.
+**Safe modification:** (1) Add assertion that decoded key is exactly 32 bytes, (2) Throw with explicit "key must be 256-bit (32 bytes)" message.
 
----
-
-### Secrets Service Transaction Ordering (v1.0 finding, still valid)
-
-**Files:** `server/src/services/secrets.service.ts` (retrieveAndDestroy, verifyAndRetrieve)
-
-**Why fragile:** Atomic read-and-destroy relies on exact order: SELECT → expiration check → password check → zero → delete. Reordering breaks anti-enumeration guarantees (SECR-07).
-
-**Safe modification:** NEVER move password check before expiration check. Expired password-protected secrets must return null (same as not-found). Add test case for any logic changes. Integration tests verify all edge cases.
+**Test coverage:** `client/src/crypto/__tests__/keys.test.ts` should verify exact length requirement.
 
 ---
 
 ## Scaling Limits
 
-### PostgreSQL Query Performance with Large Secret Counts (Phase 23 ahead-of-schedule)
+### Database Connections Unbounded (Phase 37 finding)
 
-**Current capacity:** Single PostgreSQL instance, no replication or caching layer.
+**Current capacity:** PostgreSQL 17+ with default 100 connection limit
 
-**Limit:** Once user base reaches 10M+ users with 1K+ secrets each, dashboard queries could become slow.
+**Limit:** Drizzle pool is unbounded; if 200 concurrent requests hit the app, 100 will queue.
 
-**Scaling path:**
-- Phase 23: Implement cursor-based pagination on dashboard (fetch 50 secrets per request, not all)
-- Phase 27: Add Redis caching for frequently accessed user secret metadata
-- v5.0+: Read replicas for dashboard queries
-- v6.0+: Partition secrets table by userId if single index becomes bottleneck
+**Scaling path:** (1) Set `max: 10` on Drizzle pool to limit open connections, (2) Use connection pooling middleware (pgBouncer), (3) Monitor `pg_stat_activity` for stalled queries.
 
 ---
 
-### In-Memory Rate Limiter Without Redis (v1.0 finding, still valid)
+### Redis Memory for Rate Limiting Unbounded (Phase 37 finding)
 
-**Current capacity:** Rate limiter uses in-memory store by default. Each process instance has independent counters.
+**Current capacity:** Unknown (depends on Redis instance size)
 
-**Limit:** Multi-instance deployments without Redis allow each server instance independent rate limit counters—determined attacker could distribute requests across instances and bypass limits.
+**Limit:** Each rate limiter stores N keys for N unique IPs/users; MemoryStore is unbounded if Redis unavailable.
 
-**Scaling path:** Production deployments must provide `REDIS_URL` to Redis instance shared across all server instances. Current code already supports this.
-
----
-
-### node-cron Scheduler Reliability (Phase 22 finding)
-
-**Risk:** node-cron is simple but not distributed. If server process restarts, in-flight expiration tasks are lost.
-
-**Files:** `server/src/workers/expiration-worker.ts`
-
-**Current approach:** Expiration worker runs every 5 minutes. Worst case: if server crashes, expired secrets could stay in DB for up to 5 minutes after restart.
-
-**Impact:** Low — expired secrets are non-functional after their time. Next cleanup cycle removes them.
-
-**Scaling path:** v5.0+ with multiple instances: Move to Bull + Redis queue if running multiple server instances to ensure distributed cleanup.
+**Scaling path:** (1) Require Redis in production, (2) Set Redis `MAXMEMORY` policy to evict oldest entries, (3) Monitor Redis memory and alert at 80%.
 
 ---
 
-## Missing Critical Features
+### Email Delivery Queue Not Implemented (Phase 26 finding, Phase 37 update)
 
-### No IP-Based Rate Limiting in OAuth Callback (Phase 22 finding)
+**Current capacity:** Resend API called synchronously (fire-and-forget); no queue.
 
-**Problem:** OAuth callbacks via `/api/auth/callback/{provider}` are not rate-limited. An attacker could attempt many OAuth account creation requests without hitting rate limits.
+**Limit:** If Resend is slow (>1s), transaction commit is blocked; requests pile up.
 
-**Files:**
-- `server/src/auth.ts` (Better Auth handles OAuth internally; no custom route)
-- Rate limiting is NOT applied to `/api/auth/*` routes
-
-**Blocks:** OAuth account enumeration or spam account creation attacks.
-
-**Recommendation:** Phase 25+ hardening concern. When PostHog analytics are added, also review OAuth callback security:
-1. Rate limit OAuth state parameter validation failures (prevents CSRF brute-force)
-2. Log failed OAuth attempts for monitoring
-3. Consider account creation cooldown after N failed attempts
-
----
-
-### No Audit Logging for Auth Events (Phase 22 finding)
-
-**Problem:** User creation, password changes, OAuth sign-ins, and logout events are not logged to a separate audit trail. Only HTTP request logs available, and secret IDs are redacted.
-
-**Files:** No audit table in schema.ts; no audit middleware
-
-**Blocks:** Compliance with SOC2/ISO 27001 requirements. No forensic trail for investigating account compromise.
-
-**Recommendation:** Phase 26+ (after email notifications). Add optional audit logging:
-1. Create `audit_logs` table (timestamp, userId, event type, ip_address, user_agent)
-2. Log all auth events: sign_up, sign_in, password_reset, oauth_connect, logout
-3. MUST NOT log secret IDs (keep zero-knowledge invariant)
-4. Add /api/me audit endpoint for users to review their login history
+**Scaling path:** (1) Implement async job queue for email delivery, (2) Allow transaction to commit before email sent, (3) Add retry queue for failed sends.
 
 ---
 
 ## Dependencies at Risk
 
-### Better Auth Library (Phase 22 new dependency)
+### node-cron Has No Distributed Locking (Phase 37 finding)
 
-**Risk:** Better Auth is actively developed (0.x versions). Session handling and OAuth integration could change in minor versions.
+**Risk:** Expiration worker runs on every instance independently.
 
-**Versions:** ~0.13.x
+**Impact:** Horizontal scaling = wasted CPU and DB load.
 
-**Impact:** Updates could introduce breaking changes to session validation or OAuth callback behavior
-
-**Migration plan:** Pin to major.minor versions. Test all auth flows (registration, login, password reset, OAuth, logout) before upgrading. Review changelog for session schema or callback signature changes.
+**Migration plan:** (1) Switch to node-schedule with Redis-backed singleton, (2) Use Bull or Temporal for reliable job scheduling, (3) Document single-instance deployment requirement.
 
 ---
 
-### Node.js 24.x (LTS Active)
+### pino-http CJS/ESM Incompatibility Workaround (Phase 37 finding)
 
-**Risk:** Node 24 LTS support ends April 2027 (13 months from now)
+**Risk:** Node version changes or pino-http updates could break the runtime detection hack.
 
-**Impact:** Security updates cease after EOL
+**Files:** `server/src/middleware/logger.ts` (lines 9-15)
 
-**Migration plan:** Upgrade to Node 26 LTS (release Oct 2026) before April 2027 EOL.
+**Impact:** Logging breaks silently if interop detection fails.
+
+**Migration plan:** (1) Upgrade to pino-http with native ESM support (if available), (2) Add runtime assertions to detect detection failure, (3) Switch to winston or pino@4 with full ESM.
 
 ---
 
-### Express 5.x (v3.0 finding, still valid)
+### Better Auth Type Declarations Return `any` for Session (Phase 37 finding)
 
-**Risk:** Express 5 stable released Feb 2024. Ecosystem middleware may have compatibility issues.
+**Risk:** Type safety is lost; `@typescript-eslint/no-unsafe-member-access` requires constant reassurance.
 
-**Status:** All current middleware (helmet, rate-limit, pino-http) support Express 5. No breaking changes encountered in v3.0-v4.0 development.
+**Impact:** Risk of runtime errors when accessing session properties.
+
+**Migration plan:** (1) Patch Better Auth types locally, or (2) Switch to auth library with better types (Lucia, Auth.js).
+
+---
+
+### Stripe SDK May Have Breaking Changes (Phase 34 finding, Phase 37 update)
+
+**Risk:** Stripe SDK is well-maintained but major versions may have breaking changes.
+
+**Current version:** ~15.x
+
+**Impact:** Billing integration could break on major upgrade.
+
+**Migration plan:** Pin to major.minor versions. Test Stripe webhook signature verification and Checkout session creation after any major upgrade.
+
+---
+
+## Missing Critical Features
+
+### No Database Backup Strategy Documented (Phase 37 finding)
+
+**Problem:** PostgreSQL contains all user data; no backup/restore procedure documented.
+
+**Blocks:** Disaster recovery, data residency compliance, GDPR right-to-erasure.
+
+**Recommendation:** Document backup policy in deployment docs; test recovery procedure monthly.
+
+---
+
+### No Rate Limit Recovery Mechanism (Phase 37 finding)
+
+**Problem:** If rate limit counter gets stuck (Redis corruption), manual reset required.
+
+**Blocks:** Cannot unblock legitimate user without server restart or Redis intervention.
+
+**Recommendation:** Add `/api/admin/rate-limit-reset/:userId` endpoint (admin-only) for emergency unblock.
+
+---
+
+### No User Data Export (GDPR Right-to-Data) (Phase 37 finding)
+
+**Problem:** GDPR requires user to download their data; no mechanism exists.
+
+**Blocks:** GDPR compliance; legal exposure.
+
+**Recommendation:** Add `/api/me/export` endpoint returning JSON of all user data (metadata only, no secrets).
+
+---
+
+### No Audit Trail for Auth Events (Phase 37 finding)
+
+**Problem:** User creation, password changes, OAuth sign-ins, and logouts are not logged to audit trail.
+
+**Blocks:** Compliance with SOC2/ISO 27001. No forensic trail for account compromise investigation.
+
+**Recommendation:** Add `audit_logs` table; log: sign_up, sign_in, password_reset, oauth_connect, logout (with timestamp + IP, no secretId).
+
+---
+
+## Test Coverage Gaps
+
+### Password Attempt Auto-Destroy Edge Case Not Tested (Phase 37 finding)
+
+**What's not tested:** Exact moment when `attemptsRemaining` transitions from 1 → 0; concurrent requests during auto-destroy.
+
+**Files:** `server/src/routes/__tests__/secrets.test.ts` (1000 lines but may not cover race).
+
+**Risk:** Attacker could potentially bypass auto-destroy via race condition.
+
+**Priority:** High
+
+---
+
+### Expiration Worker Hard-Delete vs Soft-Delete Not Verified (Phase 37 finding)
+
+**What's not tested:** Verify user-owned secrets get `status='expired'` (soft) while anonymous get hard-deleted.
+
+**Files:** `server/src/workers/__tests__/expiration-worker.test.ts`
+
+**Risk:** Dashboard history could be lost if soft-delete accidentally becomes hard-delete.
+
+**Priority:** High
+
+---
+
+### Zero-Knowledge Invariant Not Tested Systematically (Phase 37 finding)
+
+**What's not tested:** Comprehensive test that logs + analytics events never contain userId + secretId.
+
+**Risk:** Future developer could add a log line or analytics call violating invariant without knowing.
+
+**Priority:** Medium
+
+---
+
+### Stripe Webhook Signature Verification Failure Modes (Phase 37 finding)
+
+**What's not tested:** What happens if Stripe webhook arrives unsigned or with wrong signature.
+
+**Risk:** Attacker could trigger Pro upgrade without payment.
+
+**Priority:** Critical
+
+---
+
+### Better Auth Session Type Guards (Phase 37 finding)
+
+**What's not tested:** Full suite of session validation edge cases (expired, tampered, missing fields).
+
+**Risk:** Route handlers could receive invalid session and crash.
+
+**Priority:** Medium
+
+---
+
+### Email Notification Failure Modes (Phase 26 finding, Phase 37 update)
+
+**What's not tested:** Resend API errors (rate limit, invalid email, server down).
+
+**Files:** `server/src/services/notification.service.test.ts` (has mock but not real Resend errors).
+
+**Risk:** Silent failures make notifications unreliable.
+
+**Priority:** Medium
+
+---
+
+### Analytics Events Do Not Violate Invariant (Phase 37 finding)
+
+**What's not tested:** Audit that all PostHog events never combine userId + secretId.
+
+**Files:** `client/src/analytics/posthog.test.ts`
+
+**Risk:** Event payload could accidentally include secret ID in URL fragment before `sanitizeEventUrls` runs.
+
+**Priority:** Medium
 
 ---
 
@@ -470,20 +550,114 @@ Earlier v1.0-v3.0 concerns (linting, deployment, health checks, graceful shutdow
 
 ### High Priority
 
-None — all critical paths are secure and functional.
+1. **Stripe webhook signature verification edge cases** — Add tests for tampered/unsigned webhooks
+2. **Password attempt auto-destroy race conditions** — Add concurrent load test with 3+ simultaneous verify attempts
+3. **Zero-knowledge invariant systematic test** — Add integration test scanning all logs/analytics for userId + secretId combinations
 
 ### Medium Priority
 
-1. **Auth page noindex** (Phase 22 tech debt) — Extend server-side X-Robots-Tag to cover /login, /register, /forgot-password, /reset-password, /dashboard
-2. **OAuth rate limiting** (Phase 25+ research) — Review OAuth callback security before social login goes live at scale
-3. **Audit logging** (Phase 26+ design) — Plan audit table and event logging for compliance if user base grows
+1. **Rate limit recovery mechanism** — Add admin endpoint for emergency rate limit reset
+2. **Email notification retry queue** — Implement Bull or similar for email delivery retry
+3. **Expiration worker distributed locking** — Add Redis lock to prevent duplicate cleanup on multi-instance deployments
+4. **Console.error → Pino migration** — Replace all `console.error()` with structured logging
+5. **Database backup procedure** — Document backup policy and test recovery monthly
 
 ### Low Priority (Future Phases)
 
-1. **Dashboard query optimization** (Phase 23 implementation) — Use cursor pagination from the start; audit partial index usage
-2. **Analytics invariant enforcement** (Phase 25 implementation) — Validate PostHog sanitize_properties config strips URL fragments
-3. **Extend E2E accessibility testing** (extend Phase 17) — Add focus management and screen reader announcement tests to all auth flows
+1. **Dashboard query optimization** — Implement cursor pagination in Phase 23
+2. **Ciphertext size limits** — Reduce max to 10KB and add storage quota
+3. **User data export** — Implement GDPR data export endpoint
+4. **Audit logging** — Add auth event audit trail for compliance
 
 ---
 
-*Concerns audit: 2026-02-20*
+*Concerns audit: 2026-02-28*
+
+---
+
+## Additional Concerns (2026-03-01 Analysis)
+
+### Passphrase Generator Wordlist Bundle Size Bloat
+
+**Issue:** `client/src/crypto/passphrase.ts` is 7,840 lines (100% is the EFF Large Wordlist data). Creates a massive single-file artifact dominating bundle and slowing IDE language-server.
+
+**Files:** `client/src/crypto/passphrase.ts`
+
+**Impact:** Large unminified bundle (~280 KB); TypeScript type inference slow on large const arrays; difficult code reviews.
+
+**Fix approach:** Extract wordlist to separate `.json` or `.ts` file. Lazy-load wordlist only when passphrase generation is first requested (defer until needed). Consider Web Worker for entropy gathering if performance becomes critical.
+
+---
+
+### Rate Limiting Silent Degradation on Redis Failure
+
+**Issue:** All rate limiters set `passOnStoreError: true`, meaning if Redis is unavailable, rate limiting is silently disabled with no visibility or logging.
+
+**Files:** `server/src/middleware/rate-limit.ts` (lines 49, 81, 110, 142)
+
+**Impact:** Redis outage completely disables rate limiting without alerting operations. Attackers could brute-force or spam without being rate-limited during outages.
+
+**Fix approach:** Log `warn` level when store errors occur. Consider `passOnStoreError: false` in production (fail closed). Implement circuit-breaker pattern: once Redis is unavailable for 5 minutes, temporarily disable rate limiting and emit alerts rather than silently passing all requests through.
+
+---
+
+### E2E Test Rate Limit Bypass Environment Variable
+
+**Issue:** `E2E_TEST=true` flag sets all rate limits to 1000 (max 1000 req/sec). If this variable is set in staging/production by accident (deployment script error), rate limiting is completely disabled.
+
+**Files:** `server/src/middleware/rate-limit.ts` (lines 5-6, 40, 71, 101, 133)
+
+**Impact:** If `E2E_TEST=true` is ever set in production, rate limiting fails silently.
+
+**Fix approach:** Gate the bypass behind `NODE_ENV === 'test' && E2E_TEST === 'true'`, not just `E2E_TEST`. Alternatively use `VITEST_WORKER_THREADS` or `CI` environment variables which are less likely to be manually set.
+
+---
+
+### Expiration Worker Ciphertext Zeroing Simplified Pattern
+
+**Issue:** `server/src/workers/expiration-worker.ts` zeros all anonymous expired secrets with single `'0'` character (line 32, 38) instead of `'0'.repeat(originalLength)`. This simplification does not match SECR-08 data remanence mitigation described in comments.
+
+**Files:** `server/src/workers/expiration-worker.ts` (lines 32, 38)
+
+**Impact:** Zeroed ciphertext length is always 1 byte, revealing original length of plaintext via length inference. Violates documented SECR-08 mitigation intent (though threat model acceptance is documented).
+
+**Fix approach:** Either (a) query original ciphertext length before bulk update and zero to matching length, or (b) update security comments to clarify that length-revealing via zero pattern is an accepted trade-off for bulk-update performance. Document threat model explicitly (forensic disk recovery is out-of-scope; WAL/buffer remanence is in-scope).
+
+---
+
+### OAuth State Mismatch Workaround Fragile in Development
+
+**Issue:** `server/src/app.ts` lines 76-87 implement dev-only OAuth callback bounce middleware to work around Vite proxy state cookie mismatch. Fix checks for `X-Forwarded-Host` header and bounces direct callbacks through APP_URL.
+
+**Files:** `server/src/app.ts` (lines 76-87)
+
+**Impact:** If Vite proxy behavior changes or X-Forwarded-Host detection logic breaks, OAuth will fail silently in dev. Fix assumes APP_URL matches the proxy domain exactly.
+
+**Fix approach:** Move OAuth bounce logic to dedicated middleware module with explicit debug logging. Add feature flag to disable bounce if Vite behavior stabilizes in future versions. Document the assumption that `APP_URL` must match Vite proxy hostname.
+
+---
+
+### Stripe Singleton Initialization Fragility
+
+**Issue:** `server/src/config/stripe.ts` exports module-level Stripe singleton. If initialization fails or env vars are missing, the entire server fails to start with non-descriptive error at module load time.
+
+**Files:** `server/src/config/stripe.ts`
+
+**Impact:** Env var typos or missing values cause opaque startup errors. If STRIPE_SECRET_KEY is wrong, error occurs during require/import, not at route handler.
+
+**Fix approach:** Lazily initialize Stripe on first API call (POST /api/billing/checkout). Env vars are already validated in `config/env.ts` via Zod, so defer SDK instantiation to route handlers with explicit error boundaries.
+
+---
+
+### Console.error() Instead of Pino Logger
+
+**Issue:** Fire-and-forget email and Loops errors in notification.service.ts and subscribers.service.ts use `console.error()` instead of Pino logger.
+
+**Files:**
+- `server/src/services/notification.service.ts` (line 36)
+- `server/src/services/subscribers.service.ts` (lines 161, 197)
+
+**Impact:** Production error tracking (Sentry, Datadog) cannot see email delivery failures or Loops sync failures. Silent data loss.
+
+**Fix approach:** Replace `console.error()` with `logger.error()`. Ensure messages follow zero-knowledge invariant (no userId + secretId combinations). This is a straightforward 3-line fix.
+

@@ -1,5 +1,5 @@
 /**
- * Key management module for SecureShare.
+ * Key management module for Torch Secret.
  *
  * Generates 256-bit AES-GCM keys, exports them to base64url for URL fragment
  * embedding, and imports them back for decryption. This module is the foundation

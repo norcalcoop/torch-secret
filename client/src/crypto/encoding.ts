@@ -1,5 +1,5 @@
 /**
- * Base64 and Base64URL encoding/decoding utilities for SecureShare.
+ * Base64 and Base64URL encoding/decoding utilities for Torch Secret.
  *
  * Uses manual btoa/atob conversion (not Buffer or Uint8Array.toBase64())
  * to ensure browser compatibility. Converts via binary string intermediary

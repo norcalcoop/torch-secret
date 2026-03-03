@@ -1,9 +1,14 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { eq } from 'drizzle-orm';
 import { db } from './db/connection.js';
 import * as schema from './db/schema.js';
+import { secrets } from './db/schema.js';
 import { resend } from './services/email.js';
 import { env } from './config/env.js';
+import { loops } from './config/loops.js';
+import { enrollInOnboardingSequence } from './services/onboarding.service.js';
+import { logger } from './middleware/logger.js';
 
 /**
  * Rewrites a Better Auth-generated URL so its origin (and any embedded
@@ -73,7 +78,7 @@ export const auth = betterAuth({
       void resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
-        subject: 'Reset your SecureShare password',
+        subject: 'Reset your Torch Secret password',
         text: `Click to reset your password: ${toAppUrl(url)}\n\nIf you did not request this, you can ignore this email.`,
       });
       return Promise.resolve();
@@ -85,7 +90,7 @@ export const auth = betterAuth({
       void resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
         to: user.email,
-        subject: 'Verify your SecureShare email',
+        subject: 'Verify your Torch Secret email',
         text: `Click to verify your email: ${toAppUrl(url)}\n\nIf you did not create an account, you can ignore this email.`,
       });
       return Promise.resolve();
@@ -93,6 +98,24 @@ export const auth = betterAuth({
     sendOnSignIn: true,
   },
 
+  /**
+   * SECURITY AUDIT (Phase 40, Item #10, SR-004): OAuth account-linking behavior
+   *
+   * Finding: Better Auth 1.x does NOT automatically link an OAuth account to an
+   * existing email/password account without explicit user consent. The default
+   * behavior requires a separate sign-in flow — an OAuth provider claiming an
+   * existing email address cannot silently take over a pre-existing account.
+   *
+   * Evidence: No `account.accountLinking.trustedProviders` config is present in
+   * this betterAuth() call. Better Auth's linkAccountOnSignIn default is false.
+   * Two accounts with the same email but different providers remain separate
+   * unless the user explicitly links them via the account linking API.
+   *
+   * Action required: None. Default behavior is secure.
+   * Re-audit trigger: If account.accountLinking is added to this config in the
+   * future, ensure trustedProviders is carefully scoped and re-verification
+   * (requireEmailVerification on linking) is enforced.
+   */
   socialProviders: {
     // Only include Google provider when env vars are defined
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
@@ -115,6 +138,68 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: [env.BETTER_AUTH_URL, ...(env.APP_URL ? [env.APP_URL] : [])],
+
+  advanced: {
+    // Supertest (used in integration tests) sends no Origin or Sec-Fetch-* headers,
+    // which triggers Better Auth's CSRF check and returns 403. Disable in test env only.
+    disableCSRFCheck: env.NODE_ENV === 'test',
+  },
+
+  user: {
+    additionalFields: {
+      marketingConsent: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        input: true, // allows client to pass value during signUp.email()
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        // Step 1: GDPR — delete Loops contact (best-effort; deletion must succeed even if Loops is down)
+        // Pass only email — userId field in Loops API refers to external system ID, not our Better Auth userId
+        await loops.deleteContact({ email: user.email }).catch((err: unknown) => {
+          // ZK invariant: log only err.message — no userId alongside email in the same log line
+          logger.error(
+            { err: err instanceof Error ? err.message : String(err) },
+            'Loops deleteContact failed on account deletion',
+          );
+        });
+
+        // Step 2: ZK invariant — null secrets.user_id so existing shared links keep working
+        // FK is onDelete:'set null' (defense-in-depth: explicit null-out covers new secrets created
+        // between the beforeDelete call and the actual user row deletion)
+        await db.update(secrets).set({ userId: null }).where(eq(secrets.userId, user.id));
+      },
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: (user) => {
+          // Fire-and-forget: registration must succeed even if Loops is down.
+          // Cast user to access additionalFields — Better Auth's inferred hook types
+          // may not include additionalFields without explicit type augmentation.
+          const userWithConsent = user as typeof user & { marketingConsent?: boolean };
+          void enrollInOnboardingSequence({
+            email: user.email,
+            name: user.name,
+            marketingConsent: userWithConsent.marketingConsent ?? false,
+            subscriptionTier: 'free', // new users are always free tier
+          }).catch((err: unknown) => {
+            // ZK invariant: log only err.message — no userId, no email in the same log line
+            logger.error(
+              { err: err instanceof Error ? err.message : String(err) },
+              'Loops onboarding enrollment failed',
+            );
+          });
+          return Promise.resolve();
+        },
+      },
+    },
+  },
 });
 
 export type AuthSession = typeof auth.$Infer.Session;

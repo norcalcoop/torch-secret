@@ -40,19 +40,19 @@ export function renderTermsPage(container: HTMLElement): void {
     {
       heading: 'Acceptance of Terms',
       paragraphs: [
-        'By using SecureShare, you agree to these Terms of Service. If you do not agree, do not use the service.',
+        'By using Torch Secret, you agree to these Terms of Service. If you do not agree, do not use the service.',
       ],
     },
     {
       heading: 'What the Service Does',
       paragraphs: [
-        'SecureShare is a zero-knowledge, one-time secret sharing service. You encrypt sensitive text in your browser; we store only the encrypted result. The secret is permanently destroyed from our database the moment it is viewed.',
+        'Torch Secret is a zero-knowledge, one-time secret sharing service. You encrypt sensitive text in your browser; we store only the encrypted result. The secret is permanently destroyed from our database the moment it is viewed.',
       ],
     },
     {
       heading: 'Acceptable Use',
       paragraphs: [
-        'You may use SecureShare only for lawful purposes. You must not use the service to:',
+        'You may use Torch Secret only for lawful purposes. You must not use the service to:',
         '(a) Share content that violates applicable laws.',
         '(b) Harass, threaten, or harm others.',
         '(c) Distribute malware or phishing content.',
@@ -64,7 +64,7 @@ export function renderTermsPage(container: HTMLElement): void {
     {
       heading: 'Prohibited Content',
       paragraphs: [
-        'You are solely responsible for the content you share. Because SecureShare is zero-knowledge, we cannot inspect content. By using the service, you warrant that you will not share illegal content.',
+        'You are solely responsible for the content you share. Because Torch Secret is zero-knowledge, we cannot inspect content. By using the service, you warrant that you will not share illegal content.',
         '[Company Name] is not liable for content shared by users.',
       ],
     },
@@ -92,7 +92,7 @@ export function renderTermsPage(container: HTMLElement): void {
     {
       heading: 'Intellectual Property',
       paragraphs: [
-        'The SecureShare software and brand are owned by [Company Name]. These Terms do not grant you any rights in our intellectual property.',
+        'The Torch Secret software and brand are owned by [Company Name]. These Terms do not grant you any rights in our intellectual property.',
       ],
     },
     {

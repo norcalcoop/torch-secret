@@ -7,7 +7,7 @@ import { z } from 'zod';
  */
 export const CreateSecretSchema = z.object({
   /** Base64-encoded ciphertext (IV + ciphertext + auth tag) */
-  ciphertext: z.string().min(1).max(200_000),
+  ciphertext: z.string().min(1).max(100_000), // 100KB max (SR-014)
   /** How long until the secret expires */
   expiresIn: z.enum(['1h', '24h', '7d', '30d']),
   /** Optional password for password-protected secrets (Phase 5) */
@@ -16,6 +16,8 @@ export const CreateSecretSchema = z.object({
   label: z.string().max(100).optional(),
   /** Per-secret email notification opt-in. Phase 26 sends the actual notification. */
   notify: z.boolean().optional(),
+  /** Explicit protection type for server-side tier enforcement (Phase 34.1) */
+  protection_type: z.enum(['none', 'passphrase', 'password']).optional().default('none'),
 });
 
 export type CreateSecretRequest = z.infer<typeof CreateSecretSchema>;
@@ -103,4 +105,37 @@ export interface DashboardListResponse {
 /** Response from DELETE /api/dashboard/secrets/:id on success */
 export interface DashboardDeleteResponse {
   success: true;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 34: Stripe Pro Billing
+// ---------------------------------------------------------------------------
+
+/** Response from GET /api/me — includes subscription tier (Phase 34) */
+export interface MeResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    emailVerified: boolean;
+    image: string | null;
+    createdAt: string; // ISO string
+    subscriptionTier: 'free' | 'pro';
+  };
+}
+
+/** Response from GET /api/billing/checkout */
+export interface BillingCheckoutResponse {
+  url: string;
+}
+
+/** Response from GET /api/billing/verify-checkout */
+export interface VerifyCheckoutResponse {
+  status: 'active';
+  tier: 'pro';
+}
+
+/** Response from POST /api/billing/portal */
+export interface BillingPortalResponse {
+  url: string;
 }

@@ -1,443 +1,394 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-02-20
+**Analysis Date:** 2026-03-01
 
 ## Test Framework
 
 **Runner:**
-- Vitest 4.x with multi-project configuration
+- Vitest 4.x
 - Config: `vitest.config.ts`
-- Globals disabled: explicit imports required (`describe`, `it`, `expect`, `beforeEach`, etc.)
+- Multi-project setup: client (happy-dom), server (node, sequential)
 
 **Assertion Library:**
-- Vitest built-in (Chai-compatible API)
-- Custom matchers via vitest-axe for accessibility: `expect.extend(matchers)`
+- Vitest assertions (built-in `expect()`)
+- Accessibility assertions: `vitest-axe` with `@axe-core/playwright`
 
 **Run Commands:**
 ```bash
-npm test                    # Watch mode (all tests)
-npm run test:run            # Run once (CI mode, all tests)
-npx vitest run path/to/test.ts  # Run single file
-npx vitest --coverage       # Coverage report
+npm test              # Watch mode (both projects)
+npm run test:run      # Single run (both projects)
+npx vitest run path/to/test.ts  # Single test file
+npm run test:e2e      # Playwright E2E tests
 ```
 
 ## Test File Organization
 
-**Location & Naming:**
-- Client tests: `client/src/**/__tests__/*.test.ts` (happy-dom environment)
-- Server tests: `server/src/**/__tests__/*.test.ts` (node environment, sequential)
-- Pattern: `[source-name].test.ts` (e.g., `encrypt.test.ts` tests `encrypt.ts`)
+**Location:**
+- **Server tests:** Co-located with source in `__tests__/` subdirectory or inline
+  - `server/src/routes/__tests__/secrets.test.ts` (routes)
+  - `server/src/workers/__tests__/expiration-worker.test.ts` (workers)
+  - `server/src/services/billing.service.test.ts` (inline suffix)
+- **Client tests:** Co-located with source in `__tests__/` subdirectory or inline
+  - `client/src/crypto/__tests__/encrypt.test.ts`
+  - `client/src/__tests__/accessibility.test.ts`
+  - `client/src/pages/register.test.ts` (inline suffix)
 
-**Directory Structure:**
-```
-server/src/
-├── routes/
-│   ├── secrets.ts
-│   ├── health.ts
-│   ├── me.ts
-│   └── __tests__/
-│       ├── secrets.test.ts
-│       ├── security.test.ts
-│       └── expiration.test.ts
-├── services/
-│   ├── secrets.service.ts
-│   └── password.service.ts
-└── workers/
-    ├── expiration-worker.ts
-    └── __tests__/
-        └── expiration-worker.test.ts
+**Naming:**
+- Pattern: `{module}.test.ts` or `{module}.spec.ts` (both detected)
+- Matched by Vitest config: `include: ['client/src/**/*.test.ts']`, `include: ['server/src/**/*.test.ts']`
 
-client/src/
-├── crypto/
-│   ├── encrypt.ts
-│   ├── decrypt.ts
-│   ├── encoding.ts
-│   ├── keys.ts
-│   ├── padding.ts
-│   └── __tests__/
-│       ├── encrypt.test.ts
-│       ├── decrypt.test.ts
-│       ├── encoding.test.ts
-│       ├── keys.test.ts
-│       └── padding.test.ts
-├── components/
-│   └── __tests__/
-│       └── icons.test.ts
-└── __tests__/
-    └── accessibility.test.ts
-```
+## Multi-Project Configuration
 
-## Test Configuration
+**Client Tests:**
+- Environment: `happy-dom` (lightweight DOM implementation)
+- Include: `client/src/**/*.test.ts`
+- Tests: `client/src/crypto/__tests__/`, `client/src/pages/`, components
+- Globals: browser
 
-**Multi-Project Setup:**
-```typescript
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    globals: false,
-    testTimeout: 10_000,  // 10s for database operations
-    setupFiles: ['dotenv/config'],  // Load .env for integration tests
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json-summary'],
-      reportsDirectory: './coverage',
-    },
-    projects: [
-      {
-        test: {
-          name: 'client',
-          include: ['client/src/**/*.test.ts'],
-          environment: 'happy-dom',  // Light DOM polyfill
-        },
-      },
-      {
-        test: {
-          name: 'server',
-          include: ['server/src/**/*.test.ts'],
-          environment: 'node',
-          fileParallelism: false,  // Sequential (shared PostgreSQL)
-        },
-      },
-    ],
-  },
-});
-```
-
-**Global Settings:**
-- `globals: false` — explicitly import `describe`, `it`, `expect`, `beforeEach`, `afterEach`, `beforeAll`, `afterAll`, `test`
-- `testTimeout: 10_000` — 10 second timeout for database-heavy tests
-- `setupFiles: ['dotenv/config']` — loads `.env` for real database connections
+**Server Tests:**
+- Environment: `node`
+- Include: `server/src/**/*.test.ts`
+- Tests: routes, services, workers
+- Globals: node
+- **Important:** `fileParallelism: false` — tests run sequentially
+  - Multiple tests access same PostgreSQL instance
+  - Serial execution prevents database race conditions
 
 ## Test Structure
 
-**Standard Import Block:**
+**Basic Suite Pattern:**
 ```typescript
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';  // HTTP testing
+import { describe, test, expect, beforeAll, beforeEach, afterAll, afterEach, vi } from 'vitest';
+import request from 'supertest';
 import type { Express } from 'express';
-```
+import { buildApp } from '../../app.js';
+import { db } from '../../db/connection.js';
+import { pool } from '../../db/connection.js';
 
-**Suite Organization:**
-```typescript
-describe('Feature name', () => {
-  beforeEach(() => {
-    // Setup before each test
-  });
-
-  afterEach(async () => {
-    // Cleanup after each test
-  });
-
-  it('should do something', async () => {
-    // Test body
-    expect(result).toBe(expected);
-  });
-});
-```
-
-**Patterns:**
-- Top-level `describe` groups organize by feature/endpoint (not function name)
-- Server route tests use section separators for clarity:
-  ```typescript
-  // ---------------------------------------------------------------------------
-  // Success Criterion 1: POST /api/secrets stores and returns ID
-  // ---------------------------------------------------------------------------
-  describe('POST /api/secrets', () => { ... });
-  ```
-- Nested `describe` blocks used sparingly (prefer flat structure)
-- `it` descriptions are complete sentences: "returns ciphertext on first retrieval with 200"
-- File header documents coverage scope:
-  ```typescript
-  /**
-   * Tests for the encrypt module.
-   *
-   * Covers: return shape, IV prepending, key/IV uniqueness,
-   * padding tier verification, edge cases (empty, large, unicode).
-   */
-  ```
-
-## Integration Tests (Server)
-
-**Database Setup:**
-- Real PostgreSQL instance (not mocked)
-- Connection via `DATABASE_URL` env var
-- Schema created in `beforeAll`:
-  ```typescript
-  beforeAll(async () => {
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS secrets (
-        id TEXT PRIMARY KEY,
-        ciphertext TEXT NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        ...
-      )
-    `);
-  });
-  ```
-- Data cleanup in `afterEach` isolates tests:
-  ```typescript
-  afterEach(async () => {
-    await db.delete(secrets);  // Clear table
-  });
-  ```
-- Pool closes in `afterAll`:
-  ```typescript
-  afterAll(async () => {
-    await pool.end();  // Allow process to exit
-  });
-  ```
-
-**Fresh App Per Test:**
-```typescript
+const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';
 let app: Express;
 
 beforeEach(() => {
-  app = buildApp();  // Fresh app instance
-  // Each instance has independent rate limiter state
+  app = buildApp();  // Fresh app per test for rate limiter isolation
+});
+
+afterEach(async () => {
+  await db.delete(secrets);  // Clean up test data
+});
+
+afterAll(async () => {
+  await pool.end();  // Close DB pool to allow vitest to exit
+});
+
+describe('POST /api/secrets', () => {
+  test('creates secret and returns 21-char nanoid with 201 status', async () => {
+    const res = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+      .expect(201);
+
+    expect(res.body.id).toBeDefined();
+    expect(res.body.id).toHaveLength(21);
+    expect(res.body.expiresAt).toBeDefined();
+  });
 });
 ```
 
-**HTTP Testing Pattern (Supertest):**
-```typescript
-test('creates secret and returns 21-char nanoid with 201 status', async () => {
-  const res = await request(app)
-    .post('/api/secrets')
-    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
-    .expect(201);
+**Key Patterns:**
+- Fresh app per test (`beforeEach`) to isolate rate limiter state (MemoryStore per instance)
+- Database cleanup between tests (`afterEach`)
+- Connection close after all tests (`afterAll`): `await pool.end()`
+- Setup SQL tables idempotently: `CREATE TABLE IF NOT EXISTS secrets`
+- Meaningful test names describing success criteria: "returns ciphertext on first retrieval with 200"
 
-  expect(res.body.id).toHaveLength(21);
-  expect(res.body.expiresAt).toBeDefined();
-});
-```
+**Suite Organization:**
+- `describe()` for feature grouping: "POST /api/secrets", "GET /api/secrets/:id", "anti-enumeration"
+- `test()` for individual assertions (synonymous with `it()`)
+- Hooks: `beforeAll()`, `beforeEach()`, `afterAll()`, `afterEach()`
 
 ## Mocking
 
-**Framework:** Vitest built-in (not used extensively)
+**Framework:** Vitest's built-in `vi` module
 
-**Philosophy:** Test behavior end-to-end rather than mock dependencies
+**Module Mocking Pattern:**
+```typescript
+vi.mock('../../services/notification.service.js', () => ({
+  sendSecretViewedNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { sendSecretViewedNotification } from '../../services/notification.service.js';
+
+// Later: verify the mock was called
+expect(sendSecretViewedNotification).toHaveBeenCalledOnce();
+const [emailArg, dateArg] = vi.mocked(sendSecretViewedNotification).mock.calls[0];
+expect(emailArg).toBe('user@example.com');
+expect(dateArg).toBeInstanceOf(Date);
+```
+
+**Hoisted Mocks (for accessing in beforeEach):**
+```typescript
+const { mockUpdateContact } = vi.hoisted(() => ({
+  mockUpdateContact: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock('../config/loops.js', () => ({
+  loops: { updateContact: mockUpdateContact },
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockUpdateContact.mockResolvedValue({ success: true });
+});
+```
+
+**Clearing Mocks:**
+```typescript
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+```
+
+**What to Mock:**
+- External services: Resend email, Stripe SDK, Loops SDK
+- Database when testing middleware in isolation
+- File system for config loading
 
 **What NOT to Mock:**
-- Database: use real PostgreSQL (server tests require `DATABASE_URL`)
-- Web Crypto API: use happy-dom polyfill (client tests)
-- Express middleware: test full request/response cycle
-- HTTP layer: use supertest for real request simulation
-
-**What Might Be Mocked (Future):**
-- External services not yet implemented (currently none)
-- Time-dependent behavior (not yet needed)
-
-**Current Approach:**
-- No mocking in client crypto tests (test real Web Crypto API)
-- No mocking in server route tests (integration with real database)
-- No vi.mock or vi.spyOn patterns in codebase
+- Real database (tests use PostgreSQL directly for integration testing)
+- HTTP client (Supertest makes real requests to Express app)
+- Crypto operations (Web Crypto API tested as-is)
+- Auth sessions (Better Auth returns real session cookies)
 
 ## Fixtures and Factories
 
-**Test Data Pattern:**
+**Test Data:**
 ```typescript
-// Module-level constants
-const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';  // Base64 "test ciphertext"
-const NONEXISTENT_ID = 'xxxxxxxxxxxxxxxxxxx01';   // 21 chars, never in DB
-const URL_SAFE_REGEX = /^[A-Za-z0-9_-]+$/;
+// Constants for all tests
+const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';
+const NONEXISTENT_ID = 'xxxxxxxxxxxxxxxxxxx01';
+
+// Helper function to create test users
+async function createUserAndSignIn(
+  appInstance: Express,
+  email: string,
+  password: string,
+  name: string,
+): Promise<{ sessionCookie: string; userId: string }> {
+  await request(appInstance)
+    .post('/api/auth/sign-up/email')
+    .send({ email, password, name })
+    .expect(200);
+
+  const signInRes = await request(appInstance)
+    .post('/api/auth/sign-in/email')
+    .send({ email, password })
+    .expect(200);
+
+  // Extract session cookie from headers
+  const rawCookiesHeader = signInRes.headers['set-cookie'] as unknown;
+  const rawCookies: string[] = Array.isArray(rawCookiesHeader)
+    ? (rawCookiesHeader as string[])
+    : typeof rawCookiesHeader === 'string'
+      ? [rawCookiesHeader]
+      : [];
+  const sessionCookie = rawCookies
+    .map((c) => c.split(';')[0])
+    .find((c) => c.startsWith('better-auth.session_token='));
+
+  const userId = signInRes.body.user?.id as string;
+  return { sessionCookie, userId };
+}
+
+// Helper to insert secrets directly (bypasses API)
+async function insertTestSecret(opts: {
+  userId: string | null;
+  status?: 'active' | 'viewed' | 'expired' | 'deleted';
+  label?: string;
+  expired?: boolean;
+}): Promise<string> {
+  const id = nanoid();
+  const expiresAt = opts.expired
+    ? new Date(Date.now() - 60_000)
+    : new Date(Date.now() + 86_400_000);
+
+  await db.insert(secrets).values({
+    id,
+    ciphertext: VALID_CIPHERTEXT,
+    expiresAt,
+    userId: opts.userId,
+    status: opts.status ?? 'active',
+    label: opts.label ?? null,
+  });
+
+  return id;
+}
 ```
 
-**Data Creation Pattern:**
-- No factory functions
-- Tests create data inline for simplicity:
-  ```typescript
-  const createRes = await request(app)
-    .post('/api/secrets')
-    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
-    .expect(201);
-  const { id } = createRes.body;
-  ```
-
-**Random Data Generation:**
-```typescript
-const original = new Uint8Array(32);
-crypto.getRandomValues(original);  // Web Crypto, not Math.random()
-```
-
-**Fixture Location:**
-- Test data lives at top of each test file
-- No separate fixtures directory
-- Constants are module-scoped
+**Location:**
+- Fixtures defined at top of test file or in shared helper files
+- Per-test factory functions defined inside describe blocks when test-specific
 
 ## Coverage
 
-**Requirements:** None enforced via tooling
+**Requirements:** No minimum enforced in CI
 
 **View Coverage:**
 ```bash
-npx vitest --coverage
-# Outputs: text summary + JSON to ./coverage
+npm run test:run      # Outputs text summary to console
+cat coverage/coverage-final.json  # View JSON report
 ```
 
-**Current Coverage Areas:**
-- Client crypto: 21+ tests across 5 files (encoding, keys, padding, encrypt, decrypt)
-- Server routes: 50+ tests in `secrets.test.ts` (create, retrieve, password, anti-enumeration)
-- Server workers: Tests in `expiration-worker.test.ts`
-- Security: Tests in `security.test.ts` (CSP, rate limiting, HTTPS redirect)
-- Accessibility: Tests in `accessibility.test.ts` (vitest-axe)
+**Config:**
+```typescript
+coverage: {
+  provider: 'v8',
+  reporter: ['text', 'json-summary'],
+  reportsDirectory: './coverage',
+}
+```
 
 ## Test Types
 
-### Unit Tests
+**Unit Tests:**
+- Scope: Single function or module with mocked dependencies
+- Location: `client/src/crypto/__tests__/encrypt.test.ts`, `server/src/services/password.service.ts`
+- Approach: Test pure functions with deterministic outputs
+- Example: Encrypt produces valid base64, contains IV, matches expected size
 
-**Scope:** Pure functions tested in isolation
-**Examples:** Encoding, padding, key generation
+**Integration Tests:**
+- Scope: Full request-response cycle (API route → middleware → service → database)
+- Location: `server/src/routes/__tests__/secrets.test.ts` (most server tests)
+- Approach: Use Supertest + real database, mock only external services (Resend, Stripe)
+- Example: POST /api/secrets → ciphertext stored → GET /:id retrieves and atomically deletes
+- Database state validated after mutations: `await db.select().from(secrets).where(...)`
 
-```typescript
-// From client/src/crypto/__tests__/encrypt.test.ts
-describe('encrypt return shape', () => {
-  it('returns an object with payload, key, and keyBase64Url', async () => {
-    const result = await encrypt('hello');
-    expect(result).toHaveProperty('payload');
-    expect(result).toHaveProperty('key');
-    expect(result).toHaveProperty('keyBase64Url');
-  });
-});
-```
-
-### Integration Tests
-
-**Scope:** Full system with real database and HTTP layer
-**Tool:** Supertest for request simulation
-**Examples:** Route handlers, atomic transactions, password verification
-
-```typescript
-// From server/src/routes/__tests__/secrets.test.ts
-describe('GET /api/secrets/:id', () => {
-  test('returns ciphertext on first retrieval with 200', async () => {
-    const createRes = await request(app)
-      .post('/api/secrets')
-      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
-      .expect(201);
-
-    const { id } = createRes.body;
-    const getRes = await request(app)
-      .get(`/api/secrets/${id}`)
-      .expect(200);
-
-    expect(getRes.body.ciphertext).toBe(VALID_CIPHERTEXT);
-  });
-
-  test('returns 404 on second retrieval (atomic delete)', async () => {
-    // ... setup ...
-    await request(app).get(`/api/secrets/${id}`).expect(200);  // First: success
-    await request(app).get(`/api/secrets/${id}`).expect(404);  // Second: consumed
-  });
-});
-```
-
-### Accessibility Tests
-
-**Tool:** vitest-axe (axe-core rules)
-**Environment:** happy-dom
-**Note:** Color contrast disabled (happy-dom cannot compute styles)
-
-```typescript
-// From client/src/__tests__/accessibility.test.ts
-import { axe } from 'vitest-axe';
-import * as matchers from 'vitest-axe/matchers';
-
-expect.extend(matchers);
-
-describe('Create page accessibility', () => {
-  it('has no accessibility violations', async () => {
-    const { renderCreatePage } = await import('../pages/create.js');
-    const container = document.createElement('div');
-    renderCreatePage(container);
-
-    const results = await axe(container, {
-      rules: { 'color-contrast': { enabled: false } },
-    });
-    expect(results).toHaveNoViolations();
-  });
-});
-```
-
-### E2E Tests
-
-**Status:** Not yet implemented
-**Planned:** Playwright for browser-based testing
-**Config:** `e2e/playwright.config.ts` (exists, ready to extend)
+**E2E Tests:**
+- Framework: Playwright (configured in `e2e/playwright.config.ts`)
+- Run: `npm run test:e2e` (requires running app on localhost:3000)
+- Coverage: Full user journeys in real browser
+- Location: `e2e/` directory
 
 ## Common Patterns
 
 **Async Testing:**
 ```typescript
-it('encrypts unicode/emoji string successfully', async () => {
-  const result = await encrypt('Hello \u{1F30D}');
+test('async operation returns expected value', async () => {
+  const result = await encrypt('hello');
   expect(result.payload.ciphertext.length).toBeGreaterThan(0);
-  expect(result.keyBase64Url).toHaveLength(43);
+});
+
+// Fire-and-forget dispatch (allow promise to settle)
+await new Promise((resolve) => setImmediate(resolve));
+expect(sendSecretViewedNotification).toHaveBeenCalledOnce();
+```
+
+**HTTP Request Testing (Supertest):**
+```typescript
+test('POST creates and returns response with correct shape', async () => {
+  const res = await request(app)
+    .post('/api/secrets')
+    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+    .expect(201);
+
+  expect(res.body.id).toBeDefined();
+  expect(res.body.id).toHaveLength(21);
+  expect(res.body.expiresAt).toBeDefined();
+});
+
+// With headers
+test('includes correct Content-Type', async () => {
+  const res = await request(app)
+    .post('/api/secrets')
+    .set('Content-Type', 'application/json')
+    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
+    .expect('Content-Type', /json/);
 });
 ```
 
-**Error Testing (Validation):**
+**Error Testing:**
 ```typescript
-test('rejects missing ciphertext with 400', async () => {
+test('rejects invalid expiresIn with 400', async () => {
   const res = await request(app)
     .post('/api/secrets')
-    .send({ expiresIn: '24h' })  // Missing ciphertext
+    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '2h' })
     .expect(400);
 
   expect(res.body.error).toBe('validation_error');
-  expect(res.body.details).toBeDefined();
+});
+
+test('wrong password returns 403 with attemptsRemaining', async () => {
+  const verifyRes = await request(app)
+    .post(`/api/secrets/${id}/verify`)
+    .send({ password: 'wrong-password' })
+    .expect(403);
+
+  expect(verifyRes.body).toEqual({
+    error: 'wrong_password',
+    attemptsRemaining: 2,
+  });
 });
 ```
 
-**Error Testing (Business Logic):**
+**Mock Verification:**
 ```typescript
-test('returns 404 for nonexistent secret', async () => {
-  const res = await request(app)
-    .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01')
-    .expect(404);
+test('calls sendSecretViewedNotification on secret view', async () => {
+  // Insert user secret with notify=true
+  const secretId = nanoid();
+  await db.insert(secrets).values({
+    id: secretId,
+    userId: userId,
+    notify: true,
+    ciphertext: VALID_CIPHERTEXT,
+    expiresAt: new Date(Date.now() + 86_400_000),
+    status: 'active',
+  });
 
-  expect(res.body.error).toBe('not_found');
-  expect(res.body.message).toBe(
-    'This secret does not exist, has already been viewed, or has expired.'
-  );
+  // Trigger retrieval
+  await request(app).get(`/api/secrets/${secretId}`).expect(200);
+
+  // Allow fire-and-forget to resolve
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // Assert mock was called
+  expect(sendSecretViewedNotification).toHaveBeenCalledOnce();
+  const [emailArg, dateArg] = vi.mocked(sendSecretViewedNotification).mock.calls[0];
+  expect(emailArg).toBe('user@example.com');
+  expect(dateArg).toBeInstanceOf(Date);
 });
 ```
 
-**Round-Trip Testing:**
+**Crypto Testing (Client):**
 ```typescript
-it('should round-trip: encode then decode produces identical Uint8Array', () => {
-  const original = new Uint8Array([72, 101, 108, 108, 111]);  // "Hello"
-  const encoded = uint8ArrayToBase64Url(original);
-  const decoded = base64UrlToUint8Array(encoded);
-  expect(decoded).toEqual(original);
+test('encrypt produces different ciphertexts for same plaintext', async () => {
+  const result1 = await encrypt('same text');
+  const result2 = await encrypt('same text');
+  // Fresh IV + key each time
+  expect(result1.payload.ciphertext).not.toBe(result2.payload.ciphertext);
+  expect(result1.keyBase64Url).not.toBe(result2.keyBase64Url);
+});
+
+test('decrypted plaintext matches original', async () => {
+  const plaintext = 'hello world';
+  const { payload, keyBase64Url } = await encrypt(plaintext);
+  const decrypted = await decrypt(payload.ciphertext, keyBase64Url);
+  expect(decrypted).toBe(plaintext);
 });
 ```
 
-**Property-Based Testing (Loop):**
+**Database State Validation:**
 ```typescript
-it('should never produce +, /, or = characters in base64url output', () => {
-  for (let i = 0; i < 50; i++) {
-    const size = Math.floor(Math.random() * 100) + 1;
-    const bytes = new Uint8Array(size);
-    crypto.getRandomValues(bytes);
-    const encoded = uint8ArrayToBase64Url(bytes);
-    expect(encoded).not.toMatch(/[+/=]/);  // URL-safe chars only
-  }
-});
-```
-
-**Database Transaction Verification:**
-```typescript
-test('secret is fully destroyed after retrieval -- no trace remains', async () => {
+test('secret is fully destroyed after retrieval', async () => {
   const createRes = await request(app)
     .post('/api/secrets')
-    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
+    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h' })
     .expect(201);
 
   const { id } = createRes.body;
 
-  // Retrieve via GET (consumes and destroys)
+  // Consume the secret
   await request(app).get(`/api/secrets/${id}`).expect(200);
 
-  // Direct DB verification: row no longer exists
+  // Verify row no longer exists in database
   const rows = await db
     .select()
     .from(secrets)
@@ -447,109 +398,49 @@ test('secret is fully destroyed after retrieval -- no trace remains', async () =
 });
 ```
 
-**Anti-Enumeration Testing:**
+**Session Cookie Testing:**
 ```typescript
-test('error response for consumed secret matches nonexistent secret exactly', async () => {
-  // Create and consume a secret
-  const createRes = await request(app)
-    .post('/api/secrets')
-    .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '24h' })
-    .expect(201);
+test('authenticated request includes session cookie', async () => {
+  const { sessionCookie } = await createUserAndSignIn(
+    app,
+    'user@test.local',
+    'password123',
+    'Test User',
+  );
 
-  const { id } = createRes.body;
-
-  // First GET consumes it
-  await request(app).get(`/api/secrets/${id}`).expect(200);
-
-  // Second GET -- consumed secret
-  const consumedRes = await request(app)
-    .get(`/api/secrets/${id}`)
-    .expect(404);
-
-  // GET completely made-up 21-char ID -- nonexistent secret
-  const nonexistentRes = await request(app)
-    .get('/api/secrets/xxxxxxxxxxxxxxxxxxx01')
-    .expect(404);
-
-  // Response bodies must be byte-identical (prevents enumeration)
-  expect(consumedRes.body).toEqual(nonexistentRes.body);
-  expect(consumedRes.body).toEqual({
-    error: 'not_found',
-    message: 'This secret does not exist, has already been viewed, or has expired.',
-  });
-});
-```
-
-**Password Protection Flow:**
-```typescript
-test('verifying wrong password returns 403 with attemptsRemaining', async () => {
-  // Create password-protected secret
-  const createRes = await request(app)
-    .post('/api/secrets')
-    .send({
-      ciphertext: VALID_CIPHERTEXT,
-      expiresIn: '24h',
-      password: 'correct-password',
-    })
-    .expect(201);
-
-  const { id } = createRes.body;
-
-  // Get metadata (non-destructive)
-  const metaRes = await request(app)
-    .get(`/api/secrets/${id}/meta`)
+  const res = await request(app)
+    .get('/api/dashboard/secrets')
+    .set('Cookie', sessionCookie)
     .expect(200);
 
-  expect(metaRes.body.requiresPassword).toBe(true);
-  expect(metaRes.body.passwordAttemptsRemaining).toBe(3);
-
-  // Wrong password
-  const verifyRes = await request(app)
-    .post(`/api/secrets/${id}/verify`)
-    .send({ password: 'wrong-password' })
-    .expect(403);
-
-  expect(verifyRes.body.error).toBe('wrong_password');
-  expect(verifyRes.body.attemptsRemaining).toBe(2);
+  expect(res.body).toHaveProperty('secrets');
 });
 ```
 
-## Test Organization by Feature
-
-**Client Crypto Tests** (`client/src/crypto/__tests__/`)
-- `encoding.test.ts`: Base64/Base64URL, round-trip, URL-safe character validation
-- `keys.test.ts`: Key generation, non-extractability, export/import
-- `padding.test.ts`: PADME algorithm, tier selection, overhead verification
-- `encrypt.test.ts`: Return shape, IV prepending, uniqueness guarantee, padding integration
-- `decrypt.test.ts`: Full round-trip, error cases, padding removal
-
-**Server Route Tests** (`server/src/routes/__tests__/`)
-- `secrets.test.ts`: POST/GET endpoints, validation, atomic deletion, password protection, anti-enumeration
-- `security.test.ts`: CSP header injection, rate limiting, HTTPS redirect
-- `expiration.test.ts`: Expiration behavior, automatic cleanup
-
-**Server Worker Tests** (`server/src/workers/__tests__/`)
-- `expiration-worker.test.ts`: Scheduled cleanup, deletion of expired secrets
-
-**Client Accessibility Tests** (`client/src/__tests__/`)
-- `accessibility.test.ts`: Page structure (headings, sections, aria-labelledby), vitest-axe violations
-
-## Test Debugging & Isolation
+## Gotchas & Best Practices
 
 **Rate Limiter Isolation:**
-- Fresh app per test: `app = buildApp()` in `beforeEach`
-- Each instance has independent MemoryStore for rate limiting
-- Prevents test bleed-through across suite
+- Fresh `buildApp()` per test creates a new MemoryStore for rate limiters
+- Test data doesn't leak because each app has its own store
 
-**Database Isolation:**
-- Server tests run sequentially (`fileParallelism: false`)
-- `afterEach` cleanup: `await db.delete(secrets)`
-- Fresh transaction context for each operation
+**Database Pool Cleanup:**
+- Tests must call `await pool.end()` in `afterAll` to prevent hanging
+- Prevents "vitest hangs" errors after test run completes
 
-**Environment Variables:**
-- `setupFiles: ['dotenv/config']` loads `.env` at test startup
-- Avoids needing mocks for env-dependent code paths
+**Middleware Order Testing:**
+- Must use real `buildApp()` to test middleware chains
+- Can't mock middleware ordering — test the actual app
+- Example: rate limiting must run after optional auth
+
+**Happy-DOM Limitations:**
+- Color contrast checks disabled (happy-dom can't compute computed styles)
+- DOM structure checks (headings, ARIA labels) work fine
+
+**Session Cookie Extraction:**
+- Extract from `res.headers['set-cookie']` array
+- Pattern: `cookies.find((c) => c.startsWith('better-auth.session_token='))`
+- Pass back in subsequent requests: `.set('Cookie', sessionCookie)`
 
 ---
 
-*Testing analysis: 2026-02-20*
+*Testing analysis: 2026-03-01*

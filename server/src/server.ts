@@ -7,7 +7,7 @@ import { startExpirationWorker, stopExpirationWorker } from './workers/expiratio
 const app = buildApp();
 
 const server = app.listen(env.PORT, () => {
-  logger.info({ port: env.PORT }, 'SecureShare server started');
+  logger.info({ port: env.PORT }, 'Torch Secret server started');
   startExpirationWorker();
 });
 

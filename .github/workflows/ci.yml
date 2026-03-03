@@ -1,7 +1,10 @@
 name: CI
 
 on:
-  workflow_dispatch: # temporarily disabled auto-triggers; re-enable push/pull_request when ready
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -49,10 +52,34 @@ jobs:
     env:
       DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
       NODE_ENV: test
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RESEND_FROM_EMAIL: 'Torch Secret <noreply@torchsecret.com>'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Import secrets from Infisical
+        uses: Infisical/secrets-action@v1.0.9
+        with:
+          method: 'universal'
+          client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          project-slug: 'torch-secret-28-vs'
+          env-slug: 'dev'
+          domain: 'https://app.infisical.com'
+          export-type: 'env'
+
+      - name: Restore CI env vars
+        run: |
+          echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
+          echo "FORCE_HTTPS=false" >> $GITHUB_ENV
+          echo "REDIS_URL=" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -108,10 +135,34 @@ jobs:
     env:
       DATABASE_URL: postgresql://secureshare:secureshare@localhost:5432/secureshare
       REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RESEND_FROM_EMAIL: 'Torch Secret <noreply@torchsecret.com>'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Import secrets from Infisical
+        uses: Infisical/secrets-action@v1.0.9
+        with:
+          method: 'universal'
+          client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          project-slug: 'torch-secret-28-vs'
+          env-slug: 'dev'
+          domain: 'https://app.infisical.com'
+          export-type: 'env'
+
+      - name: Restore CI env vars
+        run: |
+          echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
+          echo "FORCE_HTTPS=false" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -164,5 +215,5 @@ jobs:
           docker build --no-cache \
             --build-arg VITE_POSTHOG_KEY="" \
             --build-arg VITE_POSTHOG_HOST="" \
-            -t secureshare:ci-test \
+            -t torch-secret:ci-test \
             .

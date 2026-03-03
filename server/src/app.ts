@@ -15,6 +15,10 @@ import { healthRouter } from './routes/health.js';
 import { auth } from './auth.js';
 import { meRouter } from './routes/me.js';
 import { createDashboardRouter } from './routes/dashboard.js';
+import { billingRouter } from './routes/billing.js';
+import { subscribersRouter } from './routes/subscribers.js';
+import { stripeWebhookHandler } from './routes/webhooks.js';
+import { seoRouter } from './routes/seo/index.js';
 import { env } from './config/env.js';
 
 /**
@@ -30,10 +34,12 @@ import { env } from './config/env.js';
  * 4. helmet         -- set all security headers (CSP uses nonce from step 3)
  * 5. httpLogger     -- logging
  * 6. auth handler   -- /api/auth/*splat MUST be before express.json() (body-stream ordering)
+ * 6.5. Stripe webhook -- /api/webhooks/stripe with express.raw() (BEFORE express.json)
  * 7. json parser    -- body parsing (for non-auth routes)
- * 8. routes         -- API endpoints (health, secrets, me)
- * 9. static assets + SPA catch-all (production only, when client/dist exists)
- * 10. errorHandler  -- MUST be last
+ * 8. routes         -- API endpoints (health, secrets, me, billing)
+ * 9. SEO SSR routes   -- /vs/*, /alternatives/*, /use/* (before static/SPA)
+ * 10. static assets + SPA catch-all (production only, when client/dist exists)
+ * 11. errorHandler  -- MUST be last
  */
 export function buildApp() {
   const app = express();
@@ -60,11 +66,43 @@ export function buildApp() {
   // HTTP request logging (pino-http with secret ID redaction)
   app.use(httpLogger);
 
+  // Dev-only: bounce OAuth callbacks through the Vite proxy to fix state_mismatch.
+  // Google/GitHub redirect directly to localhost:3000/api/auth/callback/*, bypassing the Vite
+  // proxy. The OAuth state cookie was set on torchsecret.localhost:1355 (the Vite proxy domain),
+  // so it is absent on direct localhost:3000 requests → state_mismatch.
+  // Fix: intercept direct callbacks and 302-redirect them through APP_URL (the portless URL),
+  // where the state cookie IS present. Proxy-mediated requests (identified by Vite's
+  // X-Forwarded-Host header) skip this middleware and fall through to the Better Auth handler.
+  if (env.NODE_ENV === 'development' && env.APP_URL) {
+    app.get('/api/auth/callback/:provider', (req, res, next) => {
+      if (req.headers['x-forwarded-host']) {
+        // Arrived via Vite proxy — state cookie is present, let Better Auth handle it
+        return next();
+      }
+      // Direct callback from Google/GitHub — bounce through the portless Vite proxy URL
+      const qs = new URLSearchParams(req.query as Record<string, string>).toString();
+      const target = `${env.APP_URL}/api/auth/callback/${req.params.provider}${qs ? `?${qs}` : ''}`;
+      res.redirect(302, target);
+    });
+  }
+
   // Better Auth handler -- MUST be before express.json() to avoid body-stream conflict.
   // Better Auth parses its own bodies internally; if express.json() runs first,
   // the stream is consumed and all auth requests hang indefinitely.
   // Express 5 wildcard syntax: /api/auth/*splat (not /api/auth/*)
   app.all('/api/auth/{*splat}', toNodeHandler(auth));
+
+  // Stripe webhook handler -- MUST be before express.json() (raw body required).
+  // Stripe's constructEvent() verifies the HMAC-SHA256 signature against the raw bytes.
+  // express.json() consumes and replaces req.body; mounting after causes silent signature
+  // verification failure ("No signatures found matching the expected signature").
+  // Use express.raw() on this specific route only -- not globally.
+  app.post(
+    '/api/webhooks/stripe',
+    express.raw({ type: 'application/json' }),
+
+    stripeWebhookHandler,
+  );
 
   // Parse JSON bodies with explicit size limit (100kb prevents abuse)
   app.use(express.json({ limit: '100kb' }));
@@ -81,12 +119,24 @@ export function buildApp() {
   // Mount /api/dashboard routes (requires auth session)
   app.use('/api/dashboard', createDashboardRouter());
 
+  // Mount /api/billing routes (Stripe Checkout, portal, verify-checkout)
+  app.use('/api/billing', billingRouter);
+
+  // Mount /api/subscribers routes (email list capture, GDPR double opt-in — Phase 36)
+  app.use('/api/subscribers', subscribersRouter);
+
   // API catch-all: return JSON 404 for any unmatched /api/* request.
   // MUST come after ALL API routes (health, secrets, me) and before the SPA catch-all
   // to prevent API requests from falling through to the HTML response.
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'not_found' });
   });
+
+  // SSR SEO content pages (/vs/*, /alternatives/*, /use/*).
+  // MUST be mounted BEFORE express.static and SPA catch-all so these routes
+  // are handled by Express before the SPA catch-all intercepts them.
+  // These routes are intentionally indexable — do NOT add to NOINDEX_PREFIXES.
+  app.use(seoRouter);
 
   // Serve built frontend assets in production (or when client/dist exists)
   const clientDistPath = resolve(import.meta.dirname, '../../client/dist');
@@ -115,6 +165,10 @@ export function buildApp() {
         '/forgot-password',
         '/reset-password',
         '/dashboard',
+        '/privacy',
+        '/terms',
+        '/confirm', // email confirmation pages — token in query string; must not be indexed
+        '/unsubscribe', // unsubscribe pages — token in query string; must not be indexed
       ];
       if (NOINDEX_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
         res.setHeader('X-Robots-Tag', 'noindex, nofollow');
