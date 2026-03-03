@@ -307,6 +307,7 @@ Plans:
 | 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
 | 37.2. Infisical Free Tier Integration | v5.0 | Complete    | 2026-02-28 | - |
 | 38. Feedback Links | 2/2 | Complete    | 2026-03-01 | - |
+| 45. Billing Service Gap Closure | v5.0 | 0/2 | Pending | - |
 
 
 ### Phase 39: complete, finish google auth and github auth
@@ -380,3 +381,15 @@ Plans:
 
 Plans:
 - [ ] 44-01-PLAN.md — Run gsd-verifier for Phase 37.1: verify captureCheckoutInitiated, captureSubscriptionActivated, captureDashboardViewed, extended captureSecretCreated + identifyUser, all 5 events wired in create.ts/dashboard.ts; produce 37.1-VERIFICATION.md
+
+### Phase 45: Billing Service Gap Closure
+
+**Goal:** Close two non-critical integration gaps from the v5.0 milestone audit — eliminate the verify-checkout race window by making `activatePro()` idempotent and calling it from the verify-checkout endpoint, and fix `deactivatePro()` to sync `subscriptionTier: 'free'` to Loops so churned users re-enter the day-7 re-engagement audience.
+**Requirements**: ESEQ-03 (secondary path), BILL-05 (race window)
+**Gap Closure:** Closes ESEQ-03-desync, BILL-05-race, and cancellation-loops-resync flow gap from v5.0 audit
+**Depends on:** Phase 44
+**Plans:** 2 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — Make activatePro() idempotent + call from verify-checkout endpoint (eliminate BILL-05 race)
+- [ ] 45-02-PLAN.md — Add loops.updateContact({ subscriptionTier: 'free' }) to deactivatePro() (close ESEQ-03 Loops desync)
