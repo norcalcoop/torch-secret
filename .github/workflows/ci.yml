@@ -71,8 +71,12 @@ jobs:
           domain: 'https://app.infisical.com'
           export-type: 'env'
 
-      - name: Restore CI database URL
-        run: echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+      - name: Restore CI env vars
+        run: |
+          echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -148,8 +152,12 @@ jobs:
           domain: 'https://app.infisical.com'
           export-type: 'env'
 
-      - name: Restore CI database URL
-        run: echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+      - name: Restore CI env vars
+        run: |
+          echo "DATABASE_URL=postgresql://secureshare:secureshare@localhost:5432/secureshare" >> $GITHUB_ENV
+          echo "BETTER_AUTH_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
