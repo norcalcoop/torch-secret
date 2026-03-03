@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Product Launch Checklist
 status: unknown
-last_updated: "2026-03-02T22:39:56.372Z"
+last_updated: "2026-03-03T03:22:15.167Z"
 progress:
-  total_phases: 18
+  total_phases: 19
   completed_phases: 18
-  total_plans: 61
-  completed_plans: 61
+  total_plans: 63
+  completed_plans: 62
 ---
 
 # Session State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-22 after v5.0 milestone started)
 
 ## Current Position
 
-Phase: 44 — Verify Phase 37.1 PostHog Free Tier Enrichment (COMPLETE)
-Plan: 1/1 plans done
-Status: Plan 44-01 complete — 37.1-VERIFICATION.md written retroactively; all 10 Phase 37.1 observable truths VERIFIED (line numbers from posthog.ts/create.ts/dashboard.ts); 19 PostHog tests GREEN; 376 total tests passing. No production code changes — pure verification + documentation.
-Last activity: 2026-03-02 — Plan 44-01 complete; Phase 44 complete
+Phase: 45 — Billing Service Gap Closure
+Plan: 1/? plans done (45-01 complete)
+Status: Plan 45-01 complete — BILL-05 closed; verify-checkout now calls activatePro() directly; session_mismatch guard updated to tolerate null customer; 382 tests GREEN (6 new)
+Last activity: 2026-03-03 — Plan 45-01 complete
 
-Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 39 is operational work beyond v5.0 scope)
+Progress: [██████████] 100% (v5.0 phases — 9/9 phases complete; Phase 45 is gap closure work)
 
 ## Performance Metrics
 
@@ -96,6 +96,8 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 | Phase 42 P03 | human-action | 3 tasks | 0 files |
 | Phase 43 P01 | 3 | 2 tasks | 2 files |
 | Phase 44 P01 | 3min | 2 tasks | 1 files |
+| Phase 45 P01 | 2min | 2 tasks | 3 files |
+| Phase 45 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -384,12 +386,21 @@ Progress: [██████████] 100% (v5.0 phases — 9/9 phases comp
 - ESEQ-01/02/03/04 changed from [ ] to [x] in REQUIREMENTS.md; Traceability table updated Pending → Complete
 - Verification approach: inspect source files directly — SUMMARY claims are assertions to confirm, not evidence
 
+### Phase 45 Plan 01 Execution Notes
+
+- BILL-05 closed: verify-checkout now calls `activatePro(customerId)` after session.status==='complete' validation, before res.json()
+- Dual-write idempotency: both webhook handler and verify-checkout call activatePro(); DB UPDATE WHERE is a no-op on already-Pro rows — no conditional guard needed
+- session_mismatch guard updated: added `session.customer &&` condition so null session.customer (refunded/non-subscription) skips both the 403 guard and the activatePro call
+- ZK invariant preserved: activatePro() receives stripe_customer_id only; userId never in scope alongside it
+- TDD: 4 unit tests (billing.test.ts) + 2 idempotency tests (billing.service.test.ts) — all GREEN
+- 382 total tests pass (up from 376; 6 new tests added)
+
 ### Blockers/Concerns
 
-None — v5.0 fully shipped; all phases complete
+None — v5.0 fully shipped; all phases complete; Phase 45 gap closure in progress
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Completed 43-01-PLAN.md — 37-VERIFICATION.md written, ESEQ-01/02/03/04 marked Complete in REQUIREMENTS.md, 376 tests green. Phase 43 fully complete.
-Resume file: (none — Phase 43 complete; no active plan)
+Last session: 2026-03-03
+Stopped at: Completed 45-01-PLAN.md — BILL-05 closed; verify-checkout calls activatePro() directly; 382 tests GREEN.
+Resume file: (none — Phase 45 Plan 01 complete; Plan 02 is next)
