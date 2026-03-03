@@ -65,13 +65,13 @@ export function renderTermsPage(container: HTMLElement): void {
       heading: 'Prohibited Content',
       paragraphs: [
         'You are solely responsible for the content you share. Because Torch Secret is zero-knowledge, we cannot inspect content. By using the service, you warrant that you will not share illegal content.',
-        '[Company Name] is not liable for content shared by users.',
+        'Torch Secret is not liable for content shared by users.',
       ],
     },
     {
       heading: 'Account Responsibilities',
       paragraphs: [
-        'Provide accurate information when registering. Keep your password secure. Notify us immediately at [Contact Email] if you suspect unauthorized access to your account.',
+        'Provide accurate information when registering. Keep your password secure. Notify us immediately at contact@torchsecret.com if you suspect unauthorized access to your account.',
       ],
     },
     {
@@ -92,30 +92,30 @@ export function renderTermsPage(container: HTMLElement): void {
     {
       heading: 'Intellectual Property',
       paragraphs: [
-        'The Torch Secret software and brand are owned by [Company Name]. These Terms do not grant you any rights in our intellectual property.',
+        'The Torch Secret software and brand are owned by Torch Secret. These Terms do not grant you any rights in our intellectual property.',
       ],
     },
     {
       heading: 'Disclaimer of Warranties',
       paragraphs: [
-        'THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. [Company Name] DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.',
+        'THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. TORCH SECRET DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.',
       ],
     },
     {
       heading: 'Limitation of Liability',
       paragraphs: [
-        'TO THE MAXIMUM EXTENT PERMITTED BY LAW, [Company Name] IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.',
+        'TO THE MAXIMUM EXTENT PERMITTED BY LAW, TORCH SECRET IS NOT LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.',
       ],
     },
     {
       heading: 'Governing Law',
       paragraphs: [
-        'These terms are governed by the laws of [Jurisdiction]. Disputes shall be resolved in the courts of [Jurisdiction].',
+        'These terms are governed by the laws of the State of California, United States. Disputes shall be resolved in the courts of the State of California, United States.',
       ],
     },
     {
       heading: 'Contact',
-      paragraphs: ['Questions? Contact us at [Contact Email].'],
+      paragraphs: ['Questions? Contact us at contact@torchsecret.com.'],
     },
   ];
 

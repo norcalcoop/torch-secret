@@ -39,7 +39,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
     {
       heading: 'Who We Are',
       paragraphs: [
-        '[Company Name] operates Torch Secret, a zero-knowledge one-time secret sharing service. Contact us at [Contact Email].',
+        'Torch Secret operates a zero-knowledge one-time secret sharing service. Contact us at contact@torchsecret.com.',
       ],
     },
     {
@@ -66,7 +66,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
       heading: 'Data Retention',
       paragraphs: [
         'Anonymous secrets: automatically deleted from our database the moment they are viewed, or when they expire (whichever comes first).',
-        'Account data: retained while your account is active. You may delete your account at any time by contacting [Contact Email], which permanently deletes all associated metadata.',
+        'Account data: retained while your account is active. You may delete your account at any time by contacting contact@torchsecret.com, which permanently deletes all associated metadata.',
       ],
     },
     {
@@ -88,7 +88,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
     {
       heading: 'Your Rights',
       paragraphs: [
-        'You may request access to, correction of, or deletion of your personal data by contacting [Contact Email]. Anonymous usage generates no personal data on our end.',
+        'You may request access to, correction of, or deletion of your personal data by contacting contact@torchsecret.com. Anonymous usage generates no personal data on our end.',
       ],
     },
     {
@@ -99,7 +99,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
     },
     {
       heading: 'Contact',
-      paragraphs: ['Questions or requests? Contact us at [Contact Email].'],
+      paragraphs: ['Questions or requests? Contact us at contact@torchsecret.com.'],
     },
   ];
 
