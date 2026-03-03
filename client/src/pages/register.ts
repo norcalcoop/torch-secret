@@ -252,7 +252,7 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
           name,
           callbackURL: '/dashboard',
           marketingConsent: marketingConsentCheckbox.checked,
-        });
+        } as Parameters<typeof authClient.signUp.email>[0]);
 
         if (error) {
           const code = (error as { code?: string }).code ?? '';

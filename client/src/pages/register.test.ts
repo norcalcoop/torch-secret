@@ -28,14 +28,14 @@ describe('register page — marketing consent checkbox (ESEQ-04)', () => {
 
   it('renders a checkbox with id="marketing-consent"', async () => {
     await renderRegisterPage(container);
-    const checkbox = container.querySelector('#marketing-consent');
+    const checkbox = container.querySelector<HTMLInputElement>('#marketing-consent');
     expect(checkbox).not.toBeNull();
     expect(checkbox?.type).toBe('checkbox');
   });
 
   it('checkbox is unchecked by default', async () => {
     await renderRegisterPage(container);
-    const checkbox = container.querySelector('#marketing-consent');
+    const checkbox = container.querySelector<HTMLInputElement>('#marketing-consent');
     expect(checkbox?.checked).toBe(false);
   });
 
