@@ -38,6 +38,7 @@ export function createHelmetMiddleware() {
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
+          'https://us-assets.i.posthog.com',
           (_req: IncomingMessage, res: ServerResponse) =>
             `'nonce-${(res as unknown as Response).locals.cspNonce}'`,
         ],
@@ -47,9 +48,10 @@ export function createHelmetMiddleware() {
             `'nonce-${(res as unknown as Response).locals.cspNonce}'`,
         ],
         imgSrc: ["'self'"],
-        // PostHog analytics event ingestion (npm bundle approach — no script-src change needed)
+        // PostHog: us-assets.i.posthog.com in script-src (SDK dynamically loads session recording/flags)
+        // and connect-src (event ingestion)
         connectSrc: ["'self'", 'https://us.i.posthog.com', 'https://us-assets.i.posthog.com'],
-        fontSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
