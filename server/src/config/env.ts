@@ -6,7 +6,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
   FORCE_HTTPS: z
     .string()
     .default('false')
