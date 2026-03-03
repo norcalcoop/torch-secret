@@ -38,7 +38,7 @@ secureshare/
 │       ├── api/client.ts       # Typed fetch wrapper for API calls
 │       ├── analytics/          # PostHog client (sanitizeEventUrls, identifyUser, captureSecretCreated, etc.)
 │       ├── crypto/             # AES-256-GCM encrypt/decrypt (self-contained module)
-│       ├── components/         # UI components (layout, copy-button, share-button, toast, terminal-block, theme-toggle, icons, loading-spinner, expiration-select)
+│       ├── components/         # UI components (layout, copy-button, share-button, toast, terminal-block, theme-toggle, icons, loading-spinner, expiration-select, feedback-link)
 │       └── pages/              # home, create, confirmation, reveal, error, dashboard, login, register, forgot-password, reset-password, pricing, privacy, terms, confirm, unsubscribe
 ├── server/src/
 │   ├── app.ts                  # Express app factory (middleware order is critical — see comments)
@@ -66,6 +66,7 @@ secureshare/
 │   │   ├── validate.ts         # Zod request validation
 │   │   ├── logger.ts           # Pino with secret ID redaction
 │   │   ├── require-auth.ts     # Better Auth session guard middleware
+│   │   ├── optional-auth.ts    # Better Auth session loader (no gate — attaches user if present)
 │   │   └── error-handler.ts    # Global error handler (must be last middleware)
 │   ├── services/
 │   │   ├── secrets.service.ts  # createSecret, retrieveAndDestroy, verifyAndRetrieve
@@ -160,11 +161,11 @@ The project uses the GSD workflow. State is tracked in `.planning/STATE.md`, roa
 - **v2.0 UI & SEO** (6 phases, 14 plans) — SHIPPED: Visual design, glassmorphism, SEO, theme toggle
 - **v3.0 Production-Ready Delivery** (6 phases, 15 plans) — SHIPPED: ESLint/Prettier, Docker, Playwright E2E, CI/CD, GitHub polish
 - **v4.0 Hybrid Anonymous + Account Model** (10 phases, 38 plans) — SHIPPED: Dashboard, Stripe billing, PostHog analytics, pricing page, SSR SEO pages, email capture, notification emails, rate-limit conversion prompts
-- **v5.0 Product Launch Checklist** (11 phases, in progress) — Brand rename (Torch Secret), marketing home page, Loops email onboarding, Infisical secrets management; Phase 37.2 active
+- **v5.0 Product Launch Checklist** (13 phases) — SHIPPED: Brand rename (Torch Secret), marketing home page, Loops email onboarding, Infisical secrets management, Google + GitHub OAuth; Phase 39 complete
 
 ## Key Design Decisions
 
-- **Vanilla TS over React:** 4 pages total. Performance target <1s load on 3G. Smaller bundle = smaller attack surface.
+- **Vanilla TS over React:** 15 pages, no framework overhead. Performance target <1s load on 3G. Smaller bundle = smaller attack surface.
 - **Server-side password hashing:** Argon2id on the server (OWASP-recommended params). HTTPS protects transit.
 - **nanoid over UUID:** 21-char URL-safe IDs. Cryptographically secure, shorter URLs.
 - **PADME padding:** Max 12% overhead vs 100% for power-of-2. Prevents length leakage.

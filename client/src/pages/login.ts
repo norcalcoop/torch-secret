@@ -365,16 +365,27 @@ function createOAuthButton(
   button.appendChild(labelEl);
 
   button.addEventListener('click', () => {
-    // Set a flag before the OAuth redirect so dashboard.ts can fire the
-    // captureUserLoggedIn analytics event after the full-page redirect completes.
-    // sessionStorage survives the same-origin redirect but is cleared by dashboard.ts
-    // immediately after reading, preventing stale flags on subsequent dashboard visits.
-    sessionStorage.setItem('oauth_login_provider', provider);
-    void authClient.signIn.social({
-      provider,
-      callbackURL: '/dashboard',
-      errorCallbackURL: '/login?error=oauth',
-    });
+    void (async () => {
+      // Set a flag before the OAuth redirect so dashboard.ts can fire the
+      // captureUserLoggedIn analytics event after the full-page redirect completes.
+      // sessionStorage survives the same-origin redirect but is cleared by dashboard.ts
+      // immediately after reading, preventing stale flags on subsequent dashboard visits.
+      sessionStorage.setItem('oauth_login_provider', provider);
+
+      const { error } = await authClient.signIn.social({
+        provider,
+        callbackURL: '/dashboard',
+        errorCallbackURL: '/login?error=oauth',
+      });
+
+      // If the initiation call itself fails (e.g. provider not configured on the server,
+      // network error), the redirectPlugin never fires — navigate to the error URL manually
+      // so the user sees a visible error instead of a silent no-op.
+      if (error) {
+        sessionStorage.removeItem('oauth_login_provider');
+        window.location.href = '/login?error=oauth';
+      }
+    })();
   });
 
   return button;
