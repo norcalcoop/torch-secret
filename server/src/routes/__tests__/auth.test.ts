@@ -21,8 +21,11 @@ let app: Express;
 const AUTH_TEST_EMAIL_PREFIX = 'auth-security-test';
 
 /**
- * Helper: register + sign in, return session cookie + userId.
- * Copy of the pattern from dashboard.test.ts.
+ * Helper: register and return session cookie + userId from the sign-up response.
+ *
+ * Better Auth auto-authenticates on sign-up (email+password flow) — it returns
+ * a session cookie AND { user, session } body in the same response. A separate
+ * sign-in call is unnecessary and doubles the Argon2id work (~2s each on CI).
  */
 async function createUserAndSignIn(
   appInstance: Express,
@@ -30,15 +33,11 @@ async function createUserAndSignIn(
   password: string,
   name: string,
 ): Promise<{ sessionCookie: string; userId: string }> {
-  await request(appInstance)
+  const signUpRes = await request(appInstance)
     .post('/api/auth/sign-up/email')
     .send({ email, password, name })
     .expect(200);
-  const signInRes = await request(appInstance)
-    .post('/api/auth/sign-in/email')
-    .send({ email, password })
-    .expect(200);
-  const rawCookiesHeader = signInRes.headers['set-cookie'] as unknown;
+  const rawCookiesHeader = signUpRes.headers['set-cookie'] as unknown;
   const rawCookies: string[] = Array.isArray(rawCookiesHeader)
     ? (rawCookiesHeader as string[])
     : typeof rawCookiesHeader === 'string'
@@ -47,9 +46,9 @@ async function createUserAndSignIn(
   const sessionCookie = rawCookies
     .map((c) => c.split(';')[0])
     .find((c) => c.startsWith('better-auth.session_token='));
-  if (!sessionCookie) throw new Error('No session cookie found in sign-in response');
-  const userId = (signInRes.body as { user?: { id?: string } }).user?.id;
-  if (!userId) throw new Error('No userId found in sign-in response body');
+  if (!sessionCookie) throw new Error('No session cookie found in sign-up response');
+  const userId = (signUpRes.body as { user?: { id?: string } }).user?.id;
+  if (!userId) throw new Error('No userId found in sign-up response body');
   return { sessionCookie, userId };
 }
 
