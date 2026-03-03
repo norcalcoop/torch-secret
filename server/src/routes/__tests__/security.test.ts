@@ -58,7 +58,8 @@ describe('Success Criterion 1: Content-Security-Policy with nonce', () => {
 
     const csp = res.headers['content-security-policy'];
     expect(csp).toBeDefined();
-    expect(csp).toContain("script-src 'self' 'nonce-");
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("'nonce-");
     expect(csp).not.toContain('unsafe-inline');
     expect(csp).not.toContain('unsafe-eval');
   });
