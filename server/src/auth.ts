@@ -139,6 +139,12 @@ export const auth = betterAuth({
 
   trustedOrigins: [env.BETTER_AUTH_URL, ...(env.APP_URL ? [env.APP_URL] : [])],
 
+  advanced: {
+    // Supertest (used in integration tests) sends no Origin or Sec-Fetch-* headers,
+    // which triggers Better Auth's CSRF check and returns 403. Disable in test env only.
+    disableCSRFCheck: env.NODE_ENV === 'test',
+  },
+
   user: {
     additionalFields: {
       marketingConsent: {
