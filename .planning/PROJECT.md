@@ -1,10 +1,15 @@
 # Torch Secret
 
-## Current Milestone: v6.0 (Planning)
+## Current Milestone: v5.1 Email Infrastructure
 
-**Status:** v5.0 Product Launch Checklist shipped 2026-03-03. Planning next milestone.
+**Goal:** Set up all torchsecret.com business email addresses with Cloudflare Email Routing, Resend domain authorization, Loops.so domain authentication, and Gmail "Send mail as" — replacing the `onboarding@resend.dev` placeholder with `noreply@torchsecret.com` for all app email sends.
 
-**To start next milestone:** `/gsd:new-milestone`
+**Target features:**
+- Cloudflare Email Routing for 7 business addresses (hello, contact, admin, info, support, security, privacy) → torch-secret@gmail.com
+- Resend domain verification + `RESEND_FROM_EMAIL` updated to `noreply@torchsecret.com` in Infisical
+- Loops.so domain verification for `hello@torchsecret.com` sender authentication
+- Gmail "Send mail as" for all 7 addresses via Resend SMTP
+- `SECURITY.md` and Privacy Policy updated with proper contact addresses
 
 ## What This Is
 
@@ -76,7 +81,14 @@ Users can share sensitive information once, securely, without accounts or comple
 
 ### Active
 
-<!-- v6.0 requirements TBD — run /gsd:new-milestone to define -->
+<!-- v5.1 Email Infrastructure -->
+- [ ] Cloudflare Email Routing for 7 business addresses → torch-secret@gmail.com
+- [ ] torchsecret.com domain verified in Resend (DKIM, SPF, DMARC)
+- [ ] RESEND_FROM_EMAIL updated to noreply@torchsecret.com in Infisical
+- [ ] torchsecret.com domain verified in Loops.so
+- [ ] Gmail "Send mail as" for all 7 addresses via Resend SMTP
+- [ ] SECURITY.md updated with security@torchsecret.com
+- [ ] Privacy Policy updated with privacy@torchsecret.com for data requests
 
 ### Out of Scope
 
@@ -188,4 +200,4 @@ Secrets: Infisical CLI injection for dev/staging/prod — no .env file in dev.
 | activatePro() idempotent — called from both verify-checkout and webhook | Eliminates race window where user sees success before webhook arrives; DB UPDATE WHERE is a no-op if already Pro | ✓ Good |
 
 ---
-*Last updated: 2026-03-03 after v5.0 milestone*
+*Last updated: 2026-03-03 after v5.1 milestone started*
