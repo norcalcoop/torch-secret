@@ -7,9 +7,9 @@ tags: [cloudflare, email-routing, dns, mx, gmail, delivery-verification]
 # Dependency graph
 requires:
   - phase: 46-01
-    provides: "7 active Cloudflare routing rules forwarding @torchsecret.com addresses to torch-secret@gmail.com"
+    provides: "7 active Cloudflare routing rules forwarding @torchsecret.com addresses to torch.secrets@gmail.com"
 provides:
-  - "Live end-to-end delivery confirmed: hello@torchsecret.com and security@torchsecret.com both delivered to torch-secret@gmail.com inbox"
+  - "Live end-to-end delivery confirmed: hello@torchsecret.com and security@torchsecret.com both delivered to torch.secrets@gmail.com inbox"
   - "All 7 routing rules confirmed Active in Cloudflare Email Routing dashboard"
   - "MX DNS records publicly resolvable and routing live"
   - "Phase 49 hard dependency fully satisfied: Gmail alias verification emails will route correctly"
@@ -39,7 +39,7 @@ completed: 2026-03-04
 
 # Phase 46 Plan 02: Cloudflare Email Routing — End-to-End Delivery Verification Summary
 
-**Live end-to-end delivery verified: test emails to hello@torchsecret.com and security@torchsecret.com both arrived in torch-secret@gmail.com inbox, all 7 routing rules confirmed Active, completing Phase 46 and satisfying the Phase 49 hard dependency**
+**Live end-to-end delivery verified: test emails to hello@torchsecret.com and security@torchsecret.com both arrived in torch.secrets@gmail.com inbox, all 7 routing rules confirmed Active, completing Phase 46 and satisfying the Phase 49 hard dependency**
 
 ## Performance
 
@@ -51,8 +51,8 @@ completed: 2026-03-04
 
 ## Accomplishments
 
-- Test email sent to hello@torchsecret.com from external account arrived in torch-secret@gmail.com inbox (not spam)
-- Test email sent to security@torchsecret.com from external account arrived in torch-secret@gmail.com inbox (not spam)
+- Test email sent to hello@torchsecret.com from external account arrived in torch.secrets@gmail.com inbox (not spam)
+- Test email sent to security@torchsecret.com from external account arrived in torch.secrets@gmail.com inbox (not spam)
 - All 7 routing rules (hello, contact, admin, info, support, security, privacy) confirmed Active in Cloudflare Email Routing dashboard
 - Phase 46 complete: inbound email routing live and verified for torchsecret.com
 
@@ -93,7 +93,7 @@ None — both test emails arrived in inbox (not spam). Gmail Never-send-to-Spam 
 ## Next Phase Readiness
 
 - Phase 46 is fully complete: Cloudflare Email Routing configured (Plan 01) and delivery verified (Plan 02)
-- Phase 49 (Gmail Send Mail As): Hard dependency satisfied — Gmail alias verification emails sent to @torchsecret.com addresses will now traverse the routing pipeline and arrive at torch-secret@gmail.com
+- Phase 49 (Gmail Send Mail As): Hard dependency satisfied — Gmail alias verification emails sent to @torchsecret.com addresses will now traverse the routing pipeline and arrive at torch.secrets@gmail.com
 - Phase 47 (Domain Verification + DMARC): Can proceed — no dependency on Phase 46-02 beyond DNS being live
 - Phase 48 (Resend Custom Domain): Can proceed in parallel with Phase 47
 
@@ -101,7 +101,7 @@ None — both test emails arrived in inbox (not spam). Gmail Never-send-to-Spam 
 
 - SUMMARY.md: FOUND at `.planning/phases/46-cloudflare-email-routing/46-02-SUMMARY.md`
 - No code commits expected (task was checkpoint:human-verify — verification only)
-- Delivery confirmed: both test emails arrived in torch-secret@gmail.com inbox per user approval
+- Delivery confirmed: both test emails arrived in torch.secrets@gmail.com inbox per user approval
 - All 7 routing rules Active per user confirmation
 - REQUIREMENTS.md: EROT-02 to be marked complete via state update commands
 

@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Configure Cloudflare Email Routing to receive inbound mail for all 7 torchsecret.com business addresses (hello, contact, admin, info, support, security, privacy) and forward each to torch-secret@gmail.com. Verify forwarding is live.
+Configure Cloudflare Email Routing to receive inbound mail for all 7 torchsecret.com business addresses (hello, contact, admin, info, support, security, privacy) and forward each to torch.secrets@gmail.com. Verify forwarding is live.
 
 This is a zero-code-changes phase: only Cloudflare dashboard configuration and DNS changes. No application files, no Infisical env vars, no npm packages.
 
@@ -16,7 +16,7 @@ This is a zero-code-changes phase: only Cloudflare dashboard configuration and D
 ## Implementation Decisions
 
 ### Routing destination
-- All 7 addresses forward to the single destination: torch-secret@gmail.com
+- All 7 addresses forward to the single destination: torch.secrets@gmail.com
 - No per-address differentiation — one inbox receives all inbound business email
 
 ### Addresses to configure
@@ -25,7 +25,7 @@ This is a zero-code-changes phase: only Cloudflare dashboard configuration and D
 
 ### Verification scope
 - Verify all 7 routing rules show "Active" status in the Cloudflare Email Routing dashboard
-- Send a real external test email to hello@torchsecret.com and confirm it arrives in torch-secret@gmail.com
+- Send a real external test email to hello@torchsecret.com and confirm it arrives in torch.secrets@gmail.com
 - Send a real external test email to security@torchsecret.com and confirm it arrives
 - The remaining 5 addresses: confirm Active status is sufficient per success criteria (no additional test emails required unless Active verification fails)
 

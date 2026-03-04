@@ -18,12 +18,12 @@ This is a zero-code-changes phase: only Cloudflare DNS records and Resend/Loops.
 ### DMARC rua= monitoring address
 - Use `admin@torchsecret.com` (already routed via Phase 46) as the rua= destination
 - Publish: `v=DMARC1; p=none; rua=mailto:admin@torchsecret.com`
-- No new routing rule needed — admin@ is already live and forwarding to torch-secret@gmail.com
+- No new routing rule needed — admin@ is already live and forwarding to torch.secrets@gmail.com
 - Note: The success criteria says dmarc@torchsecret.com but that address has no routing rule; admin@ is the pragmatic substitute that avoids adding a new rule this phase
 
 ### Resend delivery verification
 - Verify delivery using both the Resend dashboard "Send test" button AND a curl call to the Resend API
-- Test recipient: torch-secret@gmail.com
+- Test recipient: torch.secrets@gmail.com
 - From address: noreply@torchsecret.com (the sender address that will be used in Phase 48)
 - Success: email arrives in inbox (not spam)
 

@@ -66,7 +66,7 @@ Existing infrastructure covers all phase requirements.
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
 | Resend dashboard shows torchsecret.com Verified (DKIM + SPF + MX all green) | RSND-01 | External dashboard state — no API to query Resend verification status | Resend dashboard → Domains → torchsecret.com → confirm all three record rows show "Verified" |
-| noreply@torchsecret.com delivers to Gmail inbox without spam | RSND-01 | Inbox delivery is a human-observable outcome | `curl` test send per RESEARCH.md; check torch-secret@gmail.com inbox (not spam folder) |
+| noreply@torchsecret.com delivers to Gmail inbox without spam | RSND-01 | Inbox delivery is a human-observable outcome | `curl` test send per RESEARCH.md; check torch.secrets@gmail.com inbox (not spam folder) |
 | Loops.so dashboard shows torchsecret.com domain records present (green) | LOOP-01 | External dashboard state — no API to query Loops verification status | Loops Settings → Domain → View Records → all rows show green checkmarks |
 | hello@torchsecret.com confirmed as sender address in Loops.so settings | LOOP-02 | Loops sender configuration is dashboard-only, no API check | Loops Settings → Domain → confirm From address is hello@torchsecret.com |
 | DMARC TXT record published correctly | RSND-01 | DNS record validation | `dig _dmarc.torchsecret.com TXT +short` returns `v=DMARC1; p=none; rua=mailto:admin@torchsecret.com` |

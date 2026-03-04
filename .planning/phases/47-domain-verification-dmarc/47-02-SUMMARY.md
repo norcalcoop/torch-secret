@@ -32,7 +32,7 @@ key-files:
   modified: []
 
 key-decisions:
-  - "Planning docs had incorrect Gmail address (torch-secret@gmail.com with dash) — correct address is torch.secrets@gmail.com (with dot); doc correction deferred to separate commit"
+  - "Planning docs had incorrect Gmail address (torch.secrets@gmail.com with dash) — correct address is torch.secrets@gmail.com (with dot); doc correction deferred to separate commit"
   - "Loops From address verified per-sequence (welcome, day-3, day-7 all show hello@torchsecret.com) rather than just the top-level settings page — more thorough confirmation"
   - "Resend API test email used Resend ID 5ff8d869-2ff2-4494-9900-8cdf130489d3 (not the plan's example ID) — inbox delivery confirmed, DKIM/SPF pass"
 
@@ -79,17 +79,17 @@ None — this plan is entirely external service configuration. No application co
 
 ## Decisions Made
 
-- Planning docs had an incorrect Gmail address: `torch-secret@gmail.com` (with dash) should be `torch.secrets@gmail.com` (with dot). The test email was sent to the correct address. A separate fix commit will correct the typo in planning docs.
+- Planning docs had an incorrect Gmail address: `torch.secrets@gmail.com` (with dash) should be `torch.secrets@gmail.com` (with dot). The test email was sent to the correct address. A separate fix commit will correct the typo in planning docs.
 - Loops From address was verified per-sequence across all 3 emails (welcome, day-3, day-7) rather than just checking the top-level settings page — provides stronger confirmation that hello@torchsecret.com is active everywhere.
 - Resend API returned success (HTTP 200, `{"id":"5ff8d869-2ff2-4494-9900-8cdf130489d3"}`) on first attempt with no 403 — confirms domain Verified status was fully propagated to Resend's SES backend before the send.
 
 ## Deviations from Plan
 
-None — plan executed exactly as written. The Gmail address typo in the plan (`torch-secret@gmail.com`) was identified during execution; the test email was sent to the correct address (`torch.secrets@gmail.com`). Doc correction is deferred to a separate commit (out of scope for this plan's execution).
+None — plan executed exactly as written. The Gmail address typo in the plan (`torch.secrets@gmail.com`) was identified during execution; the test email was sent to the correct address (`torch.secrets@gmail.com`). Doc correction is deferred to a separate commit (out of scope for this plan's execution).
 
 ## Issues Encountered
 
-- Planning docs Gmail address typo: plan specified `torch-secret@gmail.com` (dash), correct address is `torch.secrets@gmail.com` (dot). The user provided the correction during Task 2 execution. Test email delivered successfully to the correct address. No re-work required.
+- Planning docs Gmail address typo: plan specified `torch.secrets@gmail.com` (dash), correct address is `torch.secrets@gmail.com` (dot). The user provided the correction during Task 2 execution. Test email delivered successfully to the correct address. No re-work required.
 
 ## User Setup Required
 

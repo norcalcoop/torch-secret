@@ -113,13 +113,13 @@ See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase detai
 ## Phase Details
 
 ### Phase 46: Cloudflare Email Routing
-**Goal**: All 7 torchsecret.com business addresses receive email at torch-secret@gmail.com via Cloudflare Email Routing
+**Goal**: All 7 torchsecret.com business addresses receive email at torch.secrets@gmail.com via Cloudflare Email Routing
 **Depends on**: Nothing (first phase)
 **Requirements**: EROT-01, EROT-02
 **Success Criteria** (what must be TRUE):
   1. Admin can configure routing rules for hello, contact, admin, info, support, security, and privacy addresses in the Cloudflare Email Routing dashboard
-  2. A real email sent from an external account to hello@torchsecret.com arrives in torch-secret@gmail.com
-  3. A real email sent from an external account to security@torchsecret.com arrives in torch-secret@gmail.com
+  2. A real email sent from an external account to hello@torchsecret.com arrives in torch.secrets@gmail.com
+  3. A real email sent from an external account to security@torchsecret.com arrives in torch.secrets@gmail.com
   4. Cloudflare Email Routing dashboard shows all 7 routing rules as Active (not Pending)
 **Plans**: 2 plans
 Plans:

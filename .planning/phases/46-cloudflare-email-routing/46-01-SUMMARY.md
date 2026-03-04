@@ -8,8 +8,8 @@ tags: [cloudflare, email-routing, dns, mx, spf, gmail]
 requires: []
 provides:
   - "Cloudflare Email Routing enabled on torchsecret.com (3 MX records + SPF TXT)"
-  - "torch-secret@gmail.com verified as destination address in Cloudflare"
-  - "7 active routing rules: hello, contact, admin, info, support, security, privacy @torchsecret.com → torch-secret@gmail.com"
+  - "torch.secrets@gmail.com verified as destination address in Cloudflare"
+  - "7 active routing rules: hello, contact, admin, info, support, security, privacy @torchsecret.com → torch.secrets@gmail.com"
   - "Gmail Never-send-to-Spam filter covering all 7 deliveredto: addresses"
 affects: [46-02, 47-domain-verification-dmarc, 49-gmail-send-mail-as]
 
@@ -41,7 +41,7 @@ completed: 2026-03-04
 
 # Phase 46 Plan 01: Cloudflare Email Routing — Enable and Configure Summary
 
-**Cloudflare Email Routing enabled on torchsecret.com with 3 MX records, SPF TXT, 7 active routing rules forwarding all business addresses to torch-secret@gmail.com, and Gmail Never-send-to-Spam filter preventing SRS-rewritten forwarded mail from landing in spam**
+**Cloudflare Email Routing enabled on torchsecret.com with 3 MX records, SPF TXT, 7 active routing rules forwarding all business addresses to torch.secrets@gmail.com, and Gmail Never-send-to-Spam filter preventing SRS-rewritten forwarded mail from landing in spam**
 
 ## Performance
 
@@ -54,8 +54,8 @@ completed: 2026-03-04
 ## Accomplishments
 
 - Cloudflare Email Routing enabled on torchsecret.com; Cloudflare automatically added 3 MX records (route1/route2/route3.mx.cloudflare.net at priorities 62/56/20) and SPF TXT record (v=spf1 include:_spf.mx.cloudflare.net ~all)
-- torch-secret@gmail.com verified as destination address in Cloudflare Email Routing dashboard
-- 7 routing rules created and confirmed Active: hello, contact, admin, info, support, security, privacy @torchsecret.com all forward to torch-secret@gmail.com
+- torch.secrets@gmail.com verified as destination address in Cloudflare Email Routing dashboard
+- 7 routing rules created and confirmed Active: hello, contact, admin, info, support, security, privacy @torchsecret.com all forward to torch.secrets@gmail.com
 - Gmail Never-send-to-Spam filter created with deliveredto: query covering all 7 addresses — prevents Cloudflare SRS envelope rewrites from triggering Gmail spam classification
 
 ## DNS Verification (confirmed live)
@@ -104,11 +104,11 @@ None — infrastructure configuration only. All changes are in external dashboar
 
 ## Issues Encountered
 
-None — all steps completed successfully on first attempt. Cloudflare verification email for torch-secret@gmail.com arrived promptly. All 7 routing rules activated immediately upon creation.
+None — all steps completed successfully on first attempt. Cloudflare verification email for torch.secrets@gmail.com arrived promptly. All 7 routing rules activated immediately upon creation.
 
 ## Next Phase Readiness
 
-- Phase 46 Plan 02 (end-to-end delivery verification): Inbound routing is live and ready for test email verification. Test emails sent to any of the 7 @torchsecret.com addresses should arrive at torch-secret@gmail.com.
+- Phase 46 Plan 02 (end-to-end delivery verification): Inbound routing is live and ready for test email verification. Test emails sent to any of the 7 @torchsecret.com addresses should arrive at torch.secrets@gmail.com.
 - Phase 49 (Gmail Send Mail As): The hard dependency (inbound routing must be live before Gmail alias verification emails can traverse the pipeline) is now satisfied.
 - Phase 47 (Domain Verification + DMARC): Can begin in parallel — no dependency on Phase 46-02 completion.
 

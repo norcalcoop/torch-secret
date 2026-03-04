@@ -9,7 +9,7 @@ Requirements for milestone v5.1 Email Infrastructure.
 
 ### Cloudflare Email Routing (EROT)
 
-- [x] **EROT-01**: Admin can route all 7 business addresses (hello, contact, admin, info, support, security, privacy) at torchsecret.com to torch-secret@gmail.com via Cloudflare Email Routing
+- [x] **EROT-01**: Admin can route all 7 business addresses (hello, contact, admin, info, support, security, privacy) at torchsecret.com to torch.secrets@gmail.com via Cloudflare Email Routing
 - [x] **EROT-02**: Admin can verify forwarding works for each address by sending a test email
 
 ### Resend Domain Authorization (RSND)

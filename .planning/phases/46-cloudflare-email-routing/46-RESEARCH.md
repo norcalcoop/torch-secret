@@ -12,7 +12,7 @@
 ### Locked Decisions
 
 #### Routing destination
-- All 7 addresses forward to the single destination: torch-secret@gmail.com
+- All 7 addresses forward to the single destination: torch.secrets@gmail.com
 - No per-address differentiation — one inbox receives all inbound business email
 
 #### Addresses to configure
@@ -21,7 +21,7 @@
 
 #### Verification scope
 - Verify all 7 routing rules show "Active" status in the Cloudflare Email Routing dashboard
-- Send a real external test email to hello@torchsecret.com and confirm it arrives in torch-secret@gmail.com
+- Send a real external test email to hello@torchsecret.com and confirm it arrives in torch.secrets@gmail.com
 - Send a real external test email to security@torchsecret.com and confirm it arrives
 - The remaining 5 addresses: confirm Active status is sufficient per success criteria (no additional test emails required unless Active verification fails)
 
@@ -52,7 +52,7 @@
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| EROT-01 | Admin can route all 7 business addresses (hello, contact, admin, info, support, security, privacy) at torchsecret.com to torch-secret@gmail.com via Cloudflare Email Routing | Dashboard flow documented: Enable routing → verify destination → create 7 routing rules |
+| EROT-01 | Admin can route all 7 business addresses (hello, contact, admin, info, support, security, privacy) at torchsecret.com to torch.secrets@gmail.com via Cloudflare Email Routing | Dashboard flow documented: Enable routing → verify destination → create 7 routing rules |
 | EROT-02 | Admin can verify forwarding works for each address by sending a test email | Verification approach documented: external sender → hello@ and security@; remaining 5 confirmed by Active status |
 </phase_requirements>
 
@@ -60,13 +60,13 @@
 
 ## Summary
 
-This is a zero-code phase: configure Cloudflare Email Routing entirely through the Cloudflare dashboard to forward 7 business email addresses to torch-secret@gmail.com. The setup involves two distinct concepts: (1) a **destination address** (torch-secret@gmail.com) that must be verified once by clicking a verification link Cloudflare emails to it, and (2) **routing rules** (one per custom address) that link each @torchsecret.com address to that verified destination. All 7 routing rules can share the same verified destination.
+This is a zero-code phase: configure Cloudflare Email Routing entirely through the Cloudflare dashboard to forward 7 business email addresses to torch.secrets@gmail.com. The setup involves two distinct concepts: (1) a **destination address** (torch.secrets@gmail.com) that must be verified once by clicking a verification link Cloudflare emails to it, and (2) **routing rules** (one per custom address) that link each @torchsecret.com address to that verified destination. All 7 routing rules can share the same verified destination.
 
 DNS check (confirmed via live `dig` query): torchsecret.com currently has **no MX records and no TXT records at the apex**. This is a clean slate — no existing email service conflicts, no need to delete records before enabling Email Routing. Cloudflare Email Routing will add its MX records and SPF TXT record automatically when enabled.
 
 The main operational risk is the Gmail spam/spam-folder issue for forwarded mail. Cloudflare's SRS envelope rewriting can cause Gmail's spam filter to flag forwarded messages. This is a known, documented issue but is mitigated by a simple Gmail filter ("Never send to Spam" for emails arriving at the forwarding destination). Phase 49 (Gmail Send Mail As) depends on this phase being complete — Gmail sends a verification email to each alias address, which must traverse this forwarding pipeline.
 
-**Primary recommendation:** Enable Cloudflare Email Routing → verify destination torch-secret@gmail.com → create 7 routing rules in one session → create Gmail "Never send to Spam" filter → send test emails to hello@ and security@ from an external account.
+**Primary recommendation:** Enable Cloudflare Email Routing → verify destination torch.secrets@gmail.com → create 7 routing rules in one session → create Gmail "Never send to Spam" filter → send test emails to hello@ and security@ from an external account.
 
 ---
 
@@ -82,7 +82,7 @@ Source: [Cloudflare Email Routing Overview](https://developers.cloudflare.com/em
 
 | Concept | Definition |
 |---------|-----------|
-| **Destination address** | The email inbox that receives forwarded mail (torch-secret@gmail.com). Account-level resource — shared across all domains in the account. Must be verified by clicking a link Cloudflare emails to it. |
+| **Destination address** | The email inbox that receives forwarded mail (torch.secrets@gmail.com). Account-level resource — shared across all domains in the account. Must be verified by clicking a link Cloudflare emails to it. |
 | **Custom address** | The @torchsecret.com address that receives inbound mail (e.g., hello@torchsecret.com). Defined per-domain. |
 | **Routing rule** | A pair: custom address + action. Action is "Route to" + a verified destination address. |
 | **Active status** | A routing rule whose destination address has been verified. Mail sent to this custom address will be forwarded. |
@@ -141,7 +141,7 @@ Navigate to Email > Email Routing. Cloudflare presents a setup wizard or "Get st
 If existing MX records are detected: Cloudflare prompts to delete them first. Accept the deletion — it is safe in this case since torchsecret.com has no existing email service.
 
 **Step 3: Verify destination address**
-Navigate to "Destination addresses" tab. Add torch-secret@gmail.com. Cloudflare sends a verification email to torch-secret@gmail.com. **Check inbox AND spam folder.** Click "Verify email address" in the email. Status changes to "Verified."
+Navigate to "Destination addresses" tab. Add torch.secrets@gmail.com. Cloudflare sends a verification email to torch.secrets@gmail.com. **Check inbox AND spam folder.** Click "Verify email address" in the email. Status changes to "Verified."
 
 **CRITICAL:** All routing rules are automatically disabled ("Pending") until this destination verification is complete. Destination verification must happen before creating routing rules, or the rules cannot be saved pointing to an unverified destination. (Alternatively: create rules while destination is pending — they will activate automatically once destination is verified.)
 
@@ -150,13 +150,13 @@ Navigate to "Routing rules" tab. For each address:
 1. Click "Create address"
 2. In "Custom address" field: enter only the prefix (e.g., `hello`) — Cloudflare appends `@torchsecret.com` automatically
 3. In "Action" dropdown: select "Send to"
-4. In "Destination" field: select `torch-secret@gmail.com` (already verified)
+4. In "Destination" field: select `torch.secrets@gmail.com` (already verified)
 5. Save
 
 Repeat for: hello, contact, admin, info, support, security, privacy.
 
 **Step 5: Configure Gmail spam filter**
-In Gmail (torch-secret@gmail.com), create a filter:
+In Gmail (torch.secrets@gmail.com), create a filter:
 - Matches: `deliveredto:hello@torchsecret.com OR deliveredto:contact@torchsecret.com OR deliveredto:admin@torchsecret.com OR deliveredto:info@torchsecret.com OR deliveredto:support@torchsecret.com OR deliveredto:security@torchsecret.com OR deliveredto:privacy@torchsecret.com`
 - Action: "Never send it to Spam"
 
@@ -166,7 +166,7 @@ This prevents Gmail's spam filter from discarding forwarded mail from Cloudflare
 From an external non-torchsecret.com email account (e.g., personal Gmail, Fastmail):
 - Send one email to hello@torchsecret.com
 - Send one email to security@torchsecret.com
-- Confirm both arrive in torch-secret@gmail.com (check inbox and spam)
+- Confirm both arrive in torch.secrets@gmail.com (check inbox and spam)
 
 **Step 7: Confirm Active status for all 7**
 Return to Cloudflare Email Routing → Routing rules. Confirm all 7 rules show "Active" status.
@@ -180,7 +180,7 @@ The status on a **routing rule** reflects whether the associated destination add
 | Active | Destination address is verified; mail is forwarded |
 | Pending | Destination address not yet verified; mail is dropped |
 
-All 7 routing rules share one destination (torch-secret@gmail.com). Once that destination is verified, all 7 rules become Active simultaneously. There is no per-rule verification — the verification is on the destination address, not on each custom address.
+All 7 routing rules share one destination (torch.secrets@gmail.com). Once that destination is verified, all 7 rules become Active simultaneously. There is no per-rule verification — the verification is on the destination address, not on each custom address.
 
 Source: [Configure rules and addresses](https://developers.cloudflare.com/email-routing/setup/email-routing-addresses/) — HIGH confidence
 
@@ -211,7 +211,7 @@ Source: [Configure rules and addresses](https://developers.cloudflare.com/email-
 
 ### Pitfall 2: Verification Email Lands in Gmail Spam
 
-**What goes wrong:** Cloudflare sends the destination verification email to torch-secret@gmail.com, but Gmail marks it as spam. You never see it. The destination stays "Pending."
+**What goes wrong:** Cloudflare sends the destination verification email to torch.secrets@gmail.com, but Gmail marks it as spam. You never see it. The destination stays "Pending."
 
 **Why it happens:** Cloudflare's verification email originates from cloudflare.com infrastructure. Gmail spam filters can flag it, especially for new accounts.
 
@@ -223,7 +223,7 @@ Source: [Configure rules and addresses](https://developers.cloudflare.com/email-
 
 ### Pitfall 3: Forwarded Business Emails Land in Gmail Spam
 
-**What goes wrong:** After routing is active, real emails sent to @torchsecret.com addresses arrive in torch-secret@gmail.com spam folder rather than inbox.
+**What goes wrong:** After routing is active, real emails sent to @torchsecret.com addresses arrive in torch.secrets@gmail.com spam folder rather than inbox.
 
 **Why it happens:** Cloudflare uses SRS (Sender Rewriting Scheme) to rewrite the MAIL FROM envelope address. Gmail's spam filter associates this pattern with forwarding services that carry spam. This is a known, ongoing issue with Cloudflare Email Routing → Gmail forwarding.
 
@@ -309,8 +309,8 @@ Sources: Spam Resource blog (SpamResource.com, 2025-07); community verification 
 
 ## Open Questions
 
-1. **Does torch-secret@gmail.com have any prior Cloudflare email history?**
-   - What we know: If torch-secret@gmail.com was previously used with Cloudflare and ever unsubscribed from or marked a Cloudflare email as spam, it may be on Cloudflare's suppression list.
+1. **Does torch.secrets@gmail.com have any prior Cloudflare email history?**
+   - What we know: If torch.secrets@gmail.com was previously used with Cloudflare and ever unsubscribed from or marked a Cloudflare email as spam, it may be on Cloudflare's suppression list.
    - What's unclear: Current suppression list status.
    - Recommendation: If the verification email does not arrive within 3 minutes, check the Destination addresses tab for a "Resend email" option. If still blocked, Cloudflare support can remove the address from the suppression list.
 
@@ -339,8 +339,8 @@ Sources: Spam Resource blog (SpamResource.com, 2025-07); community verification 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | EROT-01 | All 7 routing rules exist and show Active status in Cloudflare dashboard | manual | `dig MX torchsecret.com +short` (confirms routing enabled) | N/A |
-| EROT-02 | External email to hello@torchsecret.com arrives in torch-secret@gmail.com | manual | N/A — requires live email send from external account | N/A |
-| EROT-02 | External email to security@torchsecret.com arrives in torch-secret@gmail.com | manual | N/A — requires live email send from external account | N/A |
+| EROT-02 | External email to hello@torchsecret.com arrives in torch.secrets@gmail.com | manual | N/A — requires live email send from external account | N/A |
+| EROT-02 | External email to security@torchsecret.com arrives in torch.secrets@gmail.com | manual | N/A — requires live email send from external account | N/A |
 
 ### Sampling Rate
 

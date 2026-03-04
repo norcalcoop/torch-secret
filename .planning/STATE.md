@@ -84,7 +84,7 @@ Progress: [██████████] 100%
 
 ### Decisions Made (Phase 47, Plan 02)
 
-- Planning docs had incorrect Gmail address (torch-secret@gmail.com with dash) — correct address is torch.secrets@gmail.com (with dot); test email sent to correct address; doc correction deferred to separate commit
+- Planning docs had incorrect Gmail address (torch.secrets@gmail.com with dash) — correct address is torch.secrets@gmail.com (with dot); test email sent to correct address; doc correction deferred to separate commit
 - Loops From address verified per-sequence (welcome, day-3, day-7 all show hello@torchsecret.com) rather than just checking top-level settings page — provides stronger confirmation
 - Resend API returned HTTP 200 on first send attempt (no 403) — confirms Verified status was fully propagated to SES backend before the send
 

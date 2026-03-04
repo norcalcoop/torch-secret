@@ -149,7 +149,7 @@ DMARC record (p=none with rua=)
 - [ ] Resend domain verification for `torchsecret.com` (SPF + DKIM DNS records) — enables `noreply@torchsecret.com` as From address
 - [ ] `RESEND_FROM_EMAIL` updated to `noreply@torchsecret.com` in Infisical (dev + staging + prod) — removes `onboarding@resend.dev` placeholder from all outgoing mail
 - [ ] Loops.so domain authentication for `torchsecret.com` — enables `hello@torchsecret.com` as Loops onboarding sender
-- [ ] Cloudflare Email Routing enabled for `torchsecret.com` with verified destination (torch-secret@gmail.com)
+- [ ] Cloudflare Email Routing enabled for `torchsecret.com` with verified destination (torch.secrets@gmail.com)
 - [ ] Routing rules for: `hello@`, `security@`, `privacy@`, `support@` → gmail destination
 - [ ] DMARC record at `_dmarc.torchsecret.com` with `p=none; rua=mailto:<gmail address>` for monitoring
 - [ ] `SECURITY.md` updated to list `security@torchsecret.com` as vulnerability report contact

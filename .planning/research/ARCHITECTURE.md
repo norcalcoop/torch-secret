@@ -52,7 +52,7 @@ v5.1 connects three independent external email systems through a shared DNS zone
 | Cloudflare Email Routing | Inbound MX for all 7 addresses → Gmail forwarding | Cloudflare dashboard |
 | Resend domain verification | Authorize `noreply@torchsecret.com` as outbound sender | Resend dashboard + Cloudflare DNS |
 | Loops.so domain verification | Authorize `hello@torchsecret.com` as Loops sender | Loops dashboard + Cloudflare DNS |
-| Gmail "Send mail as" | Let torch-secret@gmail.com send as 7 business addresses | Gmail settings + smtp.resend.com |
+| Gmail "Send mail as" | Let torch.secrets@gmail.com send as 7 business addresses | Gmail settings + smtp.resend.com |
 | Express email.ts | Resend SDK singleton; no change needed | No code change |
 | notification.service.ts | Reads `env.RESEND_FROM_EMAIL`; no change needed | No code change |
 | subscribers.service.ts | Reads `env.RESEND_FROM_EMAIL`; no change needed | No code change |
@@ -131,8 +131,8 @@ Must be done first because Gmail "Send mail as" verification sends an email to `
 2. Cloudflare auto-adds 3 MX records and a base SPF TXT record at @
 3. Create 7 custom addresses:
      hello@, contact@, admin@, info@, support@, security@, privacy@
-   All forwarding to: torch-secret@gmail.com
-4. Confirm destination address (Cloudflare sends verification to torch-secret@gmail.com)
+   All forwarding to: torch.secrets@gmail.com
+4. Confirm destination address (Cloudflare sends verification to torch.secrets@gmail.com)
 5. Test: send email to hello@torchsecret.com → verify arrives in Gmail
 ```
 
@@ -268,7 +268,7 @@ External sender → [address]@torchsecret.com
     ↓ (SMTP lookup: MX record → Cloudflare Email Routing servers)
 Cloudflare Email Routing
     ↓ (rewrites envelope sender using SRS to avoid SPF failure)
-torch-secret@gmail.com (Gmail inbox)
+torch.secrets@gmail.com (Gmail inbox)
     ↓ (user reads email in Gmail)
 User replies using Gmail "Send mail as" [address]@torchsecret.com
     ↓ (Gmail submits outbound via smtp.resend.com:465)

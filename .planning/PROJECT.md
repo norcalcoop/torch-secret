@@ -5,7 +5,7 @@
 **Goal:** Set up all torchsecret.com business email addresses with Cloudflare Email Routing, Resend domain authorization, Loops.so domain authentication, and Gmail "Send mail as" — replacing the `onboarding@resend.dev` placeholder with `noreply@torchsecret.com` for all app email sends.
 
 **Target features:**
-- Cloudflare Email Routing for 7 business addresses (hello, contact, admin, info, support, security, privacy) → torch-secret@gmail.com
+- Cloudflare Email Routing for 7 business addresses (hello, contact, admin, info, support, security, privacy) → torch.secrets@gmail.com
 - Resend domain verification + `RESEND_FROM_EMAIL` updated to `noreply@torchsecret.com` in Infisical
 - Loops.so domain verification for `hello@torchsecret.com` sender authentication
 - Gmail "Send mail as" for all 7 addresses via Resend SMTP
@@ -82,7 +82,7 @@ Users can share sensitive information once, securely, without accounts or comple
 ### Active
 
 <!-- v5.1 Email Infrastructure -->
-- [ ] Cloudflare Email Routing for 7 business addresses → torch-secret@gmail.com
+- [ ] Cloudflare Email Routing for 7 business addresses → torch.secrets@gmail.com
 - [ ] torchsecret.com domain verified in Resend (DKIM, SPF, DMARC)
 - [ ] RESEND_FROM_EMAIL updated to noreply@torchsecret.com in Infisical
 - [ ] torchsecret.com domain verified in Loops.so

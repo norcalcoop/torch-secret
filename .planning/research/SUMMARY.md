@@ -62,7 +62,7 @@ v5.1 requires no new npm packages and no new server infrastructure. All sending 
 The architecture is a DNS-coordinated multi-provider email system with no shared application code between providers. Cloudflare DNS is the single control plane: all MX, SPF, DKIM, and DMARC records live there. Each provider (Cloudflare Email Routing, Resend, Loops.so) operates independently with subdomain isolation for SPF and selector-based DKIM. Inbound email flows through Cloudflare MX → Gmail forwarding → operator reads and replies via Gmail "Send mail as" via Resend SMTP. Outbound transactional email flows through Express → Resend SDK → verified `noreply@torchsecret.com`. Outbound onboarding email flows through Express → Loops.so SDK → verified `hello@torchsecret.com`.
 
 **Major components:**
-1. **Cloudflare Email Routing** — exclusive inbound MX ownership of apex domain; forwards 7+ addresses to `torch-secret@gmail.com`; must be configured and verified first (all other steps depend on it being live)
+1. **Cloudflare Email Routing** — exclusive inbound MX ownership of apex domain; forwards 7+ addresses to `torch.secrets@gmail.com`; must be configured and verified first (all other steps depend on it being live)
 2. **Resend domain verification** — authorizes `noreply@torchsecret.com` as outbound sender; DKIM CNAME `resend._domainkey` must be DNS Only (not proxied) in Cloudflare; SPF lives on `send.` subdomain, not apex
 3. **Loops.so domain verification** — authorizes `hello@torchsecret.com` as onboarding sender; three DKIM CNAME records all DNS Only in Cloudflare; SPF lives on `envelope.` subdomain, not apex
 4. **DMARC TXT record** — monitoring and eventual spoofing protection; must be deployed last in the DNS sequence after DKIM/SPF for both providers are confirmed verified
@@ -86,7 +86,7 @@ The architecture is a DNS-coordinated multi-provider email system with no shared
 
 5. **Gmail "Send mail as" using `smtp.gmail.com` instead of `smtp.resend.com`** — Emails display a permanent "via gappssmtp.com" banner; DKIM signed with `d=gappssmtp.com` rather than `d=torchsecret.com`; fails DMARC strict alignment. For a security product, this "via" banner signals non-authoritative sending to technically sophisticated users. Prevention: use `smtp.resend.com` (port 465, user=`resend`, password=dedicated restricted Resend API key — do not reuse the production `RESEND_API_KEY`).
 
-6. **Cloudflare destination address on suppression list** — Cloudflare sends a verification email to `torch-secret@gmail.com`; if that address previously bounced or spam-flagged a Cloudflare email, it is on Cloudflare's suppression list and the verification email is never delivered; routing rules stay "Pending" indefinitely with no error in the dashboard. Prevention: pre-allowlist Cloudflare sender addresses in Gmail before starting; if verification email doesn't arrive in 10 minutes, contact Cloudflare support.
+6. **Cloudflare destination address on suppression list** — Cloudflare sends a verification email to `torch.secrets@gmail.com`; if that address previously bounced or spam-flagged a Cloudflare email, it is on Cloudflare's suppression list and the verification email is never delivered; routing rules stay "Pending" indefinitely with no error in the dashboard. Prevention: pre-allowlist Cloudflare sender addresses in Gmail before starting; if verification email doesn't arrive in 10 minutes, contact Cloudflare support.
 
 7. **Full FQDN entered in Cloudflare DNS record name fields** — Cloudflare appends the zone domain automatically; entering `resend._domainkey.torchsecret.com` creates `resend._domainkey.torchsecret.com.torchsecret.com`, which Resend's verifier can never find; the record appears to be created successfully but verification fails silently. Prevention: enter only the subdomain prefix (`resend._domainkey`, `send`, `envelope`, `_dmarc`) — never the full FQDN.
 
@@ -100,7 +100,7 @@ The research reveals a hard 7-step dependency chain where each step is a prerequ
 
 **Rationale:** Every other step depends on inbound email being live and verified. Gmail "Send mail as" requires receiving Gmail's setup verification email at the custom address. DMARC RUA reporting requires `dmarc@torchsecret.com` to be a live forwarding rule. This step must be first and confirmed with a real inbound test before proceeding.
 
-**Delivers:** All 7+ `@torchsecret.com` addresses receive email at `torch-secret@gmail.com`. Cloudflare adds 3 MX records and a base SPF TXT at `@`. Operators can receive support, security, and privacy inquiries immediately.
+**Delivers:** All 7+ `@torchsecret.com` addresses receive email at `torch.secrets@gmail.com`. Cloudflare adds 3 MX records and a base SPF TXT at `@`. Operators can receive support, security, and privacy inquiries immediately.
 
 **Addresses:** `hello@`, `security@`, `privacy@`, `support@`, `contact@`, `dmarc@` routing rules; catch-all rule for `info@`, `admin@`, stray sends
 

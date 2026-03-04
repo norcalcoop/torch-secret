@@ -29,7 +29,7 @@ audited: 2026-03-04
 ## Sampling Rate
 
 - **After every task commit:** Run `dig MX torchsecret.com +short`
-- **After every plan wave:** Full manual test: send emails to hello@ and security@ from external account, confirm delivery in torch-secret@gmail.com
+- **After every plan wave:** Full manual test: send emails to hello@ and security@ from external account, confirm delivery in torch.secrets@gmail.com
 - **Before `/gsd:verify-work`:** All 7 rules Active + 2 test emails confirmed delivered
 - **Max feedback latency:** ~5 minutes (manual check)
 
@@ -59,8 +59,8 @@ Existing infrastructure covers all phase requirements (manual verification only;
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
 | All 7 routing rules exist and show Active status | EROT-01 | Requires Cloudflare dashboard access; no public API returns rule status | Navigate to Email > Email Routing > Routing rules. Confirm hello, contact, admin, info, support, security, privacy all show Active |
-| External email to hello@torchsecret.com arrives in torch-secret@gmail.com | EROT-02 | Requires live email send from external account; no automation possible | Send from non-torchsecret.com account (personal Gmail/Fastmail). Check inbox AND spam in torch-secret@gmail.com |
-| External email to security@torchsecret.com arrives in torch-secret@gmail.com | EROT-02 | Requires live email send from external account | Send from non-torchsecret.com account. Check inbox AND spam in torch-secret@gmail.com |
+| External email to hello@torchsecret.com arrives in torch.secrets@gmail.com | EROT-02 | Requires live email send from external account; no automation possible | Send from non-torchsecret.com account (personal Gmail/Fastmail). Check inbox AND spam in torch.secrets@gmail.com |
+| External email to security@torchsecret.com arrives in torch.secrets@gmail.com | EROT-02 | Requires live email send from external account | Send from non-torchsecret.com account. Check inbox AND spam in torch.secrets@gmail.com |
 | Cloudflare MX records live in DNS | EROT-01 | Confirms routing is enabled at DNS level | `dig MX torchsecret.com +short` — expect route1/route2/route3.mx.cloudflare.net (Cloudflare hostname pool; actual names may differ from amir/linda/isaac documented in research) |
 
 ---

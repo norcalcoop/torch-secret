@@ -129,7 +129,7 @@ Resend SMTP credentials:
 - Username: `resend` (literal string, not your email address)
 - Password: A Resend API key (create a restricted key with Send access only — do not reuse the production `RESEND_API_KEY` from Infisical)
 
-Gmail requires a verification email when adding "Send mail as." Cloudflare Email Routing must already be active and forwarding `hello@torchsecret.com` to `torch-secret@gmail.com` before this verification email can be received.
+Gmail requires a verification email when adding "Send mail as." Cloudflare Email Routing must already be active and forwarding `hello@torchsecret.com` to `torch.secrets@gmail.com` before this verification email can be received.
 
 **Warning signs:**
 - Gmail shows "Sent via gappssmtp.com" in email header details
@@ -144,7 +144,7 @@ Gmail "Send mail as" setup phase — must come after both Cloudflare Email Routi
 ### Pitfall 6: Cloudflare Email Routing Destination Address on Internal Suppression List
 
 **What goes wrong:**
-The Gmail address (`torch-secret@gmail.com`) used as a forwarding destination must be verified by Cloudflare before routing rules become active. Cloudflare sends a verification email to that address. If the Gmail account previously marked a Cloudflare email as spam, or the address previously bounced a Cloudflare-originated email, Cloudflare places it on an internal suppression list and the verification email is never delivered. All routing rules remain inactive indefinitely with no clear error in the dashboard.
+The Gmail address (`torch.secrets@gmail.com`) used as a forwarding destination must be verified by Cloudflare before routing rules become active. Cloudflare sends a verification email to that address. If the Gmail account previously marked a Cloudflare email as spam, or the address previously bounced a Cloudflare-originated email, Cloudflare places it on an internal suppression list and the verification email is never delivered. All routing rules remain inactive indefinitely with no clear error in the dashboard.
 
 **Why it happens:**
 Suppression lists are standard practice at email providers. Cloudflare's suppression list is not user-visible from the dashboard.
@@ -236,7 +236,7 @@ This is an ordering constraint: Resend domain verification must be fully complet
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Cloudflare Email Routing active:** Verify by actually sending an email from an external account to `hello@torchsecret.com` and confirming it arrives in `torch-secret@gmail.com`. Dashboard showing "Active" is not sufficient.
+- [ ] **Cloudflare Email Routing active:** Verify by actually sending an email from an external account to `hello@torchsecret.com` and confirming it arrives in `torch.secrets@gmail.com`. Dashboard showing "Active" is not sufficient.
 - [ ] **Resend domain verified:** Resend dashboard must show "Verified" (green) for ALL record types: MX on `send.`, SPF TXT on `send.`, and DKIM CNAME `resend._domainkey`. Any single "Pending" means sends from `noreply@torchsecret.com` will be rejected.
 - [ ] **Loops domain verified:** Loops dashboard must show domain as verified. Send a Loops test email and inspect headers — DKIM signature should show `d=torchsecret.com`, not `d=amazonses.com`.
 - [ ] **Gmail "Send mail as" sends with DKIM alignment:** After adding via Resend SMTP, send a test email and check full headers. "Signed-by: torchsecret.com" must appear. "via gappssmtp.com" must NOT appear.
@@ -246,7 +246,7 @@ This is an ordering constraint: Resend domain verification must be fully complet
 - [ ] **Better Auth transactional emails use new from-address:** Trigger a password reset on staging to confirm the reset email arrives from `noreply@torchsecret.com`, not `onboarding@resend.dev`.
 - [ ] **No DKIM CNAME records are proxied:** Check each DKIM CNAME for Resend and Loops in Cloudflare DNS — all must show grey cloud (DNS Only).
 - [ ] **Catch-all routing behavior explicitly decided:** Either set catch-all to "Drop" (silently discard unknown addresses) or "Forward" to a monitored inbox. Leaving it disabled means unrecognized addresses get a hard bounce from Cloudflare.
-- [ ] **DMARC RUA address has an active routing rule:** `dmarc@torchsecret.com` must have a Cloudflare Email Routing rule forwarding to `torch-secret@gmail.com` before the DMARC record is published.
+- [ ] **DMARC RUA address has an active routing rule:** `dmarc@torchsecret.com` must have a Cloudflare Email Routing rule forwarding to `torch.secrets@gmail.com` before the DMARC record is published.
 
 ---
 
@@ -274,7 +274,7 @@ This is an ordering constraint: Resend domain verification must be fully complet
 | Loops CNAME proxy enabled | Phase 3: Loops domain verification | Loops dashboard shows verified; test email headers show `d=torchsecret.com` |
 | DMARC deployed at `p=reject` too early | Phase 4: DMARC setup | Start at `p=none`; advance only after 2+ weeks of clean RUA reports |
 | Gmail "via" banner from wrong SMTP server | Phase 5: Gmail "Send mail as" setup | Full email headers show `signed-by: torchsecret.com`; no `via` line |
-| Destination address on suppression list | Phase 1 pre-flight | Verification email from Cloudflare arrives at `torch-secret@gmail.com` |
+| Destination address on suppression list | Phase 1 pre-flight | Verification email from Cloudflare arrives at `torch.secrets@gmail.com` |
 | RESEND_FROM_EMAIL changed before domain verified | Phase 2-3 ordering constraint | Resend shows "Verified" before Infisical env var is updated |
 | Production API key reused for Gmail SMTP | Phase 5: Gmail "Send mail as" setup | A dedicated restricted Resend API key is created and used |
 | DMARC RUA address not receiving reports | Phase 4: DMARC setup | Reports arrive at `dmarc@torchsecret.com` within 48h of DNS propagation |

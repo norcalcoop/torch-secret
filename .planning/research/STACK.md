@@ -810,7 +810,7 @@ All four systems operate on `torchsecret.com`. The critical concern is that they
 
 ## 1. Cloudflare Email Routing (Inbound)
 
-**Purpose:** Receive email at 7 business addresses (hello, contact, admin, info, support, security, privacy) and forward to torch-secret@gmail.com.
+**Purpose:** Receive email at 7 business addresses (hello, contact, admin, info, support, security, privacy) and forward to torch.secrets@gmail.com.
 
 **Confidence:** HIGH — MX hostnames confirmed via Cloudflare postmaster docs and community. SPF value confirmed via Cloudflare community forums.
 
@@ -852,17 +852,17 @@ After enabling Email Routing, create individual rules for each address:
 
 | Custom Address | Action | Destination |
 |---------------|--------|-------------|
-| hello@torchsecret.com | Send to | torch-secret@gmail.com |
-| contact@torchsecret.com | Send to | torch-secret@gmail.com |
-| admin@torchsecret.com | Send to | torch-secret@gmail.com |
-| info@torchsecret.com | Send to | torch-secret@gmail.com |
-| support@torchsecret.com | Send to | torch-secret@gmail.com |
-| security@torchsecret.com | Send to | torch-secret@gmail.com |
-| privacy@torchsecret.com | Send to | torch-secret@gmail.com |
+| hello@torchsecret.com | Send to | torch.secrets@gmail.com |
+| contact@torchsecret.com | Send to | torch.secrets@gmail.com |
+| admin@torchsecret.com | Send to | torch.secrets@gmail.com |
+| info@torchsecret.com | Send to | torch.secrets@gmail.com |
+| support@torchsecret.com | Send to | torch.secrets@gmail.com |
+| security@torchsecret.com | Send to | torch.secrets@gmail.com |
+| privacy@torchsecret.com | Send to | torch.secrets@gmail.com |
 
-Alternatively: Enable **Catch-all** rule (Email Routing → Routes → Catch-all address → Send to torch-secret@gmail.com). This forwards all addresses including future ones without creating 7 individual rules. The catch-all is the recommended approach for this use case since all 7 addresses share the same destination.
+Alternatively: Enable **Catch-all** rule (Email Routing → Routes → Catch-all address → Send to torch.secrets@gmail.com). This forwards all addresses including future ones without creating 7 individual rules. The catch-all is the recommended approach for this use case since all 7 addresses share the same destination.
 
-Cloudflare requires verifying torch-secret@gmail.com as a destination before rules can be saved. A verification email will be sent to that Gmail address.
+Cloudflare requires verifying torch.secrets@gmail.com as a destination before rules can be saved. A verification email will be sent to that Gmail address.
 
 ### Important Constraint
 
@@ -1021,7 +1021,7 @@ Three different hostnames, three separate SPF records. No conflict. No merging n
 
 ## 6. Gmail "Send Mail As" via Resend SMTP
 
-**Purpose:** Allow torch-secret@gmail.com to send email appearing to come from any of the 7 business addresses (hello@, contact@, admin@, info@, support@, security@, privacy@torchsecret.com).
+**Purpose:** Allow torch.secrets@gmail.com to send email appearing to come from any of the 7 business addresses (hello@, contact@, admin@, info@, support@, security@, privacy@torchsecret.com).
 
 **Confidence:** HIGH for Resend SMTP credentials. HIGH for Gmail "Send mail as" configuration steps. No new DNS records required.
 
@@ -1060,11 +1060,11 @@ Repeat this process for each of the 7 addresses:
    - **Security**: SSL (for port 465)
 6. Click **Add Account**
 7. Gmail sends a verification email to `hello@torchsecret.com`
-8. Since Cloudflare Email Routing forwards `hello@torchsecret.com` → torch-secret@gmail.com, the verification email arrives in Gmail
+8. Since Cloudflare Email Routing forwards `hello@torchsecret.com` → torch.secrets@gmail.com, the verification email arrives in Gmail
 9. Click the verification link in the email (or copy the numeric code and paste it in the verification prompt)
 10. The address now appears in Gmail's "From" dropdown
 
-**One-time prerequisite:** Cloudflare Email Routing must be active and torch-secret@gmail.com verified as a destination before you can receive the Gmail verification email for each "Send mail as" address.
+**One-time prerequisite:** Cloudflare Email Routing must be active and torch.secrets@gmail.com verified as a destination before you can receive the Gmail verification email for each "Send mail as" address.
 
 ### No New DNS Records Required
 
@@ -1123,7 +1123,7 @@ Start with `p=none` (monitoring mode) to collect reports without rejecting mail.
 
 Complete these steps in this order to avoid conflicts:
 
-1. **Enable Cloudflare Email Routing** — Cloudflare auto-adds MX and SPF records to root domain. Verify torch-secret@gmail.com as destination. Create catch-all rule.
+1. **Enable Cloudflare Email Routing** — Cloudflare auto-adds MX and SPF records to root domain. Verify torch.secrets@gmail.com as destination. Create catch-all rule.
 
 2. **Add Resend domain in Resend dashboard** — Add `torchsecret.com`, copy the 4 records (MX on `send`, SPF TXT on `send`, DKIM TXT on root, CNAME). Add to Cloudflare DNS. Click Verify in Resend dashboard.
 

@@ -17,12 +17,12 @@
 #### DMARC rua= monitoring address
 - Use `admin@torchsecret.com` (already routed via Phase 46) as the rua= destination
 - Publish: `v=DMARC1; p=none; rua=mailto:admin@torchsecret.com`
-- No new routing rule needed — admin@ is already live and forwarding to torch-secret@gmail.com
+- No new routing rule needed — admin@ is already live and forwarding to torch.secrets@gmail.com
 - Note: The success criteria says dmarc@torchsecret.com but that address has no routing rule; admin@ is the pragmatic substitute
 
 #### Resend delivery verification
 - Verify delivery using both the Resend dashboard "Send test" button AND a curl call to the Resend API
-- Test recipient: torch-secret@gmail.com
+- Test recipient: torch.secrets@gmail.com
 - From address: noreply@torchsecret.com (the sender address that will be used in Phase 48)
 - Success: email arrives in inbox (not spam)
 
@@ -135,7 +135,7 @@ Resend dashboard → Domains → torchsecret.com → Verify
          ↓
 Loops.so dashboard → Settings → Domain → Verify Records
          ↓
-Test: curl Resend API → noreply@torchsecret.com → torch-secret@gmail.com
+Test: curl Resend API → noreply@torchsecret.com → torch.secrets@gmail.com
          ↓
 Confirm: email arrives in Gmail inbox (not spam)
 ```
@@ -201,7 +201,7 @@ curl -X POST 'https://api.resend.com/emails' \
   -H 'Content-Type: application/json' \
   -d '{
     "from": "Torch Secret <noreply@torchsecret.com>",
-    "to": ["torch-secret@gmail.com"],
+    "to": ["torch.secrets@gmail.com"],
     "subject": "Resend domain verification test",
     "text": "This email confirms noreply@torchsecret.com is sending successfully via Resend."
   }'
@@ -305,11 +305,11 @@ If `dig` returns the expected values, it's safe to click verify.
 
 ### Pitfall 6: Gmail Delivers Test Email to Spam
 
-**What goes wrong:** The Resend API test send to torch-secret@gmail.com lands in spam rather than inbox.
+**What goes wrong:** The Resend API test send to torch.secrets@gmail.com lands in spam rather than inbox.
 
 **Why it happens:** A freshly verified domain has no reputation history. Gmail may be conservative with new sender domains.
 
-**How to avoid:** Send to torch-secret@gmail.com which already has a "Never send to Spam" Gmail filter from Phase 46 (the filter uses `deliveredto:` for Cloudflare-forwarded mail). However, the Resend test send is a direct SMTP delivery (not forwarded), so the Phase 46 filter may not apply. If it lands in spam: mark "Not spam" and resend — this trains Gmail.
+**How to avoid:** Send to torch.secrets@gmail.com which already has a "Never send to Spam" Gmail filter from Phase 46 (the filter uses `deliveredto:` for Cloudflare-forwarded mail). However, the Resend test send is a direct SMTP delivery (not forwarded), so the Phase 46 filter may not apply. If it lands in spam: mark "Not spam" and resend — this trains Gmail.
 
 **Additional mitigation:** Resend sends from authenticated SES infrastructure with DKIM signed. Gmail should honor DKIM-signed email from Resend post-verification.
 
@@ -357,7 +357,7 @@ curl -X POST 'https://api.resend.com/emails' \
   -H 'Content-Type: application/json' \
   -d '{
     "from": "Torch Secret <noreply@torchsecret.com>",
-    "to": ["torch-secret@gmail.com"],
+    "to": ["torch.secrets@gmail.com"],
     "subject": "Resend domain verification test — noreply@torchsecret.com",
     "text": "This email confirms noreply@torchsecret.com is an authenticated sending address via Resend. Domain verification is complete."
   }'
