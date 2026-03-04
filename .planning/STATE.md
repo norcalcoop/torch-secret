@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: verifying
-stopped_at: "Completed 47-01-PLAN.md"
-last_updated: "2026-03-04T15:51:44Z"
-last_activity: "2026-03-04 — Phase 47 Plan 01 complete: all 9 DNS records (Resend DKIM/SPF/MX, Loops 3x DKIM CNAMEs + SPF/MX, DMARC p=none) added to Cloudflare and verified via dig"
+stopped_at: Completed 47-02-PLAN.md
+last_updated: "2026-03-04T18:06:44.341Z"
+last_activity: "2026-03-04 — Phase 47 Plan 02 complete: Resend + Loops.so domain verification handshakes completed, hello@torchsecret.com confirmed as Loops sender, Resend API test email delivered to torch.secrets@gmail.com inbox"
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 47 of 52 (Domain Verification + DMARC) — IN PROGRESS
-Plan: 01 of 2 — COMPLETE
-Status: Phase 47 Plan 01 complete — all 9 DNS records live in Cloudflare and propagated; ready for Plan 02 (dashboard verification)
-Last activity: 2026-03-04 — Phase 47 Plan 01 complete: all 9 DNS records (Resend DKIM/SPF/MX, Loops 3x DKIM CNAMEs + SPF/MX, DMARC p=none) added to Cloudflare and verified via dig
+Phase: 47 of 52 (Domain Verification + DMARC) — COMPLETE
+Plan: 02 of 2 — COMPLETE
+Status: Phase 47 complete — Resend + Loops.so verification complete, DMARC live, test email delivered; ready for Phase 48 (Infisical env var update)
+Last activity: 2026-03-04 — Phase 47 Plan 02 complete: Resend + Loops.so domain verification handshakes completed, hello@torchsecret.com confirmed as Loops sender, Resend API test email delivered to torch.secrets@gmail.com inbox
 
 Progress: [██████████] 100%
 
@@ -47,6 +47,7 @@ Progress: [██████████] 100%
 | Phase 46-cloudflare-email-routing P01 | 30 | 2 tasks | 0 files |
 | Phase 46-cloudflare-email-routing P02 | 5 | 1 tasks | 0 files |
 | Phase 47-domain-verification-dmarc P01 | 84 | 2 tasks | 0 files |
+| Phase 47-domain-verification-dmarc P02 | 130 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,12 @@ Progress: [██████████] 100%
 - Apex @ SPF record (v=spf1 include:_spf.mx.cloudflare.net ~all) left untouched — owned by Cloudflare Email Routing; no amazonses.com added at apex
 - Both Loops and Resend use identical SPF include and MX hostname (amazonses.com / feedback-smtp.us-east-1.amazonses.com) — both services are SES-backed; subdomain isolation still required for RFC 7208 compliance
 
+### Decisions Made (Phase 47, Plan 02)
+
+- Planning docs had incorrect Gmail address (torch-secret@gmail.com with dash) — correct address is torch.secrets@gmail.com (with dot); test email sent to correct address; doc correction deferred to separate commit
+- Loops From address verified per-sequence (welcome, day-3, day-7 all show hello@torchsecret.com) rather than just checking top-level settings page — provides stronger confirmation
+- Resend API returned HTTP 200 on first send attempt (no 403) — confirms Verified status was fully propagated to SES backend before the send
+
 ### Roadmap Evolution
 
 - Phase 51 added: prepare codebase, repository, documentation to transition the github repository from private to public
@@ -88,10 +95,10 @@ Progress: [██████████] 100%
 
 ### Blockers/Concerns
 
-None — Phase 46 fully complete. Phase 49 hard dependency satisfied: inbound routing live and delivery verified.
+None — Phase 47 fully complete. Phase 48 hard dependencies satisfied: Resend torchsecret.com = Verified (safe to update RESEND_FROM_EMAIL), Loops domain verified + hello@torchsecret.com active.
 
 ## Session Continuity
 
-Last session: 2026-03-04T15:51:44Z
-Stopped at: Completed 47-01-PLAN.md
-Resume file: .planning/phases/47-domain-verification-dmarc/47-02-PLAN.md
+Last session: 2026-03-04T18:06:44.339Z
+Stopped at: Completed 47-02-PLAN.md
+Resume file: None
