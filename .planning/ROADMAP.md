@@ -149,7 +149,10 @@ Plans:
   2. A triggered secret-viewed notification email arrives from noreply@torchsecret.com (not onboarding@resend.dev)
   3. A triggered subscriber confirmation email arrives from noreply@torchsecret.com
   4. A Loops.so onboarding email arrives without a "via loops.so" or similar third-party service indicator in the headers
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 48-01-PLAN.md — Update RESEND_FROM_EMAIL in Infisical staging, restart, verify subscriber confirmation + notification emails
+- [ ] 48-02-PLAN.md — Update RESEND_FROM_EMAIL in Infisical production, redeploy, verify all email types + Loops welcome headers
 
 ### Phase 49: Gmail Send Mail As
 **Goal**: Admin can compose and send email from all 7 torchsecret.com business addresses directly inside Gmail with proper DKIM alignment and no "via" banner
