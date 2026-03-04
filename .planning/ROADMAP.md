@@ -133,9 +133,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Resend dashboard shows torchsecret.com as Verified for all three record types (DKIM, SPF, and the Resend-generated MX on send. subdomain)
   2. Loops.so dashboard shows torchsecret.com domain as verified with hello@torchsecret.com as the confirmed sender address
-  3. A DMARC TXT record exists at _dmarc.torchsecret.com with p=none and rua= pointing to dmarc@torchsecret.com
+  3. A DMARC TXT record exists at _dmarc.torchsecret.com with p=none and rua=mailto:admin@torchsecret.com (admin@ is already routed via Phase 46; dmarc@ has no routing rule)
   4. A test email sent via Resend API from noreply@torchsecret.com delivers to an external inbox without landing in spam
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 47-01-PLAN.md — Add all 9 DNS records in Cloudflare (3 Resend, 5 Loops, 1 DMARC)
+- [ ] 47-02-PLAN.md — Verify Resend and Loops.so domains, confirm hello@ sender, send API test email
 
 ### Phase 48: Activate Custom Domain Sending
 **Goal**: All outbound application email sends from noreply@torchsecret.com instead of onboarding@resend.dev, and Loops.so onboarding emails send from hello@torchsecret.com without third-party header indicators
@@ -228,6 +231,26 @@ Plans:
 | 50. Documentation Updates | v5.1 | 0/TBD | Not started | - |
 
 _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
+
+### Phase 51: prepare codebase, repository, documentation to transition the github repository from private to public
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 50
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 51 to break down)
+
+### Phase 52: audit the product launch checklist items
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 51
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 52 to break down)
 
 ---
 
