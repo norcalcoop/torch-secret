@@ -104,7 +104,7 @@ See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase detai
 
 **Milestone Goal:** Replace the `onboarding@resend.dev` placeholder with a fully authenticated `@torchsecret.com` email identity — Cloudflare Email Routing for all 7 business addresses, Resend and Loops.so domain verification, Gmail "Send mail as" via Resend SMTP, and updated contact references in SECURITY.md and the Privacy Policy.
 
-- [ ] **Phase 46: Cloudflare Email Routing** — Configure inbound MX, route 7 business addresses to Gmail, verify forwarding
+- [x] **Phase 46: Cloudflare Email Routing** — Configure inbound MX, route 7 business addresses to Gmail, verify forwarding (completed 2026-03-04)
 - [ ] **Phase 47: Domain Verification + DMARC** — Verify torchsecret.com in Resend (DKIM, SPF, DMARC) and Loops.so (DKIM, SPF) in parallel
 - [ ] **Phase 48: Activate Custom Domain Sending** — Update RESEND_FROM_EMAIL in Infisical and confirm all outbound emails arrive from @torchsecret.com
 - [ ] **Phase 49: Gmail Send Mail As** — Create Resend SMTP API key, add all 7 aliases to Gmail, verify via forwarded confirmation emails
@@ -221,7 +221,7 @@ Plans:
 | 43. Phase 37 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-02 |
 | 44. Phase 37.1 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-03 |
 | 45. Billing Service Gap Closure | v5.0 | 2/2 | Complete | 2026-03-03 |
-| 46. Cloudflare Email Routing | 1/2 | In Progress|  | - |
+| 46. Cloudflare Email Routing | 2/2 | Complete   | 2026-03-04 | - |
 | 47. Domain Verification + DMARC | v5.1 | 0/TBD | Not started | - |
 | 48. Activate Custom Domain Sending | v5.1 | 0/TBD | Not started | - |
 | 49. Gmail Send Mail As | v5.1 | 0/TBD | Not started | - |
