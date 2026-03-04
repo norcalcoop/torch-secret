@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: verifying
-stopped_at: Phase 47 context gathered
-last_updated: "2026-03-04T14:27:38.153Z"
-last_activity: "2026-03-04 — Phase 46 complete: test emails to hello@torchsecret.com and security@torchsecret.com delivered to torch-secret@gmail.com inbox; all 7 routing rules Active"
+stopped_at: "Completed 47-01-PLAN.md"
+last_updated: "2026-03-04T15:51:44Z"
+last_activity: "2026-03-04 — Phase 47 Plan 01 complete: all 9 DNS records (Resend DKIM/SPF/MX, Loops 3x DKIM CNAMEs + SPF/MX, DMARC p=none) added to Cloudflare and verified via dig"
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 46 of 50 (Cloudflare Email Routing) — COMPLETE
-Plan: 02 of 2 — COMPLETE
-Status: Phase 46 complete — both plans done; inbound routing live and delivery verified
-Last activity: 2026-03-04 — Phase 46 complete: test emails to hello@torchsecret.com and security@torchsecret.com delivered to torch-secret@gmail.com inbox; all 7 routing rules Active
+Phase: 47 of 52 (Domain Verification + DMARC) — IN PROGRESS
+Plan: 01 of 2 — COMPLETE
+Status: Phase 47 Plan 01 complete — all 9 DNS records live in Cloudflare and propagated; ready for Plan 02 (dashboard verification)
+Last activity: 2026-03-04 — Phase 47 Plan 01 complete: all 9 DNS records (Resend DKIM/SPF/MX, Loops 3x DKIM CNAMEs + SPF/MX, DMARC p=none) added to Cloudflare and verified via dig
 
 Progress: [██████████] 100%
 
@@ -46,6 +46,7 @@ Progress: [██████████] 100%
 *v5.1 velocity tracking begins after first plan completes*
 | Phase 46-cloudflare-email-routing P01 | 30 | 2 tasks | 0 files |
 | Phase 46-cloudflare-email-routing P02 | 5 | 1 tasks | 0 files |
+| Phase 47-domain-verification-dmarc P01 | 84 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,14 @@ Progress: [██████████] 100%
 
 - Delivery verification used 2 representative addresses (hello + security) with live test emails; remaining 5 (contact, admin, info, support, privacy) confirmed by Active status — sufficient proof that the routing pipeline is functional for all 7 addresses
 
+### Decisions Made (Phase 47, Plan 01)
+
+- DMARC record was an edit of an existing _dmarc TXT (not a fresh add) — value updated to v=DMARC1; p=none; rua=mailto:admin@torchsecret.com
+- Loops DKIM selector names are account-generated 32-char hex-like strings — must be copied exactly from Loops dashboard, never inferred
+- All 3 Loops DKIM CNAMEs set to DNS Only (grey cloud) before saving — Cloudflare defaults new CNAMEs to proxied
+- Apex @ SPF record (v=spf1 include:_spf.mx.cloudflare.net ~all) left untouched — owned by Cloudflare Email Routing; no amazonses.com added at apex
+- Both Loops and Resend use identical SPF include and MX hostname (amazonses.com / feedback-smtp.us-east-1.amazonses.com) — both services are SES-backed; subdomain isolation still required for RFC 7208 compliance
+
 ### Roadmap Evolution
 
 - Phase 51 added: prepare codebase, repository, documentation to transition the github repository from private to public
@@ -83,6 +92,6 @@ None — Phase 46 fully complete. Phase 49 hard dependency satisfied: inbound ro
 
 ## Session Continuity
 
-Last session: 2026-03-04T14:27:38.151Z
-Stopped at: Phase 47 context gathered
-Resume file: .planning/phases/47-domain-verification-dmarc/47-CONTEXT.md
+Last session: 2026-03-04T15:51:44Z
+Stopped at: Completed 47-01-PLAN.md
+Resume file: .planning/phases/47-domain-verification-dmarc/47-02-PLAN.md

@@ -14,14 +14,14 @@ Requirements for milestone v5.1 Email Infrastructure.
 
 ### Resend Domain Authorization (RSND)
 
-- [ ] **RSND-01**: Admin can verify torchsecret.com in Resend with DKIM, SPF, and DMARC DNS records
+- [x] **RSND-01**: Admin can verify torchsecret.com in Resend with DKIM, SPF, and DMARC DNS records
 - [ ] **RSND-02**: Admin can update RESEND_FROM_EMAIL to noreply@torchsecret.com in Infisical (staging + production)
 - [ ] **RSND-03**: User receives transactional emails (secret-viewed notifications, subscriber confirmations) from noreply@torchsecret.com
 
 ### Loops.so Domain Authorization (LOOP)
 
-- [ ] **LOOP-01**: Admin can verify torchsecret.com in Loops.so with DKIM and SPF DNS records
-- [ ] **LOOP-02**: Admin can confirm hello@torchsecret.com is the verified sender address in Loops.so
+- [x] **LOOP-01**: Admin can verify torchsecret.com in Loops.so with DKIM and SPF DNS records
+- [x] **LOOP-02**: Admin can confirm hello@torchsecret.com is the verified sender address in Loops.so
 - [ ] **LOOP-03**: User receives onboarding emails from hello@torchsecret.com without "via loops.so" header indicators
 
 ### Gmail Send Mail As (GMAI)
@@ -71,9 +71,9 @@ Which phases cover which requirements. Populated by roadmapper.
 |-------------|-------|--------|
 | EROT-01 | Phase 46 | Complete |
 | EROT-02 | Phase 46 | Complete |
-| RSND-01 | Phase 47 | Pending |
-| LOOP-01 | Phase 47 | Pending |
-| LOOP-02 | Phase 47 | Pending |
+| RSND-01 | Phase 47 | Complete |
+| LOOP-01 | Phase 47 | Complete |
+| LOOP-02 | Phase 47 | Complete |
 | RSND-02 | Phase 48 | Pending |
 | RSND-03 | Phase 48 | Pending |
 | LOOP-03 | Phase 48 | Pending |
