@@ -7,6 +7,7 @@
 - ✅ **v3.0 Production-Ready Delivery** — Phases 15-20 (shipped 2026-02-18)
 - ✅ **v4.0 Hybrid Anonymous + Account Model** — Phases 21-30 (shipped 2026-02-22)
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
+- 🚧 **v5.1 Email Infrastructure** — Phases 46-50 (in progress)
 
 ## Phases
 
@@ -95,9 +96,74 @@ See [v4.0 Roadmap Archive](milestones/v4.0-ROADMAP.md) for full phase details.
 - [x] Phase 44: Phase 37.1 Gap Closure (1/1 plan) — completed 2026-03-03
 - [x] Phase 45: Billing Service Gap Closure (2/2 plans) — completed 2026-03-03
 
-See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full phase details.
+See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details.
 
 </details>
+
+### v5.1 Email Infrastructure (In Progress)
+
+**Milestone Goal:** Replace the `onboarding@resend.dev` placeholder with a fully authenticated `@torchsecret.com` email identity — Cloudflare Email Routing for all 7 business addresses, Resend and Loops.so domain verification, Gmail "Send mail as" via Resend SMTP, and updated contact references in SECURITY.md and the Privacy Policy.
+
+- [ ] **Phase 46: Cloudflare Email Routing** — Configure inbound MX, route 7 business addresses to Gmail, verify forwarding
+- [ ] **Phase 47: Domain Verification + DMARC** — Verify torchsecret.com in Resend (DKIM, SPF, DMARC) and Loops.so (DKIM, SPF) in parallel
+- [ ] **Phase 48: Activate Custom Domain Sending** — Update RESEND_FROM_EMAIL in Infisical and confirm all outbound emails arrive from @torchsecret.com
+- [ ] **Phase 49: Gmail Send Mail As** — Create Resend SMTP API key, add all 7 aliases to Gmail, verify via forwarded confirmation emails
+- [ ] **Phase 50: Documentation Updates** — Update SECURITY.md and Privacy Policy with proper contact addresses
+
+## Phase Details
+
+### Phase 46: Cloudflare Email Routing
+**Goal**: All 7 torchsecret.com business addresses receive email at torch-secret@gmail.com via Cloudflare Email Routing
+**Depends on**: Nothing (first phase)
+**Requirements**: EROT-01, EROT-02
+**Success Criteria** (what must be TRUE):
+  1. Admin can configure routing rules for hello, contact, admin, info, support, security, and privacy addresses in the Cloudflare Email Routing dashboard
+  2. A real email sent from an external account to hello@torchsecret.com arrives in torch-secret@gmail.com
+  3. A real email sent from an external account to security@torchsecret.com arrives in torch-secret@gmail.com
+  4. Cloudflare Email Routing dashboard shows all 7 routing rules as Active (not Pending)
+**Plans**: TBD
+
+### Phase 47: Domain Verification + DMARC
+**Goal**: torchsecret.com is an authenticated sending domain in both Resend and Loops.so, and a DMARC monitoring record is published
+**Depends on**: Phase 46
+**Requirements**: RSND-01, LOOP-01, LOOP-02
+**Success Criteria** (what must be TRUE):
+  1. Resend dashboard shows torchsecret.com as Verified for all three record types (DKIM, SPF, and the Resend-generated MX on send. subdomain)
+  2. Loops.so dashboard shows torchsecret.com domain as verified with hello@torchsecret.com as the confirmed sender address
+  3. A DMARC TXT record exists at _dmarc.torchsecret.com with p=none and rua= pointing to dmarc@torchsecret.com
+  4. A test email sent via Resend API from noreply@torchsecret.com delivers to an external inbox without landing in spam
+**Plans**: TBD
+
+### Phase 48: Activate Custom Domain Sending
+**Goal**: All outbound application email sends from noreply@torchsecret.com instead of onboarding@resend.dev, and Loops.so onboarding emails send from hello@torchsecret.com without third-party header indicators
+**Depends on**: Phase 47
+**Requirements**: RSND-02, RSND-03, LOOP-03
+**Success Criteria** (what must be TRUE):
+  1. RESEND_FROM_EMAIL is set to noreply@torchsecret.com in Infisical for staging and production environments
+  2. A triggered secret-viewed notification email arrives from noreply@torchsecret.com (not onboarding@resend.dev)
+  3. A triggered subscriber confirmation email arrives from noreply@torchsecret.com
+  4. A Loops.so onboarding email arrives without a "via loops.so" or similar third-party service indicator in the headers
+**Plans**: TBD
+
+### Phase 49: Gmail Send Mail As
+**Goal**: Admin can compose and send email from all 7 torchsecret.com business addresses directly inside Gmail with proper DKIM alignment and no "via" banner
+**Depends on**: Phase 46, Phase 47
+**Requirements**: GMAI-01, GMAI-02, GMAI-03, GMAI-04
+**Success Criteria** (what must be TRUE):
+  1. A dedicated Resend API key (restricted, separate from the production RESEND_API_KEY) exists for Gmail SMTP relay use
+  2. All 7 business addresses appear in Gmail Settings under "Send mail as" and are marked as verified
+  3. A test reply sent from hello@torchsecret.com via Gmail shows "Signed by: torchsecret.com" and no "via gappssmtp.com" in the full email headers
+  4. hello@torchsecret.com is set as the default outbound address in Gmail
+**Plans**: TBD
+
+### Phase 50: Documentation Updates
+**Goal**: SECURITY.md and the Privacy Policy reference the correct @torchsecret.com contact addresses for security disclosures and data subject requests
+**Depends on**: Phase 46
+**Requirements**: ADOC-01, ADOC-02
+**Success Criteria** (what must be TRUE):
+  1. SECURITY.md lists security@torchsecret.com as the contact address for vulnerability reports
+  2. The Privacy Policy page at /privacy displays privacy@torchsecret.com as a clickable mailto link for data subject requests
+**Plans**: TBD
 
 ## Progress
 
@@ -152,6 +218,11 @@ See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full phase details.
 | 43. Phase 37 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-02 |
 | 44. Phase 37.1 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-03 |
 | 45. Billing Service Gap Closure | v5.0 | 2/2 | Complete | 2026-03-03 |
+| 46. Cloudflare Email Routing | v5.1 | 0/TBD | Not started | - |
+| 47. Domain Verification + DMARC | v5.1 | 0/TBD | Not started | - |
+| 48. Activate Custom Domain Sending | v5.1 | 0/TBD | Not started | - |
+| 49. Gmail Send Mail As | v5.1 | 0/TBD | Not started | - |
+| 50. Documentation Updates | v5.1 | 0/TBD | Not started | - |
 
 _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
 

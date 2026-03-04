@@ -69,26 +69,26 @@ Which phases cover which requirements. Populated by roadmapper.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EROT-01 | — | Pending |
-| EROT-02 | — | Pending |
-| RSND-01 | — | Pending |
-| RSND-02 | — | Pending |
-| RSND-03 | — | Pending |
-| LOOP-01 | — | Pending |
-| LOOP-02 | — | Pending |
-| LOOP-03 | — | Pending |
-| GMAI-01 | — | Pending |
-| GMAI-02 | — | Pending |
-| GMAI-03 | — | Pending |
-| GMAI-04 | — | Pending |
-| ADOC-01 | — | Pending |
-| ADOC-02 | — | Pending |
+| EROT-01 | Phase 46 | Pending |
+| EROT-02 | Phase 46 | Pending |
+| RSND-01 | Phase 47 | Pending |
+| LOOP-01 | Phase 47 | Pending |
+| LOOP-02 | Phase 47 | Pending |
+| RSND-02 | Phase 48 | Pending |
+| RSND-03 | Phase 48 | Pending |
+| LOOP-03 | Phase 48 | Pending |
+| GMAI-01 | Phase 49 | Pending |
+| GMAI-02 | Phase 49 | Pending |
+| GMAI-03 | Phase 49 | Pending |
+| GMAI-04 | Phase 49 | Pending |
+| ADOC-01 | Phase 50 | Pending |
+| ADOC-02 | Phase 50 | Pending |
 
 **Coverage:**
 - v5.1 requirements: 14 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after v5.1 milestone started*
+*Last updated: 2026-03-03 — traceability populated by roadmapper*
