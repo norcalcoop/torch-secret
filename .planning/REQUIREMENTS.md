@@ -15,8 +15,8 @@ Requirements for milestone v5.1 Email Infrastructure.
 ### Resend Domain Authorization (RSND)
 
 - [x] **RSND-01**: Admin can verify torchsecret.com in Resend with DKIM, SPF, and DMARC DNS records
-- [ ] **RSND-02**: Admin can update RESEND_FROM_EMAIL to noreply@torchsecret.com in Infisical (staging + production)
-- [ ] **RSND-03**: User receives transactional emails (secret-viewed notifications, subscriber confirmations) from noreply@torchsecret.com
+- [x] **RSND-02**: Admin can update RESEND_FROM_EMAIL to noreply@torchsecret.com in Infisical (staging + production)
+- [x] **RSND-03**: User receives transactional emails (secret-viewed notifications, subscriber confirmations) from noreply@torchsecret.com
 
 ### Loops.so Domain Authorization (LOOP)
 
@@ -74,8 +74,8 @@ Which phases cover which requirements. Populated by roadmapper.
 | RSND-01 | Phase 47 | Complete |
 | LOOP-01 | Phase 47 | Complete |
 | LOOP-02 | Phase 47 | Complete |
-| RSND-02 | Phase 48 | Pending |
-| RSND-03 | Phase 48 | Pending |
+| RSND-02 | Phase 48 | Complete |
+| RSND-03 | Phase 48 | Complete |
 | LOOP-03 | Phase 48 | Pending |
 | GMAI-01 | Phase 49 | Pending |
 | GMAI-02 | Phase 49 | Pending |

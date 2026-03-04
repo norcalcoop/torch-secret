@@ -229,7 +229,7 @@ Plans:
 | 45. Billing Service Gap Closure | v5.0 | 2/2 | Complete | 2026-03-03 |
 | 46. Cloudflare Email Routing | 2/2 | Complete    | 2026-03-04 | - |
 | 47. Domain Verification + DMARC | 2/2 | Complete    | 2026-03-04 | - |
-| 48. Activate Custom Domain Sending | v5.1 | 0/TBD | Not started | - |
+| 48. Activate Custom Domain Sending | 1/2 | In Progress|  | - |
 | 49. Gmail Send Mail As | v5.1 | 0/TBD | Not started | - |
 | 50. Documentation Updates | v5.1 | 0/TBD | Not started | - |
 
@@ -240,7 +240,7 @@ _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase deta
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 50
-**Plans:** 2/2 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 51 to break down)

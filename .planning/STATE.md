@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: verifying
-stopped_at: Phase 48 context gathered
-last_updated: "2026-03-04T19:07:22.305Z"
+stopped_at: Completed 48-01-PLAN.md
+last_updated: "2026-03-04T22:40:35.104Z"
 last_activity: "2026-03-04 — Phase 47 Plan 02 complete: Resend + Loops.so domain verification handshakes completed, hello@torchsecret.com confirmed as Loops sender, Resend API test email delivered to torch.secrets@gmail.com inbox"
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 6
+  completed_plans: 5
+  percent: 83
 ---
 
 # Session State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.1 Email Infrastructure — Phase 47: Domain Verification + DMARC (next phase)
+**Current focus:** v5.1 Email Infrastructure — Phase 48: Activate Custom Domain Sending
 
 ## Current Position
 
-Phase: 47 of 52 (Domain Verification + DMARC) — COMPLETE
-Plan: 02 of 2 — COMPLETE
-Status: Phase 47 complete — Resend + Loops.so verification complete, DMARC live, test email delivered; ready for Phase 48 (Infisical env var update)
-Last activity: 2026-03-04 — Phase 47 Plan 02 complete: Resend + Loops.so domain verification handshakes completed, hello@torchsecret.com confirmed as Loops sender, Resend API test email delivered to torch.secrets@gmail.com inbox
+Phase: 48 of 52 (Activate Custom Domain Sending) — In Progress
+Plan: 01 of 2 — COMPLETE
+Status: Phase 48 Plan 01 complete — staging email delivery from noreply@torchsecret.com confirmed for both email types; ready for Plan 02 (production Infisical update)
+Last activity: 2026-03-04 — Phase 48 Plan 01 complete: RESEND_FROM_EMAIL updated in Infisical staging, subscriber confirmation + secret-viewed notification both delivered from noreply@torchsecret.com with zero Resend API errors
 
-Progress: [██████████] 100%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 | Phase 46-cloudflare-email-routing P02 | 5 | 1 tasks | 0 files |
 | Phase 47-domain-verification-dmarc P01 | 84 | 2 tasks | 0 files |
 | Phase 47-domain-verification-dmarc P02 | 130 | 2 tasks | 0 files |
+| Phase 48 P01 | 20 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -93,12 +94,18 @@ Progress: [██████████] 100%
 - Phase 51 added: prepare codebase, repository, documentation to transition the github repository from private to public
 - Phase 52 added: audit the product launch checklist items
 
+### Decisions Made (Phase 48, Plan 01)
+
+- Staged rollout confirmed sufficient: updating Infisical staging first and verifying two representative email types provides adequate confidence before the production Infisical update in Plan 02
+- No code changes required: all three Resend email callers (notification.service.ts, subscribers.service.ts, Better Auth) already read env.RESEND_FROM_EMAIL at call time
+- Zero Resend 403 errors in staging — confirms noreply@torchsecret.com is fully authorized on Resend backend; production update is safe to proceed
+
 ### Blockers/Concerns
 
-None — Phase 47 fully complete. Phase 48 hard dependencies satisfied: Resend torchsecret.com = Verified (safe to update RESEND_FROM_EMAIL), Loops domain verified + hello@torchsecret.com active.
+None — Phase 48 Plan 01 staging verification complete. Both email types delivering from noreply@torchsecret.com with zero errors. Ready for Plan 02 (production cutover).
 
 ## Session Continuity
 
-Last session: 2026-03-04T19:07:22.303Z
-Stopped at: Phase 48 context gathered
-Resume file: .planning/phases/48-activate-custom-domain-sending/48-CONTEXT.md
+Last session: 2026-03-04T22:40:28.053Z
+Stopped at: Completed 48-01-PLAN.md
+Resume file: None
