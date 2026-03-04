@@ -1,854 +1,463 @@
-# Architecture Research: v5.0 Product Launch Checklist
+# Architecture Research: v5.1 Business Email Infrastructure
 
-**Domain:** Adding Stripe billing, marketing homepage, SEO content pages, and email capture to existing Express 5 / Vite 7 / Vanilla TS SPA
-**Researched:** 2026-02-22
-**Confidence:** HIGH (Stripe webhook raw-body pattern, Better Auth Stripe plugin, Vite MPA build, Beehiiv API, JSON-LD nonce injection), MEDIUM (programmatic /use/[slug] SEO pages via SPA — crawler JS rendering still not 100% guaranteed), LOW (none)
+**Domain:** Adding business email infrastructure (inbound routing + outbound verification + Gmail aliases) to existing Express app with Resend + Loops
+**Researched:** 2026-03-03
+**Confidence:** HIGH (Resend DNS records confirmed via official docs, DKIM selector `resend._domainkey` confirmed, Cloudflare Email Routing MX/SPF behavior confirmed, SMTP credentials confirmed, SPF single-record rule confirmed), MEDIUM (Loops DKIM selector names not publicly disclosed — must be read from Loops dashboard; DMARC p=quarantine recommendation for forwarding is community-sourced)
 
 ---
 
 ## System Overview
 
-v5.0 adds five new subsystems to the shipped v4.0 architecture. Each has a precise insertion point. No existing middleware or route changes its position in the pipeline. The zero-knowledge invariant is not affected by any v5.0 feature (billing, marketing, SEO, email capture touch zero secret data).
+v5.1 connects three independent external email systems through a shared DNS zone (Cloudflare). No new server-side code is required beyond updating one environment variable in Infisical. The codebase change surface is exactly one env var value.
 
 ```
-+-----------------------------------------------------------------------+
-|                        Browser (Vanilla TS SPA)                        |
-|                                                                        |
-|  /         /pricing   /vs/*   /use/*  (indexable, marketing)          |
-|  [MODIFIED] [NEW]     [NEW]   [NEW]                                   |
-|                                                                        |
-|  /secret/:id  /confirmation  /dashboard  /auth/*  (unchanged)         |
-|                                                                        |
-|  Beehiiv email capture -> POST /api/email-capture  (NEW)              |
-|  Stripe Checkout redirect -> stripe.com (NEW, leaves SPA)             |
-+----------------------------------+------------------------------------+
-                                   | HTTPS
-+----------------------------------v------------------------------------+
-|                    Express 5 Middleware Pipeline                       |
-|                                                                        |
-|  trust proxy -> httpsRedirect -> cspNonce -> helmet -> httpLogger      |
-|  -> Better Auth /api/auth/{*splat}                                    |
-|  -> express.json({ limit: '100kb' })  (unchanged)                     |
-|                                                                        |
-|  [NEW] POST /api/webhooks/stripe    <- raw body, BEFORE express.json  |
-|  [NEW] POST /api/email-capture      <- Beehiiv proxy                  |
-|  [NEW] GET  /api/billing/portal     <- Stripe portal session URL      |
-|  [NEW] POST /api/billing/checkout   <- Stripe Checkout session URL    |
-|                                                                        |
-|  /api/health, /api/secrets, /api/me, /api/dashboard  (unchanged)     |
-|  /api catch-all 404    (unchanged)                                    |
-|  static + SPA catch-all (unchanged -- serves all HTML routes)        |
-|  NOINDEX_PREFIXES array: /pricing stays OUT (indexable)               |
-|  errorHandler (unchanged, MUST be last)                               |
-+----------------------------------+------------------------------------+
-                                   |
-          +------------------------+----------------------------+
-          |                        |                          |
-+---------v-------+   +------------v----------+   +----------v---------+
-|  PostgreSQL 17  |   |  External Services    |   |    SPA / Vite      |
-|                 |   |                       |   |                    |
-|  users table:   |   |  Stripe              |   |  Single index.html |
-|   + plan col    |   |  (Checkout, Portal,  |   |  All routes served |
-|  subscriptions  |   |   Webhooks)          |   |  by SPA catch-all  |
-|  [NEW table]    |   |                       |   |                    |
-|                 |   |  Beehiiv             |   |  /pricing [NEW]    |
-|  secrets,       |   |  (email list API)    |   |  /vs/*    [NEW]    |
-|  sessions,      |   |                       |   |  /use/*   [NEW]    |
-|  accounts,      |   |  Resend              |   |  / [MODIFIED]      |
-|  verification   |   |  (onboarding seq.)   |   |                    |
-|  (unchanged)    |   |                       |   |  JSON-LD scripts   |
-|                 |   |  PostHog (unchanged) |   |  per-page via      |
-+-----------------+   +-----------------------+   |  router.ts         |
-                                                  +--------------------+
++-----------------------------------------------------------+
+|              torchsecret.com DNS (Cloudflare)              |
+|                                                            |
+|  MX @ → Cloudflare Email Routing  (inbound)               |
+|  SPF @ → combined: Cloudflare + Resend includes            |
+|  DKIM resend._domainkey → Resend TXT (outbound auth)      |
+|  DKIM [3 CNAME selectors] → Loops (outbound auth)        |
+|  SPF envelope.torchsecret.com → Loops sub-SPF             |
+|  DMARC _dmarc → p=quarantine; rua=...                     |
++-----------------------------------------------------------+
+         |                    |                    |
+         v                    v                    v
++----------------+  +------------------+  +------------------+
+| Cloudflare     |  | Resend           |  | Loops.so         |
+| Email Routing  |  | (outbound SMTP)  |  | (email sequences)|
+| (inbound only) |  |                  |  |                  |
+| Forwards 7     |  | noreply@         |  | hello@           |
+| addresses to   |  | torchsecret.com  |  | torchsecret.com  |
+| Gmail          |  | verified domain  |  | verified domain  |
++-------+--------+  +--------+---------+  +--------+---------+
+        |                    |                      |
+        v                    v                      v
++----------------+  +------------------+  +------------------+
+| torch-secret   |  | Express          |  | Loops.so         |
+| @gmail.com     |  | notification.    |  | onboarding       |
+| (receives all) |  | service.ts       |  | sequences        |
+|                |  | subscribers.     |  | (registered +    |
+| Gmail "Send    |  | service.ts       |  | subscribed       |
+| mail as" 7     |  | (sends via       |  | events)          |
+| aliases via    |  | RESEND_API_KEY + |  |                  |
+| smtp.resend.com|  | RESEND_FROM_EMAIL|  |                  |
++----------------+  +------------------+  +------------------+
 ```
+
+### Component Responsibilities
+
+| Component | Responsibility | Managed In |
+|-----------|----------------|------------|
+| Cloudflare Email Routing | Inbound MX for all 7 addresses → Gmail forwarding | Cloudflare dashboard |
+| Resend domain verification | Authorize `noreply@torchsecret.com` as outbound sender | Resend dashboard + Cloudflare DNS |
+| Loops.so domain verification | Authorize `hello@torchsecret.com` as Loops sender | Loops dashboard + Cloudflare DNS |
+| Gmail "Send mail as" | Let torch-secret@gmail.com send as 7 business addresses | Gmail settings + smtp.resend.com |
+| Express email.ts | Resend SDK singleton; no change needed | No code change |
+| notification.service.ts | Reads `env.RESEND_FROM_EMAIL`; no change needed | No code change |
+| subscribers.service.ts | Reads `env.RESEND_FROM_EMAIL`; no change needed | No code change |
+| Infisical | Source of truth for `RESEND_FROM_EMAIL` value | Infisical dashboard |
 
 ---
 
-## Integration Point 1: Stripe Billing
+## DNS Record Architecture
 
-### The raw-body webhook problem (already solved in the codebase)
+### Current State (before v5.1)
 
-The existing `app.ts` mounts Better Auth at `/api/auth/{*splat}` before `express.json()` because Better Auth requires unconsumed body streams. The same constraint applies to Stripe: `stripe.webhooks.constructEvent()` verifies an HMAC-SHA256 signature over the raw request bytes. Once `express.json()` parses the body to an object, signature verification fails.
-
-**Mounting pattern -- insert before `express.json()` in `buildApp()`:**
-
-```typescript
-// server/src/app.ts -- add BEFORE the express.json() line
-
-// Stripe webhook: raw body required for HMAC-SHA256 signature verification.
-// MUST be mounted before express.json() -- body-stream ordering constraint.
-// Mount directly on `app`, not via a sub-router (sub-routers inherit parent middleware).
-app.post(
-  '/api/webhooks/stripe',
-  express.raw({ type: 'application/json' }),
-  stripeWebhookHandler,   // server/src/routes/stripe-webhook.ts
-);
-
-// Billing API routes (Checkout session, portal session)
-// These use JSON bodies, so they mount AFTER express.json()
-app.use('/api/billing', requireAuth, billingRouter);
+```
+torchsecret.com DNS:
+  (no MX records — domain receives no email)
+  (no SPF/DKIM/DMARC records)
+  RESEND_FROM_EMAIL = onboarding@resend.dev  (Resend sandbox)
 ```
 
-The Better Auth handler already sits before `express.json()`. The Stripe webhook needs the same position. All other billing routes (`/api/billing/checkout`, `/api/billing/portal`) use JSON bodies and mount after `express.json()`.
+### Target State (after v5.1)
 
-### Better Auth Stripe Plugin vs. manual Stripe SDK
-
-Two integration options exist:
-
-| Approach | Adds to schema | Webhook handling | Subscription check API |
-|----------|----------------|-----------------|----------------------|
-| Better Auth Stripe plugin | `subscription` table via `npx @better-auth/cli generate` | Plugin handles internally via `/api/auth/stripe/webhook` | `authClient.useActiveSubscription()` on client |
-| Manual Stripe SDK | Drizzle migration for `subscriptions` table | Custom handler at `/api/webhooks/stripe` | Query `subscriptions` table directly |
-
-**Recommendation: Better Auth Stripe plugin.** The codebase already uses Better Auth for sessions, OAuth, and email auth. The plugin adds its `subscription` table through the same `@better-auth/cli generate` migration path already established. The plugin's webhook handler registers at `/api/auth/stripe/webhook` which Better Auth serves via the existing `/api/auth/{*splat}` handler. This means no additional raw-body route is needed in `app.ts` because Better Auth's handler already runs before `express.json()`.
-
-**Caveat:** As of early 2026, the Better Auth Stripe plugin has several open GitHub issues (subscription updates not persisting, plan switching edge cases). If stability is a concern, the manual Stripe SDK approach is more predictable but requires writing the webhook handler and subscription table migration manually.
-
-**Confidence:** MEDIUM for Better Auth Stripe plugin stability. HIGH for manual SDK pattern.
-
-### Schema additions (Better Auth Stripe plugin path)
-
-The plugin adds to the Better Auth schema via its own migration CLI. The `users` table gets a `plan` field (denormalized tier cache). A new `subscription` table tracks billing state. Run:
-
-```bash
-npx @better-auth/cli generate   # generates Drizzle migration for subscription table
-npm run db:migrate
+```
+torchsecret.com DNS:
+  MX  @                          → route1.mx.cloudflare.net (priority 98)
+  MX  @                          → route2.mx.cloudflare.net (priority 59)
+  MX  @                          → route3.mx.cloudflare.net (priority 14)
+  TXT @                          → "v=spf1 include:_spf.mx.cloudflare.net include:amazonses.com ~all"
+  TXT resend._domainkey          → "p=[resend-dkim-public-key]"  (DNS Only, not proxied)
+  MX  send                       → feedback-smtp.[region].amazonses.com (Resend bounce/return)
+  TXT send                       → "v=spf1 include:amazonses.com ~all"  (Resend sub-SPF)
+  CNAME [loops-selector-1]._domainkey → [loops DKIM target]  (DNS Only)
+  CNAME [loops-selector-2]._domainkey → [loops DKIM target]  (DNS Only)
+  CNAME [loops-selector-3]._domainkey → [loops DKIM target]  (DNS Only)
+  TXT  envelope                  → "v=spf1 include:amazonses.com ~all"  (Loops sub-SPF, no conflict)
+  TXT  _dmarc                    → "v=DMARC1; p=quarantine; rua=mailto:dmarc@torchsecret.com"
 ```
 
-After migration, the `users` table includes a plan field. The existing `secrets.ts` route already contains an inline plan check (the `expiresIn === '30d'` guard at line 92-99). That guard becomes a proper plan check once Pro billing is live.
+**Note:** Exact MX hostnames, DKIM public key values, and Loops selector names must be read from the respective dashboards (Cloudflare → Email Routing → View DNS records; Resend → Domains → torchsecret.com; Loops → Settings → Domain → View records). The selectors and public keys are account-specific and are not published in documentation.
 
-### Feature gate middleware
+### SPF Architecture: Why No Conflict Between Cloudflare + Resend + Loops
 
-The existing `secrets.ts` route uses an inline plan check. Extract to reusable middleware for v5.0:
+There is only ever **one SPF TXT record per FQDN**. Multiple SPF TXT records on the same hostname invalidate each other (RFC 7208). The three providers are arranged to avoid this:
 
-```typescript
-// server/src/middleware/require-plan.ts [NEW]
-import type { Request, Response, NextFunction } from 'express';
-import type { AuthUser } from '../auth.js';
+| Provider | SPF location | Mechanism | Why no conflict |
+|----------|-------------|-----------|-----------------|
+| Cloudflare Email Routing | `@` (root domain) | `include:_spf.mx.cloudflare.net` | In root SPF record |
+| Resend | `send.torchsecret.com` (subdomain) | `include:amazonses.com` | Resend's SPF lives on `send` subdomain — separate FQDN from `@` |
+| Loops | `envelope.torchsecret.com` (subdomain) | `include:amazonses.com` | Loops explicitly uses `envelope.*` subdomain — separate FQDN from `@` |
 
-export function requirePlan(plan: 'pro') {
-  return (_req: Request, res: Response, next: NextFunction): void => {
-    const user = res.locals.user as AuthUser | undefined;
-    // AuthUser from Better Auth Stripe plugin will have a `plan` field
-    // after the plugin migration. Until then, check subscription table.
-    if (!user || (user as AuthUser & { plan?: string }).plan !== plan) {
-      res.status(403).json({
-        error: 'upgrade_required',
-        message: 'This feature requires a Pro subscription.',
-        requiredPlan: plan,
-      });
-      return;
-    }
-    next();
-  };
-}
-```
+The root `@` SPF record must include both Cloudflare (for inbound rewriting) and any top-level senders. Resend and Loops handle their own SPF via subdomains automatically — nothing extra needed at `@` for them beyond what Resend's domain dashboard auto-generates.
 
-**Where it applies in v5.0:** Only the 30-day expiration unlock on `POST /api/secrets`. The guard is already present as an inline check; `requirePlan('pro')` makes it a composable middleware for future Pro features.
+**However:** Check whether Resend's dashboard adds `include:amazonses.com` to the root `@` or to a `send.*` subdomain. If Resend requests a root-level SPF entry, it must be merged into the single `@` TXT record. Cloudflare's DMARC Management UI can help construct the merged record.
 
-### New env vars
+### DKIM Architecture: Multiple Selectors Coexist Freely
 
-```typescript
-// server/src/config/env.ts additions
-STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
-STRIPE_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
-STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
-STRIPE_PRO_MONTHLY_PRICE_ID: z.string().startsWith('price_'),
-STRIPE_PRO_ANNUAL_PRICE_ID: z.string().startsWith('price_'),
-```
+DKIM selectors are unique sub-hostnames. Different providers use different selectors — they do not conflict because each lookup is `[selector]._domainkey.torchsecret.com` and resolves independently.
 
-### Key webhook events (manual SDK path, or to understand what the Better Auth plugin handles)
+| Provider | DKIM record type | DKIM selector | Proxy status |
+|----------|-----------------|---------------|--------------|
+| Resend | TXT | `resend._domainkey` | DNS Only (gray cloud) |
+| Loops | CNAME (x3) | [from Loops dashboard] | DNS Only (gray cloud) |
 
-| Event | Action |
-|-------|--------|
-| `checkout.session.completed` | Provision subscription, set `users.plan = 'pro'`, upsert `subscriptions` row |
-| `customer.subscription.updated` | Sync plan tier, update `subscriptions.status` |
-| `customer.subscription.deleted` | Set `users.plan = 'free'`, update `subscriptions.status = 'canceled'` |
-| `invoice.payment_failed` | Set `subscriptions.status = 'past_due'`, trigger Resend dunning email |
-| `invoice.payment_succeeded` | Update `subscriptions.period_end` |
-
-**Idempotency:** Stripe may deliver events more than once. Use `ON CONFLICT DO UPDATE` (Drizzle's `.onConflictDoUpdate`) on `stripeSubscriptionId`. No separate event-ID deduplication table needed.
+**Critical:** All DKIM records in Cloudflare must be set to **DNS Only (gray cloud)**. Cloudflare's proxy (orange cloud) intercepts CNAME/TXT lookups and returns proxy IPs instead of the actual DKIM public key, causing DKIM verification to fail silently.
 
 ---
 
-## Integration Point 2: Marketing Homepage
+## Order of Operations
 
-### The homepage is currently the create-secret page
+The sequence matters because Gmail "Send mail as" sends a verification email to the address being added. That email must be receivable before Gmail can be configured.
 
-`router.ts` maps `path === '/'` to `renderCreatePage(container)`. The create page and the marketing page cannot both live at `/`. One of three strategies applies:
+### Phase 1: Cloudflare Email Routing (inbound prerequisite)
 
-**Option A: Homepage becomes the marketing page; create moves to `/create`**
+Must be done first because Gmail "Send mail as" verification sends an email to `hello@torchsecret.com`, `contact@torchsecret.com`, etc. — those addresses must be live and forwarding to Gmail before Gmail configuration can proceed.
 
-The marketing page renders at `/`. The create-secret form moves to `/create`. Users land on marketing, click "Create Secret" CTA, navigate to `/create`. The conversion funnel improves: new visitors see the value proposition first. Existing shareable links (`/secret/:id`) are unchanged. The header nav "Create Secret" link updates from `/` to `/create`.
-
-**Option B: Homepage is the marketing page; the create form is a section within it**
-
-The marketing hero renders above the fold; the create form is a section below. One URL, one page module. Smooth for returning users who scroll to the form. Harder to maintain as both sections grow.
-
-**Option C: A/B test (redirect or split)**
-
-Overkill for launch. Defer.
-
-**Recommendation: Option A.** The homepage-as-app pattern was chosen for v1.0 when there were no marketing needs. With a pricing page, SEO pages, and a "free tier vs Pro" positioning, users arriving at `/` need context before the form. Moving the form to `/create` is a one-line router change plus a header nav update.
-
-**Router change:**
-
-```typescript
-// client/src/router.ts: modify the path === '/' branch
-
-} else if (path === '/') {
-  // NEW: marketing homepage
-  updatePageMeta({
-    title: 'Torch Secret - Zero-Knowledge Secret Sharing',
-    description: 'Share passwords, API keys, and sensitive text via one-time encrypted links. AES-256-GCM. Zero-knowledge. No accounts required.',
-    canonical: 'https://torchsecret.com/',
-  });
-  import('./pages/home.js')         // NEW PAGE MODULE
-    .then((mod) => mod.renderHomePage(container))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-
-} else if (path === '/create') {
-  // MOVED: was at '/'
-  updatePageMeta({
-    title: 'Create a Secret',
-    description: 'Share secrets securely with zero-knowledge encryption. One-time view, no accounts.',
-  });
-  import('./pages/create.js')
-    .then((mod) => mod.renderCreatePage(container))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-}
+```
+1. Cloudflare Dashboard → Email → Email Routing → Enable
+2. Cloudflare auto-adds 3 MX records and a base SPF TXT record at @
+3. Create 7 custom addresses:
+     hello@, contact@, admin@, info@, support@, security@, privacy@
+   All forwarding to: torch-secret@gmail.com
+4. Confirm destination address (Cloudflare sends verification to torch-secret@gmail.com)
+5. Test: send email to hello@torchsecret.com → verify arrives in Gmail
 ```
 
-**`#app` container width constraint:** The existing `<div id="app" class="mx-auto max-w-2xl px-4 py-8">` in `index.html` constrains the app container to `max-w-2xl`. Marketing pages need full-width sections (hero, features grid, pricing preview). The container constraint must be removed from `index.html` and moved into each page module that needs it. Marketing pages manage their own layout.
+**DNS propagation:** MX records typically propagate within minutes on Cloudflare's authoritative DNS, but allow up to 1 hour before testing.
 
-**New page module:** `client/src/pages/home.ts` -- the marketing homepage. Renders hero, zero-knowledge proof points, How It Works, pricing preview, and email capture form. All within the existing SPA router pattern (dynamic import, code splitting, focus management).
+### Phase 2: Resend Domain Verification (outbound prerequisite)
+
+Must be done before updating `RESEND_FROM_EMAIL` in Infisical. Sending from an unverified domain fails with a Resend API error.
+
+```
+1. Resend Dashboard → Domains → Add Domain → torchsecret.com
+2. Resend displays 3 DNS records to add:
+     a. MX record on "send" subdomain (bounce return path)
+     b. TXT record on "send" subdomain (SPF)
+     c. TXT record on "resend._domainkey" (DKIM public key)
+3. Add all 3 records in Cloudflare DNS:
+     - Set DKIM TXT record to DNS Only (NOT proxied)
+     - Omit ".torchsecret.com" from record names (Cloudflare appends domain automatically)
+4. Merge SPF if needed:
+     - If Resend requires a root @ SPF entry, update the existing @ TXT record
+       (created by Cloudflare Email Routing) to add include:amazonses.com
+       Merged: "v=spf1 include:_spf.mx.cloudflare.net include:amazonses.com ~all"
+     - If Resend puts its SPF only on "send" subdomain (most likely), root @ is unchanged
+5. Return to Resend → click "Verify DNS Records"
+6. Wait for "Verified" status (typically minutes; up to 24 hours)
+7. Do NOT update RESEND_FROM_EMAIL yet
+```
+
+**DNS propagation:** Allow 15–60 minutes before clicking Verify.
+
+### Phase 3: Loops.so Domain Verification
+
+Independent of Resend; can be done in parallel with Phase 2. Loops uses `hello@torchsecret.com` as sender, which is authorized through the DKIM CNAME records.
+
+```
+1. Loops Dashboard → Settings → Domain → View records
+2. Loops displays several records to add:
+     a. 3 DKIM CNAME records (account-specific selectors)
+     b. MX record(s) for envelope subdomain
+     c. TXT record on "envelope" subdomain (SPF — will NOT conflict with root @)
+3. Add all records in Cloudflare DNS:
+     - Set all 3 DKIM CNAME records to DNS Only (NOT proxied)
+     - Omit ".torchsecret.com" from record names
+4. Loops Dashboard → click "Verify Records"
+5. Wait for verification (up to 1 hour per Loops docs)
+```
+
+### Phase 4: DMARC Record
+
+Add after SPF and DKIM are verified (both Resend and Loops). DMARC without working DKIM/SPF is ineffective and will cause deliverability failures immediately.
+
+```
+1. Add TXT record in Cloudflare:
+     Name:    _dmarc
+     Type:    TXT
+     Content: "v=DMARC1; p=quarantine; rua=mailto:dmarc@torchsecret.com"
+
+2. Use p=quarantine (not p=reject):
+     - Cloudflare Email Routing rewrites the envelope sender during forwarding
+     - This breaks SPF alignment for forwarded emails from strict senders
+     - p=reject would cause legitimate forwarded emails to bounce
+     - p=quarantine is the correct posture for forwarding setups
+     - p=none during initial testing is also acceptable, then promote to quarantine
+```
+
+**Note:** `dmarc@torchsecret.com` will forward to Gmail via the custom address routing established in Phase 1. Alternatively, use an external DMARC reporting inbox (Postmark, dmarcian free tier).
+
+### Phase 5: Update RESEND_FROM_EMAIL in Infisical
+
+Only after Phase 2 is complete and Resend shows domain as "Verified":
+
+```
+1. Infisical Dashboard → [project] → [environment: production]
+2. Update RESEND_FROM_EMAIL:
+     From: onboarding@resend.dev
+     To:   noreply@torchsecret.com
+3. Repeat for staging environment if desired
+4. Render auto-deploys if Secret Sync is configured; or trigger manual deploy
+5. Verify first outbound email sends successfully (e.g., create a secret on staging with notify-on-view enabled)
+```
+
+**No application code changes required for this step.** All three email callers (`notification.service.ts`, `subscribers.service.ts`, and Better Auth's built-in email verification) read `env.RESEND_FROM_EMAIL` at runtime via the Zod-validated env schema. The env var is the entire implementation.
+
+### Phase 6: Gmail "Send mail as" Configuration
+
+Requires Phase 1 (addresses live and forwarding to Gmail) and Phase 2 (Resend SMTP available for verified domain).
+
+```
+For each of the 7 addresses (hello, contact, admin, info, support, security, privacy):
+1. Gmail → Settings → Accounts and Import → Send mail as → Add another email address
+2. Enter: Name = "Torch Secret", Email = [address]@torchsecret.com
+3. Select: "Send through [address]'s SMTP servers"
+4. SMTP settings:
+     Server:   smtp.resend.com
+     Port:     465  (SSL) — recommended; or 587 (TLS)
+     Username: resend
+     Password: [RESEND_API_KEY]  (same API key as application uses)
+5. Gmail sends verification code to [address]@torchsecret.com
+   → Email arrives in Gmail inbox (via Cloudflare Email Routing from Phase 1)
+   → Enter verification code in Gmail dialog
+6. Repeat for all 7 addresses
+```
+
+**Important:** The Resend API key used for Gmail SMTP must belong to a Resend account where `torchsecret.com` is a verified domain. The same key as `RESEND_API_KEY` in Infisical can be used — no separate key required.
 
 ---
 
-## Integration Point 3: Pricing Page
+## Codebase Changes vs. External Configuration
 
-### New SPA route at `/pricing`
+| Item | Type | Location | What changes |
+|------|------|----------|-------------|
+| `RESEND_FROM_EMAIL` env var | External config (Infisical) | Infisical dashboard | Value changes from `onboarding@resend.dev` to `noreply@torchsecret.com` |
+| DNS records (MX, SPF, DKIM, DMARC) | External config (Cloudflare) | Cloudflare DNS dashboard | New records added |
+| Resend domain verification | External config (Resend) | Resend dashboard | Domain added and verified |
+| Loops domain verification | External config (Loops) | Loops dashboard | Domain verified |
+| Gmail "Send mail as" | External config (Gmail) | Gmail settings | 7 aliases added |
+| `notification.service.ts` | No change | Existing file | Already reads `env.RESEND_FROM_EMAIL` |
+| `subscribers.service.ts` | No change | Existing file | Already reads `env.RESEND_FROM_EMAIL` |
+| `email.ts` | No change | Existing file | Resend SDK singleton; no from-address logic |
+| `onboarding.service.ts` | No change | Existing file | Loops handles sending address — no Resend |
+| `env.ts` | No change | Existing file | `RESEND_FROM_EMAIL` schema already accepts any non-empty string |
+| `SECURITY.md` | Code/docs change | Repo file | Add `security@torchsecret.com` contact |
+| Privacy Policy page | Code change | `client/src/pages/privacy.ts` | Add `privacy@torchsecret.com` for data requests |
 
-A standard SPA route addition. Indexable by search engines (no `noindex`). No auth required.
-
-```typescript
-// client/src/router.ts addition
-} else if (path === '/pricing') {
-  updatePageMeta({
-    title: 'Pricing - Torch Secret',
-    description: 'Free forever for personal use. Upgrade to Pro for 30-day expiration, priority support, and more.',
-    canonical: 'https://torchsecret.com/pricing',
-  });
-  import('./pages/pricing.js')
-    .then((mod) => mod.renderPricingPage(container))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-}
-```
-
-**New page module:** `client/src/pages/pricing.ts` -- Free vs Pro tier cards, FAQ accordion, and CTAs. The upgrade CTA triggers a Stripe Checkout session:
-
-```typescript
-// In pricing.ts: upgrade flow
-async function handleUpgradeClick(priceId: string): Promise<void> {
-  const res = await fetch('/api/billing/checkout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ priceId }),
-  });
-  const { url } = await res.json() as { url: string };
-  window.location.href = url;   // redirect to Stripe Checkout (leaves SPA)
-}
-```
-
-**New API endpoint:**
-
-```typescript
-// POST /api/billing/checkout
-// Requires: requireAuth middleware
-// Body: { priceId: string }
-// Returns: { url: string }  -- Stripe Checkout session URL
-// Creates a Stripe Checkout session with:
-//   mode: 'subscription',
-//   success_url: 'https://torchsecret.com/dashboard?upgrade=success',
-//   cancel_url: 'https://torchsecret.com/pricing',
-```
-
-**No CSP changes required:** Stripe Checkout is a full-page redirect away from the SPA. The browser navigates to `stripe.com` -- CSP does not apply to the destination. Stripe.js (used for embedded Checkout) is NOT used here; the redirect-to-hosted approach requires no `script-src` additions.
-
-**NOINDEX_PREFIXES:** `/pricing` must NOT be added to `NOINDEX_PREFIXES`. It is a public, indexable marketing page. No server-side header change needed.
+**Bottom line:** Zero application code changes are needed to make transactional email work with the new domain. The only code-touching tasks are documentation updates (SECURITY.md and Privacy Policy page).
 
 ---
 
-## Integration Point 4: SEO Content Pages
+## Data Flow: Inbound Email to Gmail
 
-### The SPA-and-SEO tension
-
-The existing SPA uses History API routing. Googlebot crawls JavaScript-rendered SPAs, but with latency (content appears in the second indexing wave, not the first). For competitor comparison pages and use-case landing pages -- where Google ranking is the primary goal -- fast first-wave indexing matters.
-
-**Options:**
-
-| Approach | How | SEO reliability | Dev complexity |
-|----------|-----|----------------|----------------|
-| SPA routes (`/vs/onetimesecret` in router.ts) | Client-side render, same as all pages | MEDIUM -- Googlebot renders JS but with delay | Low -- same pattern as pricing page |
-| Vite MPA (separate HTML entry points) | `build.rollupOptions.input` with multiple `.html` files | HIGH -- static HTML, instant first-wave | Medium -- separate build config, separate JS bundles |
-| Prerendering at build time | Script renders each page to static HTML | HIGH -- static HTML generated from TS | High -- headless browser or SSR setup |
-| Express SSR | Render HTML in Express route handlers | HIGH -- real SSR | High -- server templating layer |
-
-**Recommendation: SPA routes for /vs/* and /use/* pages.** The evidence is as follows:
-
-1. Google has confirmed it renders JavaScript-heavy pages. Competitor comparison and use-case pages are thin content (mostly static text, no dynamic data). The SEO benefit of instant first-wave indexing vs. second-wave is measurable but not decisive for pages that will also be linked from the homepage and sitemap.
-
-2. The codebase has no templating infrastructure. Vite MPA or Express SSR adds significant complexity for pages that are essentially static content. The content can be written directly in TypeScript string templates, same as `client/src/pages/privacy.ts` and `client/src/pages/terms.ts`.
-
-3. The JSON-LD schema markup needed on these pages (`FAQPage`, `WebApplication`, `HowTo`) injects correctly via the existing CSP nonce mechanism (see Integration Point 6 below).
-
-4. The `updatePageMeta()` function in `router.ts` already sets per-route `<title>`, `<meta description>`, `<link rel="canonical">`, and OG/Twitter tags on every navigation. These are the most important on-page SEO elements.
-
-**If post-launch SEO underperforms:** The SPA route approach can be converted to static prerendering later by running a headless browser at build time (a Puppeteer script saves rendered HTML to `client/dist/vs/onetimesecret/index.html`). This is a build-step addition, not an architecture change.
-
-### Router additions for /vs/* and /use/*
-
-```typescript
-// client/src/router.ts additions
-
-} else if (path === '/vs/onetimesecret') {
-  updatePageMeta({
-    title: 'Torch Secret vs OneTimeSecret - Comparison',
-    description: 'How Torch Secret compares to OneTimeSecret: zero-knowledge encryption, no account required, open source.',
-    canonical: 'https://torchsecret.com/vs/onetimesecret',
-  });
-  import('./pages/vs/onetimesecret.js')
-    .then((mod) => mod.renderPage(container))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-
-} else if (path.startsWith('/vs/')) {
-  // catch-all for unknown /vs/* slugs
-  updatePageMeta({ title: 'Page Not Found', description: 'Torch Secret', noindex: true });
-  import('./pages/error.js')
-    .then((mod) => mod.renderErrorPage(container, 'not_found'))
-    .catch(() => showLoadError(container));
-
-} else if (path.startsWith('/use/')) {
-  // Programmatic use-case pages: /use/password-sharing, /use/api-keys, etc.
-  const slug = path.replace('/use/', '');
-  updatePageMeta({
-    title: `Securely Share ${slugToTitle(slug)} - Torch Secret`,
-    description: `Securely share ${slug.replace(/-/g, ' ')} with zero-knowledge encryption.`,
-    canonical: `https://torchsecret.com/use/${slug}`,
-  });
-  import('./pages/use-case.js')
-    .then((mod) => mod.renderUseCasePage(container, slug))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-}
+```
+External sender → [address]@torchsecret.com
+    ↓ (SMTP lookup: MX record → Cloudflare Email Routing servers)
+Cloudflare Email Routing
+    ↓ (rewrites envelope sender using SRS to avoid SPF failure)
+torch-secret@gmail.com (Gmail inbox)
+    ↓ (user reads email in Gmail)
+User replies using Gmail "Send mail as" [address]@torchsecret.com
+    ↓ (Gmail submits outbound via smtp.resend.com:465)
+Resend SMTP (authenticates with API key, uses verified torchsecret.com domain)
+    ↓ (adds DKIM signature using resend._domainkey)
+Recipient mail server (SPF + DKIM pass → delivered to inbox)
 ```
 
-**New page modules:**
-- `client/src/pages/vs/onetimesecret.ts`
-- `client/src/pages/vs/pwpush.ts`
-- `client/src/pages/vs/privnote.ts`
-- `client/src/pages/alternatives/onetimesecret.ts`
-- `client/src/pages/alternatives/pwpush.ts`
-- `client/src/pages/alternatives/privnote.ts`
-- `client/src/pages/use-case.ts` -- single module that switches on `slug` to render the correct content
+## Data Flow: Outbound Transactional Email (Notification + Subscriber Confirmation)
 
-**Sitemap update:** `client/public/sitemap.xml` must be updated to include all new indexable routes (`/pricing`, `/vs/*`, `/use/*`). The file is static; update it manually or generate it at build time with a simple Node.js script.
-
----
-
-## Integration Point 5: Email Capture
-
-### Backend proxy to Beehiiv (or Mailchimp)
-
-The email capture form on the homepage sends a POST to `/api/email-capture`. The Express handler proxies to the email list provider's API. The provider API key never reaches the browser.
-
-**Why a backend proxy rather than a direct browser-to-Beehiiv call:**
-
-1. The Beehiiv API key must remain server-side. Embedding it in the client bundle exposes it to anyone who opens DevTools.
-2. The `connectSrc` CSP directive would need to allow Beehiiv's API domain for direct calls. Adding third-party domains to CSP increases the attack surface.
-3. A backend proxy allows rate limiting (reuse existing `express-rate-limit` infrastructure) to prevent form abuse.
-4. A backend proxy allows validation (Zod schema on the email field) before the call leaves the server.
-
-**New endpoint:**
-
-```typescript
-// server/src/routes/email-capture.ts [NEW]
-// POST /api/email-capture
-// Body: { email: string }
-// Returns: { success: true } | { error: string }
-// Proxies to Beehiiv: POST https://api.beehiiv.com/v2/publications/{PUB_ID}/subscriptions
-// Headers: Authorization: Bearer {BEEHIIV_API_KEY}
-// Body: { email, reactivate_existing: false, send_welcome_email: false }
+```
+Express app event (secret viewed / subscriber signs up)
+    ↓
+notification.service.ts OR subscribers.service.ts
+    ↓ (resend.emails.send({ from: env.RESEND_FROM_EMAIL, ... }))
+Resend API (HTTPS to api.resend.com)
+    ↓ (Resend sends via verified torchsecret.com domain)
+    ↓ (adds DKIM signature: resend._domainkey.torchsecret.com)
+    ↓ (envelope from: send.torchsecret.com for bounce handling)
+Recipient mail server (SPF + DKIM pass via amazonses.com)
+    ↓
+User inbox
 ```
 
-**New env vars:**
+## Data Flow: Loops Onboarding Email
 
-```typescript
-// server/src/config/env.ts additions
-BEEHIIV_API_KEY: z.string().min(1).optional(),
-BEEHIIV_PUBLICATION_ID: z.string().min(1).optional(),
 ```
-
-Both are optional to allow running the app without email capture configured (development, staging).
-
-**Rate limiting:** Apply `express-rate-limit` at 3 requests per IP per hour on `/api/email-capture`. Reuse the existing `createRateLimiter` factory from `rate-limit.ts`.
-
-**Zero-knowledge invariant:** The email capture endpoint receives only an email address. It has no access to `secretId`. The user may or may not be authenticated; regardless, the endpoint does not combine `userId` and `secretId`. No invariant risk.
-
-**NOINDEX_PREFIXES:** No change. `/api/email-capture` is an API route, never served as HTML.
-
----
-
-## Integration Point 6: Schema Markup (JSON-LD)
-
-### The CSP nonce constraint
-
-The existing `index.html` already has a JSON-LD block with `nonce="__CSP_NONCE__"`. This works because Express replaces `__CSP_NONCE__` at serve time in the SPA catch-all handler (`htmlTemplate.replaceAll('__CSP_NONCE__', res.locals.cspNonce)`).
-
-**Problem:** The `index.html` JSON-LD contains a single `WebApplication` schema for the homepage. The `/pricing` page needs a `FAQPage` schema. The `/vs/*` pages need a `WebApplication` comparison schema. These are route-specific schemas -- they cannot all live in the static `index.html`.
-
-**Approach: JavaScript-injected JSON-LD per page (recommended)**
-
-Each page module injects its own `<script type="application/ld+json">` element into `document.head` on navigation, and removes it on the next navigation.
-
-```typescript
-// client/src/utils/json-ld.ts [NEW UTILITY]
-
-let currentJsonLdEl: HTMLScriptElement | null = null;
-
-export function setJsonLd(schema: Record<string, unknown>): void {
-  // Remove previous route's schema
-  currentJsonLdEl?.remove();
-
-  const el = document.createElement('script');
-  el.type = 'application/ld+json';
-  // XSS prevention: escape < to \u003c in JSON-LD content
-  el.textContent = JSON.stringify(schema).replace(/</g, '\\u003c');
-  document.head.appendChild(el);
-  currentJsonLdEl = el;
-}
+User registers / subscriber confirms
+    ↓
+onboarding.service.ts OR subscribers.service.ts
+    ↓ (loops.sendEvent({ email, eventName: 'registered' | 'subscribed' }))
+Loops.so API
+    ↓ (sends from hello@torchsecret.com via verified Loops domain)
+    ↓ (DKIM signed via Loops CNAME selectors)
+    ↓ (SPF authorized via envelope.torchsecret.com subdomain)
+User inbox
 ```
-
-Called from each page module that needs schema markup:
-
-```typescript
-// In pricing.ts renderPricingPage():
-setJsonLd({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [{ '@type': 'Question', name: '...', acceptedAnswer: { '@type': 'Answer', text: '...' } }],
-});
-```
-
-**CSP behavior of dynamically created script elements:** Using `el.textContent` to set the content of a dynamically created `<script type="application/ld+json">` element does not trigger CSP `script-src` restrictions. CSP `script-src` applies to scripts that execute JavaScript. `type="application/ld+json"` is a data block -- it is not executed as JavaScript. Browsers and CSP implementations treat it as inert data, not executable code. This is confirmed by MDN CSP documentation.
-
-**The existing `index.html` JSON-LD block:** Keep it as the default WebApplication schema for the homepage. It renders for all routes before JavaScript runs (good for SEO crawlers). The `setJsonLd()` utility replaces it on non-homepage navigation. On navigation back to `/`, `setJsonLd()` restores the WebApplication schema.
-
----
-
-## Integration Point 7: Email Onboarding Sequence
-
-### Resend transactional emails (already integrated)
-
-The codebase already uses Resend for auth emails (`auth.ts`: password reset, email verification). The onboarding sequence (welcome, key features, upgrade prompt) adds three new Resend calls triggered by the user registration lifecycle event in Better Auth.
-
-**Integration point:** Better Auth exposes `hooks` in the `betterAuth()` config. The `after` hook fires after successful sign-up.
-
-```typescript
-// server/src/auth.ts: add hooks to betterAuth() config
-hooks: {
-  after: [
-    {
-      matcher: (context) => context.path === '/sign-up/email',
-      handler: async (ctx) => {
-        const user = ctx.context.newSession?.user;
-        if (user) {
-          // Fire-and-forget; do not await to avoid blocking the sign-up response
-          void scheduleOnboardingSequence(user.id, user.email, user.name);
-        }
-        return ctx;
-      },
-    },
-  ],
-},
-```
-
-**`scheduleOnboardingSequence`** sends:
-1. Welcome email immediately (via Resend, fire-and-forget)
-2. "Key features" email at +24h via cron worker
-3. Upgrade prompt email at +72h via cron worker
-
-**Cron worker approach:** The existing `expiration-worker.ts` runs on a cron schedule. Add an `onboarding-worker.ts` that queries for users in their first 4 days and sends timed emails. Store the `onboarding_step` (0-3) on the user row or in a separate `onboarding_emails` table.
-
-**Simpler alternative:** A `user_onboarding` table with columns `(userId, step, send_at, sent_at)`. The worker queries `WHERE send_at <= NOW() AND sent_at IS NULL`, sends, and marks `sent_at`. Avoids adding a column to the Better Auth-managed `users` table.
-
-**Zero-knowledge invariant:** Onboarding emails contain no `secretId`. They reference only the user's name, email, and account features. No invariant risk.
-
----
-
-## New vs. Modified: Complete Inventory
-
-### New Files
-
-| File | Layer | Responsibility |
-|------|-------|---------------|
-| `server/src/routes/stripe-webhook.ts` | Routes | Raw body handler, event dispatch, idempotent DB updates |
-| `server/src/routes/billing.ts` | Routes | Checkout session creation, portal session URL |
-| `server/src/routes/email-capture.ts` | Routes | Beehiiv API proxy, rate-limited |
-| `server/src/services/stripe.service.ts` | Services | Stripe SDK calls (checkout, portal, subscription read) |
-| `server/src/middleware/require-plan.ts` | Middleware | Pro feature gate (check user plan) |
-| `server/src/workers/onboarding-worker.ts` | Workers | Timed onboarding email sequence |
-| `client/src/pages/home.ts` | Frontend | Marketing homepage (hero, proof points, How It Works, pricing preview, email capture) |
-| `client/src/pages/pricing.ts` | Frontend | Pricing page (Free vs Pro cards, FAQ, upgrade CTA) |
-| `client/src/pages/vs/onetimesecret.ts` | Frontend | Competitor comparison page |
-| `client/src/pages/vs/pwpush.ts` | Frontend | Competitor comparison page |
-| `client/src/pages/vs/privnote.ts` | Frontend | Competitor comparison page |
-| `client/src/pages/alternatives/onetimesecret.ts` | Frontend | Alternatives page |
-| `client/src/pages/alternatives/pwpush.ts` | Frontend | Alternatives page |
-| `client/src/pages/alternatives/privnote.ts` | Frontend | Alternatives page |
-| `client/src/pages/use-case.ts` | Frontend | Programmatic use-case pages, slug-switched content |
-| `client/src/utils/json-ld.ts` | Frontend Utility | Per-route JSON-LD injection/removal |
-
-### Modified Files
-
-| File | Change | Reason |
-|------|--------|--------|
-| `server/src/app.ts` | Add Stripe raw-body webhook before `express.json()`; add `/api/billing` and `/api/email-capture` routes | New endpoints |
-| `server/src/config/env.ts` | Add `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID`, `STRIPE_PRO_ANNUAL_PRICE_ID`, `BEEHIIV_API_KEY`, `BEEHIIV_PUBLICATION_ID` | New services |
-| `server/src/auth.ts` | Add `hooks.after` for onboarding sequence trigger | Better Auth lifecycle hook |
-| `server/src/db/schema.ts` | Add `subscriptions` table (if manual Stripe SDK path) or run Better Auth Stripe plugin migration | Billing state storage |
-| `client/src/router.ts` | Add routes for `/`, `/create`, `/pricing`, `/vs/*`, `/use/*`, `/alternatives/*` | New pages plus homepage split |
-| `client/index.html` | Remove `max-w-2xl` from `#app` container; update brand references (SecureShare -> Torch Secret, domain -> torchsecret.com) | Marketing pages need full-width layout |
-| `client/public/sitemap.xml` | Add all new indexable routes | SEO discoverability |
-| `client/public/robots.txt` | Verify `Allow: /pricing`, `Allow: /vs/*`, `Allow: /use/*` | SEO |
-| `.planning/INVARIANTS.md` | Add Stripe/billing row to enforcement table | Extension protocol compliance |
-
-### Unchanged Files (Zero-Knowledge Core Intact)
-
-| File | Why unchanged |
-|------|---------------|
-| `server/src/services/secrets.service.ts` | Atomic zero-then-delete unchanged |
-| `server/src/middleware/security.ts` | No new CSP domains needed for Stripe redirect-mode; Beehiiv call is server-side |
-| `client/src/crypto/` | Web Crypto module unchanged |
-| `server/src/middleware/logger.ts` | No new redaction rules needed; billing/email endpoints do not contain secretId |
-| All existing page modules | Only routing changes; page content unchanged |
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: Stripe Raw-Body Before Global JSON Parser
+### Pattern 1: Subdomain Isolation for Multi-Provider SPF
 
-**What:** The Stripe webhook route must receive the request body as a raw `Buffer`. The global `express.json()` middleware consumes the body stream. Mount the Stripe route using `express.raw({ type: 'application/json' })` directly on the app instance before the `express.json()` call.
+**What:** Each email provider that needs SPF authorization is given its own subdomain (`send.*` for Resend, `envelope.*` for Loops), leaving the root `@` SPF record clean and minimal.
 
-**When:** Any endpoint that uses HMAC signature verification over the raw request body. Only Stripe webhooks in this codebase.
+**Why:** RFC 7208 allows exactly one SPF TXT record per FQDN. Multiple providers trying to share the root `@` TXT record hit the 10-DNS-lookup limit and must be merged into one record — a maintenance burden. Subdomain isolation lets each provider own its SPF record independently.
 
-**Trade-offs:** The webhook handler is the only route in the codebase not covered by the global JSON parser. This is correct by design. The raw buffer is passed to `stripe.webhooks.constructEvent(buffer, signature, secret)` which parses JSON internally after verification.
-
-**Example:**
-```typescript
-// In buildApp(), BEFORE app.use(express.json(...)):
-app.post(
-  '/api/webhooks/stripe',
-  express.raw({ type: 'application/json' }),
-  stripeWebhookHandler,
-);
-// Then: app.use(express.json({ limit: '100kb' }));
-```
-
-### Pattern 2: SPA Route for Marketing Pages (No SSR)
-
-**What:** Marketing pages (`/pricing`, `/vs/*`, `/use/*`) are rendered client-side by the existing SPA router, not server-side. Each page is a separate dynamic-import chunk. `updatePageMeta()` sets the correct title, description, and canonical URL on every navigation.
-
-**When:** Content pages that are essentially static text, rendered within the existing SPA infrastructure. No external data dependencies (no API calls needed to render the page content).
-
-**Trade-offs:** Googlebot renders JavaScript. Second-wave indexing may be slower than static HTML. For a product launching now, this trade-off is acceptable. If post-launch analytics show these pages are not indexing well, prerendering can be added as a build step later.
+**When to use:** Always when running multiple outbound email providers on the same domain.
 
 **Example:**
-```typescript
-// router.ts: standard pattern, just more routes
-} else if (path === '/pricing') {
-  updatePageMeta({
-    title: 'Pricing - Torch Secret',
-    description: '...',
-    canonical: 'https://torchsecret.com/pricing',
-  });
-  import('./pages/pricing.js')
-    .then((mod) => mod.renderPricingPage(container))
-    .then(() => focusPageHeading())
-    .catch(() => showLoadError(container));
-}
+```
+@                      TXT  "v=spf1 include:_spf.mx.cloudflare.net ~all"
+send.torchsecret.com   TXT  "v=spf1 include:amazonses.com ~all"  (Resend-owned)
+envelope.torchsecret.com TXT "v=spf1 include:amazonses.com ~all" (Loops-owned)
 ```
 
-### Pattern 3: Per-Route JSON-LD Injection
+### Pattern 2: DKIM Selector Namespace Separation
 
-**What:** Each page module that needs schema markup calls `setJsonLd(schema)` at render time. The utility creates a `<script type="application/ld+json">` element (a data block, not executable script), escapes `<` characters to prevent XSS, and appends it to `document.head`. The previous route's element is removed before insertion.
+**What:** Each provider uses a distinct DKIM selector prefix (`resend._domainkey` for Resend; Loops uses its own selectors). DNS resolves each independently.
 
-**When:** Any route that benefits from rich schema markup: homepage (`WebApplication`), pricing (`FAQPage`), use-case pages (`HowTo`), comparison pages (`WebApplication` with comparative data).
+**Why:** DKIM selectors form independent sub-hostnames. There is no conflict between providers as long as they each use unique selector names. Unlike SPF (one record per hostname), DKIM allows unlimited records across different selectors.
 
-**Trade-offs:** The JSON-LD is injected after JavaScript runs, not in the initial HTML. For Googlebot, this is fine -- it executes JavaScript and reads the final DOM. The static `index.html` JSON-LD block provides a fallback for non-JS crawlers on the initial load.
+**When to use:** Always — this is the standard DKIM mechanism and requires no special setup beyond using the selectors each provider assigns.
 
-### Pattern 4: Backend-Proxied Email Capture
+### Pattern 3: Environment Variable as Configuration Seam
 
-**What:** The email capture form POSTs to `/api/email-capture` (Express). Express validates the email with Zod, rate-limits the endpoint, and proxies to Beehiiv's `/subscriptions` API. The Beehiiv API key never reaches the browser.
+**What:** The `from` address in all transactional emails is externalized to `RESEND_FROM_EMAIL` and injected by Infisical. Updating the sender address requires zero code changes.
 
-**When:** Any form that submits user data to a third-party marketing service. The pattern generalizes to any service where API credentials must be kept server-side.
+**Why:** Separates configuration (which address to send from) from implementation (how to send). The codebase remains unchanged whether sending from `onboarding@resend.dev` or `noreply@torchsecret.com`.
 
-**Trade-offs:** One additional HTTP round-trip (browser to Express to Beehiiv) vs. a direct browser-to-Beehiiv call. The latency overhead is negligible (tens of milliseconds) relative to the security and CSP benefits.
-
----
-
-## Data Flow: Key Paths
-
-### Stripe Pro Upgrade Flow
-
-```
-Browser (pricing page):
-  User clicks "Upgrade to Pro"
-  POST /api/billing/checkout { priceId: 'price_...' }
-        |
-Express: requireAuth -> billingRouter
-  Stripe SDK: stripe.checkout.sessions.create({
-    mode: 'subscription',
-    customer: user.stripeCustomerId,  // or create new customer
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: 'https://torchsecret.com/dashboard?upgrade=success',
-    cancel_url: 'https://torchsecret.com/pricing',
-  })
-  Response: { url: 'https://checkout.stripe.com/...' }
-        |
-Browser: window.location.href = url  (leaves SPA, goes to Stripe)
-        |
-User completes payment on stripe.com
-        |
-Stripe -> POST /api/webhooks/stripe (or /api/auth/stripe/webhook via Better Auth plugin)
-  express.raw() -> Buffer body preserved
-  stripe.webhooks.constructEvent(body, sig, secret)  // HMAC verification
-  event.type === 'checkout.session.completed'
-        |
-  DB transaction:
-    UPDATE users SET plan = 'pro' WHERE id = userId
-    INSERT subscriptions (...) ON CONFLICT DO UPDATE SET status = ...
-        |
-  Resend: send 'Welcome to Pro' email (fire-and-forget)
-        |
-  Response: 200 { received: true }
-        |
-Browser: redirected to /dashboard?upgrade=success
-  Dashboard reads user session (plan is now 'pro')
-  Shows Pro badge, unlocks 30-day expiration option
-```
-
-### Email Capture Flow
-
-```
-Browser (homepage email capture form):
-  User types email, submits form
-  POST /api/email-capture { email: 'user@example.com' }
-        |
-Express:
-  Rate limiter: 3 req/IP/hour
-  Zod validation: z.string().email()
-        |
-  fetch('https://api.beehiiv.com/v2/publications/{PUB_ID}/subscriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.BEEHIIV_API_KEY}` },
-    body: JSON.stringify({ email, reactivate_existing: false }),
-  })
-        |
-  Response: { success: true }
-        |
-Browser: show success toast "You're on the list!"
-```
-
-### SEO Page Navigation Flow
-
-```
-Googlebot or User -> GET /vs/onetimesecret
-        |
-Express: SPA catch-all handler
-  Injects __CSP_NONCE__ -> returns index.html with static WebApplication JSON-LD
-        |
-Browser:
-  Theme FOWT script runs (existing)
-  app.ts loads, router.ts handleRoute() fires
-  path === '/vs/onetimesecret'
-        |
-  updatePageMeta({
-    title: 'Torch Secret vs OneTimeSecret',
-    canonical: 'https://torchsecret.com/vs/onetimesecret',
-  })
-  import('./pages/vs/onetimesecret.js') -> renders comparison content
-  setJsonLd({ '@type': 'WebApplication', ... }) -> injects comparison schema as data block
-        |
-Googlebot reads final DOM:
-  <title>Torch Secret vs OneTimeSecret...</title>
-  <meta description="...">
-  <link rel="canonical" href="https://torchsecret.com/vs/onetimesecret">
-  <script type="application/ld+json">{ ... }</script>
-```
-
----
-
-## Build Order: Dependency Chain
-
-```
-Phase 1: Rebrand (no deps -- string replacements across all files)
-|
-+-- Replace SecureShare -> Torch Secret in: index.html, router.ts, auth.ts,
-    all page .ts files, README, sitemap.xml, JSON-LD, OG tags
-+-- Replace secureshare.example.com -> torchsecret.com in: index.html,
-    sitemap.xml, robots.txt, CLAUDE.md references
-+-- Tech debt: CI env vars, /privacy + /terms noindex, schema.ts ZK comment
-
-Phase 2: Homepage + Create Page Split (depends on Phase 1 -- rebrand complete)
-|
-+-- Remove max-w-2xl from index.html #app container (layout shell change)
-+-- Add /create route to router.ts (move existing create logic)
-+-- Create client/src/pages/home.ts (marketing homepage, no Stripe yet)
-+-- Update header nav: "/" -> "/create" for "Create Secret" link
-    Pricing page, SEO pages depend on homepage layout being established
-
-Phase 3: Pricing Page (depends on Phase 2 -- create at /create, not /)
-|
-+-- Add /pricing route to router.ts
-+-- Create client/src/pages/pricing.ts (static content, no Stripe CTA yet)
-+-- Add /pricing to sitemap.xml
-
-Phase 4: Stripe Billing (depends on Phase 3 -- pricing page must exist)
-|
-+-- Add STRIPE_* env vars to config/env.ts
-+-- Generate subscriptions migration (Better Auth Stripe plugin OR manual Drizzle)
-+-- Mount POST /api/webhooks/stripe BEFORE express.json() in app.ts
-+-- server/src/routes/stripe-webhook.ts (event handlers, idempotent upserts)
-+-- server/src/routes/billing.ts (checkout session, portal session)
-+-- server/src/services/stripe.service.ts (Stripe SDK calls)
-+-- Add requirePlan middleware (server/src/middleware/require-plan.ts)
-+-- Move inline 30d expiration check to requirePlan('pro') in secrets.ts
-+-- Wire upgrade CTA in pricing.ts to POST /api/billing/checkout
-+-- Dashboard: show Pro badge, unlock 30d expiration option for Pro users
-
-Phase 5: SEO Content Pages (depends on Phase 1 -- rebrand; otherwise independent)
-|
-+-- client/src/utils/json-ld.ts (per-route JSON-LD injection utility)
-+-- Add /vs/*, /alternatives/*, /use/* routes to router.ts
-+-- Create page modules: vs/onetimesecret.ts, vs/pwpush.ts, vs/privnote.ts,
-    alternatives/*.ts, use-case.ts (slug-switched)
-+-- Update sitemap.xml with all new routes
-+-- Schema markup: WebApplication on /, FAQPage on /pricing,
-    HowTo/WebApplication on /use/*, WebApplication on /vs/*
-
-Phase 6: Email Capture (depends on Phase 5 -- homepage has the capture form)
-|
-+-- Add BEEHIIV_* env vars to config/env.ts
-+-- server/src/routes/email-capture.ts (proxy, Zod validation, rate limit)
-+-- Wire email capture form in home.ts to POST /api/email-capture
-
-Phase 7: Email Onboarding Sequence (depends on Phase 4 Stripe, Phase 6 email)
-|
-+-- user_onboarding table (Drizzle migration: userId, step, send_at, sent_at)
-+-- Better Auth hooks.after in auth.ts: on sign-up, insert 3 onboarding rows
-+-- server/src/workers/onboarding-worker.ts (cron, queries unsent rows, Resend calls)
-
-Phase 8: Feedback Form Links (depends on Phase 2 -- existing pages unchanged)
-|
-+-- Add feedback link to confirmation page (client/src/pages/confirmation.ts)
-+-- Add feedback link to reveal page (client/src/pages/reveal.ts)
-    (Links to an external form -- Typeform, Tally, etc. -- not a new page)
-```
-
-**Why this ordering:**
-
-1. **Rebrand first:** Every subsequent file touch should use the new brand name. Doing rebrand last means editing files twice.
-2. **Homepage/create split before pricing:** The pricing page CTA links to `/create`. If `/create` does not exist yet, the link is broken during development.
-3. **Pricing page before Stripe:** The Stripe Checkout `cancel_url` points to `/pricing`. The page should exist before wiring up the checkout flow.
-4. **Stripe before email onboarding:** The onboarding sequence includes an upgrade prompt email. The upgrade flow must work before the email references it.
-5. **SEO pages are independent:** They can be built in parallel with billing after the rebrand is complete. Listed as Phase 5 for clarity, but could overlap with Phase 4.
-6. **Email capture after homepage:** The capture form lives on the homepage. The homepage page module must exist before the form can be wired up.
-7. **Feedback links last:** Smallest scope, no dependencies, safe to do anytime after the relevant page modules exist.
+**Trade-off:** The Zod schema for `RESEND_FROM_EMAIL` does not validate email format (just `z.string().min(1)`). A typo in Infisical would silently produce a Resend API error at runtime rather than a startup crash. Acceptable for this low-churn env var.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Mounting Stripe Webhook Inside a Sub-Router
+### Anti-Pattern 1: Proxying DKIM CNAME Records in Cloudflare
 
-**What people do:** Create a `billingRouter`, add the webhook route to it, then mount the router on the app after `express.json()`.
+**What people do:** Add DKIM CNAME records in Cloudflare and leave proxy (orange cloud) enabled.
 
-**Why it's wrong:** By the time the request reaches the billing router, `express.json()` has already consumed the body stream. The raw buffer is gone. `stripe.webhooks.constructEvent()` throws because it receives a parsed object instead of a Buffer.
+**Why it's wrong:** Cloudflare's proxy intercepts the CNAME lookup and returns its own IP addresses. The receiving mail server's DKIM verifier expects the DNS lookup to resolve to the provider's public key TXT record via CNAME chain. With proxying, the TXT record is unreachable — DKIM verification fails, emails land in spam or are rejected.
 
-**Do this instead:** Mount the webhook route directly on the `app` instance before the `express.json()` middleware line.
+**Do this instead:** Ensure all DKIM CNAME records show the gray cloud (DNS Only) in Cloudflare DNS management. This is required for all three Loops CNAME records and for any CNAME-based Resend records.
 
-### Anti-Pattern 2: Adding `unsafe-inline` to script-src for JSON-LD
+### Anti-Pattern 2: Multiple SPF TXT Records on the Same Hostname
 
-**What people do:** Dynamically injected script elements appear to fail CSP, so they add `'unsafe-inline'` to `script-src`.
+**What people do:** Add a second TXT record at `@` for the new email provider's SPF instead of merging into the existing record.
 
-**Why it's wrong:** `'unsafe-inline'` nullifies the entire nonce-based CSP. Any injected inline script -- including XSS payloads -- runs without restriction. This is a critical security regression.
+**Why it's wrong:** RFC 7208 §3.2 requires exactly one SPF TXT record per domain. Having two causes "permerror" in SPF evaluation — equivalent to failing. Some providers will also warn or fail outright.
 
-**Do this instead:** Use `<script type="application/ld+json">` (a data block, not executable code). CSP `script-src` does not apply to script elements with a MIME type other than JavaScript. No nonce is needed for JSON-LD data blocks.
+**Do this instead:** There is exactly one `@` TXT record with type SPF. All includes are merged into it: `"v=spf1 include:_spf.mx.cloudflare.net include:amazonses.com ~all"`. Resend and Loops avoid this problem by using subdomain SPF records.
 
-### Anti-Pattern 3: Calling Beehiiv API from the Browser
+### Anti-Pattern 3: Using p=reject DMARC with Email Forwarding
 
-**What people do:** Call the Beehiiv subscription API directly from the client-side email capture form handler.
+**What people do:** Set DMARC to `p=reject` for maximum security immediately after adding records.
 
-**Why it's wrong:** The Beehiiv API key must be included in the request. Embedding it in the client bundle exposes it to anyone who opens DevTools. `connectSrc` CSP also needs to allow `api.beehiiv.com`, adding a third-party domain to the CSP attack surface.
+**Why it's wrong:** Cloudflare Email Routing rewrites the envelope sender during forwarding. This breaks SPF alignment for the forwarded copy. With `p=reject`, Gmail (the destination) rejects forwarded messages from senders who also have `p=reject` DMARC, because the email fails both SPF alignment (envelope rewritten) and potentially DKIM alignment (DKIM signatures from sender's domain remain, but pass when the key is valid — ARC helps here). In practice, some strict senders' emails will bounce or be quarantined.
 
-**Do this instead:** POST to `/api/email-capture`, let Express proxy to Beehiiv with the server-side API key. Rate-limit the endpoint at the Express layer.
+**Do this instead:** Use `p=quarantine` for your own domain's DMARC record. This quarantines spoofed emails from your domain without bouncing legitimate forwarded mail from third parties.
 
-### Anti-Pattern 4: Removing max-w-2xl Without Moving It to Page Modules
+### Anti-Pattern 4: Updating RESEND_FROM_EMAIL Before Domain is Verified
 
-**What people do:** Remove `max-w-2xl` from `index.html` for the marketing homepage, causing the create page and reveal page to become full-width.
+**What people do:** Update the env var first to get it done, then verify the domain.
 
-**Why it's wrong:** The create form, reveal page, and confirmation page were designed at `max-w-2xl`. Full-width creates/reveals look broken.
+**Why it's wrong:** Resend API rejects sends from unverified domains with a 403 error. All transactional emails (secret-viewed notifications and subscriber confirmation emails) will silently fail until the domain is verified. The failure surfaces as `notification_send_failed` in Pino logs but does not crash the request.
 
-**Do this instead:** Remove `max-w-2xl` from the `#app` div in `index.html`. Each page module that needs a constrained width applies its own `max-w-2xl mx-auto` to its outermost container. The marketing homepage and SEO pages manage their own widths per section (hero can be full-width; content sections constrained).
+**Do this instead:** Verify the domain in Resend and confirm it shows "Verified" status, then update `RESEND_FROM_EMAIL` in Infisical.
 
-### Anti-Pattern 5: Combining userId and Stripe Event Data in a Log Line
+### Anti-Pattern 5: Omitting Domain from Cloudflare Record Names
 
-**What people do:** Log `{ userId, stripeCustomerId, plan, event: 'subscription_created' }` for debugging the billing webhook.
+**What people do (the opposite mistake):** When adding DNS records in Cloudflare, include the full FQDN in the record name field (e.g., `resend._domainkey.torchsecret.com`).
 
-**Why it's worth avoiding:** While `stripeCustomerId` is not a `secretId`, the general pattern of attaching user identifiers to event log lines should be scrutinized. Log the event type, plan change, and subscription status. Omit `userId` from Stripe webhook log lines. If debugging requires correlating a webhook to a user, use `stripeCustomerId` as the log's distinct identifier (it is not PII in isolation and does not combine with `secretId`).
+**Why it's wrong:** Cloudflare automatically appends `.torchsecret.com` to all record names. Adding the full FQDN creates a double-suffixed record (`resend._domainkey.torchsecret.com.torchsecret.com`) that Resend's verifier can never find.
+
+**Do this instead:** Enter only the subdomain prefix in the Name field (e.g., `resend._domainkey`, or `send`, or `envelope`). Cloudflare appends the zone domain automatically.
 
 ---
 
-## Integration Points: External Services
+## Integration Points
 
-| Service | Integration Pattern | Specific Notes |
-|---------|---------------------|---------------|
-| Stripe | Redirect-to-hosted Checkout + raw-body webhook | No Stripe.js in browser; no `script-src` CSP change needed; webhook mounted before `express.json()` |
-| Beehiiv | Server-side HTTP proxy from `/api/email-capture` | API key stays server-side; endpoint rate-limited; Zod validates email |
-| Resend | Existing SDK (transactional email) | Onboarding sequence adds 3 email templates; triggered via Better Auth lifecycle hook |
-| Better Auth Stripe plugin | Plugin added to `betterAuth()` config in `auth.ts` | Adds subscription table via `@better-auth/cli generate`; webhook handled at `/api/auth/stripe/webhook` |
+### External Services
+
+| Service | Integration Pattern | Key Gotcha |
+|---------|---------------------|------------|
+| Cloudflare Email Routing | Inbound MX + forwarding rules via dashboard | Locks DNS records when active; disabling Email Routing deletes MX records |
+| Resend (domain) | TXT DKIM + subdomain MX/SPF via DNS | DKIM selector is always `resend._domainkey`; set DNS Only in Cloudflare |
+| Resend (SMTP) | smtp.resend.com:465, user=`resend`, pass=API key | Must use API key for verified domain; same key as `RESEND_API_KEY` |
+| Loops.so (domain) | 3 CNAME DKIM + subdomain MX/SPF via DNS | Selector names visible only in Loops dashboard; proxy must be off |
+| Gmail "Send mail as" | SMTP credentials configured per alias in Gmail settings | Gmail sends verification email — requires Cloudflare Email Routing live first |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| `app.ts` webhook mount vs. `express.json()` | Ordering dependency | Webhook must precede global JSON parser; document in `app.ts` middleware order comment |
-| `router.ts` vs. page modules | Dynamic import | `home.ts` is a new chunk; all SEO pages are separate chunks (code splitting) |
-| `json-ld.ts` utility vs. page modules | Direct import | Called in each page's render function; singleton `currentJsonLdEl` reference tracks the active element |
-| `billing.ts` routes vs. `requireAuth` middleware | Middleware chain | All billing endpoints require auth session; unauth users get 401 and are redirected to `/login` |
-| `onboarding-worker.ts` vs. Resend | `resend.emails.send()` | Same service as existing auth emails; no new SDK dependency |
+| `env.ts` → email services | `RESEND_FROM_EMAIL` value at startup | Zod validates non-empty; no email format validation |
+| `notification.service.ts` → Resend | `resend.emails.send()` with `from: env.RESEND_FROM_EMAIL` | No code change; env var update only |
+| `subscribers.service.ts` → Resend | `resend.emails.send()` with `from: env.RESEND_FROM_EMAIL` | No code change; env var update only |
+| `onboarding.service.ts` → Loops | `loops.sendEvent()` — Loops controls sender address | Loops sends from `hello@torchsecret.com` after domain verification; no code change |
+| Better Auth → Resend | Auth email sender configured in `server/src/app.ts` auth setup | Check if `RESEND_FROM_EMAIL` is also used for auth emails (email verification, password reset) |
+
+### Better Auth Email Sender — Verify Before Updating
+
+Better Auth's email sender in `server/src/app.ts` may also use `env.RESEND_FROM_EMAIL` as the `from` address for auth emails (email verification links, password reset). Confirm this in the `auth` configuration block before updating the env var:
+
+- If it uses `env.RESEND_FROM_EMAIL`: updating the env var changes auth email sender too — correct behavior
+- If it hardcodes a different address: may need a separate check after deploy
+
+---
+
+## Scaling Considerations
+
+This milestone is pure configuration — no scaling implications for the email infrastructure itself. The Resend free tier allows 3,000 emails/month; Pro is 50,000/month. Loops.so pricing is contact-based. Neither poses a scaling constraint at current stage.
+
+| Scale | Email Architecture Adjustments |
+|-------|-------------------------------|
+| 0–1k users | Current setup adequate; single Resend API key shared for SMTP + SDK |
+| 1k–100k users | Separate Resend API keys for SMTP-only (Gmail) vs. SDK (transactional) to scope permissions |
+| 100k+ users | Evaluate dedicated sending IP, BIMI record for brand indicators, dedicated bounce monitoring |
+
+---
+
+## DNS Propagation Timeline
+
+| Phase | Action | Expected propagation |
+|-------|--------|---------------------|
+| Phase 1 | Cloudflare Email Routing MX records | Minutes (Cloudflare authoritative) |
+| Phase 2 | Resend DKIM TXT + send.* records | 15 min – 1 hour |
+| Phase 3 | Loops DKIM CNAME + envelope.* records | Up to 1 hour |
+| Phase 4 | DMARC TXT record | 15 min – 48 hours |
+| Phase 5 | Infisical env var update + Render deploy | Minutes (after deploy) |
+| Phase 6 | Gmail "Send mail as" verification | Immediate (email arrives via Phase 1) |
+
+**Total minimum clock time (sequential):** ~2–4 hours if DNS propagates quickly.
+**Total safe estimate (with verification gaps):** Same day if started in the morning.
 
 ---
 
 ## Sources
 
-- [Stripe Webhooks: Using with Express](https://docs.stripe.com/webhooks) -- raw body requirement, `constructEvent` pattern (HIGH -- official)
-- [Stripe Subscription Webhook Events](https://docs.stripe.com/billing/subscriptions/webhooks) -- `checkout.session.completed`, `customer.subscription.*`, `invoice.*` events (HIGH -- official)
-- [Better Auth Stripe Plugin](https://www.better-auth.com/docs/plugins/stripe) -- subscription table schema, `@better-auth/cli generate`, webhook at `/api/auth/stripe/webhook` (MEDIUM -- known active bugs in 2025-2026)
-- [Better Auth Stripe Plugin Issues](https://github.com/better-auth/better-auth/issues/4957) -- subscription updates not persisting (MEDIUM -- open issue, risk flag)
-- [Beehiiv Create Subscription API](https://developers.beehiiv.com/api-reference/subscriptions/create) -- endpoint, required params, `send_welcome_email` option (HIGH -- official)
-- [Vite Multi-Page Build](https://vite.dev/guide/build) -- `build.rollupOptions.input` for multiple HTML entry points (HIGH -- official)
-- [MDN: Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) -- `script-src` does not restrict `type="application/ld+json"` data blocks (HIGH -- official)
-- [SPA SEO 2025](https://shahidshahmiri.com/seo-for-single-page-applications/) -- second-wave indexing for JS-rendered content; Google recommendation for SSR on mission-critical SEO pages (MEDIUM -- community blog, aligns with Google Developers guidance)
-- [Stripe Express Subscription Integration](https://codingpr.com/express-stripe-subscriptions/) -- checkout session creation pattern, portal session pattern (MEDIUM -- community blog, consistent with official Stripe docs)
+- [Resend Cloudflare knowledge base](https://resend.com/docs/knowledge-base/cloudflare) — DKIM selector `resend._domainkey` confirmed, DNS Only requirement confirmed, record name truncation for Cloudflare (HIGH confidence)
+- [Resend Send with SMTP docs](https://resend.com/docs/send-with-smtp) — SMTP host `smtp.resend.com`, user `resend`, password = API key, ports 465/587 (HIGH confidence)
+- [Loops.so sending domain docs](https://loops.so/docs/sending-domain) — SPF at `envelope.*` subdomain to avoid conflict confirmed (MEDIUM confidence — selector names not disclosed)
+- [Cloudflare Email Routing DNS records docs](https://developers.cloudflare.com/email-routing/setup/email-routing-dns-records/) — MX record structure, SPF `include:_spf.mx.cloudflare.net` (HIGH confidence)
+- [Cloudflare community: Email Routing and SPF](https://community.cloudflare.com/t/email-routing-and-spf/341490) — Combined SPF record pattern confirmed (MEDIUM confidence, community source)
+- [Multiple DKIM records - DMARCLY](https://dmarcly.com/blog/can-i-have-multiple-dkim-records-on-my-domain) — Multiple DKIM selectors coexist freely, unique selectors required (HIGH confidence)
+- [Gmail Send mail as with Cloudflare Email Routing gist](https://gist.github.com/irazasyed/a5ca450f1b1b8a01e092b74866e9b2f1) — SMTP credentials confirmed; DMARC p=quarantine recommendation for forwarding (MEDIUM confidence, community source)
+- [Cloudflare DMARC Reject + Email Routing community](https://community.cloudflare.com/t/dmarc-reject-policy-cloudflare-email-routing/753410) — p=reject conflicts with email forwarding (MEDIUM confidence, community source)
 
 ---
-
-*Architecture research for: Torch Secret v5.0 Product Launch Checklist*
-*Researched: 2026-02-22*
+*Architecture research for: v5.1 Business Email Infrastructure (torchsecret.com)*
+*Researched: 2026-03-03*

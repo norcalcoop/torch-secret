@@ -1,214 +1,257 @@
 # Project Research Summary
 
-**Project:** Torch Secret v5.0 — Product Launch Checklist
-**Domain:** SaaS product launch — Stripe billing, marketing site, programmatic SEO, email onboarding
-**Researched:** 2026-02-22
+**Project:** Torch Secret — v5.1 Business Email Infrastructure
+**Domain:** Email deliverability, DNS authentication, inbound routing, operator alias setup
+**Researched:** 2026-03-03
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Torch Secret v5.0 is the go-public milestone for an existing zero-knowledge one-time secret sharing app. The foundation is fully built: Better Auth sessions, PostHog analytics, Resend transactional email, Drizzle/PostgreSQL persistence, and a Vanilla TS SPA. What v5.0 adds is the revenue layer (Stripe Pro billing at $9/month or $7/month annual), the marketing presence (rebrand to torchsecret.com, homepage redesign, pricing page), organic acquisition infrastructure (programmatic SEO pages, schema markup), and lifecycle email (3-email onboarding sequence via Loops.so). The rebrand is the critical-path opener: every other v5.0 feature embeds the product name or domain in copy, canonical URLs, or email sender addresses. Completing the rebrand first prevents rework across all subsequent phases.
+v5.1 is a pure infrastructure milestone: replacing the `onboarding@resend.dev` placeholder sender with a fully authenticated `@torchsecret.com` email identity. The existing sending code (Resend transactional + Loops.so onboarding sequences) requires zero application code changes — the entire milestone is DNS records in Cloudflare, domain verification in Resend and Loops.so dashboards, one environment variable update in Infisical, and Gmail alias configuration for operators. The codebase already externalizes the from-address to `RESEND_FROM_EMAIL`, so updating that env var is the only "deployment" action required after DNS verification is complete.
 
-The recommended Stripe integration uses the raw `stripe` SDK (v20.3.1) with a hand-written webhook handler rather than the `@better-auth/stripe` plugin for billing. Four open bugs in the plugin (issues #2440, #4957, #5976, #4801) directly break the subscription upgrade flow, DB sync, and webhook signature handling as of February 2026. The plugin can remain installed for session compatibility but its billing webhook path is unreliable. Email onboarding sequences should use Loops.so (v6.2.0) rather than a custom cron-based approach — Loops provides the time-delay sequencing that Resend alone cannot deliver without a custom cron+DB tracking system. Only one new npm package (`loops`) is required for v5.0; everything else is already installed or uses infrastructure already present.
+The recommended architecture connects three external email systems through a shared Cloudflare DNS zone: Cloudflare Email Routing (inbound MX for all role addresses forwarded to Gmail), Resend (outbound transactional via verified `noreply@torchsecret.com`), and Loops.so (onboarding sequences via verified `hello@torchsecret.com`). Each provider uses subdomain isolation for SPF (`send.` for Resend, `envelope.` for Loops) so all three coexist without SPF record conflicts. DKIM selectors are provider-specific and coexist freely. Gmail "Send mail as" via Resend SMTP (`smtp.resend.com`) gives operators the ability to reply from business addresses with proper DKIM alignment and no "via gappssmtp.com" trust-eroding banner — critical for a security-focused product.
 
-The most consequential architectural decision is how to serve the SEO content pages (`/vs/*`, `/alternatives/*`, `/use/*`). The Architecture researcher recommended SPA client-side routes for simplicity; the Stack and Pitfalls researchers both independently recommended Express server-side rendering. The SSR position is adopted here. AI crawlers (GPTBot, ClaudeBot, PerplexityBot) cannot execute JavaScript and will see an empty HTML shell from the SPA, making the competitor comparison pages — the highest-conversion SEO asset — invisible to the very crawlers they target. Googlebot's two-wave indexing also creates a days-to-weeks delay for JS-rendered content on a new domain where ranking speed matters at launch. Express SSR for these pages is not complex in this codebase: route handlers return fully-formed HTML strings, and the same `__CSP_NONCE__` replacement already used for `index.html` applies. SPA routes remain correct for the homepage, pricing page, and all functional app pages; SEO content pages require SSR.
+The primary risk in this milestone is ordering: six of the seven documented critical pitfalls are caused by doing steps out of sequence (proxied DKIM CNAMEs, duplicate SPF records, DMARC deployed before senders are verified, env var updated before domain is verified, Gmail aliases configured before inbound routing is live). The research provides an explicit hard dependency chain. Following it eliminates all critical pitfalls. For a security-focused product, `security@torchsecret.com` and a `/.well-known/security.txt` file are non-negotiable trust signals that researchers and AI crawlers expect before responsible disclosure is possible.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack is unchanged. v5.0 requires only one new npm package: `loops@6.2.0` for the time-delayed email onboarding sequence. All other services use packages already installed in v4.0 (`stripe@20.3.1`, `resend@6.9.2`, `better-auth@1.4.18`, `posthog-js@1.351.1`, `posthog-node@5.24.17`). The zero-dependency approach for EFF diceware passphrase generation remains correct: commit the wordlist as a static JSON file, use Web Crypto `getRandomValues`, and avoid the CJS-only `eff-diceware-passphrase` npm package that conflicts with the ESM codebase.
+v5.1 requires no new npm packages and no new server infrastructure. All sending code (Resend SDK, Loops.so SDK) is already shipped from v4.0 and v5.0. The only application-layer change is one environment variable value.
 
-**Core new/notable technologies:**
-- `stripe@20.3.1` (server only): Raw SDK with hand-written webhook handler. Do NOT rely on `@better-auth/stripe` for billing webhook processing — 4 open bugs make the plugin non-functional for subscription lifecycle management as of Feb 2026. Stripe Hosted Checkout (full-page redirect) eliminates the need for `@stripe/stripe-js` on the client and requires no `script-src` CSP additions.
-- `loops@6.2.0`: Time-delayed email onboarding sequences. Resend alone cannot deliver step-delayed sequences without custom cron infrastructure; Loops provides dashboard-configured automation with a clean SDK. Use v6.x API (`createContact()` with single object parameter — breaking change from v5).
-- `resend@6.9.2` Audiences API (already installed): Email list capture via `resend.contacts.create()`. No new package required — the Audiences API is included in the already-installed SDK.
-- `posthog-js@1.351.1` (already installed, bundled via Vite): Must use the npm-bundled approach, not the PostHog snippet. Dynamically injected `<script>` tags cannot receive a per-request CSP nonce.
-- Express SSR template strings (no new package): SEO content pages rendered as full HTML in Express route handlers. Same pattern as the existing SPA catch-all; content stored as TypeScript data objects.
+**Core technologies in use (unchanged):**
+- **Resend SDK** (`resend@6.9.2`): Transactional email — already in use. Domain verification unlocks `noreply@torchsecret.com` as the From address.
+- **Loops.so SDK** (`loops@6.2.0`): Onboarding sequences — already in use. Domain verification unlocks `hello@torchsecret.com` as the onboarding sender.
+- **Infisical**: Env var injection — `RESEND_FROM_EMAIL` is the configuration seam. Updating it in Infisical and redeploying is the entire "code deployment" for this milestone.
+- **Cloudflare**: DNS authoritative server and Email Routing provider — the single control plane for all email authentication records.
 
-**New environment variables for v5.0:**
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID`, `STRIPE_PRO_ANNUAL_PRICE_ID`
-- `RESEND_AUDIENCE_ID` (for Resend Audiences email list capture)
-- `LOOPS_API_KEY` (for Loops.so onboarding sequences)
+**No new dependencies needed.** All tooling is external configuration: Cloudflare dashboard, Resend dashboard, Loops dashboard, Gmail settings. The v4.0 stack research established the passphrase generation approach (EFF wordlist as static JSON, Web Crypto `getRandomValues`) which remains the correct approach and is already implemented.
 
 ### Expected Features
 
-**Must have at launch (P1):**
-- Rebrand — rename SecureShare to Torch Secret and swap domain to torchsecret.com across all user-facing strings, HTML meta, JSON-LD `@id`, email sender addresses, sitemap, canonical URLs, CI/Docker configs. Treat as an atomic change; partial rename splits brand authority.
-- Marketing homepage — hero with headline/subhead/CTA, zero-knowledge proof points, How It Works section, pricing preview (not a full pricing table), email capture form. Move the create-secret form to `/create`; the homepage at `/` becomes the marketing landing page.
-- Pricing page (`/pricing`) — Free vs Pro tier cards, monthly/annual billing toggle (annual default, saves 22%), FAQ section (6-8 questions), Pro card highlighted with "Recommended" badge. FAQ is not optional — 34% of pricing bounces are attributed to unclear cancellation policies.
-- Stripe Pro billing — Checkout session creation, webhook handler for subscription lifecycle (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`), Pro feature unlock (30-day expiration), Stripe Customer Portal for self-service cancellation.
-- Schema markup on homepage and `/pricing` — `WebApplication` JSON-LD on homepage, `FAQPage` JSON-LD on `/pricing`. Both must be in server-rendered or static HTML, not injected by JS, to be visible to AI crawlers.
+**Must have for launch (P1 — table stakes):**
+- Emails arrive from `@torchsecret.com` not `@resend.dev` — visible placeholder erodes trust; a ZK encryption product using a third-party sandbox domain is a contradiction
+- SPF + DKIM for Resend (enables `noreply@torchsecret.com` as verified outbound sender)
+- SPF + DKIM for Loops.so (enables `hello@torchsecret.com` as verified onboarding sender)
+- Cloudflare Email Routing active for `hello@`, `security@`, `privacy@`, `support@` → Gmail
+- DMARC at `p=none` with `rua=` monitoring — Gmail/Yahoo 2024 mandate for bulk senders; also establishes the reporting baseline required before safe enforcement escalation
+- `security@torchsecret.com` listed in SECURITY.md — RFC 2142 §4 defines this address for security bulletins; researchers check for it before responsible disclosure; absence signals amateurism for an encryption product
+- `privacy@torchsecret.com` listed in Privacy Policy — GDPR Articles 13/14 require a listed, functional contact address for data subject requests; regulators check
 
-**Should have within 2 weeks of launch (P2):**
-- SEO comparison pages (`/vs/onetimesecret`, `/vs/pwpush`, `/vs/privnote`) — Express SSR, minimum 800 words of original content per page, factual competitor feature comparison tables, FAQPage JSON-LD in initial HTML response.
-- SEO use-case pages (`/use/*` hub + 4 highest-volume slugs) — Express SSR, HowTo JSON-LD per page in initial HTML response, use-case-specific copy.
-- Email onboarding sequence — 3 emails via Loops.so: welcome (immediate), key features (day 3), upgrade prompt (day 7). Upgrade email requires Stripe to be live. Emails 2-3 require a marketing consent checkbox on the registration form for GDPR compliance.
-- Email capture on homepage — GDPR-compliant: unchecked opt-in checkbox, consent timestamp stored in `marketing_subscribers` table, double opt-in confirmation email, working unsubscribe endpoint (`GET /unsubscribe?token=`).
+**Should have before launch (P2 — low effort, high value):**
+- Gmail "Send mail as" for `hello@`, `security@`, `privacy@`, `support@` via Resend SMTP — operators reply from the correct address with `d=torchsecret.com` DKIM signing; no "via" banner
+- `/.well-known/security.txt` — RFC 9116, CISA-recommended, 5-minute Express static route; reinforces zero-knowledge security brand
+- `contact@torchsecret.com` Cloudflare routing rule (press, partnerships)
+- Cloudflare catch-all rule → Gmail (absorbs `info@`, `admin@`, stray sends without hard bounces)
 
-**Defer to v6+ (P3):**
-- Annual billing toggle (add after verifying monthly retention)
-- Live vanity secret count on homepage (add after launch when numbers are real)
-- Feedback form link on confirmation/reveal pages (30-minute task, no dependencies)
-- Team/Enterprise tier
-- Public REST API for programmatic secret creation
-- Custom domains for Pro users
+**Defer post-launch (P3):**
+- DMARC upgrade `p=none` → `p=quarantine` — only after 2+ weeks of clean RUA aggregate reports confirming no legitimate send stream has a misconfiguration
+- DMARC upgrade `p=quarantine` → `p=reject` — only after confirming quarantine phase is clean; use `p=quarantine` (not `p=reject`) as permanent posture because Cloudflare Email Routing's envelope rewriting during forwarding breaks SPF alignment under `p=reject`
+- `Reply-To: support@torchsecret.com` on `noreply@` sends — softens bounce UX for transactional email recipients who try to reply; 3 lines of code change in `email.ts` and `notification.service.ts`
+
+**Anti-features confirmed out of scope:**
+- Google Workspace ($6+/user/month) — Cloudflare Email Routing + Gmail "Send mail as" via Resend SMTP provides identical operator capability at $0
+- Self-hosted SMTP / custom MX — catastrophic maintenance burden; blacklist risk is high; Resend handles deliverability as MTA
+- `postmaster@` and `abuse@` mailboxes — RFC requirements apply to SMTP server operators and ISPs, not to SaaS products using third-party MTAs
+- Separate sending subdomains (`mail.`, `app.`) — only relevant at 100k+/month send volume; pre-launch Torch Secret sends hundreds of emails, not millions
 
 ### Architecture Approach
 
-v5.0 adds five new subsystems to the shipped v4.0 architecture. No existing middleware changes position. The zero-knowledge invariant is not affected by any v5.0 feature. The key structural changes are: (1) homepage split — the create-secret form moves to `/create` so `/` becomes the marketing page, requiring removal of the hardcoded `max-w-2xl` constraint from `index.html` and per-page-module width management; (2) Stripe webhook route mounted on the Express `app` instance directly before `express.json()`, same position as the Better Auth handler (body-stream ordering requirement); (3) SEO content pages served as Express SSR routes returning complete HTML with content in the initial HTTP response, not as SPA routes in `router.ts`; (4) per-route JSON-LD injection via a `setJsonLd()` utility for SPA pages (homepage, pricing), with static JSON-LD in the HTML response for SSR SEO pages.
+The architecture is a DNS-coordinated multi-provider email system with no shared application code between providers. Cloudflare DNS is the single control plane: all MX, SPF, DKIM, and DMARC records live there. Each provider (Cloudflare Email Routing, Resend, Loops.so) operates independently with subdomain isolation for SPF and selector-based DKIM. Inbound email flows through Cloudflare MX → Gmail forwarding → operator reads and replies via Gmail "Send mail as" via Resend SMTP. Outbound transactional email flows through Express → Resend SDK → verified `noreply@torchsecret.com`. Outbound onboarding email flows through Express → Loops.so SDK → verified `hello@torchsecret.com`.
 
-**Major new components:**
-1. `server/src/routes/stripe-webhook.ts` — raw body handler, webhook event dispatch, idempotent DB upserts via `ON CONFLICT DO UPDATE`
-2. `server/src/routes/billing.ts` — Checkout session creation and Customer Portal session URL (both behind `requireAuth`)
-3. `server/src/routes/seo-pages.ts` — Express SSR handlers for `/vs/:slug`, `/alternatives/:slug`, `/use/:slug`, with TypeScript data objects for page content and static JSON-LD in `<head>`
-4. `server/src/middleware/require-plan.ts` — reusable Pro feature gate using Redis cache-aside with 5-minute TTL
-5. `server/src/workers/onboarding-worker.ts` — cron-triggered enrollment in Loops.so sequences on user registration
-6. `client/src/pages/home.ts` — marketing homepage SPA module (hero, proof points, How It Works, pricing preview, email capture form)
-7. `client/src/pages/pricing.ts` — pricing page SPA module (tier cards, billing toggle, FAQ accordion, upgrade CTA)
-8. `client/src/utils/json-ld.ts` — per-route JSON-LD injection/removal singleton for SPA pages
+**Major components:**
+1. **Cloudflare Email Routing** — exclusive inbound MX ownership of apex domain; forwards 7+ addresses to `torch-secret@gmail.com`; must be configured and verified first (all other steps depend on it being live)
+2. **Resend domain verification** — authorizes `noreply@torchsecret.com` as outbound sender; DKIM CNAME `resend._domainkey` must be DNS Only (not proxied) in Cloudflare; SPF lives on `send.` subdomain, not apex
+3. **Loops.so domain verification** — authorizes `hello@torchsecret.com` as onboarding sender; three DKIM CNAME records all DNS Only in Cloudflare; SPF lives on `envelope.` subdomain, not apex
+4. **DMARC TXT record** — monitoring and eventual spoofing protection; must be deployed last in the DNS sequence after DKIM/SPF for both providers are confirmed verified
+5. **Infisical env var update** — `RESEND_FROM_EMAIL` = `noreply@torchsecret.com`; the only deployment action; must follow Resend showing "Verified" status
+6. **Gmail "Send mail as"** — per-alias configuration via `smtp.resend.com`; must be last (requires inbound routing live to receive verification email, and Resend SMTP available to sign with your DKIM key)
+
+**Key architectural patterns:**
+- **Subdomain SPF isolation:** `send.torchsecret.com` for Resend, `envelope.torchsecret.com` for Loops — avoids RFC 7208's one-SPF-TXT-per-FQDN rule; Cloudflare Email Routing owns the apex `@` SPF record
+- **Environment variable as configuration seam:** Zero code changes required; all three transactional email callers (`notification.service.ts`, `subscribers.service.ts`, Better Auth) already read `env.RESEND_FROM_EMAIL` at runtime
+- **DKIM selector namespace separation:** Each provider uses distinct selectors; no conflicts possible between Resend (`resend._domainkey`) and Loops (account-specific selectors); DNS resolves each independently
 
 ### Critical Pitfalls
 
-1. **Stripe webhook route mounted after `express.json()` silently breaks signature verification** — The error "No signatures found matching the expected signature" does not mention the ordering problem. Mount the webhook route directly on the `app` instance before the `express.json()` line, not via a sub-router. Update the `app.ts` middleware order comment block to document both the Better Auth handler and the Stripe webhook as pre-JSON-parser routes. (Pitfall 3)
+1. **Cloudflare DKIM CNAME records left proxied (orange cloud)** — Cloudflare intercepts the CNAME lookup and returns its own IP instead of delegating to the provider's DKIM key infrastructure; DKIM verification fails permanently; Resend dashboard shows "Pending" indefinitely; Cloudflare throws error Code 1004. Prevention: explicitly set all DKIM CNAME records to DNS Only (grey cloud) before clicking Verify in Resend or Loops dashboards.
 
-2. **SEO content pages served as SPA routes are invisible to AI crawlers and slow to index on Google** — GPTBot, ClaudeBot, and PerplexityBot cannot execute JavaScript; they see the empty `index.html` shell. Googlebot indexes JS-rendered content in two waves with days-to-weeks delay on new domains. Serve `/vs/*`, `/alternatives/*`, and `/use/*` as Express SSR with complete HTML in the initial HTTP response. Verify with `curl https://torchsecret.com/vs/onetimesecret | grep '<h1>'` — must return content, not an empty shell. (Pitfalls 4 and 5)
+2. **Multiple SPF TXT records at apex after enabling Cloudflare Email Routing** — Cloudflare Email Routing adds its own `v=spf1 include:_spf.mx.cloudflare.net ~all` at the apex. Any pre-existing SPF record produces a second TXT record; RFC 7208 returns `PermError` for all senders — equivalent to authentication failure. Prevention: merge all SPF includes into exactly one `@` TXT record immediately after enabling Email Routing; confirm with `dig TXT torchsecret.com` before proceeding.
 
-3. **Email 3 (upgrade prompt) is marketing email under GDPR — explicit consent required** — The welcome email is transactional (no consent needed). The upgrade prompt is promotional (consent required for EU users). Add a marketing consent checkbox (unchecked by default) to the registration form. Store the consent timestamp in the DB. Only send emails 2-3 to opted-in users. Apply one-click unsubscribe via Resend `List-Unsubscribe` header. (Pitfall 6)
+3. **`RESEND_FROM_EMAIL` updated before Resend domain is "Verified"** — All transactional emails (secret-viewed notifications, Better Auth password reset/verification, subscriber confirmations) fail silently with Resend 403 errors; the Express app does not crash, but users receive nothing. Prevention: update the Infisical env var only after Resend dashboard shows green "Verified" status for all three record types AND a manual test send from `noreply@torchsecret.com` succeeds.
 
-4. **Pro feature gate with stale subscription status causes revenue leaks and false failures** — Mode A: cancelled users retain Pro access when the `customer.subscription.deleted` webhook is delayed. Mode B: paying users see "no subscription" for 5 seconds after checkout redirect before the webhook arrives. Mitigation: cache subscription status in Redis with 5-minute TTL; clear on webhook events; on the success page (`?session_id=` param), query Stripe API directly before rendering the success UI. (Pitfall 9)
+4. **DMARC deployed at `p=reject` immediately** — Legitimate emails rejected permanently if any DKIM/SPF configuration has an error; Cloudflare Email Routing's envelope rewriting during forwarding also breaks SPF alignment, causing `p=reject` to bounce legitimate forwarded messages. Prevention: always start at `p=none` with `rua=` monitoring; advance to `p=quarantine` only after 2-4 weeks of clean aggregate reports; use `p=quarantine` (not `p=reject`) as permanent posture for domains using email forwarding.
 
-5. **Thin programmatic SEO content triggers Google quality penalties** — Use-case pages generated from a shared template with only the slug swapped in are classified as thin content and de-indexed, especially on a new domain with low authority. Ship 3-4 comparison pages with minimum 800 words of substantive original content rather than 8 thin use-case pages at launch. Add remaining pages as content is genuinely written. (Pitfall 8)
+5. **Gmail "Send mail as" using `smtp.gmail.com` instead of `smtp.resend.com`** — Emails display a permanent "via gappssmtp.com" banner; DKIM signed with `d=gappssmtp.com` rather than `d=torchsecret.com`; fails DMARC strict alignment. For a security product, this "via" banner signals non-authoritative sending to technically sophisticated users. Prevention: use `smtp.resend.com` (port 465, user=`resend`, password=dedicated restricted Resend API key — do not reuse the production `RESEND_API_KEY`).
+
+6. **Cloudflare destination address on suppression list** — Cloudflare sends a verification email to `torch-secret@gmail.com`; if that address previously bounced or spam-flagged a Cloudflare email, it is on Cloudflare's suppression list and the verification email is never delivered; routing rules stay "Pending" indefinitely with no error in the dashboard. Prevention: pre-allowlist Cloudflare sender addresses in Gmail before starting; if verification email doesn't arrive in 10 minutes, contact Cloudflare support.
+
+7. **Full FQDN entered in Cloudflare DNS record name fields** — Cloudflare appends the zone domain automatically; entering `resend._domainkey.torchsecret.com` creates `resend._domainkey.torchsecret.com.torchsecret.com`, which Resend's verifier can never find; the record appears to be created successfully but verification fails silently. Prevention: enter only the subdomain prefix (`resend._domainkey`, `send`, `envelope`, `_dmarc`) — never the full FQDN.
+
+---
 
 ## Implications for Roadmap
 
-The dependency chain from combined research is clear and the ordering is largely non-negotiable. The rebrand must be first. The homepage/create split must precede the pricing page. The pricing page must exist before Stripe billing is wired. Stripe must be live before the upgrade-prompt email can send. SEO pages and email capture are independent of billing and can be built in parallel after the rebrand.
+The research reveals a hard 7-step dependency chain where each step is a prerequisite for the next. This maps directly to a single phase with ordered tasks rather than multiple parallel phases. The milestone is narrowly scoped — one env var change, DNS records, dashboard configuration, and two document edits — but sequencing is strict and each step requires verification before proceeding.
 
-### Phase 1: Rebrand + Tech Debt
-**Rationale:** Every subsequent file touch should use the new brand name. Doing the rebrand last means editing files twice across every phase. This is also the right moment to clear existing tech debt (CI env vars, `/privacy` + `/terms` noindex fix, schema.ts ZK comment) — zero functional change, fast to execute, clean slate for v5.0.
-**Delivers:** Torch Secret name and torchsecret.com domain throughout all user-facing strings, HTML meta, JSON-LD `@id` and `url`, email sender addresses, sitemap, robots.txt, README, and CI/Docker configs. Tech debt items cleared.
-**Addresses:** FEATURES.md Feature Area 1 (Rebrand); CI/NOINDEX/schema.ts debt items.
-**Avoids:** Rework from partial rename; broken DMARC/SPF from placeholder email sender domain; mismatched JSON-LD undermining schema validity.
-**Research flag:** No research phase needed. Pure string replacement work with a grep-based audit.
+### Phase 1: Inbound Infrastructure (Cloudflare Email Routing)
 
-### Phase 2: Marketing Homepage + Create-Page Split
-**Rationale:** The homepage is currently the create-secret page. The pricing page and SEO pages need the homepage to exist as a marketing landing page before they can be linked from the nav. The `max-w-2xl` container constraint in `index.html` must be removed and moved into individual page modules before any full-width marketing page can be built. The email capture form can be added as a UI widget in this phase; the backend endpoint that wires it is Phase 6.
-**Delivers:** `/` serves the marketing homepage (SPA route via `client/src/pages/home.ts`); create-secret form moves to `/create`; header nav updated; `index.html` `max-w-2xl` constraint removed from `#app` and moved into per-page modules; marketing homepage with hero, zero-knowledge proof points, How It Works, pricing preview, and email capture form widget (form non-functional until Phase 6).
-**Uses:** Existing SPA router pattern; `updatePageMeta()`; dynamic imports; `client/src/pages/home.ts` new module.
-**Avoids:** Anti-pattern of removing `max-w-2xl` without moving it to page modules, which breaks full-width create/reveal pages (Architecture anti-pattern 4).
-**Research flag:** No research phase needed. Frontend design skill invocation required per CLAUDE.md before any UI work.
+**Rationale:** Every other step depends on inbound email being live and verified. Gmail "Send mail as" requires receiving Gmail's setup verification email at the custom address. DMARC RUA reporting requires `dmarc@torchsecret.com` to be a live forwarding rule. This step must be first and confirmed with a real inbound test before proceeding.
 
-### Phase 3: Pricing Page
-**Rationale:** Stripe Checkout's `cancel_url` points to `/pricing`. The page must exist before the billing flow is wired. The pricing page can be built as static SPA content with placeholder CTAs (upgrade button is non-functional until Phase 4).
-**Delivers:** `/pricing` SPA route via `client/src/pages/pricing.ts`; Free vs Pro tier cards; monthly/annual billing toggle with annual as default (shows 22% saving); Pro card highlighted with "Recommended" badge; feature comparison list per tier; FAQ section (6-8 questions); static upgrade CTA (wired to live Stripe in Phase 4); `FAQPage` JSON-LD via `setJsonLd()` utility (also creates `client/src/utils/json-ld.ts`); `/pricing` added to `sitemap.xml`.
-**Uses:** `client/src/pages/pricing.ts` new module; `client/src/utils/json-ld.ts` new utility.
-**Avoids:** Missing FAQ section (increases bounce 34%); pricing page without highlighted Pro tier (22% worse conversion); full pricing table embedded on marketing homepage (creates visual clutter before primary CTA).
-**Research flag:** No research phase needed. Frontend design skill required.
+**Delivers:** All 7+ `@torchsecret.com` addresses receive email at `torch-secret@gmail.com`. Cloudflare adds 3 MX records and a base SPF TXT at `@`. Operators can receive support, security, and privacy inquiries immediately.
 
-### Phase 4: Stripe Pro Billing
-**Rationale:** Stripe requires the pricing page to exist for the cancel URL. Must be live before the email onboarding upgrade-prompt email (Phase 7) can reference a real checkout. This is the revenue phase and the most complex integration.
-**Delivers:** Stripe webhook handler mounted before `express.json()` in `app.ts`; `subscriptions` Drizzle table migration; `POST /api/billing/checkout` (Checkout session creation); `GET /api/billing/portal` (Customer Portal session URL); `server/src/middleware/require-plan.ts` (Redis cache-aside, 5-minute TTL); Pro feature unlock (30-day expiration); success-page direct Stripe API query on `?session_id=` param; INVARIANTS.md Stripe/billing row added before any webhook code is written.
-**Uses:** `stripe@20.3.1` (already installed); raw `express.raw({ type: 'application/json' })` before `express.json()` in `app.ts`; Drizzle migration; Redis for subscription status cache.
-**Avoids:** `@better-auth/stripe` billing webhook path (bugs #2440, #4957, #5976, #4801 as of Feb 2026 — verify status before Phase 4 begins); Stripe webhook route after `express.json()` (Pitfall 3); stale subscription status revenue leak (Pitfall 9); Stripe secret key in Vite client bundle; Pro activation on checkout redirect rather than on verified webhook event.
-**Research flag:** No research phase needed. All patterns are fully documented with code examples. Verify `@better-auth/stripe` bug status at Phase 4 kickoff — if all 4 bugs are resolved, the plugin billing path may be viable.
+**Addresses:** `hello@`, `security@`, `privacy@`, `support@`, `contact@`, `dmarc@` routing rules; catch-all rule for `info@`, `admin@`, stray sends
 
-### Phase 5: SEO Content Pages (Express SSR)
-**Rationale:** Independent of billing. Can begin after Phase 1 (rebrand) is complete and can overlap with Phases 3-4. The architecture decision to use Express SSR rather than SPA routes must be made before any content is written. Content quality gate applies: each page ships only when it has substantive, original content (minimum 800 words for comparison pages). Thin pages damage domain authority for all pages on the domain.
-**Delivers:** Express SSR handlers for `/vs/onetimesecret`, `/vs/pwpush`, `/vs/privnote`, `/alternatives/*`, `/use/:slug` (4 initial slugs + hub at `/use`); static JSON-LD in server-rendered HTML `<head>` (FAQPage on `/vs/*`, HowTo on `/use/*`); CSP nonce injection applied to SSR page templates; all new routes added to `sitemap.xml`; `robots.txt` verified; NOINDEX_PREFIXES audited to confirm `/vs/`, `/alternatives/`, `/use/` are not accidentally matched.
-**Uses:** Express router; TypeScript data objects for page content; `JSON.stringify()` for JSON-LD; no new packages; same `__CSP_NONCE__` replacement pattern as the existing SPA catch-all.
-**Avoids:** SPA routes invisible to AI crawlers (Pitfall 4); JS-injected JSON-LD invisible to AI crawlers (Pitfall 5); thin content SEO penalty (Pitfall 8); false competitor claims or copied competitor screenshots (legal risk); `noindex` accidentally applied to SEO pages.
-**Research flag:** No research phase needed. Express SSR pattern is clear. Content quality review gate required before publishing any page.
+**Avoids:** Pitfall 1 (MX record deletion — document all existing MX records before enabling; verify Loops MX lives on `envelope.` subdomain not apex); Pitfall 6 (suppression list — pre-allowlist Cloudflare senders in Gmail before starting)
 
-### Phase 6: Email Capture
-**Rationale:** The email capture form widget was built in Phase 2 as a UI element. This phase wires the backend endpoint to Resend Audiences. The GDPR consent model must be designed before the endpoint is built — the consent checkbox and storage schema are prerequisites, not implementation details.
-**Delivers:** `POST /api/email-capture` Express endpoint (rate-limited: 3/IP/hour via existing `createRateLimiter` factory; Zod email validation; proxies to Resend Audiences API using `resend.contacts.create()`); `marketing_subscribers` DB table (separate from `users`; columns: `email`, `consented_at`, `consent_source`, `ip_hash`, `confirmed_at`, `unsubscribed_at`); `RESEND_AUDIENCE_ID` env var; double opt-in confirmation email sent via Resend; `GET /unsubscribe?token=` endpoint that sets `unsubscribed_at`; email capture form in `home.ts` wired to the endpoint.
-**Uses:** `resend@6.9.2` Audiences API (already installed); existing `express-rate-limit` factory; Drizzle migration for `marketing_subscribers`.
-**Avoids:** Resend/Beehiiv API key in browser bundle (proxy pattern keeps key server-side); email capture list stored in `users` table (different legal consent basis, must be separate table); missing GDPR consent checkbox; missing unsubscribe endpoint; double opt-in skipped.
-**Research flag:** No research phase needed. Resend Audiences API is in the already-installed SDK. Note: Architecture researcher referenced Beehiiv as email list provider; Stack researcher recommends Resend Audiences instead (no new package). Adopt Resend Audiences.
+**Verification:** Send a real email to `hello@torchsecret.com` from an external account and confirm it arrives in Gmail. Do not proceed to Phase 2 until this passes.
 
-### Phase 7: Email Onboarding Sequence
-**Rationale:** Depends on Stripe being live (Phase 4) because Email 3 (upgrade prompt) must link to a real Checkout flow. Depends on the marketing consent model from Phase 6. Using Loops.so eliminates the need for a custom cron+DB email scheduling system.
-**Delivers:** `loops@6.2.0` installed (the only new npm package in all of v5.0); `server/src/services/loops.service.ts` with `enrollInOnboarding()` and `triggerUpgradeSequence()` functions; Better Auth `hooks.after` on `/sign-up/email` to call `enrollInOnboarding()`; `user_signed_up` Loops event triggers 3-email sequence configured in Loops dashboard (Welcome immediately, Key Features day 3, Upgrade Prompt day 7); marketing consent flag checked before enrollment — only opted-in users receive emails 2-3; `LOOPS_API_KEY` env var; email copy lives in the Loops dashboard, not in code.
-**Uses:** `loops@6.2.0` — use v6.x `createContact()` single-object API (breaking change from v5); Better Auth lifecycle hooks pattern.
-**Avoids:** Sending upgrade prompt without GDPR marketing consent (Pitfall 6); custom cron+DB sequence tracking (eliminated by Loops); sending upgrade email to existing Pro users (check plan at enrollment time); more than 3 emails in first 10 days (drives unsubscribes per SaaS research).
-**Research flag:** No research phase needed. Loops.so SDK patterns are fully documented in STACK.md with complete code examples.
+### Phase 2: Resend Domain Verification (Outbound Transactional)
 
-### Phase 8: Feedback Form Links
-**Rationale:** Fully independent of all other phases. No dependencies. Listed last because it requires no blockers and can be appended to any other phase during implementation to avoid context-switching overhead.
-**Delivers:** Feedback link on confirmation page (`client/src/pages/confirmation.ts`) and reveal page (`client/src/pages/reveal.ts`); external form (Tally.so recommended — developer-friendly, no tracking cookies by default, free); opens in new tab; completely anonymous form with no required fields.
-**Research flag:** No research phase needed. 30-minute task.
+**Rationale:** Resend domain verification unlocks `noreply@torchsecret.com` as the From address for all transactional email. This is a prerequisite for updating the Infisical env var (Phase 5) and for Gmail "Send mail as" via Resend SMTP (Phase 6). Phases 2 and 3 are independent and can be worked in parallel.
+
+**Delivers:** `noreply@torchsecret.com` authorized as outbound sender. Resend dashboard shows "Verified" for all three record types (DKIM CNAME, SPF on `send.`, MX on `send.`).
+
+**Addresses:** Resend DKIM CNAME (`resend._domainkey`, DNS Only in Cloudflare), SPF and MX on `send.torchsecret.com` subdomain
+
+**Avoids:** Pitfall 2 (DKIM CNAME proxy — explicitly set DNS Only before clicking Verify); Pitfall 7 (full FQDN in Cloudflare record name — enter prefix `resend._domainkey` not the full FQDN)
+
+**Verification:** Resend dashboard shows green "Verified" for all three record types. Send a test email via Resend API from `noreply@torchsecret.com` and confirm delivery to an external inbox (not spam).
+
+### Phase 3: Loops.so Domain Verification (Outbound Onboarding)
+
+**Rationale:** Independent of Resend; can run in parallel with Phase 2. Loops.so domain verification unlocks `hello@torchsecret.com` as the onboarding sequence sender, ensuring onboarding emails appear authoritative rather than arriving from Amazon SES infrastructure.
+
+**Delivers:** `hello@torchsecret.com` authorized as Loops.so sender. DKIM headers in outgoing onboarding emails show `d=torchsecret.com`. Loops dashboard shows domain as verified.
+
+**Addresses:** Three Loops DKIM CNAME records (all DNS Only in Cloudflare), MX and SPF on `envelope.torchsecret.com` subdomain — does NOT conflict with apex SPF or `send.` subdomain
+
+**Avoids:** Pitfall 2 (DKIM proxy — all three Loops CNAME records must be DNS Only); Pitfall 7 (full FQDN in record names)
+
+**Note on gap:** Loops DKIM selector names are account-specific and not disclosed in public documentation — they must be read from the Loops dashboard → Settings → Domain during execution.
+
+**Verification:** Loops dashboard shows verified. Send a Loops test event and inspect email headers: `DKIM-Signature: d=torchsecret.com` must appear.
+
+### Phase 4: DMARC Monitoring Record
+
+**Rationale:** DMARC must be added after DKIM and SPF are verified for both senders (Phases 2+3). The `rua=` reporting address (`dmarc@torchsecret.com`) must already route to Gmail via Cloudflare Email Routing (Phase 1) before the DMARC record is published — otherwise reports are silently lost from day one and there is no visibility into authentication failures.
+
+**Delivers:** `_dmarc.torchsecret.com` TXT record with `v=DMARC1; p=none; rua=mailto:dmarc@torchsecret.com`. Daily XML aggregate reports begin arriving at `dmarc@torchsecret.com` → Gmail within 24-48 hours.
+
+**Avoids:** Pitfall 4 (premature `p=reject` — start at `p=none` for monitoring; the research recommends `p=quarantine` as the stable production posture for forwarding setups, not `p=reject`, because Cloudflare Email Routing's SRS envelope rewriting breaks SPF alignment under `p=reject`)
+
+**Verification:** After 24-48 hours, DMARC aggregate reports arrive at `dmarc@torchsecret.com` in Gmail. Reports show zero or low `dkim=fail` and `spf=fail` counts for Resend and Loops sends.
+
+### Phase 5: Infisical Env Var Update + Deploy
+
+**Rationale:** This is the one step that touches production. It must follow Phase 2 (Resend "Verified"). This single env var change switches all transactional email From addresses from `onboarding@resend.dev` to `noreply@torchsecret.com` — `notification.service.ts`, `subscribers.service.ts`, and Better Auth auth emails all read `env.RESEND_FROM_EMAIL` at runtime. No application code change required.
+
+**Delivers:** All outbound transactional email (secret-viewed notifications, subscriber confirmations, Better Auth password reset/verification) sends from `noreply@torchsecret.com`. Placeholder domain eliminated.
+
+**Addresses:** `RESEND_FROM_EMAIL` updated in Infisical (dev + staging + production environments); Render redeploys automatically via Infisical Secret Sync or manually triggered
+
+**Avoids:** Pitfall 3 (env var updated before domain verified — Phase 2 must show green "Verified" status in Resend dashboard before this step; test with a manual Resend API send first)
+
+**Note on gap:** Confirm whether the Better Auth email sender configuration in `server/src/app.ts` reads `env.RESEND_FROM_EMAIL` or hardcodes a separate from-address. If it reads the env var, this phase handles auth emails automatically. If not, a code fix is needed before deploy.
+
+**Verification:** Trigger a password reset on staging after deploy. Confirm the reset email arrives from `noreply@torchsecret.com` (not `onboarding@resend.dev`). Check Resend send logs for any 403 errors.
+
+### Phase 6: Gmail "Send Mail As" + Operator Aliases
+
+**Rationale:** Requires both Phase 1 (inbound routing live — to receive Gmail's verification email during alias setup) and Phase 2 (Resend domain verified — to have a working SMTP relay that signs with your DKIM key). Must use `smtp.resend.com` with a dedicated restricted API key, not `smtp.gmail.com` and not the production `RESEND_API_KEY`.
+
+**Delivers:** Operators can reply from `hello@`, `security@`, `privacy@`, `support@` with proper `d=torchsecret.com` DKIM signing and no "via gappssmtp.com" banner. Each alias added via Gmail → Settings → Accounts and Import → Send mail as, using Resend SMTP credentials.
+
+**Avoids:** Pitfall 5 (using `smtp.gmail.com` produces "via" banner and DKIM misalignment — use `smtp.resend.com` port 465, user=`resend`); security mistake of reusing production `RESEND_API_KEY` — create a dedicated restricted send-only key in Resend for Gmail SMTP use
+
+**Verification:** Send a test reply from each alias. Inspect full email headers: `Signed-by: torchsecret.com` must appear; `via gappssmtp.com` must NOT appear.
+
+### Phase 7: Documentation Updates (SECURITY.md, Privacy Policy, security.txt)
+
+**Rationale:** Two are legal/trust requirements that must be live before launch. `security@torchsecret.com` in SECURITY.md is required for responsible disclosure. `privacy@torchsecret.com` in the Privacy Policy is required for GDPR compliance. `security.txt` is a 5-minute Express static route with outsized trust signal value for a ZK security product. These documentation changes are code-only (no DNS) and can be staged and committed independently of the DNS phases.
+
+**Delivers:** SECURITY.md lists `security@torchsecret.com` as the vulnerability report contact. Privacy Policy page (`client/src/pages/privacy.ts`) lists `privacy@torchsecret.com` for data subject requests. `/.well-known/security.txt` served from Express with `Contact: mailto:security@torchsecret.com` and a future `Expires:` date field (RFC 9116 required fields).
+
+**Addresses:** RFC 2142 §4 (`security@` for security-focused products), RFC 9116 (`security.txt`), GDPR Articles 13/14 (`privacy@` listed in privacy policy)
+
+**Verification:** `curl https://torchsecret.com/.well-known/security.txt` returns valid security.txt with `Contact:` and `Expires:` fields. Privacy Policy page displays `privacy@torchsecret.com` as a clickable mailto link.
 
 ### Phase Ordering Rationale
 
-- **Rebrand must be first:** Every downstream file touch should use the final brand name. Rebrand last means editing files twice across every subsequent phase. Broken DMARC/SPF from placeholder email sender domain is a silent failure mode.
-- **Homepage split before pricing:** The pricing page CTA links to `/create`. If `/create` does not exist, the link is broken during development. The `max-w-2xl` refactor must precede any full-width marketing page.
-- **Pricing before Stripe:** Stripe Checkout `cancel_url` and the success redirect point to `/pricing`. The page must exist before the billing flow is wired.
-- **Stripe before email onboarding Email 3:** The upgrade prompt email must link to a live Checkout flow. Do not send an upgrade email if there is no checkout to convert into.
-- **SEO pages are independent:** They can be built in parallel with billing phases (3-4) after the rebrand. Listed as Phase 5 for document clarity but can overlap with Phases 3-4 if teams are available.
-- **Email capture (Phase 6) before email onboarding (Phase 7):** The GDPR consent model established in Phase 6 informs the marketing consent flag checked in Phase 7. The checkbox on the registration form is part of Phase 6's consent design.
+- **Inbound before outbound aliases:** Cloudflare Email Routing must be first because Gmail "Send mail as" setup requires receiving Gmail's verification email at the custom address. This is a hard prerequisite with no workaround.
+- **Verification before env var update:** Resend domain verification (Phase 2) must show green status in the Resend dashboard before the Infisical env var (Phase 5) is updated. Reversing this order causes silent 403 failures on all transactional email in production.
+- **Phases 2 and 3 are parallelizable:** Resend and Loops.so domain verification are fully independent. Both provider dashboards can be worked concurrently, cutting total clock time.
+- **DKIM/SPF before DMARC:** DMARC enforcement against misconfigured DKIM/SPF causes legitimate emails to be rejected. Phase 4 is always last in the DNS sequence. The `rua=` address (Phase 1) must be live before the DMARC record is published.
+- **Documentation (Phase 7) is code-only:** Can be committed and staged at any point but should be deployed before launch. Not blocked by DNS phases.
 
 ### Research Flags
 
-Phases needing deeper research during planning:
-- None. All v5.0 patterns are fully researched and documented with implementation-ready code examples in the research files.
+Phases with well-documented patterns — no additional research needed:
+- **All DNS phases:** Fully documented in official Cloudflare, Resend, and Loops.so documentation. The research files cover every step with exact DNS record structures, credential formats, proxy settings, and verification procedures.
+- **Phase 5 (env var update):** One Infisical env var change. No research needed.
+- **Phase 7 (documentation):** RFC 9116 security.txt format is simple (two required fields). Privacy Policy and SECURITY.md are text edits.
 
-Phases with well-documented patterns (research phase not needed):
-- **Phase 1 (Rebrand):** String replacement work with grep-based audit. No patterns to research.
-- **Phase 2 (Marketing Homepage):** Existing SPA router pattern. Frontend design skill required per CLAUDE.md.
-- **Phase 3 (Pricing Page):** Existing SPA router pattern plus JSON-LD utility (simple DOM append).
-- **Phase 4 (Stripe Billing):** Official Stripe docs confirm all patterns. STACK.md has complete code examples. Architecture conflict resolved to manual webhook handler.
-- **Phase 5 (SEO Pages):** Architecture conflict resolved — Express SSR. No research needed; pattern is well-understood.
-- **Phase 6 (Email Capture):** Resend Audiences API is documented. GDPR consent model documented in PITFALLS.md.
-- **Phase 7 (Email Onboarding):** Loops.so SDK fully documented in STACK.md with complete service file example.
-- **Phase 8 (Feedback Links):** No research needed. External link to Tally.so form.
+Execution-time discoveries (not research gaps):
+- **Phase 2 (Resend SPF location):** The exact DNS records displayed in the Resend dashboard are account-specific. Research confirms Resend uses `send.` subdomain for SPF (not apex), but the TXT values must be copied from the Resend dashboard during execution.
+- **Phase 3 (Loops DKIM selectors):** Loops DKIM selector names are not publicly disclosed — must be read from the Loops dashboard → Settings → Domain. The research confirms 3 CNAME records on `envelope.` subdomain but not the selector prefixes.
+- **Phase 4 (DMARC RUA address):** Either `dmarc@torchsecret.com` (via Cloudflare routing rule from Phase 1) or an external DMARC reporting service (Postmark free tier, dmarcian) is valid. Operator choice during execution.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All package versions verified via npm registry. Integration patterns verified against official docs. Key conflict resolved: raw `stripe` SDK recommended over `@better-auth/stripe` billing webhooks due to 4 confirmed open bugs. `loops@6.2.0` v6.x API breaking change documented. `@stripe/stripe-js` confirmed unnecessary for Hosted Checkout redirect mode. |
-| Features | HIGH | Stripe billing and schema markup guidance from official docs (HIGH). Pricing page UX research from multiple industry sources that agree on key patterns (MEDIUM, treated as HIGH consensus). Competitor analysis from observed live products (MEDIUM). Feature dependency graph is explicit and non-controversial. |
-| Architecture | HIGH for Stripe raw-body pattern, SPA homepage/pricing pattern, per-route JSON-LD injection. MEDIUM for SEO page rendering decision (conflict resolved). | Conflict resolved: Express SSR wins over SPA routes for SEO content pages. Two of three research streams (Stack, Pitfalls) independently recommended SSR; Architecture researcher recommended SPA routes for simplicity. SSR adopted because AI crawler blindness to JS is documented and not debatable, Googlebot two-wave delay is confirmed by official Google docs, and Express SSR complexity is low in this codebase. |
-| Pitfalls | HIGH for Stripe webhook ordering, subscription status staleness, JS-injected JSON-LD AI crawler invisibility, GDPR email classification. MEDIUM for programmatic SEO thin content risk. | GDPR transactional/marketing boundary is well-established law. Stripe webhook ordering is a deterministic technical failure mode. AI crawler JS blindness is confirmed by official Google documentation and corroborated by Search Engine Journal. Thin content risk is well-documented by Semrush and Google's own quality guidelines. |
+| Stack | HIGH | v4.0 stack already shipped and production-validated. v5.1 requires zero new dependencies. All patterns reuse existing code. |
+| Features | HIGH | RFC 2142, RFC 9116, and GDPR Articles 13/14 are primary sources with no ambiguity. Anti-features (Google Workspace, self-hosted MX, `abuse@`, `postmaster@`) definitively ruled out with cited rationale. |
+| Architecture | HIGH | Cloudflare, Resend, and Loops.so official docs confirmed DNS record types, DKIM selector names, SPF subdomain architecture (`send.`, `envelope.`), SMTP credentials, and proxy requirements. One MEDIUM residual: exact Loops DKIM selector names are account-specific and visible only in the dashboard. |
+| Pitfalls | HIGH | 7 critical pitfalls documented with official source citations, recovery strategies, and phase-to-pitfall mapping. Hard dependency chain validated against all three providers' documentation. Ordering requirements are deterministic and non-negotiable. |
 
-**Overall confidence:** HIGH
+**Overall confidence: HIGH**
 
 ### Gaps to Address
 
-- **`@better-auth/stripe` bug status:** Issues #2440, #4957, #5976, #4801 were open as of Feb 2026. Before Phase 4 begins, verify whether any have been resolved in a newer `better-auth` release. If all four are resolved, the plugin's billing webhook path may be viable and would simplify the integration. If even one remains open, use the raw Stripe SDK approach.
+- **Loops DKIM selector names:** Must be read from Loops dashboard during execution. Research confirms the structure (3 CNAME records, all DNS Only) but selector prefixes are account-specific and not publicly documented.
 
-- **Resend Audiences double opt-in pattern:** Resend's Audiences API handles contact storage, but the double opt-in confirmation email needs to be sent as a standard transactional email via `resend.emails.send()`, not through the Audiences API itself. Verify the exact flow during Phase 6 implementation.
+- **Resend SPF record location (root `@` vs `send.` subdomain):** Research indicates Resend places its SPF on the `send.` subdomain (does not touch the root `@`). Confirm this in the Resend dashboard during Phase 2 — if Resend requests a root-level `include:amazonses.com`, it must be merged into the single `@` TXT record created by Cloudflare Email Routing. Architecture research notes: "Check whether Resend's dashboard adds `include:amazonses.com` to the root `@` or to a `send.*` subdomain."
 
-- **Express SSR and CSP nonce for SEO pages:** The `__CSP_NONCE__` replacement pattern currently exists only in the SPA catch-all handler. SSR route handlers for SEO pages need the same nonce injection applied to their HTML templates. Verify this is wired correctly during Phase 5 implementation.
+- **Better Auth email sender configuration:** Confirm in `server/src/app.ts` whether the Better Auth email sender reads `env.RESEND_FROM_EMAIL` or uses a hardcoded from-address. If it reads the env var, Phase 5 handles auth emails automatically. If hardcoded, a code fix is needed before deploy.
 
-- **Loops.so free tier limit:** Loops is free up to 2,000 contacts. Unlikely to be an issue at launch, but should be checked if email list grows rapidly before Phase 7 ships.
+- **Domain reputation warmup:** New `@torchsecret.com` sender domain has zero reputation on launch day. Resend recommends a 6-week send-volume ramp. At current Torch Secret send volumes (hundreds, not thousands, of emails), impact is low but expect 1-2 weeks of elevated spam classification on the new From address. Monitor Resend delivery dashboard for bounce/complaint spikes in the first week.
 
-- **NOINDEX_PREFIXES audit for SEO routes:** After Phase 5 ships, verify that `/vs/`, `/alternatives/`, and `/use/` are not accidentally matched by any prefix in `NOINDEX_PREFIXES` in `app.ts`. Run `curl -I https://torchsecret.com/vs/onetimesecret | grep X-Robots` in staging before deploying.
+- **`noreply@` inbound handling:** Research notes a potential UX issue where users who reply to transactional emails (secret-viewed notifications) get a hard bounce from `noreply@torchsecret.com`. The post-launch mitigation is adding `Reply-To: support@torchsecret.com` to those sends (3 lines of code). The catch-all Cloudflare rule also optionally accepts and discards mail to `noreply@` without hard-bouncing. Decide which approach before launch.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Stripe Webhooks documentation](https://docs.stripe.com/webhooks) — raw body requirement, `constructEvent` pattern
-- [Stripe Checkout documentation](https://docs.stripe.com/payments/checkout) — hosted Checkout flow, no client-side Stripe.js required, `redirectToCheckout` deprecated
-- [Stripe Subscription Webhooks](https://docs.stripe.com/billing/subscriptions/webhooks) — event types, timing, idempotency
-- [Better Auth documentation](https://www.better-auth.com/docs) — Express 5 integration, Drizzle adapter, lifecycle hooks, Stripe plugin
-- [Loops.so JavaScript SDK](https://loops.so/docs/sdks/javascript) — v6.x API patterns, v6.0 breaking change for `createContact()`
-- [Resend documentation + Audiences API](https://resend.com/docs/dashboard/audiences/contacts) — `contacts.create()` with `audienceId`
-- [Google Search Central: JavaScript SEO Basics](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics) — two-wave indexing, JS rendering latency on new domains
-- [Google Search Central: Structured Data with JavaScript](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript) — JSON-LD JS injection timing requirements
-- [Google Search Central: FAQPage structured data](https://developers.google.com/search/docs/appearance/structured-data/faqpage) — FAQPage schema requirements, must match visible page content
-- [MDN: Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) — `type="application/ld+json"` is a data block, not subject to `script-src`
-- [GDPR Email Compliance — Omnisend](https://www.omnisend.com/blog/gdpr-video-gdpr-ready-email-marketing-automation-consent/) — transactional vs. marketing classification, consent record requirements, double opt-in
-- npm registry: `better-auth@1.4.18`, `stripe@20.3.1`, `resend@6.9.2`, `loops@6.2.0`, `posthog-js@1.351.1`, `posthog-node@5.24.17` — versions verified
+
+- RFC 2142 — Mailbox Names for Common Services — defines `security@`, `abuse@`, `postmaster@` requirements and which RFC sections apply to SaaS vs. ISPs
+- RFC 9116 — security.txt File Format — required fields (`Contact:`, `Expires:`), optional fields, canonical URL `/.well-known/security.txt`
+- RFC 7208 — Sender Policy Framework — one SPF TXT record per FQDN rule; `PermError` on multiple records
+- [Cloudflare Email Routing docs](https://developers.cloudflare.com/email-routing/) — MX exclusivity requirement, SPF merge requirement, SRS envelope rewriting during forwarding, MX deletion behavior when enabling
+- [Cloudflare Email Routing SPF troubleshooting](https://developers.cloudflare.com/email-routing/troubleshooting/email-routing-spf-records/) — multiple SPF records forbidden; merged record pattern
+- [Resend Cloudflare knowledge base](https://resend.com/docs/knowledge-base/cloudflare) — DKIM selector `resend._domainkey` confirmed; DNS Only requirement; record name truncation (no FQDN in Cloudflare name field)
+- [Resend Send with SMTP docs](https://resend.com/docs/send-with-smtp) — `smtp.resend.com`, port 465/587, username `resend`, password = API key
+- [Resend Domain warming guide](https://resend.com/blog/how-to-warm-up-a-new-domain) — six-week ramp recommendation; cold domain spam risk
+- [Loops.so sending domain docs](https://loops.so/docs/sending-domain) — SPF at `envelope.` subdomain; 3 DKIM CNAMEs; DNS Only requirement for Cloudflare
+- [CISA security.txt recommendation](https://www.cisa.gov/news-events/news/securitytxt-simple-file-big-value) — US government endorsement for all organizations
+- GDPR Articles 13/14 — data subject rights contact address requirement; regulators check for functional `privacy@` address
 
 ### Secondary (MEDIUM confidence)
-- Better Auth Stripe plugin open issues: [#2440](https://github.com/better-auth/better-auth/issues/2440), [#4957](https://github.com/better-auth/better-auth/issues/4957), [#5976](https://github.com/better-auth/better-auth/issues/5976), [#4801](https://github.com/better-auth/better-auth/issues/4801) — bugs confirmed open as of Feb 2026; status may change
-- [Search Engine Journal: AI Search Optimization](https://www.searchenginejournal.com/ai-search-optimization-make-your-structured-data-accessible/537843/) — AI crawlers cannot execute JavaScript; confirmed independently by Pitfalls research
-- [Semrush: Thin Content](https://www.semrush.com/blog/thin-content/) — what constitutes thin content, post-core-update de-indexing patterns
-- [TermsFeed: GDPR Transactional vs Marketing Email](https://www.termsfeed.com/blog/gdpr-transactional-emails/) — legal classification guidance for onboarding email types
-- Pricing page UX research (InfluenceFlow, Userpilot, Artisan Strategies) — highlighted tier conversion +22%, annual billing uplift 25-35%, FAQ impact 11.8% — multiple sources agree
-- Competitor research: OneTimeSecret pricing page (~$35/month Identity Plus), PwPush documentation, Privnote site — verify specific claims against live products before authoring comparison pages
+
+- [Cloudflare community: Email Routing and SPF](https://community.cloudflare.com/t/email-routing-and-spf/341490) — merged SPF record pattern confirmed; Cloudflare auto-adds SPF for Email Routing
+- [Cloudflare community: DMARC Reject + Email Routing](https://community.cloudflare.com/t/dmarc-reject-policy-cloudflare-email-routing/753410) — `p=reject` conflicts with Cloudflare Email Routing forwarding; `p=quarantine` is the correct posture
+- [Gmail "Send mail as" with Cloudflare + SMTP gist](https://gist.github.com/irazasyed/a5ca450f1b1b8a01e092b74866e9b2f1) — Resend SMTP vs gmail.com SMTP DKIM behavior; "via" banner cause and prevention
+- [dmarc.wiki/resend](https://dmarc.wiki/resend) — Resend SPF architecture on `send.` subdomain confirmed
+- [Google DMARC rollout guidance](https://support.google.com/a/answer/10032473) — `p=none` → `p=quarantine` (with pct ramp) → `p=reject` timeline; Gmail/Yahoo 2024 bulk sender requirements
+- [Cloudflare community: Destination address suppression list](https://community.cloudflare.com/t/email-routing-destination-address-verification-emails-not-being-delivered/380285) — suppression list root cause; Cloudflare support can remove addresses
+- [GMass: Gmail "Send mail as" deliverability](https://www.gmass.co/blog/gmail-send-mail-as-setting-affects-email-deliverability/) — "via" banner DKIM behavior when using gmail.com SMTP
 
 ---
-*Research completed: 2026-02-22*
+
+*Research completed: 2026-03-03*
 *Ready for roadmap: yes*

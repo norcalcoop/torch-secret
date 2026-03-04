@@ -779,3 +779,406 @@ VITE_POSTHOG_HOST=
 ---
 *Stack research for: Torch Secret v5.0 — Product Launch Checklist (Stripe billing, email capture, onboarding sequences, SEO content pages)*
 *Researched: 2026-02-22*
+
+---
+---
+
+# v5.1 Email Infrastructure — DNS Records and Service Configurations
+
+**Domain:** Business email infrastructure for torchsecret.com
+**Researched:** 2026-03-03
+**Confidence:** HIGH for record types and format structures. MEDIUM for exact Resend DKIM record name (dashboard-generated, format confirmed via multiple community sources). LOW for exact Cloudflare MX hostnames (auto-assigned, vary by domain).
+
+**Scope:** No new npm packages. This section documents DNS record configurations, service setup procedures, and configuration values for Cloudflare Email Routing (inbound), Resend domain verification (outbound), Loops.so domain authentication (separate outbound), and Gmail "Send mail as" via Resend SMTP.
+
+---
+
+## Overview: Four Systems, One Domain
+
+All four systems operate on `torchsecret.com`. The critical concern is that they do NOT conflict with each other at the DNS level. Here is how they coexist:
+
+| System | DNS Scope | Record Types | Conflict Risk |
+|--------|-----------|--------------|---------------|
+| Cloudflare Email Routing (inbound) | Root domain (`torchsecret.com`) | MX + SPF TXT | SPF must be a single merged record |
+| Resend domain verification (outbound) | `send` subdomain + root DKIM | MX on `send`, SPF TXT on `send`, DKIM TXT on root | No conflict — uses separate subdomain for SPF/MX |
+| Loops.so domain authentication (outbound) | `envelope` subdomain + separate DKIM CNAMEs | SPF TXT on `envelope`, DKIM CNAMEs on root, MX on subdomain | No conflict — uses separate subdomain for SPF/MX |
+| Gmail "Send mail as" | Uses Resend SMTP — no new DNS records | None | No DNS required |
+
+**The key insight:** Resend and Loops both use subdomains (`send.torchsecret.com`, `envelope.torchsecret.com`) for their SPF and MX records, which means the root domain SPF record is owned entirely by Cloudflare Email Routing. DKIM records do live on the root domain but use unique selectors (different names) so they coexist without conflict.
+
+---
+
+## 1. Cloudflare Email Routing (Inbound)
+
+**Purpose:** Receive email at 7 business addresses (hello, contact, admin, info, support, security, privacy) and forward to torch-secret@gmail.com.
+
+**Confidence:** HIGH — MX hostnames confirmed via Cloudflare postmaster docs and community. SPF value confirmed via Cloudflare community forums.
+
+### How Setup Works
+
+Cloudflare Email Routing is configured entirely through the Cloudflare dashboard (Websites → Email → Email Routing). When you enable it, Cloudflare automatically writes the MX and SPF records to your zone. You do not manually enter these records.
+
+**Dashboard path:** Cloudflare Dashboard → torchsecret.com → Email → Email Routing → Enable Email Routing
+
+### DNS Records Added Automatically by Cloudflare
+
+When Email Routing is enabled, Cloudflare adds these records automatically:
+
+**MX Records (three, for redundancy):**
+
+| Type | Name | Value | Priority |
+|------|------|-------|----------|
+| MX | `torchsecret.com` | `route1.mx.cloudflare.net` | 52 |
+| MX | `torchsecret.com` | `route2.mx.cloudflare.net` | 98 |
+| MX | `torchsecret.com` | `route3.mx.cloudflare.net` | 91 |
+
+Note: The Cloudflare postmaster docs show `amir.mx.cloudflare.net`, `linda.mx.cloudflare.net`, `isaac.mx.cloudflare.net` with priorities 13, 24, 86 as the canonical example. Community reports show `route1/route2/route3.mx.cloudflare.net` with priorities 52, 98, 91. Both naming patterns are Cloudflare Email Routing infrastructure. The actual hostnames assigned to your domain are determined at activation — do not enter them manually. Trust what Cloudflare writes automatically.
+
+**SPF TXT Record:**
+
+| Type | Name | Value |
+|------|------|-------|
+| TXT | `torchsecret.com` | `v=spf1 include:_spf.mx.cloudflare.net ~all` |
+
+This is the exact SPF value Cloudflare Email Routing adds. It resolves to Cloudflare's inbound relay IP ranges (`104.30.0.0/20`).
+
+**DKIM:** Cloudflare Email Routing adds its own DKIM for forwarded mail. You can query it at `cf2024-1._domainkey.torchsecret.com` — Cloudflare manages this automatically, no action required.
+
+### Routing Rules Configuration
+
+After enabling Email Routing, create individual rules for each address:
+
+**Dashboard path:** Email Routing → Routing Rules → Create address
+
+| Custom Address | Action | Destination |
+|---------------|--------|-------------|
+| hello@torchsecret.com | Send to | torch-secret@gmail.com |
+| contact@torchsecret.com | Send to | torch-secret@gmail.com |
+| admin@torchsecret.com | Send to | torch-secret@gmail.com |
+| info@torchsecret.com | Send to | torch-secret@gmail.com |
+| support@torchsecret.com | Send to | torch-secret@gmail.com |
+| security@torchsecret.com | Send to | torch-secret@gmail.com |
+| privacy@torchsecret.com | Send to | torch-secret@gmail.com |
+
+Alternatively: Enable **Catch-all** rule (Email Routing → Routes → Catch-all address → Send to torch-secret@gmail.com). This forwards all addresses including future ones without creating 7 individual rules. The catch-all is the recommended approach for this use case since all 7 addresses share the same destination.
+
+Cloudflare requires verifying torch-secret@gmail.com as a destination before rules can be saved. A verification email will be sent to that Gmail address.
+
+### Important Constraint
+
+Cloudflare Email Routing locks the MX records once enabled ("DNS records locked"). You cannot have other MX records on the root domain while Email Routing is active. This is why Resend and Loops must use subdomain MX records (see below).
+
+---
+
+## 2. Resend Domain Verification (Outbound)
+
+**Purpose:** Authorize Resend to send email as `noreply@torchsecret.com`. Required before changing `RESEND_FROM_EMAIL` in Infisical.
+
+**Confidence:** HIGH for record structure and subdomain approach. MEDIUM for exact DKIM record name (the name `resend._domainkey` is confirmed across multiple community sources but is generated by Resend's dashboard — verify in dashboard before entering).
+
+### Architecture: Subdomain-Based
+
+Resend uses a `send.torchsecret.com` subdomain for its SPF and MX (bounce handling) records. This means these records do NOT conflict with Cloudflare Email Routing's root-domain MX or SPF records.
+
+### DNS Records to Add Manually
+
+**Dashboard path to get records:** Resend Dashboard → Domains → Add Domain → enter `torchsecret.com` → copy the displayed records
+
+All records must be added in Cloudflare DNS with proxy status set to **DNS Only** (orange cloud OFF).
+
+**MX Record (bounce handling — on subdomain):**
+
+| Type | Name | Value | Priority |
+|------|------|-------|----------|
+| MX | `send` | `feedback-smtp.us-east-1.amazonses.com` | 10 |
+
+This is on the `send` subdomain. In Cloudflare, enter `send` in the Name field (Cloudflare appends `.torchsecret.com` automatically). The exact MX value is provided by Resend's dashboard — the above value is Resend's Amazon SES infrastructure.
+
+**SPF TXT Record (on subdomain):**
+
+| Type | Name | Value |
+|------|------|-------|
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+
+This is on `send.torchsecret.com`. Resend sends mail through Amazon SES infrastructure. This does NOT conflict with the root domain SPF record owned by Cloudflare Email Routing.
+
+**DKIM TXT Record (on root domain, unique selector):**
+
+| Type | Name | Value |
+|------|------|-------|
+| TXT | `resend._domainkey` | [long public key provided by Resend dashboard] |
+
+The name `resend._domainkey` creates the full hostname `resend._domainkey.torchsecret.com`. The value is a long RSA public key in the format `v=DKIM1; k=rsa; p=MIGf...` — copy it exactly from the Resend dashboard. Do not modify the key value.
+
+**CNAME Record (routing/click-tracking — optional):**
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `resend` | `resend.com` |
+
+This is for Resend's click-tracking and routing infrastructure. Optional but recommended.
+
+### Verification
+
+After adding all records in Cloudflare, return to Resend Dashboard → Domains and click **Verify DNS Records**. DNS propagation can take up to 24 hours but typically completes within minutes when using Cloudflare's authoritative DNS.
+
+### After Verification: Update Infisical
+
+Once the domain shows "Verified" in Resend:
+
+1. Log into Infisical
+2. Update `RESEND_FROM_EMAIL` to `noreply@torchsecret.com` in the production environment
+3. Update the same variable in staging if needed
+4. The app's `from` field in `resend.emails.send()` calls will automatically use the new value
+
+---
+
+## 3. Loops.so Domain Authentication (Outbound)
+
+**Purpose:** Authenticate `hello@torchsecret.com` as the sender for Loops.so onboarding emails.
+
+**Confidence:** HIGH for SPF subdomain approach (confirmed via Loops docs). MEDIUM for exact DKIM CNAME selector names (account-generated — must retrieve from Loops dashboard). HIGH for record type (CNAME, not TXT, with proxy disabled).
+
+### Architecture: Subdomain-Based SPF, Separate DKIM Selectors
+
+Loops.so uses an `envelope.torchsecret.com` subdomain for its SPF record (the SMTP envelope/return-path), which means it does NOT conflict with the root domain SPF record owned by Cloudflare Email Routing, or with Resend's `send.torchsecret.com` SPF record.
+
+Loops.so's DKIM records use their own unique selector names (different from `resend._domainkey` and `cf2024-1._domainkey`), so all three DKIM records coexist on the root domain without conflict.
+
+### DNS Records to Add Manually
+
+**Dashboard path to get records:** Loops.so Dashboard → Settings → Domain → View records
+
+All CNAME records must have proxy status set to **DNS Only** (orange cloud OFF). Cloudflare proxy breaks DKIM CNAME lookups.
+
+**SPF TXT Record (on envelope subdomain):**
+
+| Type | Name | Value |
+|------|------|-------|
+| TXT | `envelope` | `v=spf1 include:amazonses.com ~all` |
+
+In Cloudflare, enter `envelope` in the Name field. Loops.so sends through Amazon SES, same as Resend, but uses a different subdomain so the two SPF records do not interact.
+
+**DKIM CNAME Records (three records, all on root domain):**
+
+Loops.so provides three DKIM CNAME records. The exact selector names are account-generated and must be retrieved from the Loops dashboard. The format is:
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `[selector1]` | `[loops-provided-cname-target]` |
+| CNAME | `[selector2]` | `[loops-provided-cname-target]` |
+| CNAME | `[selector3]` | `[loops-provided-cname-target]` |
+
+Each selector name is unique (e.g., it might be something like `loops1._domainkey`, `loops2._domainkey`, `loops3._domainkey`, but the actual names come from the dashboard). Copy them exactly from the Loops dashboard. These will be distinct from `resend._domainkey` and will not conflict.
+
+**MX Record (on a Loops subdomain):**
+
+Loops.so may provide an MX record on a subdomain for bounce handling. Retrieve the exact value from the Loops dashboard. If present, it follows the same pattern as Resend — on a subdomain, not the root domain.
+
+### Verification
+
+After adding all records, return to Loops Dashboard → Settings → Domain → click **Verify Records**. Allow up to 1 hour for DNS propagation. Loops displays a green checkmark next to each verified record.
+
+### Why Three DKIM Records
+
+Loops.so uses three DKIM keys (one per selector) to support DKIM key rotation. Having multiple DKIM selectors for the same service is standard practice for high-deliverability email providers — it allows rotating keys without disrupting email flow.
+
+---
+
+## 4. Multiple DKIM Records: Coexistence Confirmed
+
+This section addresses the potential concern about having DKIM records from three different systems (Cloudflare, Resend, Loops) on `torchsecret.com`.
+
+**Multiple DKIM records are explicitly permitted by the DKIM standard (RFC 6376).** Each DKIM record lives at `{selector}._domainkey.torchsecret.com`. As long as each service uses a different selector name, there is no conflict.
+
+| System | DKIM Selector | Full DNS Name |
+|--------|--------------|---------------|
+| Cloudflare Email Routing | `cf2024-1` | `cf2024-1._domainkey.torchsecret.com` |
+| Resend | `resend` | `resend._domainkey.torchsecret.com` |
+| Loops.so | [3 account-generated selectors] | e.g., `loops1._domainkey.torchsecret.com` |
+
+**The only way DKIM records conflict** is if two records use the **same** selector name. That does not apply here — each service uses its own selector namespace.
+
+---
+
+## 5. SPF Record Strategy: No Merging Required
+
+A domain can only have **one** SPF TXT record at any given hostname. Multiple SPF records at the same hostname cause SPF failures.
+
+In this setup, there is no merging problem because each service uses a different hostname:
+
+| Hostname | SPF Record | Owner |
+|----------|------------|-------|
+| `torchsecret.com` (root) | `v=spf1 include:_spf.mx.cloudflare.net ~all` | Cloudflare Email Routing |
+| `send.torchsecret.com` | `v=spf1 include:amazonses.com ~all` | Resend |
+| `envelope.torchsecret.com` | `v=spf1 include:amazonses.com ~all` | Loops.so |
+
+Three different hostnames, three separate SPF records. No conflict. No merging needed.
+
+**Important:** Do NOT add `include:amazonses.com` or `include:_spf.resend.com` to the root domain SPF record. Resend and Loops authenticate via their own subdomains. Adding their includes to the root domain SPF would be redundant and could push the root SPF toward the 10-DNS-lookup limit.
+
+---
+
+## 6. Gmail "Send Mail As" via Resend SMTP
+
+**Purpose:** Allow torch-secret@gmail.com to send email appearing to come from any of the 7 business addresses (hello@, contact@, admin@, info@, support@, security@, privacy@torchsecret.com).
+
+**Confidence:** HIGH for Resend SMTP credentials. HIGH for Gmail "Send mail as" configuration steps. No new DNS records required.
+
+### Resend SMTP Credentials
+
+| Field | Value |
+|-------|-------|
+| SMTP Host | `smtp.resend.com` |
+| Port | `465` (SSL/TLS, recommended) or `587` (STARTTLS) |
+| Username | `resend` |
+| Password | Your Resend API key (starts with `re_`) |
+| Encryption | SSL/TLS on port 465, or STARTTLS on port 587 |
+
+The username is always the literal string `resend` — not your email address. The API key is the password.
+
+**Port choice:** Use 465 (SSL). Gmail's "Send mail as" supports both 465 and 587. Port 465 is recommended by Resend and avoids STARTTLS negotiation.
+
+**API key scope:** The Resend API key used here must have permission to send emails from the verified `torchsecret.com` domain. Use an API key created for the torchsecret.com domain in the Resend dashboard, or use the full-access key.
+
+### Gmail Configuration Steps (per address)
+
+Repeat this process for each of the 7 addresses:
+
+1. In Gmail, go to **Settings (gear icon)** → **See all settings** → **Accounts and Import**
+2. Under "Send mail as", click **Add another email address**
+3. Fill in:
+   - **Name**: `Torch Secret` (or the appropriate role, e.g. "Torch Secret Support")
+   - **Email address**: `hello@torchsecret.com` (or whichever address)
+   - Uncheck "Treat as an alias" (so it shows as a distinct from address, not an alias)
+4. Click **Next Step**
+5. Fill in SMTP settings:
+   - **SMTP Server**: `smtp.resend.com`
+   - **Port**: `465`
+   - **Username**: `resend`
+   - **Password**: [Resend API key]
+   - **Security**: SSL (for port 465)
+6. Click **Add Account**
+7. Gmail sends a verification email to `hello@torchsecret.com`
+8. Since Cloudflare Email Routing forwards `hello@torchsecret.com` → torch-secret@gmail.com, the verification email arrives in Gmail
+9. Click the verification link in the email (or copy the numeric code and paste it in the verification prompt)
+10. The address now appears in Gmail's "From" dropdown
+
+**One-time prerequisite:** Cloudflare Email Routing must be active and torch-secret@gmail.com verified as a destination before you can receive the Gmail verification email for each "Send mail as" address.
+
+### No New DNS Records Required
+
+Gmail "Send mail as" using Resend SMTP does not require any new DNS records. The sending authentication uses Resend's infrastructure and the DKIM/SPF records already added in Section 2.
+
+---
+
+## 7. Complete DNS Record Reference
+
+All records to add manually in Cloudflare DNS (after Cloudflare Email Routing is enabled and auto-adds its own records):
+
+### Resend Records (add manually)
+
+| Type | Name (in Cloudflare) | Value | Proxy |
+|------|----------------------|-------|-------|
+| MX | `send` | `feedback-smtp.us-east-1.amazonses.com` (priority 10) | DNS Only |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | DNS Only |
+| TXT | `resend._domainkey` | [copy from Resend dashboard — long RSA key] | DNS Only |
+| CNAME | `resend` | `resend.com` | DNS Only |
+
+### Loops.so Records (add manually)
+
+| Type | Name (in Cloudflare) | Value | Proxy |
+|------|----------------------|-------|-------|
+| TXT | `envelope` | `v=spf1 include:amazonses.com ~all` | DNS Only |
+| CNAME | [from Loops dashboard] | [from Loops dashboard] | DNS Only |
+| CNAME | [from Loops dashboard] | [from Loops dashboard] | DNS Only |
+| CNAME | [from Loops dashboard] | [from Loops dashboard] | DNS Only |
+| MX | [from Loops dashboard, if provided] | [from Loops dashboard] | DNS Only |
+
+### Cloudflare Email Routing Records (auto-added — do not enter manually)
+
+| Type | Name | Value | Notes |
+|------|------|-------|-------|
+| MX | `torchsecret.com` | `route1.mx.cloudflare.net` (priority ~52) | Auto-added |
+| MX | `torchsecret.com` | `route2.mx.cloudflare.net` (priority ~98) | Auto-added |
+| MX | `torchsecret.com` | `route3.mx.cloudflare.net` (priority ~91) | Auto-added |
+| TXT | `torchsecret.com` | `v=spf1 include:_spf.mx.cloudflare.net ~all` | Auto-added |
+| TXT | `cf2024-1._domainkey` | [Cloudflare-managed DKIM] | Auto-added |
+
+### DMARC Record (recommended addition — add manually)
+
+A DMARC record is not strictly required for sending but is strongly recommended for deliverability and to prevent spoofing. Add it after both Resend and Loops are verified:
+
+| Type | Name | Value |
+|------|------|-------|
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc@torchsecret.com` |
+
+Start with `p=none` (monitoring mode) to collect reports without rejecting mail. After reviewing reports for 1-2 weeks, tighten to `p=quarantine` then `p=reject`.
+
+**DMARC alignment note:** Resend supports only relaxed SPF alignment (`aspf=r`) because its SPF domain is a subdomain (`send.torchsecret.com`) while the From address is `@torchsecret.com`. DKIM alignment is strict (`adkim=s`). The default DMARC policy without explicit alignment flags uses relaxed for both, which works fine.
+
+---
+
+## 8. Setup Order
+
+Complete these steps in this order to avoid conflicts:
+
+1. **Enable Cloudflare Email Routing** — Cloudflare auto-adds MX and SPF records to root domain. Verify torch-secret@gmail.com as destination. Create catch-all rule.
+
+2. **Add Resend domain in Resend dashboard** — Add `torchsecret.com`, copy the 4 records (MX on `send`, SPF TXT on `send`, DKIM TXT on root, CNAME). Add to Cloudflare DNS. Click Verify in Resend dashboard.
+
+3. **Update Infisical** — Change `RESEND_FROM_EMAIL` to `noreply@torchsecret.com` in all environments.
+
+4. **Add Loops.so domain** — In Loops Settings → Domain, retrieve the DKIM CNAMEs and SPF records. Add to Cloudflare DNS with proxy OFF. Click Verify in Loops dashboard.
+
+5. **Configure Gmail "Send mail as"** — For each of the 7 addresses: Gmail Settings → Accounts and Import → Add another email address → use smtp.resend.com:465, username `resend`, password = Resend API key. Receive verification email via Cloudflare forwarding, click link.
+
+6. **Add DMARC record** — Add `_dmarc` TXT record with `p=none` monitoring policy.
+
+---
+
+## 9. What NOT to Set Up
+
+| Avoid | Why |
+|-------|-----|
+| Adding Resend or Loops MX records on the root domain | Cloudflare Email Routing owns root MX. Adding other MX records on `torchsecret.com` will break inbound routing or prevent Email Routing from enabling. |
+| Merging Resend/Loops SPF into root domain SPF record | Unnecessary — they use subdomains. Adding more `include:` directives to root SPF increases DNS lookup count toward the 10-lookup limit with no benefit. |
+| Enabling Cloudflare proxy (orange cloud) on DKIM CNAME records | Cloudflare's proxy intercepts CNAME lookups and returns Cloudflare IPs instead of the DKIM key target. This breaks DKIM authentication silently. Always set DKIM CNAMEs to DNS Only. |
+| Creating a separate SPF record for `torchsecret.com` alongside Cloudflare's | A domain can have only one SPF TXT record per hostname. Multiple SPF records at the same hostname cause SPF `permerror` and email authentication failures. |
+| Using Resend SMTP with port 25 for Gmail "Send mail as" | Gmail's SMTP relay for "Send mail as" blocks port 25 outbound. Use port 465 (SSL) or 587 (STARTTLS). |
+| Verifying root domain in Loops.so (instead of using the subdomain approach) | Would require adding Loops MX records to the root domain, conflicting with Cloudflare Email Routing. Use the subdomain SPF approach that Loops provides by default. |
+
+---
+
+## 10. New Environment Variables for v5.1
+
+```bash
+# Update in Infisical (all environments)
+RESEND_FROM_EMAIL=noreply@torchsecret.com   # was: onboarding@resend.dev
+
+# No new environment variables — Resend API key and Loops API key already configured
+```
+
+---
+
+## Sources
+
+- [Email Routing DNS Records — Cloudflare Postmaster docs](https://developers.cloudflare.com/email-routing/postmaster/) — MX hostnames (amir/linda/isaac pattern), SPF value `v=spf1 include:_spf.mx.cloudflare.net ~all` — HIGH confidence (official docs)
+- [Cloudflare Email Routing blog post — falkus.co](https://falkus.co/2023/05/cloudflare-email-routing) — route1/route2/route3 MX names with priorities 52/98/91 — MEDIUM confidence (community, third-party)
+- [Cloudflare Community: Email Routing and SPF](https://community.cloudflare.com/t/email-routing-and-spf/341490) — SPF value `v=spf1 include:_spf.mx.cloudflare.net ~all` confirmed by Cloudflare staff — HIGH confidence
+- [Cloudflare Email Routing Addresses](https://developers.cloudflare.com/email-routing/setup/email-routing-addresses/) — catch-all and individual routing rules — HIGH confidence (official docs)
+- [Resend Send with SMTP](https://resend.com/docs/send-with-smtp) — host `smtp.resend.com`, ports 25/465/587/2465/2587, username `resend`, password = API key — HIGH confidence (official docs)
+- [Resend Cloudflare knowledge base](https://resend.com/docs/knowledge-base/cloudflare) — Cloudflare-specific DNS record instructions, `send` subdomain for MX/SPF, `resend._domainkey` for DKIM TXT, `resend` CNAME → `resend.com` — HIGH confidence (official Resend docs)
+- [Resend Custom Return Path changelog](https://resend.com/changelog/custom-return-path) — confirms SPF/MX on `send` subdomain via Amazon SES — HIGH confidence (official)
+- [dmarc.wiki — Resend setup](https://dmarc.wiki/resend) — confirms SPF on `send` subdomain, DMARC alignment constraint (relaxed SPF only), DMARC template — MEDIUM confidence (third-party, verified against official)
+- [DEV.to — Cloudflare + Resend setup](https://dev.to/scofieldfree/how-to-create-free-business-email-in-10-minutes-complete-cloudflare-resend-setup-1ihn) — Confirms exact record names: `_resend` SPF, `resend._domainkey` DKIM, `resend` CNAME — MEDIUM confidence (community, verified against official docs)
+- [Loops.so sending domain docs](https://loops.so/docs/sending-domain) — SPF on `envelope` subdomain, DKIM as CNAME records (3 records), proxy must be disabled for CNAMEs — HIGH confidence (official docs)
+- [dmarcdkim.com — Loops.so setup](https://dmarcdkim.com/setup/loops-so-spf-dkim-dmarc-setup-domain-authentication-guide) — SPF hostname `envelope`, value `v=spf1 include:amazonses.com ~all`, DKIM as 3 CNAMEs — MEDIUM confidence (third-party)
+- [DMARCLY — Multiple DKIM records](https://dmarcly.com/blog/can-i-have-multiple-dkim-records-on-my-domain) — multiple DKIM records with different selectors are explicitly allowed — HIGH confidence (authoritative technical reference)
+- [Gmail Send mail as — support.google.com](https://support.google.com/mail/answer/22370) — Gmail "Add another email address" flow, SMTP fields, verification code — HIGH confidence (official Google docs)
+- [ImprovMX Gmail SMTP guide](https://improvmx.com/guides/gmail-smtp) — step-by-step Gmail "Send mail as" SMTP configuration pattern — MEDIUM confidence (community, patterns apply to any SMTP provider)
+- [Cloudflare community: SPF multiple lookups](https://community.cloudflare.com/t/spf-record-issue-too-many-lookups/666104) — 10-lookup SPF limit, merge strategy — HIGH confidence (Cloudflare staff responses)
+
+---
+*Stack research for: Torch Secret v5.1 — Business Email Infrastructure*
+*Researched: 2026-03-03*
