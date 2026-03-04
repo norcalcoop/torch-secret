@@ -121,7 +121,10 @@ See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase detai
   2. A real email sent from an external account to hello@torchsecret.com arrives in torch-secret@gmail.com
   3. A real email sent from an external account to security@torchsecret.com arrives in torch-secret@gmail.com
   4. Cloudflare Email Routing dashboard shows all 7 routing rules as Active (not Pending)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 46-01-PLAN.md — Enable Email Routing, verify destination, create 7 routing rules, configure Gmail spam filter
+- [ ] 46-02-PLAN.md — Verify DNS propagation and end-to-end email delivery
 
 ### Phase 47: Domain Verification + DMARC
 **Goal**: torchsecret.com is an authenticated sending domain in both Resend and Loops.so, and a DMARC monitoring record is published
