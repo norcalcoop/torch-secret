@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: completed
-stopped_at: Phase 49 context gathered
-last_updated: "2026-03-05T02:22:49.877Z"
+stopped_at: Completed 49-gmail-send-mail-as-01-PLAN.md
+last_updated: "2026-03-05T11:35:25.427Z"
 last_activity: "2026-03-05 — Phase 48 Plan 02 complete: production Infisical updated, Render redeployed, all three email types confirmed in production including Loops DKIM-aligned on torchsecret.com"
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
 ---
 
 # Session State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** v5.1 Email Infrastructure — Phase 48: Activate Custom Domain Sending
+**Current focus:** v5.1 Email Infrastructure — Phase 49: Gmail Send Mail As
 
 ## Current Position
 
-Phase: 48 of 52 (Activate Custom Domain Sending) — COMPLETE
-Plan: 02 of 2 — COMPLETE
-Status: Phase 48 complete — RESEND_FROM_EMAIL=noreply@torchsecret.com live in production; all three email types (subscriber confirmation, secret-viewed notification, Loops welcome) confirmed. RSND-02, RSND-03, LOOP-03 all satisfied.
-Last activity: 2026-03-05 — Phase 48 Plan 02 complete: production Infisical updated, Render redeployed, all three email types confirmed in production including Loops DKIM-aligned on torchsecret.com
+Phase: 49 of 52 (Gmail Send Mail As) — IN PROGRESS
+Plan: 01 of 2 — COMPLETE
+Status: Phase 49 Plan 01 complete — Resend "Gmail SMTP Relay" API key created (restricted to torchsecret.com) and all 7 @torchsecret.com aliases registered in Gmail Send mail as via smtp.resend.com:465. GMAI-01, GMAI-02 satisfied. 7 verification emails dispatched, awaiting Plan 02 confirmation.
+Last activity: 2026-03-05 — Phase 49 Plan 01 complete: dedicated Resend SMTP API key created, 7 Gmail aliases registered with smtp.resend.com relay
 
-Progress: [██████████] 100%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: [██████████] 100%
 | Phase 47-domain-verification-dmarc P02 | 130 | 2 tasks | 0 files |
 | Phase 48 P01 | 20 | 2 tasks | 0 files |
 | Phase 48-activate-custom-domain-sending P02 | 40 | 2 tasks | 0 files |
+| Phase 49-gmail-send-mail-as P01 | 15 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -107,12 +108,19 @@ Progress: [██████████] 100%
 - Production email verification confirmed in single session: subscriber confirmation flow triggers both Resend confirmation email and Loops welcome email as a side effect — efficient single-pass test of full email chain.
 - Loops DKIM alignment confirmed via Gmail "Show original" — Authentication-Results shows dkim=pass header.i=@torchsecret.com; no via loops.so or via amazonses.com relay indicator present. LOOP-03 complete.
 
+### Decisions Made (Phase 49, Plan 01)
+
+- smtp.resend.com:465 (implicit SSL) required — port 465 not 587 (STARTTLS); Gmail must select "SSL" not "TLS"; wrong mode causes silent "Failed to connect"
+- SMTP username is literal string "resend" for all aliases — not the email address, not the API key; Resend's fixed auth scheme
+- Single dedicated API key "Gmail SMTP Relay" scoped to torchsecret.com covers all 7 aliases — simpler credential management vs per-alias keys; domain restriction limits blast radius if key leaked
+- All 7 aliases added in single session before verifying any — batching avoids session re-auth; Gmail queues all 7 verification emails correctly
+
 ### Blockers/Concerns
 
-None — Phase 48 complete. All v5.1 requirements through Phase 48 satisfied (RSND-02, RSND-03, LOOP-03). Ready for Phase 49 (Gmail Send Mail As).
+None — Phase 49 Plan 01 complete. GMAI-01, GMAI-02 satisfied. Plan 02 can proceed: click 7 verification links in torch.secrets@gmail.com inbox, set hello@ as default, confirm DKIM alignment via Show original.
 
 ## Session Continuity
 
-Last session: 2026-03-05T02:22:49.875Z
-Stopped at: Phase 49 context gathered
-Resume file: .planning/phases/49-gmail-send-mail-as/49-CONTEXT.md
+Last session: 2026-03-05T11:35:25.425Z
+Stopped at: Completed 49-gmail-send-mail-as-01-PLAN.md
+Resume file: None

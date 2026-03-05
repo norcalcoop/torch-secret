@@ -26,8 +26,8 @@ Requirements for milestone v5.1 Email Infrastructure.
 
 ### Gmail Send Mail As (GMAI)
 
-- [ ] **GMAI-01**: Admin can create a Resend API key dedicated to Gmail SMTP relay
-- [ ] **GMAI-02**: Admin can add all 7 business addresses to Gmail "Send mail as" using smtp.resend.com:465 with the Resend API key
+- [x] **GMAI-01**: Admin can create a Resend API key dedicated to Gmail SMTP relay
+- [x] **GMAI-02**: Admin can add all 7 business addresses to Gmail "Send mail as" using smtp.resend.com:465 with the Resend API key
 - [ ] **GMAI-03**: Admin can verify all 7 Send mail as addresses in Gmail via Cloudflare-forwarded verification emails
 - [ ] **GMAI-04**: Admin can set hello@torchsecret.com as the default outbound address in Gmail
 
@@ -77,8 +77,8 @@ Which phases cover which requirements. Populated by roadmapper.
 | RSND-02 | Phase 48 | Complete |
 | RSND-03 | Phase 48 | Complete |
 | LOOP-03 | Phase 48 | Complete |
-| GMAI-01 | Phase 49 | Pending |
-| GMAI-02 | Phase 49 | Pending |
+| GMAI-01 | Phase 49 | Complete |
+| GMAI-02 | Phase 49 | Complete |
 | GMAI-03 | Phase 49 | Pending |
 | GMAI-04 | Phase 49 | Pending |
 | ADOC-01 | Phase 50 | Pending |
