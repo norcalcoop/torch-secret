@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
-status: verifying
-stopped_at: Completed 48-01-PLAN.md
-last_updated: "2026-03-04T22:40:35.104Z"
-last_activity: "2026-03-04 — Phase 47 Plan 02 complete: Resend + Loops.so domain verification handshakes completed, hello@torchsecret.com confirmed as Loops sender, Resend API test email delivered to torch.secrets@gmail.com inbox"
+status: completed
+stopped_at: Completed 48-02-PLAN.md
+last_updated: "2026-03-05T01:22:50.905Z"
+last_activity: "2026-03-04 — Phase 48 Plan 01 complete: RESEND_FROM_EMAIL updated in Infisical staging, subscriber confirmation + secret-viewed notification both delivered from noreply@torchsecret.com with zero Resend API errors"
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 83
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 48 of 52 (Activate Custom Domain Sending) — In Progress
-Plan: 01 of 2 — COMPLETE
-Status: Phase 48 Plan 01 complete — staging email delivery from noreply@torchsecret.com confirmed for both email types; ready for Plan 02 (production Infisical update)
-Last activity: 2026-03-04 — Phase 48 Plan 01 complete: RESEND_FROM_EMAIL updated in Infisical staging, subscriber confirmation + secret-viewed notification both delivered from noreply@torchsecret.com with zero Resend API errors
+Phase: 48 of 52 (Activate Custom Domain Sending) — COMPLETE
+Plan: 02 of 2 — COMPLETE
+Status: Phase 48 complete — RESEND_FROM_EMAIL=noreply@torchsecret.com live in production; all three email types (subscriber confirmation, secret-viewed notification, Loops welcome) confirmed. RSND-02, RSND-03, LOOP-03 all satisfied.
+Last activity: 2026-03-05 — Phase 48 Plan 02 complete: production Infisical updated, Render redeployed, all three email types confirmed in production including Loops DKIM-aligned on torchsecret.com
 
-Progress: [████████░░] 83%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [████████░░] 83%
 | Phase 47-domain-verification-dmarc P01 | 84 | 2 tasks | 0 files |
 | Phase 47-domain-verification-dmarc P02 | 130 | 2 tasks | 0 files |
 | Phase 48 P01 | 20 | 2 tasks | 0 files |
+| Phase 48-activate-custom-domain-sending P02 | 40 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -100,12 +101,18 @@ Progress: [████████░░] 83%
 - No code changes required: all three Resend email callers (notification.service.ts, subscribers.service.ts, Better Auth) already read env.RESEND_FROM_EMAIL at call time
 - Zero Resend 403 errors in staging — confirms noreply@torchsecret.com is fully authorized on Resend backend; production update is safe to proceed
 
+### Decisions Made (Phase 48, Plan 02)
+
+- Infisical render-sync "Disable Secret Deletion" flag: sync was deleting Render-native fromDatabase DB linkage, causing DATABASE_URL undefined on deploy. Re-linked DB in Render dashboard + enabled flag to prevent recurrence.
+- Production email verification confirmed in single session: subscriber confirmation flow triggers both Resend confirmation email and Loops welcome email as a side effect — efficient single-pass test of full email chain.
+- Loops DKIM alignment confirmed via Gmail "Show original" — Authentication-Results shows dkim=pass header.i=@torchsecret.com; no via loops.so or via amazonses.com relay indicator present. LOOP-03 complete.
+
 ### Blockers/Concerns
 
-None — Phase 48 Plan 01 staging verification complete. Both email types delivering from noreply@torchsecret.com with zero errors. Ready for Plan 02 (production cutover).
+None — Phase 48 complete. All v5.1 requirements through Phase 48 satisfied (RSND-02, RSND-03, LOOP-03). Ready for Phase 49 (Gmail Send Mail As).
 
 ## Session Continuity
 
-Last session: 2026-03-04T22:40:28.053Z
-Stopped at: Completed 48-01-PLAN.md
+Last session: 2026-03-05T01:22:50.896Z
+Stopped at: Completed 48-02-PLAN.md
 Resume file: None

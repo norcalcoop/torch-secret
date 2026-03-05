@@ -22,7 +22,7 @@ Requirements for milestone v5.1 Email Infrastructure.
 
 - [x] **LOOP-01**: Admin can verify torchsecret.com in Loops.so with DKIM and SPF DNS records
 - [x] **LOOP-02**: Admin can confirm hello@torchsecret.com is the verified sender address in Loops.so
-- [ ] **LOOP-03**: User receives onboarding emails from hello@torchsecret.com without "via loops.so" header indicators
+- [x] **LOOP-03**: User receives onboarding emails from hello@torchsecret.com without "via loops.so" header indicators
 
 ### Gmail Send Mail As (GMAI)
 
@@ -76,7 +76,7 @@ Which phases cover which requirements. Populated by roadmapper.
 | LOOP-02 | Phase 47 | Complete |
 | RSND-02 | Phase 48 | Complete |
 | RSND-03 | Phase 48 | Complete |
-| LOOP-03 | Phase 48 | Pending |
+| LOOP-03 | Phase 48 | Complete |
 | GMAI-01 | Phase 49 | Pending |
 | GMAI-02 | Phase 49 | Pending |
 | GMAI-03 | Phase 49 | Pending |
