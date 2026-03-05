@@ -175,7 +175,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. SECURITY.md lists security@torchsecret.com as the contact address for vulnerability reports
   2. The Privacy Policy page at /privacy displays privacy@torchsecret.com as a clickable mailto link for data subject requests
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 50-01-PLAN.md — Update SECURITY.md with security email + Privacy Policy with privacy mailto link
 
 ## Progress
 
