@@ -288,7 +288,7 @@ export function renderConfirmationPage(
     'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden rounded font-medium transition-all cursor-pointer motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]';
   createAnotherButton.textContent = 'Create Another Secret';
   createAnotherButton.addEventListener('click', () => {
-    navigate('/');
+    navigate('/create');
   });
 
   // -- Actions group: flex-col wrapper forces feedbackLink below createAnotherButton --

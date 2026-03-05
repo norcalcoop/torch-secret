@@ -412,7 +412,7 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
   newSecretLink.textContent = 'Create a New Secret';
   newSecretLink.addEventListener('click', (e) => {
     e.preventDefault();
-    navigate('/');
+    navigate('/create');
   });
   actions.appendChild(newSecretLink);
 
