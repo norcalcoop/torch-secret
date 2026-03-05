@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: completed
-stopped_at: Completed 52-01-PLAN.md
-last_updated: "2026-03-05T23:41:08.215Z"
-last_activity: "2026-03-05 — Phase 51 Plan 03 complete: repository is public, CI green on main"
+stopped_at: Completed 52-02-PLAN.md
+last_updated: "2026-03-05T23:55:00.000Z"
+last_activity: "2026-03-05 — Phase 52 Plan 02 complete: Stripe live-mode verified, launch-checklist.md is authoritative pre-launch status doc"
 progress:
   total_phases: 7
   completed_phases: 6
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 52 of 52 (Audit the Product Launch Checklist Items) — IN PROGRESS
-Plan: 01 of 2 — COMPLETE
-Status: Phase 52 Plan 01 complete — three post-action CTA bugs fixed (navigate('/') → navigate('/create')), Phase 40 roadmap documentation drift corrected
-Last activity: 2026-03-05 — Phase 52 Plan 01 complete: CTA navigation bugs fixed, v5.0 roadmap corrected
+Phase: 52 of 52 (Audit the Product Launch Checklist Items) — COMPLETE
+Plan: 02 of 2 — COMPLETE
+Status: Phase 52 complete — launch-checklist.md fully audited (26 [x] items), Stripe live-mode verified (sk_live_ key, production webhook, live price ID), all open items documented with v6.0 disposition
+Last activity: 2026-03-05 — Phase 52 Plan 02 complete: Stripe live-mode verification confirmed, launch-checklist.md is authoritative pre-launch status doc
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -144,12 +144,17 @@ Progress: [█████████░] 93%
 
 - Only the three post-action CTA navigate('/') calls were changed — other navigate('/') calls in dashboard.ts (logout line 236, account delete line 678) remain pointing to / (marketing home); those are correct
 
+### Decisions Made (Phase 52, Plan 02)
+
+- All 4 Stripe live-mode checks passed: sk_live_ key in Infisical prod, whsec_ webhook secret confirmed, production webhook endpoint at https://torchsecret.com/api/webhooks/stripe in Live mode, STRIPE_PRICE_ID_PRO is a live price_ ID — billing pipeline is launch-ready
+- launch-checklist.md is gitignored by design (Phase 51) — no git commit for checklist changes; only planning docs committed
+
 ### Blockers/Concerns
 
-None — Phase 52 Plan 01 complete. Three CTA bugs fixed. Phase 52 Plan 02 can proceed.
+None — Phase 52 complete. v5.1 milestone fully shipped. Ready for /gsd:new-milestone to kick off v6.0 Launch Execution.
 
 ## Session Continuity
 
-Last session: 2026-03-05T23:41:08.213Z
-Stopped at: Completed 52-01-PLAN.md
+Last session: 2026-03-05T23:55:00.000Z
+Stopped at: Completed 52-02-PLAN.md
 Resume file: None
