@@ -33,6 +33,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: [lint]
+    if: ${{ !github.event.pull_request.head.repo.fork }}
 
     services:
       postgres:
@@ -107,6 +108,7 @@ jobs:
     name: E2E
     runs-on: ubuntu-latest
     needs: [lint]
+    if: ${{ !github.event.pull_request.head.repo.fork }}
 
     services:
       postgres:
