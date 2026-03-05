@@ -29,5 +29,6 @@ coverage/
 e2e/e2e-config.json
 e2e/uat-auth-session.json
 e2e/uat-auth-session-pro.json
+e2e/uat-pro-session.json
 e2e/uat-failures/
 e2e/discovery-screenshots/
