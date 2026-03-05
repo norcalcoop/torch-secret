@@ -179,6 +179,30 @@ Plans:
 Plans:
 - [ ] 50-01-PLAN.md — Update SECURITY.md with security email + Privacy Policy with privacy mailto link
 
+### Phase 51: prepare codebase, repository, documentation to transition the github repository from private to public
+
+**Goal:** Remove internal planning artifacts from the public git index, make CI fork-safe, delete legacy brand docs, scan git history for secrets, and flip the repository to public.
+**Requirements**: none
+**Depends on:** Phase 50
+**Plans:** 3 plans
+
+Plans:
+- [ ] 51-01-PLAN.md — Delete legacy docs, untrack .planning/ and CLAUDE.md, update .gitignore
+- [ ] 51-02-PLAN.md — Add fork-safe CI conditionals to test and e2e jobs, update CONTRIBUTING.md
+- [ ] 51-03-PLAN.md — Run git history secret scan, check branch protection rules, flip repo to public
+
+### Phase 52: audit the product launch checklist items
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 51
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 52 to break down)
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -237,29 +261,8 @@ Plans:
 | 48. Activate Custom Domain Sending | 2/2 | Complete    | 2026-03-05 | - |
 | 49. Gmail Send Mail As | 2/2 | Complete    | 2026-03-05 | 2026-03-05 |
 | 50. Documentation Updates | 1/1 | Complete    | 2026-03-05 | - |
+| 51. Public Repo Preparation | — | 0/3 | Planned | — |
 
 _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
-
-### Phase 51: prepare codebase, repository, documentation to transition the github repository from private to public
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 50
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 51 to break down)
-
-### Phase 52: audit the product launch checklist items
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 51
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 52 to break down)
-
----
 
 <!-- v6.0 phases will be added here after /gsd:new-milestone -->
