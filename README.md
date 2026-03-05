@@ -62,35 +62,58 @@ When a secret is retrieved, the server performs an atomic three-step transaction
 
 - Node.js 24.x
 - PostgreSQL 17+ running locally
-- [Infisical CLI](https://infisical.com/docs/cli/overview) installed
 
 ### Setup
 
-1. **Install Infisical CLI:**
+**Option A — Using a `.env` file (external contributors)**
+
+1. Copy the example env file and fill in your own values:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   At minimum you need `DATABASE_URL`, `BETTER_AUTH_SECRET` (generate with `openssl rand -base64 32`), and `BETTER_AUTH_URL=http://localhost:3000`.
+
+2. Start development servers:
+
+   ```bash
+   npm run dev:server   # Terminal 1 — Express server on :3000
+   npm run dev:client   # Terminal 2 — Vite dev server
+   ```
+
+**Option B — Using Infisical (maintainers / team members)**
+
+The project uses [Infisical](https://infisical.com) for secrets management. Team members with project access get secrets injected automatically — no `.env` file needed.
+
+1. Install the Infisical CLI:
 
    ```bash
    brew install infisical/get-cli/infisical   # macOS
    ```
 
-   See [Infisical CLI docs](https://infisical.com/docs/cli/overview) for Linux installation.
+   See [Infisical CLI docs](https://infisical.com/docs/cli/overview) for Linux.
 
-2. **Authenticate with Infisical:**
+2. Authenticate:
 
    ```bash
    infisical login
    ```
 
-   This opens a browser. Authenticate with your personal account. Session persists in `~/.infisical/` — only needed once per machine.
+3. Link to the project (`.infisical.json` is gitignored — run this once after cloning):
 
-3. **Request project access** from the project owner (needed to read secrets from the `torch-secret` Infisical project).
-
-4. **Start development servers:**
    ```bash
-   npm run dev:server   # Terminal 1 — Express server on :3000, secrets injected by Infisical
-   npm run dev:client   # Terminal 2 — Vite dev server via portless
+   infisical init
    ```
 
-No `.env` file needed. Secrets are pulled automatically from the `dev` environment in Infisical.
+   Select the `torch-secret` project when prompted. Requires team membership — request access from the project owner.
+
+4. Start development servers:
+
+   ```bash
+   npm run dev:server   # Terminal 1 — Express server on :3000, secrets injected by Infisical
+   npm run dev:client   # Terminal 2 — Vite dev server
+   ```
 
 ### Docker Staging
 

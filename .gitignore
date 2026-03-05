@@ -5,6 +5,10 @@ dist/
 .env.*
 !.env.example
 .claude.local.md
+CLAUDE.md
+.claude/
+.planning/
+.infisical.json
 .DS_Store
 cached-*.md
 *.png
@@ -27,5 +31,10 @@ coverage/
 e2e/e2e-config.json
 e2e/uat-auth-session.json
 e2e/uat-auth-session-pro.json
+e2e/uat-pro-session.json
 e2e/uat-failures/
 e2e/discovery-screenshots/
+
+# E2E run artifacts (machine-generated, contain local paths)
+e2e/*-BROWSER.md
+e2e/*-RESULTS.json

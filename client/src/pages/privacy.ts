@@ -104,6 +104,36 @@ export function renderPrivacyPage(container: HTMLElement): void {
   ];
 
   for (const { heading, paragraphs } of sections) {
+    if (heading === 'Your Rights') {
+      // Rendered manually to produce a clickable mailto link.
+      // Using createElement/appendChild only — no innerHTML (CSP + XSS hygiene).
+      const rightsSection = document.createElement('section');
+
+      const rightsH2 = document.createElement('h2');
+      rightsH2.className = 'text-xl font-heading font-semibold text-text-primary mt-6 mb-2';
+      rightsH2.textContent = 'Your Rights';
+      rightsSection.appendChild(rightsH2);
+
+      const rightsP = document.createElement('p');
+      rightsP.className = 'text-text-secondary leading-relaxed';
+      rightsP.appendChild(
+        document.createTextNode(
+          'You may request access to, correction of, or deletion of your personal data by contacting ',
+        ),
+      );
+      const privacyLink = document.createElement('a');
+      privacyLink.href = 'mailto:privacy@torchsecret.com';
+      privacyLink.textContent = 'privacy@torchsecret.com';
+      privacyLink.className = 'underline hover:text-text-primary transition-colors';
+      rightsP.appendChild(privacyLink);
+      rightsP.appendChild(
+        document.createTextNode('. Anonymous usage generates no personal data on our end.'),
+      );
+      rightsSection.appendChild(rightsP);
+      card.appendChild(rightsSection);
+      continue;
+    }
+
     const section = document.createElement('section');
 
     const h2 = document.createElement('h2');

@@ -109,6 +109,10 @@ Torch Secret uses [Vitest](https://vitest.dev/) for unit and integration tests, 
 
 Client tests run in a happy-dom environment. Server tests run sequentially against a real PostgreSQL database (not mocks).
 
+> **Fork PRs:** CI runs lint, format, and TypeScript checks automatically. The test and E2E jobs
+> require Infisical secrets that are not available to forks and are intentionally skipped.
+> Maintainers will run the full test suite during review.
+
 ## Project Structure
 
 ```
