@@ -8,6 +8,7 @@ dist/
 CLAUDE.md
 .claude/
 .planning/
+.infisical.json
 .DS_Store
 cached-*.md
 *.png
@@ -33,3 +34,7 @@ e2e/uat-auth-session-pro.json
 e2e/uat-pro-session.json
 e2e/uat-failures/
 e2e/discovery-screenshots/
+
+# E2E run artifacts (machine-generated, contain local paths)
+e2e/*-BROWSER.md
+e2e/*-RESULTS.json
