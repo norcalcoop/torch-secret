@@ -108,7 +108,7 @@ See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase detai
 - [x] **Phase 47: Domain Verification + DMARC** — Verify torchsecret.com in Resend (DKIM, SPF, DMARC) and Loops.so (DKIM, SPF) in parallel (completed 2026-03-04)
 - [x] **Phase 48: Activate Custom Domain Sending** — Update RESEND_FROM_EMAIL in Infisical and confirm all outbound emails arrive from @torchsecret.com (completed 2026-03-05)
 - [x] **Phase 49: Gmail Send Mail As** — Create Resend SMTP API key, add all 7 aliases to Gmail, verify via forwarded confirmation emails (completed 2026-03-05)
-- [ ] **Phase 50: Documentation Updates** — Update SECURITY.md and Privacy Policy with proper contact addresses
+- [x] **Phase 50: Documentation Updates** — Update SECURITY.md and Privacy Policy with proper contact addresses (completed 2026-03-05)
 
 ## Phase Details
 
@@ -236,7 +236,7 @@ Plans:
 | 47. Domain Verification + DMARC | 2/2 | Complete    | 2026-03-04 | - |
 | 48. Activate Custom Domain Sending | 2/2 | Complete    | 2026-03-05 | - |
 | 49. Gmail Send Mail As | 2/2 | Complete    | 2026-03-05 | 2026-03-05 |
-| 50. Documentation Updates | v5.1 | 0/TBD | Not started | - |
+| 50. Documentation Updates | 1/1 | Complete   | 2026-03-05 | - |
 
 _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
 
@@ -245,7 +245,7 @@ _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase deta
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 50
-**Plans:** 2/2 plans complete
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 51 to break down)

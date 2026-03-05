@@ -33,8 +33,8 @@ Requirements for milestone v5.1 Email Infrastructure.
 
 ### App & Documentation Updates (ADOC)
 
-- [ ] **ADOC-01**: Admin can update SECURITY.md to include security@torchsecret.com as the security disclosure email
-- [ ] **ADOC-02**: Admin can update Privacy Policy to reference privacy@torchsecret.com for data subject requests
+- [x] **ADOC-01**: Admin can update SECURITY.md to include security@torchsecret.com as the security disclosure email
+- [x] **ADOC-02**: Admin can update Privacy Policy to reference privacy@torchsecret.com for data subject requests
 
 ## Future Requirements
 
@@ -81,8 +81,8 @@ Which phases cover which requirements. Populated by roadmapper.
 | GMAI-02 | Phase 49 | Complete |
 | GMAI-03 | Phase 49 | Complete |
 | GMAI-04 | Phase 49 | Complete |
-| ADOC-01 | Phase 50 | Pending |
-| ADOC-02 | Phase 50 | Pending |
+| ADOC-01 | Phase 50 | Complete |
+| ADOC-02 | Phase 50 | Complete |
 
 **Coverage:**
 - v5.1 requirements: 14 total

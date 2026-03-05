@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
 status: verifying
-stopped_at: Completed 49-gmail-send-mail-as-02-PLAN.md
-last_updated: "2026-03-05T11:57:02.262Z"
+stopped_at: Completed 50-documentation-updates-01-PLAN.md
+last_updated: "2026-03-05T12:55:34.103Z"
 last_activity: "2026-03-05 — Phase 49 Plan 02 complete: all 7 aliases verified, hello@ set as default, DKIM spot-check passed"
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 5
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 49 of 52 (Gmail Send Mail As) — COMPLETE
-Plan: 02 of 2 — COMPLETE
-Status: Phase 49 complete — All 7 Gmail aliases verified, hello@torchsecret.com set as default outbound address, DKIM alignment confirmed (Signed by: torchsecret.com, no via gappssmtp.com). GMAI-01 through GMAI-04 all satisfied.
-Last activity: 2026-03-05 — Phase 49 Plan 02 complete: all 7 aliases verified, hello@ set as default, DKIM spot-check passed
+Phase: 50 of 52 (Documentation Updates) — COMPLETE
+Plan: 01 of 1 — COMPLETE
+Status: Phase 50 complete — security@torchsecret.com added to SECURITY.md, privacy@torchsecret.com rendered as clickable mailto link in Privacy Policy. ADOC-01 and ADOC-02 satisfied.
+Last activity: 2026-03-05 — Phase 50 Plan 01 complete: contact addresses updated in SECURITY.md and privacy.ts
 
 Progress: [██████████] 100%
 
@@ -52,6 +52,7 @@ Progress: [██████████] 100%
 | Phase 48-activate-custom-domain-sending P02 | 40 | 2 tasks | 0 files |
 | Phase 49-gmail-send-mail-as P01 | 15 | 2 tasks | 0 files |
 | Phase 49-gmail-send-mail-as P02 | 10 | 2 tasks | 0 files |
+| Phase 50-documentation-updates P01 | 10 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -122,12 +123,18 @@ Progress: [██████████] 100%
 - hello@torchsecret.com set as Gmail default — all new compose windows show Torch Secret brand identity as sender
 - "Reply from the same address the message was sent to" enabled — support@ replies come from support@, not hello@; preserves per-alias context
 
+### Decisions Made (Phase 50, Plan 01)
+
+- Your Rights section intercepted in render loop via `heading === 'Your Rights'` guard + `continue` — preserves section order without restructuring the sections data model
+- security@ used only in SECURITY.md (vulnerability disclosure); privacy@ used only in privacy.ts Your Rights — each alias routed to its correct channel
+- Email alternative in SECURITY.md labeled explicitly as fallback — GitHub advisory link remains primary for CVE assignment
+
 ### Blockers/Concerns
 
-None — Phase 49 complete. All GMAI requirements (GMAI-01 through GMAI-04) satisfied. Phase 50 (Documentation Updates) can proceed.
+None — Phase 50 complete. ADOC-01 and ADOC-02 satisfied. Phase 51 (public repo preparation) can proceed.
 
 ## Session Continuity
 
-Last session: 2026-03-05T11:48:22.043Z
-Stopped at: Completed 49-gmail-send-mail-as-02-PLAN.md
+Last session: 2026-03-05T12:55:34.100Z
+Stopped at: Completed 50-documentation-updates-01-PLAN.md
 Resume file: None
