@@ -18,7 +18,7 @@ export interface OnboardingUser {
  * Uses sendEvent() which creates/updates the contact atomically — no separate createContact call needed.
  *
  * ZERO-KNOWLEDGE: only email and non-identifying properties passed to Loops.
- * No userId, no secretId. See .planning/INVARIANTS.md.
+ * No userId, no secretId. See INVARIANTS.md.
  */
 export async function enrollInOnboardingSequence(user: OnboardingUser): Promise<void> {
   const firstName = user.name.split(' ')[0] ?? user.name;

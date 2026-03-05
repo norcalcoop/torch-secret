@@ -9,7 +9,7 @@ import type { AuthUser } from '../auth.js';
 /**
  * ZERO-KNOWLEDGE: activatePro and deactivatePro look up by stripe_customer_id only.
  * The webhook handler never touches userId directly — it passes stripe_customer_id
- * to these functions. See .planning/INVARIANTS.md Stripe billing row.
+ * to these functions. See INVARIANTS.md Stripe billing row.
  */
 
 export async function activatePro(stripeCustomerId: string): Promise<void> {

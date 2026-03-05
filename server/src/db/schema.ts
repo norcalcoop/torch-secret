@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro']);
 
 /**
- * ZERO-KNOWLEDGE INVARIANT — canonical rule (see also CLAUDE.md and .planning/INVARIANTS.md)
+ * ZERO-KNOWLEDGE INVARIANT — canonical rule (see also CLAUDE.md and INVARIANTS.md)
  *
  * No database record, log line, or analytics event may contain BOTH a userId AND a secretId
  * in the same payload. These two identifiers must remain permanently separated.
@@ -14,7 +14,7 @@ export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro'])
  * An attacker (or insider) with DB/log access could correlate which user created which secret,
  * violating the zero-knowledge security model.
  *
- * Current enforcement points (update .planning/INVARIANTS.md when adding new systems):
+ * Current enforcement points (update INVARIANTS.md when adding new systems):
  *   DB — secrets table:       secrets.user_id is nullable FK; secrets.id is never stored in users, sessions, or accounts rows
  *   DB — users table:         No secret_id or last_secret_id column. User rows contain no secret identifiers.
  *   Logger:                   server/src/middleware/logger.ts redacts secret IDs from URL paths via regex
@@ -26,7 +26,7 @@ export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro'])
  *   Email capture:          marketing_subscribers stores email + GDPR evidence; no userId or secretId column — Phase 36
  *   Loops onboarding:     databaseHooks hook logs only err.message on failure — no userId in Loops error logs — Phase 37
  *
- * To extend this list: update .planning/INVARIANTS.md first, then update this comment.
+ * To extend this list: update INVARIANTS.md first, then update this comment.
  */
 
 export const users = pgTable('users', {
@@ -185,7 +185,7 @@ export type NewVerification = typeof verification.$inferInsert;
  * Zero-knowledge invariant: this table has NO FK to users or secrets tables.
  * No query may JOIN marketing_subscribers with secrets in the same result set.
  * ip_hash is SHA-256(IP_HASH_SALT + req.ip) — never stores plain IP addresses.
- * See .planning/INVARIANTS.md for the full enforcement rule (Phase 36).
+ * See INVARIANTS.md for the full enforcement rule (Phase 36).
  */
 export const marketingSubscribers = pgTable(
   'marketing_subscribers',

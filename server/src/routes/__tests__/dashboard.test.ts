@@ -481,7 +481,7 @@ describe('INVARIANTS.md enforcement table', () => {
     const { resolve } = await import('node:path');
 
     // Resolve relative to project root (4 levels up from server/src/routes/__tests__)
-    const invariantsPath = resolve(import.meta.dirname, '../../../../.planning/INVARIANTS.md');
+    const invariantsPath = resolve(import.meta.dirname, '../../../../INVARIANTS.md');
     const content = readFileSync(invariantsPath, 'utf-8');
 
     expect(content).toMatch(/dashboard/i);
@@ -492,7 +492,7 @@ describe('INVARIANTS.md enforcement table', () => {
     const { readFileSync } = await import('node:fs');
     const { resolve } = await import('node:path');
 
-    const invariantsPath = resolve(import.meta.dirname, '../../../../.planning/INVARIANTS.md');
+    const invariantsPath = resolve(import.meta.dirname, '../../../../INVARIANTS.md');
     const content = readFileSync(invariantsPath, 'utf-8');
 
     // The entry should reference the logger file and the dashboard route

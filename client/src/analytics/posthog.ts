@@ -12,7 +12,7 @@
  *   transmission. Reveal-page URLs contain AES-256-GCM encryption keys in their
  *   fragments — these must NEVER reach PostHog servers.
  *
- * See: .planning/INVARIANTS.md — Invariant 1: Zero-Knowledge User-Secret Separation
+ * See: INVARIANTS.md — Invariant 1: Zero-Knowledge User-Secret Separation
  */
 
 import posthog, { type CaptureResult } from 'posthog-js';

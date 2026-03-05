@@ -13,7 +13,7 @@ import type { AuthUser } from '../auth.js';
  *
  * ZERO-KNOWLEDGE INVARIANT: These routes return secretId to the authenticated owner.
  * This is permitted (owner-only, auth-gated). What is prohibited: logging userId+secretId
- * together, or returning ciphertext/passwordHash. See .planning/INVARIANTS.md.
+ * together, or returning ciphertext/passwordHash. See INVARIANTS.md.
  */
 export function createDashboardRouter() {
   const router = Router();

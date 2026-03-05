@@ -11,7 +11,7 @@ import { auth } from '../auth.js';
  *
  * ZERO-KNOWLEDGE INVARIANT: res.locals.user contains userId. The secrets route handler
  * uses it to populate userId on insert. secretId is the INSERT result and must never
- * be combined with userId in the same log line. See .planning/INVARIANTS.md.
+ * be combined with userId in the same log line. See INVARIANTS.md.
  */
 export async function optionalAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

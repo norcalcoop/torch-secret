@@ -11,7 +11,7 @@ import { auth } from '../auth.js';
  *
  * ZERO-KNOWLEDGE INVARIANT: res.locals.user contains userId.
  * Never augment res.locals or pass userId to any code that also reads secretId
- * from the request body or URL. See .planning/INVARIANTS.md.
+ * from the request body or URL. See INVARIANTS.md.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const session = await auth.api.getSession({

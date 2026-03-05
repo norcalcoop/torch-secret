@@ -22,7 +22,7 @@ export const meRouter = Router();
  * Response: { user: { id, email, name, emailVerified, image, createdAt, subscriptionTier } }
  *
  * ZERO-KNOWLEDGE INVARIANT: Returns userId (user.id).
- * MUST NOT include secretId in the response body. See .planning/INVARIANTS.md.
+ * MUST NOT include secretId in the response body. See INVARIANTS.md.
  */
 
 meRouter.get('/', requireAuth, async (_req, res) => {

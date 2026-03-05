@@ -39,7 +39,7 @@ function toAppUrl(url: string): string {
 
 /**
  * ZERO-KNOWLEDGE INVARIANT — read before modifying this file.
- * See: .planning/INVARIANTS.md
+ * See: INVARIANTS.md
  *
  * The session object contains userId. No auth hook, middleware, or route may combine
  * res.locals.user.id with a secretId in the same log line, DB record, or API response.
