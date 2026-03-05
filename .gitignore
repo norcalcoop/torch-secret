@@ -5,6 +5,8 @@ dist/
 .env.*
 !.env.example
 .claude.local.md
+CLAUDE.md
+.planning/
 .DS_Store
 cached-*.md
 *.png
