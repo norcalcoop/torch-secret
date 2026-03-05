@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Email Infrastructure
-status: completed
-stopped_at: Completed 49-gmail-send-mail-as-01-PLAN.md
-last_updated: "2026-03-05T11:35:25.427Z"
-last_activity: "2026-03-05 — Phase 48 Plan 02 complete: production Infisical updated, Render redeployed, all three email types confirmed in production including Loops DKIM-aligned on torchsecret.com"
+status: verifying
+stopped_at: Completed 49-gmail-send-mail-as-02-PLAN.md
+last_updated: "2026-03-05T11:48:22.045Z"
+last_activity: "2026-03-05 — Phase 49 Plan 01 complete: dedicated Resend SMTP API key created, 7 Gmail aliases registered with smtp.resend.com relay"
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 88
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-03 after v5.1 milestone started)
 
 ## Current Position
 
-Phase: 49 of 52 (Gmail Send Mail As) — IN PROGRESS
-Plan: 01 of 2 — COMPLETE
-Status: Phase 49 Plan 01 complete — Resend "Gmail SMTP Relay" API key created (restricted to torchsecret.com) and all 7 @torchsecret.com aliases registered in Gmail Send mail as via smtp.resend.com:465. GMAI-01, GMAI-02 satisfied. 7 verification emails dispatched, awaiting Plan 02 confirmation.
-Last activity: 2026-03-05 — Phase 49 Plan 01 complete: dedicated Resend SMTP API key created, 7 Gmail aliases registered with smtp.resend.com relay
+Phase: 49 of 52 (Gmail Send Mail As) — COMPLETE
+Plan: 02 of 2 — COMPLETE
+Status: Phase 49 complete — All 7 Gmail aliases verified, hello@torchsecret.com set as default outbound address, DKIM alignment confirmed (Signed by: torchsecret.com, no via gappssmtp.com). GMAI-01 through GMAI-04 all satisfied.
+Last activity: 2026-03-05 — Phase 49 Plan 02 complete: all 7 aliases verified, hello@ set as default, DKIM spot-check passed
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [█████████░] 88%
 | Phase 48 P01 | 20 | 2 tasks | 0 files |
 | Phase 48-activate-custom-domain-sending P02 | 40 | 2 tasks | 0 files |
 | Phase 49-gmail-send-mail-as P01 | 15 | 2 tasks | 0 files |
+| Phase 49-gmail-send-mail-as P02 | 10 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -115,12 +116,18 @@ Progress: [█████████░] 88%
 - Single dedicated API key "Gmail SMTP Relay" scoped to torchsecret.com covers all 7 aliases — simpler credential management vs per-alias keys; domain restriction limits blast radius if key leaked
 - All 7 aliases added in single session before verifying any — batching avoids session re-auth; Gmail queues all 7 verification emails correctly
 
+### Decisions Made (Phase 49, Plan 02)
+
+- DKIM spot-check via Gmail "Show original" confirmed: DKIM-Signature d=torchsecret.com; s=resend, dkim=pass header.i=@torchsecret.com — smtp.resend.com relay is active, not Gmail servers; no via gappssmtp.com
+- hello@torchsecret.com set as Gmail default — all new compose windows show Torch Secret brand identity as sender
+- "Reply from the same address the message was sent to" enabled — support@ replies come from support@, not hello@; preserves per-alias context
+
 ### Blockers/Concerns
 
-None — Phase 49 Plan 01 complete. GMAI-01, GMAI-02 satisfied. Plan 02 can proceed: click 7 verification links in torch.secrets@gmail.com inbox, set hello@ as default, confirm DKIM alignment via Show original.
+None — Phase 49 complete. All GMAI requirements (GMAI-01 through GMAI-04) satisfied. Phase 50 (Documentation Updates) can proceed.
 
 ## Session Continuity
 
-Last session: 2026-03-05T11:35:25.425Z
-Stopped at: Completed 49-gmail-send-mail-as-01-PLAN.md
+Last session: 2026-03-05T11:48:22.043Z
+Stopped at: Completed 49-gmail-send-mail-as-02-PLAN.md
 Resume file: None
