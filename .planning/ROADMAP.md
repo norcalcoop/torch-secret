@@ -163,7 +163,10 @@ Plans:
   2. All 7 business addresses appear in Gmail Settings under "Send mail as" and are marked as verified
   3. A test reply sent from hello@torchsecret.com via Gmail shows "Signed by: torchsecret.com" and no "via gappssmtp.com" in the full email headers
   4. hello@torchsecret.com is set as the default outbound address in Gmail
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 49-01-PLAN.md — Create Resend API key, add all 7 Gmail Send mail as aliases with smtp.resend.com SMTP
+- [ ] 49-02-PLAN.md — Verify all 7 aliases, set hello@ as default, confirm DKIM alignment via Show original
 
 ### Phase 50: Documentation Updates
 **Goal**: SECURITY.md and the Privacy Policy reference the correct @torchsecret.com contact addresses for security disclosures and data subject requests
@@ -230,7 +233,7 @@ Plans:
 | 46. Cloudflare Email Routing | 2/2 | Complete    | 2026-03-04 | - |
 | 47. Domain Verification + DMARC | 2/2 | Complete    | 2026-03-04 | - |
 | 48. Activate Custom Domain Sending | 2/2 | Complete    | 2026-03-05 | - |
-| 49. Gmail Send Mail As | v5.1 | 0/TBD | Not started | - |
+| 49. Gmail Send Mail As | v5.1 | 0/2 | Not started | - |
 | 50. Documentation Updates | v5.1 | 0/TBD | Not started | - |
 
 _See [v5.0 Roadmap Archive](milestones/v5.0-ROADMAP.md) for full v5.0 phase details._
