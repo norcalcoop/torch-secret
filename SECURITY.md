@@ -18,6 +18,8 @@ If you discover a security vulnerability in Torch Secret, please report it respo
 
 [Report a vulnerability](https://github.com/norcalcoop/torch-secret/security/advisories/new)
 
+**Email alternative:** security@torchsecret.com — use this if you prefer direct contact or the GitHub flow is unavailable.
+
 When reporting, please include:
 
 - A description of the vulnerability
