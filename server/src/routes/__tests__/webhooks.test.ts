@@ -8,7 +8,17 @@
  * Supertest must send raw JSON string body with Content-Type: application/json.
  * buildApp() already mounts the route with express.raw() before express.json().
  */
-import { describe, test, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
+
+const { mockActivatePro, mockDeactivatePro } = vi.hoisted(() => ({
+  mockActivatePro: vi.fn().mockResolvedValue(undefined),
+  mockDeactivatePro: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../services/billing.service.js', () => ({
+  activatePro: mockActivatePro,
+  deactivatePro: mockDeactivatePro,
+}));
 import request from 'supertest';
 import type { Express } from 'express';
 import { buildApp } from '../../app.js';
@@ -16,6 +26,8 @@ import { db } from '../../db/connection.js';
 import { pool } from '../../db/connection.js';
 import { users } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { env } from '../../config/env.js';
+import { stripe } from '../../config/stripe.js';
 
 let app: Express;
 
@@ -24,6 +36,7 @@ beforeAll(() => {
 });
 
 afterEach(async () => {
+  vi.clearAllMocks();
   // Clean up any test users created to verify no Pro upgrade occurred
   await db.delete(users).where(eq(users.email, 'webhook-test-user@test.secureshare.dev'));
 });
@@ -86,5 +99,35 @@ describe('POST /api/webhooks/stripe — signature verification (Gap 1)', () => {
       .from(users)
       .where(eq(users.email, 'webhook-test-user@test.secureshare.dev'));
     expect(user?.subscriptionTier).toBe('free');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TEST-02: Stripe webhook positive-path — valid HMAC signature accepted
+// ---------------------------------------------------------------------------
+describe('POST /api/webhooks/stripe — valid signature (positive path)', () => {
+  test('valid checkout.session.completed webhook returns 200 { received: true }', async () => {
+    const payload = JSON.stringify({
+      type: 'checkout.session.completed',
+      data: {
+        object: { mode: 'subscription', customer: 'cus_test_positive_path' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockActivatePro).toHaveBeenCalledOnce();
+    expect(mockActivatePro).toHaveBeenCalledWith('cus_test_positive_path');
   });
 });
