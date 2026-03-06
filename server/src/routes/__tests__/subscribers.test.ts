@@ -148,6 +148,19 @@ describe('POST /api/subscribers', () => {
     // New confirmation email should be sent
     expect(emailSend()).toHaveBeenCalledOnce();
   });
+
+  // QUAL-02: Resend outage does not bubble up as 500
+  test('Resend outage does not propagate — POST /api/subscribers still returns 200', async () => {
+    // Simulate Resend API being down for this one call
+    emailSend().mockRejectedValueOnce(new Error('Resend API down'));
+
+    const res = await request(app)
+      .post('/api/subscribers')
+      .send({ email: 'resend-error@example.com', consent: true })
+      .expect(200);
+
+    expect(res.body).toEqual({ ok: true });
+  });
 });
 
 // ---------------------------------------------------------------------------
