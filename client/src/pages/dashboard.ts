@@ -865,7 +865,7 @@ function renderEmptyState(container: HTMLElement): void {
     'mt-2 px-6 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-all cursor-pointer';
   ctaBtn.textContent = 'Create a Secret';
   ctaBtn.addEventListener('click', () => {
-    navigate('/');
+    navigate('/create');
   });
   emptyState.appendChild(ctaBtn);
 

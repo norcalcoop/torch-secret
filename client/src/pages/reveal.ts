@@ -406,13 +406,13 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
 
   // "Create a New Secret" link
   const newSecretLink = document.createElement('a');
-  newSecretLink.href = '/';
+  newSecretLink.href = '/create';
   newSecretLink.className =
     'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:outline-hidden rounded font-medium transition-colors';
   newSecretLink.textContent = 'Create a New Secret';
   newSecretLink.addEventListener('click', (e) => {
     e.preventDefault();
-    navigate('/');
+    navigate('/create');
   });
   actions.appendChild(newSecretLink);
 
