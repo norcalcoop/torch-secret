@@ -8,6 +8,14 @@
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
+const { mockLoggerError } = vi.hoisted(() => ({
+  mockLoggerError: vi.fn(),
+}));
+
+vi.mock('../../middleware/logger.js', () => ({
+  logger: { error: mockLoggerError },
+}));
+
 // Mock the email transport BEFORE importing the service under test
 vi.mock('../email.js', () => ({
   resend: {
@@ -55,5 +63,13 @@ describe('sendSecretViewedNotification — ZK invariant', () => {
 // CONCERNS.md: console.error replacement — verified by Plan 05 implementation
 // ---------------------------------------------------------------------------
 describe('sendSecretViewedNotification — structured logging on error', () => {
-  test.todo('logs via logger.error (not console.error) when Resend send fails');
+  test('logs via logger.error (not console.error) when Resend send fails', async () => {
+    vi.mocked(resend.emails.send).mockResolvedValueOnce({
+      error: { message: 'Resend outage' },
+    } as never);
+
+    await sendSecretViewedNotification('user@example.com', new Date());
+
+    expect(mockLoggerError).toHaveBeenCalledOnce();
+  });
 });
