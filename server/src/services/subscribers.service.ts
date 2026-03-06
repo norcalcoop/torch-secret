@@ -110,12 +110,19 @@ export async function createSubscriber(email: string, ip: string): Promise<void>
 
   // Only send confirmation email if we actually set the token (pending path)
   if (row?.confirmationToken === token) {
-    await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
-      to: email,
-      subject: 'Confirm your Torch Secret subscription',
-      html: buildConfirmationEmail(token),
-    });
+    try {
+      await resend.emails.send({
+        from: env.RESEND_FROM_EMAIL,
+        to: email,
+        subject: 'Confirm your Torch Secret subscription',
+        html: buildConfirmationEmail(token),
+      });
+    } catch (err: unknown) {
+      logger.error(
+        { err: err instanceof Error ? err.message : String(err) },
+        'confirmation_email_send_failed',
+      );
+    }
   }
 }
 
