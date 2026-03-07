@@ -204,7 +204,7 @@ Plans:
 **Goal:** Users can select from 22 retro-themed visual skins (games, anime, cartoon) via a header dropdown; Pro users activate themes with live hover previews, pixel SVG icons, animated background effects, and persistent selection; free users see the selector and are gated to /pricing
 **Requirements**: THEME-01, THEME-02, THEME-03, THEME-04, THEME-05
 **Depends on:** Phase 58
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 
 Plans:
 - [ ] 58.1-01-PLAN.md — Theme data module (retro-data.ts) + retro theme engine (retro-theme.ts) + unit tests
@@ -339,7 +339,7 @@ Plans:
 | 56. Test Gap Closure — Services & Stripe | 1/1 | Complete    | 2026-03-06 | - |
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete    | 2026-03-07 | - |
-| 58.1. UI/UX Custom Themes | 0/5 | In Progress | - |
+| 58.1. UI/UX Custom Themes | 1/5 | In Progress|  |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |

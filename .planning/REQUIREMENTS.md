@@ -41,7 +41,7 @@
 
 ### UI/UX Retro Themes (Phase 58.1)
 
-- [ ] **THEME-01**: A typed THEMES record exists with all 22 retro theme configs (games, anime, cartoon groups); retro theme engine exports getRetroTheme, setRetroTheme, clearRetroTheme, applyRetroColors, initRetroThemeListener; unit tests pass
+- [x] **THEME-01**: A typed THEMES record exists with all 22 retro theme configs (games, anime, cartoon groups); retro theme engine exports getRetroTheme, setRetroTheme, clearRetroTheme, applyRetroColors, initRetroThemeListener; unit tests pass
 - [ ] **THEME-02**: The header theme toggle is replaced by a two-section dropdown showing Base modes and all 22 Retro Pro themes; hovering a theme applies a live full-page preview without persisting; clicking while Pro commits the theme; clicking while free navigates to /pricing; axe-core scan reports zero WCAG violations
 - [ ] **THEME-03**: createPixelIcon factory creates pixel SVG icons using DOM API (never innerHTML); mobile nav swaps to pixel icons on retrothemechange event; FOWT script in index.html applies retro theme CSS vars synchronously from localStorage before first paint; FOWT-SYNC comments present in both index.html and retro-data.ts
 - [ ] **THEME-04**: Special effects engine (MatrixRain, PongBall, DosTyper, Blink, FloatingEmojis, ScanlineOverlay) mounts/unmounts cleanly; prefers-reduced-motion suppresses all animated effects; CSS keyframes mRain and floatY added to styles.css; dot-grid suppressed when data-retro-theme present

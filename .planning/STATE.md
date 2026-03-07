@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 61-02-PLAN.md (LAUNCH-05, LAUNCH-06)
-last_updated: "2026-03-07T14:48:19.645Z"
+stopped_at: Completed 58.1-01-PLAN.md
+last_updated: "2026-03-07T17:46:49.120Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
-  total_phases: 8
+  total_phases: 11
   completed_phases: 8
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 15
+  completed_plans: 11
   percent: 100
 ---
 
@@ -52,8 +52,17 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 60-launch-narrative-writing P01 | 3 | 3 tasks | 3 files |
 | Phase 61 P01 | 138s | 3 tasks | 3 files |
 | Phase 61-launch-distribution-assets P02 | 3 | 2 tasks | 2 files |
+| Phase 58.1-01 P01 | 261s | 3 tasks | 3 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 58.1 inserted after Phase 58: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (URGENT) — retro theme definitions from /Users/ourcomputer/Downloads/retro-themes.jsx; must use frontend-design skill
+- Phase 58.2 inserted after Phase 58: launch quick wins do now (URGENT) — 5 "Do Now" small gems from 10x session-1 analysis: mobile share sheet, QR code, mailto button, clipboard auto-clear countdown, intelligent expiry suggestion (renumbered from 58.1)
+- Phase 58.3 inserted after Phase 58: small gems (URGENT) — all 9 Small Gems from 10x session-1 analysis (renumbered from 58.2)
+
+
 
 ### Key Architectural Constraints (carry forward)
 
@@ -73,6 +82,14 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.1 Plan 01 Decisions (2026-03-07)
+
+- applyRetroColors is stateless (no localStorage writes); caller owns persistence; preview flag is semantic-only
+- 21 themes confirmed as authoritative count; REQUIREMENTS.md/ROADMAP "22" is a planning error
+- clearRetroTheme calls applyTheme() after cleanup to restore light/dark base immediately
+- cardBorder color extracted via regex before setting --ds-color-border (handles "2px solid #hex" format)
+- initRetroThemeListener uses module-level listenerRegistered guard (same pattern as theme.ts)
 
 ### Phase 58 Decisions (2026-03-07)
 
@@ -131,7 +148,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-07T14:44:02.958Z
-Stopped at: Completed 61-02-PLAN.md (LAUNCH-05, LAUNCH-06)
+Last session: 2026-03-07T17:46:49.118Z
+Stopped at: Completed 58.1-01-PLAN.md
 Resume file: None
 Next action: /gsd:execute-phase 55

@@ -17,7 +17,7 @@
 import { Shield, Home, PenLine, CreditCard, LayoutDashboard } from 'lucide';
 import { authClient } from '../api/auth-client.js';
 import { createIcon } from './icons.js';
-import { createThemeToggle } from './theme-toggle.js';
+import { createThemeDropdown } from './theme-toggle.js';
 import { navigate } from '../router.js';
 
 /**
@@ -126,8 +126,8 @@ function createHeader(): HTMLElement {
   });
   rightSide.appendChild(createLink);
 
-  // 4. Theme toggle (rightmost)
-  const themeToggle = createThemeToggle();
+  // 4. Theme dropdown (rightmost)
+  const themeToggle = createThemeDropdown();
   rightSide.appendChild(themeToggle);
 
   inner.appendChild(rightSide);
