@@ -7,6 +7,189 @@
         var d = t === 'dark' || (!t && matchMedia('(prefers-color-scheme:dark)').matches);
         document.documentElement.classList.toggle('dark', d);
         document.documentElement.style.colorScheme = d ? 'dark' : 'light';
+
+        // Retro theme FOWT prevention — apply CSS vars before first paint
+        // FOWT-SYNC: compact values must match bg/text/primary(accent)/accent(accent-hover)/cardBg(surface)/navBg(surface-raised)/borderColor(border) in client/src/retro-data.ts
+        // Order per applyRetroColors(): bg, text, primary, accent, cardBg, navBg, borderColor
+        var rt = localStorage.getItem('retro-theme');
+        if (rt) {
+          var R = {
+            mario: ['#5c94fc', '#fff', '#e52521', '#fbf236', 'rgba(0,0,0,0.6)', '#000', '#fbf236'],
+            zelda: [
+              '#1a1a0f',
+              '#e8d48b',
+              '#c8a800',
+              '#8bc34a',
+              'rgba(20,30,10,0.85)',
+              '#0d1505',
+              '#c8a800',
+            ],
+            contra: [
+              '#0a0a0a',
+              '#fff',
+              '#cc0000',
+              '#ffcc00',
+              'rgba(0,0,0,0.85)',
+              '#110000',
+              '#cc0000',
+            ],
+            mk: [
+              '#0a0000',
+              '#ffdddd',
+              '#dd0000',
+              '#ff4400',
+              'rgba(20,0,0,0.9)',
+              '#050000',
+              '#dd0000',
+            ],
+            sf: [
+              '#1a0033',
+              '#fff',
+              '#ff4444',
+              '#4488ff',
+              'rgba(10,0,30,0.9)',
+              '#100022',
+              '#ffdd00',
+            ],
+            pong: ['#000', '#fff', '#fff', '#aaa', 'rgba(255,255,255,0.05)', '#000', '#fff'],
+            c64: ['#4040b8', '#a0a0ff', '#a0a0ff', '#6060cc', '#2020a0', '#4040b8', '#4040b8'],
+            dos: [
+              '#000080',
+              '#cccccc',
+              '#ffffff',
+              '#55ffff',
+              'rgba(0,0,100,0.9)',
+              '#000000',
+              '#888',
+            ],
+            mac: ['#aaaaaa', '#000000', '#000000', '#555555', '#ffffff', '#000000', '#000'],
+            matrix: [
+              '#000',
+              '#00ff41',
+              '#00ff41',
+              '#00aa22',
+              'rgba(0,30,0,0.8)',
+              'rgba(0,5,0,0.95)',
+              '#00ff41',
+            ],
+            minecraft: [
+              '#87CEEB',
+              '#222',
+              '#5d9b3f',
+              '#8B5A2B',
+              'rgba(141,101,63,0.85)',
+              '#3d6b2f',
+              '#5d9b3f',
+            ],
+            pokemon: [
+              '#cc0000',
+              '#fff',
+              '#ffcc00',
+              '#3b4cca',
+              'rgba(0,0,0,0.5)',
+              '#990000',
+              '#ffcc00',
+            ],
+            tetris: [
+              '#000',
+              '#fff',
+              '#00ffff',
+              '#ffff00',
+              'rgba(0,0,40,0.9)',
+              '#000022',
+              '#00ffff',
+            ],
+            duckhunt: [
+              '#88ccff',
+              '#fff',
+              '#cc4400',
+              '#ffcc00',
+              'rgba(0,60,0,0.8)',
+              '#2a5a10',
+              '#ffcc00',
+            ],
+            punchout: [
+              '#111133',
+              '#fff',
+              '#ffcc00',
+              '#ff2222',
+              'rgba(0,0,50,0.85)',
+              '#050520',
+              '#ffcc00',
+            ],
+            dbz: [
+              '#0a0a1a',
+              '#ffeecc',
+              '#ff7700',
+              '#ffee00',
+              'rgba(20,10,0,0.9)',
+              '#050510',
+              '#ff7700',
+            ],
+            astroboy: [
+              '#003366',
+              '#aaccff',
+              '#4488ff',
+              '#ffffff',
+              'rgba(0,20,60,0.9)',
+              '#001133',
+              '#4488ff',
+            ],
+            tmnt: [
+              '#0d1f0d',
+              '#aaffaa',
+              '#55cc22',
+              '#ffcc00',
+              'rgba(0,30,0,0.88)',
+              '#050f05',
+              '#55cc22',
+            ],
+            gijoe: [
+              '#0d1a0a',
+              '#cce8a0',
+              '#7ab230',
+              '#f5c800',
+              'rgba(10,25,5,0.9)',
+              '#060e04',
+              '#7ab230',
+            ],
+            transformers: [
+              '#08080f',
+              '#ffcccc',
+              '#cc2222',
+              '#4488ff',
+              'rgba(15,5,5,0.9)',
+              '#050005',
+              '#cc2222',
+            ],
+            fma: [
+              '#1a0f00',
+              '#ffcc99',
+              '#cc4400',
+              '#ffaa00',
+              'rgba(30,15,0,0.9)',
+              '#0d0500',
+              '#cc4400',
+            ],
+          };
+          var KEYS = [
+            '--ds-color-bg',
+            '--ds-color-text-primary',
+            '--ds-color-accent',
+            '--ds-color-accent-hover',
+            '--ds-color-surface',
+            '--ds-color-surface-raised',
+            '--ds-color-border',
+          ];
+          var vals = R[rt];
+          if (vals) {
+            var el = document.documentElement;
+            for (var i = 0; i < KEYS.length; i++) {
+              el.style.setProperty(KEYS[i], vals[i]);
+            }
+            el.setAttribute('data-retro-theme', rt);
+          }
+        }
       })();
     </script>
     <meta charset="UTF-8" />

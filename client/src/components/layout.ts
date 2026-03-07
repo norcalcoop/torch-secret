@@ -16,9 +16,10 @@
 
 import { Shield, Home, PenLine, CreditCard, LayoutDashboard } from 'lucide';
 import { authClient } from '../api/auth-client.js';
-import { createIcon } from './icons.js';
+import { createIcon, createPixelIcon } from './icons.js';
 import { createThemeDropdown } from './theme-toggle.js';
 import { navigate } from '../router.js';
+import { THEMES } from '../retro-data.js';
 
 /**
  * Build and insert the persistent layout shell around <main>.
@@ -254,6 +255,33 @@ function createMobileNav(): HTMLElement {
 
   window.addEventListener('routechange', updateActiveTabs);
   updateActiveTabs(); // initial state
+
+  // Lucide icon data for each tab (used when reverting from retro theme)
+  const LUCIDE_TAB_ICONS = [Home, PenLine, CreditCard, LayoutDashboard] as const;
+
+  window.addEventListener('retrothemechange', (e: Event) => {
+    const { themeId } = (e as CustomEvent<{ themeId: string | null }>).detail;
+    const theme = themeId ? THEMES[themeId] : null;
+
+    tabButtons.forEach((btn, i) => {
+      // Remove existing icon (first child element)
+      const existingIcon = btn.firstElementChild;
+      if (existingIcon) existingIcon.remove();
+
+      const navEntry = theme?.nav[i]; // use nav[0..3] only — nav has 5 entries, we have 4 tabs
+      const newIcon = navEntry
+        ? createPixelIcon(navEntry.i, 16)
+        : createIcon(LUCIDE_TAB_ICONS[i], { size: 'sm' });
+
+      btn.insertBefore(newIcon, btn.firstChild);
+
+      // Update label text — truncate to 10 chars to prevent overflow
+      const labelEl = btn.querySelector('span');
+      if (labelEl) {
+        labelEl.textContent = navEntry ? navEntry.l.substring(0, 10) : tabs[i].label;
+      }
+    });
+  });
 
   return nav;
 }
