@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 60-launch-narrative-writing 60-01-PLAN.md
-last_updated: "2026-03-07T12:33:53.661Z"
+stopped_at: Completed 61-01-PLAN.md
+last_updated: "2026-03-07T14:43:01.811Z"
 last_activity: 2026-03-07 — Phase 60 Plan 01 complete (LAUNCH-01, LAUNCH-02, LAUNCH-03 closed)
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06 after v5.2 milestone start)
 
 **Core value:** Users can share sensitive information once, securely, without accounts or complexity
-**Current focus:** Phase 60 — Launch Narrative Writing (LAUNCH-01, LAUNCH-02, LAUNCH-03 closed)
+**Current focus:** Phase 61 — Launch Distribution Assets (LAUNCH-04 closed)
 
 ## Current Position
 
-Phase: 60 of 61 (Launch narrative — screencast script + Show HN + technical writeup)
-Plan: 1 of 1 complete
-Status: Phase 60 complete — LAUNCH-01, LAUNCH-02, and LAUNCH-03 CLOSED
-Last activity: 2026-03-07 — Phase 60 Plan 01 complete (LAUNCH-01, LAUNCH-02, LAUNCH-03 closed)
+Phase: 61 of 61 (Reddit posts + PH listing + launch email)
+Plan: 1 of 2 complete
+Status: Phase 61 Plan 01 complete — LAUNCH-04 CLOSED (three Reddit post drafts written)
+Last activity: 2026-03-07 — Phase 61 Plan 01 complete (LAUNCH-04 closed)
 
-Progress: [██████████] 100% (8/8 plans complete across v5.2)
+Progress: [█████████░] 90% (9/10 plans complete across v5.2)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: [██████████] 100% (8/8 plans complete across v5.2)
 | Phase 58-dmarc-upgrade P01 | 0 | 3 tasks | 0 files |
 | Phase 59-repo-hygiene-documentation P01 | 2 | 2 tasks | 1 files |
 | Phase 60-launch-narrative-writing P01 | 3 | 3 tasks | 3 files |
+| Phase 61 P01 | 138s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -117,9 +118,16 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 - Submitter comment targets ~490 words (within 300–500 word range); PADME paragraph identified as the trim candidate if editors find it over limit
 - Technical writeup ISC license corrected from MIT in fix commit d99c717 (applied during Task 2 session)
 
+### Phase 61 Decisions (2026-03-07)
+
+- r/netsec title leads with RFC 3986 §3.5 citation — verifiable technical claim earns security practitioner trust; title reads as practitioner sharing, not founder announcing
+- r/netsec limitations section is a first-class body section with named heading (not a footnote) — device compromise, browser extensions, JS trust model all named explicitly
+- r/selfhosted title leads with docker-compose not product name — self-hoster audience is skeptical of SaaS-first openers; hosted version appears as secondary sentence only
+- r/devops opens with alternatives bullet list (Slack DM / email / 1Password vault) to crystallize credential-sharing pain point before naming the product
+
 ## Session Continuity
 
-Last session: 2026-03-07T12:30:07.299Z
-Stopped at: Completed 60-launch-narrative-writing 60-01-PLAN.md
+Last session: 2026-03-07T14:43:01.808Z
+Stopped at: Completed 61-01-PLAN.md
 Resume file: None
 Next action: /gsd:execute-phase 55

@@ -233,10 +233,11 @@ Plans:
   1. Three distinct Reddit post drafts exist — one each for r/netsec, r/selfhosted, and r/devops — each under 300 words with a community-specific angle and no cross-posting boilerplate
   2. A Product Hunt listing draft exists with: tagline, full description, a checklist of required gallery images, FAQ section, and a first-comment template
   3. A "we launched on Product Hunt" email draft exists for the subscriber list, formatted for Resend or Loops delivery
-**Plans**: 1 plan
+**Plans**: 2 plans
 
 Plans:
-- [ ] 60-01-PLAN.md — Write demo script, technical writeup, and Show HN post (LAUNCH-01, LAUNCH-02, LAUNCH-03)
+- [ ] 61-01-PLAN.md — Write Reddit community posts for r/netsec, r/selfhosted, r/devops (LAUNCH-04)
+- [ ] 61-02-PLAN.md — Write Product Hunt listing and subscriber launch email (LAUNCH-05, LAUNCH-06)
 
 ## Progress
 
@@ -306,6 +307,6 @@ Plans:
 | 58. DMARC Upgrade | 1/1 | Complete    | 2026-03-07 | - |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
-| 61. Launch Distribution Assets | v5.2 | 0/TBD | Not started | - |
+| 61. Launch Distribution Assets | 1/2 | In Progress|  | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._

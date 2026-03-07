@@ -35,7 +35,7 @@
 - [x] **LAUNCH-01**: Demo screencast script and shot list written (30–60 second flow: paste → create → share → reveal → gone)
 - [x] **LAUNCH-02**: Show HN post drafted and reviewed (title leads with RFC 3986 / URL fragment angle; submitter-comment template included)
 - [x] **LAUNCH-03**: Technical writeup drafted ("How we built a zero-knowledge secret sharer where we mathematically cannot read your data")
-- [ ] **LAUNCH-04**: Community post drafts for r/netsec, r/selfhosted, and r/devops (3 distinct angles, each ≤ 300 words)
+- [x] **LAUNCH-04**: Community post drafts for r/netsec, r/selfhosted, and r/devops (3 distinct angles, each ≤ 300 words)
 - [ ] **LAUNCH-05**: Product Hunt listing drafted (tagline, description, gallery image checklist, FAQ, first-comment template)
 - [ ] **LAUNCH-06**: "We launched on Product Hunt" email drafted for the subscriber list
 
@@ -89,7 +89,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LAUNCH-01 | Phase 60 | Complete |
 | LAUNCH-02 | Phase 60 | Complete |
 | LAUNCH-03 | Phase 60 | Complete |
-| LAUNCH-04 | Phase 61 | Pending |
+| LAUNCH-04 | Phase 61 | Complete |
 | LAUNCH-05 | Phase 61 | Pending |
 | LAUNCH-06 | Phase 61 | Pending |
 
