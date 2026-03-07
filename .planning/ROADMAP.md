@@ -305,7 +305,7 @@ Plans:
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete    | 2026-03-07 | - |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
-| 60. Launch Narrative Writing | 1/1 | Complete   | 2026-03-07 | - |
+| 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | v5.2 | 0/TBD | Not started | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
