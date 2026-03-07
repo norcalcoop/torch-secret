@@ -220,3 +220,39 @@
     transform: translateY(0);
   }
 }
+
+/* =============================================
+ * Retro theme animation keyframes
+ * Used by retro-effects.ts overlay elements.
+ * ============================================= */
+
+@keyframes mRain {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(200vh);
+  }
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+/* Dot-grid suppression when a retro theme is active */
+html[data-retro-theme] .dot-grid-bg::before {
+  display: none;
+}
+
+/* Retro button token overrides (set inline on <html> by retro-theme.ts) */
+[data-retro-theme] button:not(.no-retro) {
+  background-color: var(--retro-btn-bg, inherit);
+  box-shadow: var(--retro-btn-shadow, none);
+  border: var(--retro-btn-border, inherit);
+}
