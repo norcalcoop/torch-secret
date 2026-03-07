@@ -193,7 +193,7 @@ This section is not a footnote. Four real limitations exist, and pre-announcing 
 
 ## 8. Open Source and Self-Hosted
 
-The full implementation is available at https://github.com/norcalcoop/torch-secret under the MIT license. Docker Compose files are included for local and production deployment.
+The full implementation is available at https://github.com/norcalcoop/torch-secret under the ISC license. Docker Compose files are included for local and production deployment.
 
 The server is designed to be untrusted — it stores only encrypted blobs and has no access to decryption keys. Self-hosting removes the need to trust our infrastructure at all. If you run your own instance, the zero-knowledge property holds against your own server operators as well as against ours.
 
