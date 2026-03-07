@@ -203,3 +203,5 @@ The Worker is deployed manually from a developer machine — it rarely needs upd
 ## Contributing
 
 We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding conventions, and the pull request process.
+
+Have feedback about Torch Secret? → [Share it here](https://tally.so/r/Y5ZV56)
