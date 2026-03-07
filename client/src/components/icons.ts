@@ -91,3 +91,34 @@ export function createIcon(icon: IconNode, options: CreateIconOptions = {}): SVG
 
 /** Re-export IconNode type for consumer convenience. */
 export type { IconNode } from 'lucide';
+
+import { ICONS, type SvgDesc } from '../retro-icons.js';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Create a pixel-art SVG icon from the retro ICONS descriptor map.
+ * Uses DOM API (createElementNS + setAttribute) — never innerHTML.
+ * Returns a fallback filled circle for unknown icon IDs.
+ *
+ * @param id - Icon key from ICONS record (e.g. 'mario_home')
+ * @param size - Width/height in pixels. Default: 22.
+ */
+export function createPixelIcon(id: string, size = 22): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 32 32');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('fill', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const descs: SvgDesc[] = ICONS[id] ?? [{ tag: 'circle', attrs: { cx: 16, cy: 16, r: 6 } }];
+  for (const desc of descs) {
+    const el = document.createElementNS(SVG_NS, desc.tag);
+    for (const [attr, val] of Object.entries(desc.attrs)) {
+      el.setAttribute(attr, String(val));
+    }
+    svg.appendChild(el);
+  }
+  return svg;
+}
