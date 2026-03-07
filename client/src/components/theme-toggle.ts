@@ -300,7 +300,8 @@ export function createThemeDropdown(): HTMLDivElement {
     const items = retroGroup.querySelectorAll<HTMLButtonElement>('[data-retro-theme]');
     items.forEach((item) => {
       const isActive = item.dataset['retroTheme'] === committed;
-      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      // aria-pressed is not allowed on role="menuitem" — use data-active + CSS classes
+      item.dataset['active'] = isActive ? 'true' : 'false';
       if (isActive) {
         item.classList.add('text-accent', 'font-medium');
       } else {
@@ -314,7 +315,8 @@ export function createThemeDropdown(): HTMLDivElement {
     const items = baseGroup.querySelectorAll<HTMLButtonElement>('[data-theme]');
     items.forEach((item) => {
       const isActive = item.dataset['theme'] === pref && getRetroTheme() === null;
-      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      // aria-pressed is not allowed on role="menuitem" — use data-active + CSS classes
+      item.dataset['active'] = isActive ? 'true' : 'false';
       if (isActive) {
         item.classList.add('text-accent', 'font-medium');
       } else {

@@ -219,6 +219,75 @@ describe('Component accessibility', () => {
   });
 });
 
+describe('Theme dropdown', () => {
+  it('has no accessibility violations in closed state', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const results = await axe(container, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results).toHaveNoViolations();
+  });
+
+  it('has no accessibility violations in open state', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the dropdown panel
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    toggleBtn!.click();
+
+    const results = await axe(container, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results).toHaveNoViolations();
+  });
+
+  it('toggle button has aria-expanded attribute', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    expect(toggleBtn!.hasAttribute('aria-expanded')).toBe(true);
+    expect(toggleBtn!.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('toggle button has aria-label attribute', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    expect(toggleBtn!.getAttribute('aria-label')).toBe('Change theme');
+  });
+
+  it('retro theme buttons have role="menuitem"', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the panel to render menu items
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    toggleBtn!.click();
+
+    const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
+    expect(retroGroup).not.toBeNull();
+
+    const menuItems = retroGroup!.querySelectorAll('[role="menuitem"]');
+    expect(menuItems.length).toBeGreaterThan(0);
+    menuItems.forEach((item) => {
+      expect(item.getAttribute('role')).toBe('menuitem');
+    });
+  });
+});
+
 describe('PROT-02 brute-force label integration', () => {
   it('high tier yields centuries or eons brute-force estimate', async () => {
     const { generatePassword } = await import('../crypto/password-generator.js');
