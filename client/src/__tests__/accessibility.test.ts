@@ -8,9 +8,20 @@
  * verified manually in a separate checkpoint.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { navigate } from '../router.js';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
+
+// Mock the router so navigate() is a spy and doesn't touch history API in tests.
+// Vitest hoists vi.mock() above imports — all components that import navigate
+// will receive this spy automatically.
+vi.mock('../router.js', () => ({
+  navigate: vi.fn(),
+  initRouter: vi.fn(),
+  updatePageMeta: vi.fn(),
+  focusPageHeading: vi.fn(),
+}));
 
 expect.extend(matchers);
 
@@ -372,5 +383,42 @@ describe('PROT-02 brute-force label integration', () => {
     const text = entropyLine!.textContent ?? '';
     expect(text).toMatch(/\d+(\.\d+)? bits/);
     expect(text).toMatch(/at 10B guesses\/sec/);
+  });
+});
+
+describe('Theme dropdown — Pro gating', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Reset the module-level cachedIsPro in theme-toggle.ts by dispatching
+    // retrothemechange — theme-toggle listens to this and nulls the cache.
+    window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: null } }));
+  });
+
+  it('free user: click locked retro theme calls navigate("/pricing"), no localStorage write', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the dropdown panel
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    toggleBtn!.click();
+
+    // Click the first retro theme button (all are locked for free users)
+    const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
+    expect(retroGroup).not.toBeNull();
+    const firstRetroBtn = retroGroup!.querySelector<HTMLButtonElement>('[data-retro-theme]');
+    expect(firstRetroBtn).not.toBeNull();
+    firstRetroBtn!.click();
+
+    // Flush the fire-and-forget async IIFE in the click handler
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
+    // navigate('/pricing') must have been called — not setRetroTheme
+    expect(navigate).toHaveBeenCalledWith('/pricing');
+
+    // No retro theme must be persisted to localStorage
+    expect(localStorage.getItem('retro-theme')).toBeNull();
   });
 });
