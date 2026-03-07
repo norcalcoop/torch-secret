@@ -36,8 +36,16 @@
 - [x] **LAUNCH-02**: Show HN post drafted and reviewed (title leads with RFC 3986 / URL fragment angle; submitter-comment template included)
 - [x] **LAUNCH-03**: Technical writeup drafted ("How we built a zero-knowledge secret sharer where we mathematically cannot read your data")
 - [x] **LAUNCH-04**: Community post drafts for r/netsec, r/selfhosted, and r/devops (3 distinct angles, each ≤ 300 words)
-- [ ] **LAUNCH-05**: Product Hunt listing drafted (tagline, description, gallery image checklist, FAQ, first-comment template)
-- [ ] **LAUNCH-06**: "We launched on Product Hunt" email drafted for the subscriber list
+- [x] **LAUNCH-05**: Product Hunt listing drafted (tagline, description, gallery image checklist, FAQ, first-comment template)
+- [x] **LAUNCH-06**: "We launched on Product Hunt" email drafted for the subscriber list
+
+### UI/UX Retro Themes (Phase 58.1)
+
+- [ ] **THEME-01**: A typed THEMES record exists with all 22 retro theme configs (games, anime, cartoon groups); retro theme engine exports getRetroTheme, setRetroTheme, clearRetroTheme, applyRetroColors, initRetroThemeListener; unit tests pass
+- [ ] **THEME-02**: The header theme toggle is replaced by a two-section dropdown showing Base modes and all 22 Retro Pro themes; hovering a theme applies a live full-page preview without persisting; clicking while Pro commits the theme; clicking while free navigates to /pricing; axe-core scan reports zero WCAG violations
+- [ ] **THEME-03**: createPixelIcon factory creates pixel SVG icons using DOM API (never innerHTML); mobile nav swaps to pixel icons on retrothemechange event; FOWT script in index.html applies retro theme CSS vars synchronously from localStorage before first paint; FOWT-SYNC comments present in both index.html and retro-data.ts
+- [ ] **THEME-04**: Special effects engine (MatrixRain, PongBall, DosTyper, Blink, FloatingEmojis, ScanlineOverlay) mounts/unmounts cleanly; prefers-reduced-motion suppresses all animated effects; CSS keyframes mRain and floatY added to styles.css; dot-grid suppressed when data-retro-theme present
+- [ ] **THEME-05**: @fontsource/press-start-2p installed; font lazy-loads on retro theme activation (not for dos/mac themes); initRetroThemeListener called at app startup; PostHog 'retro_theme_activated' event fires with theme_id/name/group (no userId or secretId); Playwright E2E confirms FOWT colors appear before JS bundle executes
 
 ## Future Requirements
 
@@ -90,14 +98,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LAUNCH-02 | Phase 60 | Complete |
 | LAUNCH-03 | Phase 60 | Complete |
 | LAUNCH-04 | Phase 61 | Complete |
-| LAUNCH-05 | Phase 61 | Pending |
-| LAUNCH-06 | Phase 61 | Pending |
+| LAUNCH-05 | Phase 61 | Complete |
+| LAUNCH-06 | Phase 61 | Complete |
+| THEME-01 | Phase 58.1 | Planned |
+| THEME-02 | Phase 58.1 | Planned |
+| THEME-03 | Phase 58.1 | Planned |
+| THEME-04 | Phase 58.1 | Planned |
+| THEME-05 | Phase 58.1 | Planned |
 
 **Coverage:**
-- v5.2 requirements: 19 total
-- Mapped to phases: 19 ✓
+- v5.2 requirements: 24 total
+- Mapped to phases: 24 ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 — traceability filled after roadmap creation*
+*Last updated: 2026-03-07 — THEME-01 through THEME-05 added for Phase 58.1*

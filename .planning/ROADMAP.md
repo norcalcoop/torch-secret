@@ -199,6 +199,40 @@ Plans:
 Plans:
 - [ ] 58-01-PLAN.md — DNS runbook: pre-flight report review, p=quarantine edit, smoke test verification (INFRA-01)
 
+### Phase 58.1: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (INSERTED)
+
+**Goal:** Users can select from 22 retro-themed visual skins (games, anime, cartoon) via a header dropdown; Pro users activate themes with live hover previews, pixel SVG icons, animated background effects, and persistent selection; free users see the selector and are gated to /pricing
+**Requirements**: THEME-01, THEME-02, THEME-03, THEME-04, THEME-05
+**Depends on:** Phase 58
+**Plans:** 5 plans
+
+Plans:
+- [ ] 58.1-01-PLAN.md — Theme data module (retro-data.ts) + retro theme engine (retro-theme.ts) + unit tests
+- [ ] 58.1-02-PLAN.md — Theme dropdown component replacing toggle, hover preview, Pro gating, accessibility scan
+- [ ] 58.1-03-PLAN.md — Pixel SVG icon system (retro-icons.ts), createPixelIcon factory, mobile nav swap, FOWT extension
+- [ ] 58.1-04-PLAN.md — Special effects engine: MatrixRain, PongBall, DosTyper, Blink, FloatingEmojis, scanlines
+- [ ] 58.1-05-PLAN.md — App wiring: font install, effects integration, initRetroThemeListener, PostHog analytics, E2E FOWT test
+
+### Phase 58.2: launch quick wins do now (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 58
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 58.2 to break down)
+
+### Phase 58.3: small gems (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 58
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 58.3 to break down)
+
 ### Phase 59: Repo Hygiene & Documentation
 **Goal**: The public GitHub repository is clean, well-maintained, and surfaces the feedback link that appears on confirmation and reveal pages
 **Depends on**: Phase 53
@@ -305,8 +339,9 @@ Plans:
 | 56. Test Gap Closure — Services & Stripe | 1/1 | Complete    | 2026-03-06 | - |
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete    | 2026-03-07 | - |
+| 58.1. UI/UX Custom Themes | 0/5 | In Progress | - |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
-| 61. Launch Distribution Assets | 2/2 | Complete   | 2026-03-07 | - |
+| 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
