@@ -51,11 +51,11 @@ export function setRetroTheme(id: string | null): void {
   if (id === null) {
     localStorage.removeItem(RETRO_STORAGE_KEY);
     clearRetroTheme();
+    window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: null } }));
   } else {
     localStorage.setItem(RETRO_STORAGE_KEY, id);
-    applyRetroTheme(id);
+    applyRetroTheme(id); // applyRetroTheme dispatches retrothemechange
   }
-  window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: id } }));
 }
 
 /**
@@ -150,6 +150,10 @@ export function applyRetroTheme(id: string): void {
 
   // 6. Fire analytics event — theme_id only, NO userId or secretId (ZK invariant)
   captureRetroThemeActivated(id);
+
+  // 7. Notify listeners (mobile nav, effects, etc.) — fires for all callers including
+  //    startup restore from app.ts, not just user-initiated setRetroTheme calls.
+  window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: id } }));
 }
 
 /**
