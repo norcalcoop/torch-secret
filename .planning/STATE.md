@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.1-01-PLAN.md
-last_updated: "2026-03-07T17:46:49.120Z"
+stopped_at: Completed 58.1-02-PLAN.md
+last_updated: "2026-03-07T18:02:39.373Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 15
-  completed_plans: 11
+  completed_plans: 14
   percent: 100
 ---
 
@@ -53,6 +53,8 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 61 P01 | 138s | 3 tasks | 3 files |
 | Phase 61-launch-distribution-assets P02 | 3 | 2 tasks | 2 files |
 | Phase 58.1-01 P01 | 261s | 3 tasks | 3 files |
+| Phase 58.1 P04 | 321s | 1 tasks | 3 files |
+| Phase 58.1 P03 | 500s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +84,20 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.1 Plan 04 Decisions (2026-03-07)
+
+- MatrixRain uses pure CSS @keyframes mRain on column divs — no setInterval, per spec requirement
+- ScanlineOverlay not guarded by prefers-reduced-motion — it is a static CSS texture (not motion)
+- Single cleanup array pattern: each mount fn returns () => void; currentCleanup iterates the array
+- DosTyper uses data-dos-line attribute for test detection; all 13 lines shown immediately under reduced motion
+
+### Phase 58.1 Plan 03 Decisions (2026-03-07)
+
+- ICONS record keyed by navEntry.i strings (e.g. 'mario_home') — same keys used in THEMES[id].nav[i].i, so createPixelIcon(navEntry.i) works directly in Plans 04-05
+- FOWT R{} map order: [bg, text, primary, accent, cardBg, navBg, borderColor] — matches applyRetroColors() CSS var assignment order in retro-theme.ts exactly
+- createPixelIcon returns fallback circle SVG for unknown IDs rather than throwing — prevents layout breakage
+- frontend-design skill not invoked (does not exist at ~/.claude/skills/frontend-design/); plan was self-contained
 
 ### Phase 58.1 Plan 01 Decisions (2026-03-07)
 
@@ -148,7 +164,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-07T17:46:49.118Z
-Stopped at: Completed 58.1-01-PLAN.md
+Last session: 2026-03-07T18:02:39.371Z
+Stopped at: Completed 58.1-02-PLAN.md
 Resume file: None
 Next action: /gsd:execute-phase 55
