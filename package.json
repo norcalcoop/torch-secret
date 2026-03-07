@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource/press-start-2p": "^5.2.7",
     "argon2": "^0.44.0",
     "better-auth": "^1.4.18",
     "dotenv": "^17.3.1",

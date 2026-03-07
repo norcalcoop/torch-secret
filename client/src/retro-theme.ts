@@ -10,6 +10,27 @@
 
 import { THEMES, RETRO_STORAGE_KEY, type RetroTheme } from './retro-data.js';
 import { applyTheme } from './theme.js';
+import { mountRetroEffects, unmountRetroEffects } from './retro-effects.js';
+import { captureRetroThemeActivated } from './analytics/posthog.js';
+
+// Module-level flag: have we loaded the Press Start 2P font yet?
+let retroFontLoaded = false;
+
+async function loadRetroFont(theme: RetroTheme): Promise<void> {
+  if (theme.font.includes('Press Start 2P')) {
+    if (!retroFontLoaded) {
+      retroFontLoaded = true;
+      // Vite emits this as an async CSS chunk; woff2 files are hashed and self-hosted
+      await import('@fontsource/press-start-2p/index.css');
+    }
+  }
+  // Apply font-family AFTER import resolves (or immediately for system fonts)
+  document.documentElement.style.fontFamily = theme.font;
+}
+
+export function clearRetroFont(): void {
+  document.documentElement.style.removeProperty('font-family');
+}
 
 /**
  * Read the currently persisted retro theme ID from localStorage.
@@ -99,18 +120,17 @@ export function clearRetroColors(): void {
 }
 
 /**
- * Apply a retro theme by ID: sets CSS vars, bgImg on body, and data-retro-theme attribute.
- *
- * Note: font loading and special effects (matrix rain, pong canvas, etc.) are
- * mounted by retro-effects.ts / loadRetroFont() — wired in Plan 05 app.ts startup.
+ * Apply a retro theme by ID: sets CSS vars, bgImg on body, data-retro-theme attribute,
+ * mounts retro effects, lazy-loads the font, and fires analytics.
  */
 export function applyRetroTheme(id: string): void {
   const theme = THEMES[id];
   if (!theme) return;
 
+  // 1. Apply CSS color tokens
   applyRetroColors(theme);
 
-  // Apply background image on body (decorative gradient / pattern)
+  // 2. Apply background image on body (decorative gradient / pattern)
   if (theme.bgImg && theme.bgImg !== 'none') {
     document.body.style.backgroundImage = theme.bgImg;
     document.body.style.backgroundSize = 'cover';
@@ -119,19 +139,34 @@ export function applyRetroTheme(id: string): void {
     document.body.style.removeProperty('background-size');
   }
 
-  // Mark element for CSS [data-retro-theme] selectors
+  // 3. Mark element for CSS [data-retro-theme] selectors
   document.documentElement.setAttribute('data-retro-theme', id);
+
+  // 4. Mount effects engine (unmounts any previous effects first)
+  mountRetroEffects(id, theme);
+
+  // 5. Lazy-load font and apply (fire-and-forget; colors are already correct)
+  void loadRetroFont(theme);
+
+  // 6. Fire analytics event — theme_id only, NO userId or secretId (ZK invariant)
+  captureRetroThemeActivated(id);
 }
 
 /**
  * Clear the active retro theme completely:
+ * - Unmounts all retro effects (cleanup timers/DOM nodes)
  * - Removes all CSS var overrides
+ * - Restores default font
  * - Removes body background overrides
  * - Removes data-retro-theme attribute
  * - Re-applies the base light/dark theme
  */
 export function clearRetroTheme(): void {
+  // Unmount effects before removing DOM/CSS (prevents dangling references)
+  unmountRetroEffects();
+
   clearRetroColors();
+  clearRetroFont();
   document.body.style.removeProperty('background-image');
   document.body.style.removeProperty('background-size');
   document.documentElement.removeAttribute('data-retro-theme');
