@@ -128,7 +128,7 @@ See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full phase details.
 - [x] **Phase 58: DMARC Upgrade** — Upgrade DMARC from p=none to p=quarantine in DNS (completed 2026-03-07)
 - [x] **Phase 59: Repo Hygiene & Documentation** — Add Tally.so link to README, triage and close stale GitHub issues (completed 2026-03-07)
 - [x] **Phase 60: Launch Narrative Writing** — Demo screencast script, Show HN post, technical writeup (completed 2026-03-07)
-- [ ] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list
+- [x] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list (completed 2026-03-07)
 
 ## Phase Details
 
@@ -307,6 +307,6 @@ Plans:
 | 58. DMARC Upgrade | 1/1 | Complete    | 2026-03-07 | - |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
-| 61. Launch Distribution Assets | 1/2 | In Progress|  | - |
+| 61. Launch Distribution Assets | 2/2 | Complete   | 2026-03-07 | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
