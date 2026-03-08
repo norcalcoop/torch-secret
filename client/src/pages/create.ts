@@ -518,7 +518,7 @@ function createProtectionPanel(
       desc.textContent =
         lockLevel === 'free'
           ? 'Create a free account to generate secure passphrases.'
-          : 'Upgrade to Pro to set custom passwords.';
+          : 'Upgrade to Pro ($5.42/mo) to set custom passwords.';
       popover.appendChild(desc);
 
       const ctaLink = document.createElement('a');

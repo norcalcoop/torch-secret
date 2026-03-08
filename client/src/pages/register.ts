@@ -14,7 +14,7 @@
 
 import { authClient } from '../api/auth-client.js';
 import { navigate } from '../router.js';
-import { Github, Mail } from 'lucide';
+import { Github, Mail, Flame } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { captureUserRegistered } from '../analytics/posthog.js';
 
@@ -34,9 +34,18 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
     // Session check failed — fall through and render the form
   }
 
+  // QW2 — Check for ?plan=pro URL param to conditionally render the Pro upgrade banner
+  const params = new URLSearchParams(window.location.search);
+  const isPlanPro = params.get('plan') === 'pro';
+
   // -- Page wrapper --
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
+
+  // QW2 — Pro upgrade banner (rendered BEFORE the header, above the form)
+  if (isPlanPro) {
+    wrapper.appendChild(createProUpgradeBanner());
+  }
 
   // -- Header --
   const header = document.createElement('header');
@@ -572,6 +581,68 @@ function createGoogleIconSvg(): SVGSVGElement {
   svg.appendChild(redG);
 
   return svg;
+}
+
+/**
+ * Create the Pro upgrade banner shown above the registration form when ?plan=pro is in the URL.
+ *
+ * QW2 — Surfaces the Pro value proposition at the moment the user is choosing to register.
+ * URL param only (no sessionStorage) per RESEARCH.md Pitfall 5 — sessionStorage does not
+ * survive OAuth redirects back to /dashboard.
+ */
+function createProUpgradeBanner(): HTMLElement {
+  const banner = document.createElement('div');
+  banner.className = 'bg-surface/60 backdrop-blur border border-border/40 rounded-xl p-4 space-y-2';
+
+  // Row 1: Flame icon + heading
+  const headingRow = document.createElement('div');
+  headingRow.className = 'flex items-center gap-2';
+  const flameIcon = createIcon(Flame, { size: 'sm', class: 'text-accent flex-shrink-0' });
+  flameIcon.setAttribute('aria-hidden', 'true');
+  const heading = document.createElement('h2');
+  heading.className = 'text-base font-heading font-semibold text-text-primary';
+  heading.textContent = 'Upgrading to Pro';
+  headingRow.appendChild(flameIcon);
+  headingRow.appendChild(heading);
+  banner.appendChild(headingRow);
+
+  // Row 2: price
+  const price = document.createElement('p');
+  price.className = 'text-sm text-text-secondary';
+  price.textContent = '$65/year \u00b7 $5.42/mo equivalent';
+  banner.appendChild(price);
+
+  // Row 3: guarantee
+  const guarantee = document.createElement('p');
+  guarantee.className = 'text-xs text-text-muted';
+  guarantee.textContent = '7-day money-back guarantee';
+  banner.appendChild(guarantee);
+
+  // Row 4: feature bullets
+  const features = document.createElement('ul');
+  features.className = 'text-sm text-text-secondary space-y-1 list-none mt-1';
+
+  const featureItems = [
+    '30-day secret expiration (vs. 7-day free)',
+    'Secret dashboard and history',
+    'Email notification when your secret is viewed',
+  ];
+  for (const text of featureItems) {
+    const li = document.createElement('li');
+    li.className = 'flex items-start gap-1.5';
+    const bullet = document.createElement('span');
+    bullet.className = 'text-accent flex-shrink-0';
+    bullet.textContent = '\u2713';
+    bullet.setAttribute('aria-hidden', 'true');
+    const labelEl = document.createElement('span');
+    labelEl.textContent = text;
+    li.appendChild(bullet);
+    li.appendChild(labelEl);
+    features.appendChild(li);
+  }
+  banner.appendChild(features);
+
+  return banner;
 }
 
 /**
