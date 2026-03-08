@@ -199,6 +199,26 @@ Plans:
 Plans:
 - [ ] 58-01-PLAN.md — DNS runbook: pre-flight report review, p=quarantine edit, smoke test verification (INFRA-01)
 
+### Phase 58.5: marketing audit fixes (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 58
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 58.5 to break down)
+
+### Phase 58.4: de-activate custome themes (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 58
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 58.4 to break down)
+
 ### Phase 58.1: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (INSERTED)
 
 **Goal:** Users can select from 22 retro-themed visual skins (games, anime, cartoon) via a header dropdown; Pro users activate themes with live hover previews, pixel SVG icons, animated background effects, and persistent selection; free users see the selector and are gated to /pricing
@@ -218,7 +238,7 @@ Plans:
 **Goal:** The confirmation page offers all four sharing modalities (copy, native share, email, QR code) and auto-clears the clipboard after 60 seconds; the create page shows authenticated users a context-aware expiry suggestion based on day and time of day
 **Requirements**: (no formal IDs — 5 high-value UX features identified in 10x session-1 analysis)
 **Depends on:** Phase 58.1
-**Plans:** 4/4 plans complete
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 58.2-01-PLAN.md — Install qrcode package, add vite.config.ts optimizeDeps, scaffold 4 test stub files (Wave 0)
@@ -228,13 +248,17 @@ Plans:
 
 ### Phase 58.3: small gems (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Ship 4 remaining small gems: burn-after-reading reveal timer, one-click reshare from dashboard, inline secret preview on create page, and passphrase word list themes
+**Requirements**: (no formal IDs — 4 high-value UX features identified in 10x session-1 analysis)
 **Depends on:** Phase 58
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 58.3 to break down)
+- [ ] 58.3-01-PLAN.md — Wave 0: test scaffolding (dashboard.test.ts new, reveal/create/passphrase tests extended RED)
+- [ ] 58.3-02-PLAN.md — Passphrase word lists (word-lists.ts new, passphrase.ts extended)
+- [ ] 58.3-03-PLAN.md — Burn timer dropdown + preview panel in create.ts
+- [ ] 58.3-04-PLAN.md — Burn timer countdown in reveal.ts
+- [ ] 58.3-05-PLAN.md — Reshare button in dashboard.ts + create.ts prefill + passphrase selector wiring
 
 ### Phase 59: Repo Hygiene & Documentation
 **Goal**: The public GitHub repository is clean, well-maintained, and surfaces the feedback link that appears on confirmation and reveal pages
@@ -343,7 +367,7 @@ Plans:
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-07 | - |
 | 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
-| 58.2. Launch Quick Wins — Do Now | 4/4 | Complete    | 2026-03-08 |
+| 58.2. Launch Quick Wins — Do Now | 5/5 | Complete   | 2026-03-08 |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |
