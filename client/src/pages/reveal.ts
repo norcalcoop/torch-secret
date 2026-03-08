@@ -101,7 +101,7 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
       // Decrypt client-side using Phase 1 crypto module
       const plaintext = await decrypt(ciphertext, key!);
 
-      // Render the revealed secret
+      // Render the revealed secret (attachBurnTimer is called internally by renderRevealedSecret)
       renderRevealedSecret(container, plaintext);
 
       // Best-effort memory cleanup: clear key reference
@@ -303,7 +303,7 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
           // Decrypt client-side
           const plaintext = await decrypt(ciphertext, encryptionKey);
 
-          // Render the revealed secret
+          // Render the revealed secret (attachBurnTimer is called internally by renderRevealedSecret)
           renderRevealedSecret(container, plaintext);
 
           // Best-effort memory cleanup
@@ -358,6 +358,56 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
     wrapper.appendChild(form);
     target.appendChild(wrapper);
   }
+}
+
+/**
+ * Attach a burn timer countdown below the terminal block.
+ *
+ * Reads the ?burn= URL search param (already read before replaceState, but also
+ * available here since replaceState preserves window.location.search).
+ *
+ * The status line is inserted after the terminal element (.mb-6). The content
+ * (<pre>) is cleared when the countdown reaches zero.
+ *
+ * Under prefers-reduced-motion, the countdown text is NOT updated each tick,
+ * but the timer still fires and hides content at zero.
+ *
+ * @internal — exported for test isolation only.
+ */
+export function attachBurnTimer(container: HTMLElement, seconds: number): void {
+  // Find the terminal block by its class (added by renderRevealedSecret)
+  const terminalEl = container.querySelector('.mb-6');
+  if (!terminalEl) return;
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const statusLine = document.createElement('p');
+  statusLine.className = 'text-sm text-text-muted mt-2 text-center';
+  if (!prefersReduced) {
+    statusLine.textContent = `Content hides in ${seconds}s`;
+  }
+  terminalEl.insertAdjacentElement('afterend', statusLine);
+
+  let remaining = seconds;
+  const interval = setInterval(() => {
+    // Guard: if the terminal has been removed (navigation), stop silently
+    if (!terminalEl.isConnected) {
+      clearInterval(interval);
+      return;
+    }
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      // Hide the secret content — querySelector('pre') may be null in test environments
+      const preEl = container.querySelector('pre');
+      if (preEl) {
+        preEl.textContent = '[Content hidden \u2014 copy it before closing]';
+      }
+      statusLine.textContent = 'Content has been hidden.';
+    } else if (!prefersReduced) {
+      statusLine.textContent = `Content hides in ${remaining}s`;
+    }
+  }, 1_000);
 }
 
 /**
@@ -427,6 +477,13 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
   wrapper.appendChild(actions);
   container.appendChild(wrapper);
   captureSecretViewed();
+
+  // Attach burn timer if ?burn= param is present (read from current search params)
+  const burnParam = new URLSearchParams(window.location.search).get('burn');
+  const burnSecs = burnParam ? parseInt(burnParam, 10) : null;
+  if (burnSecs !== null && !Number.isNaN(burnSecs) && burnSecs > 0) {
+    attachBurnTimer(container, burnSecs);
+  }
 }
 
 /**

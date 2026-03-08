@@ -204,7 +204,7 @@ Plans:
 **Goal:** [Urgent work - to be planned]
 **Requirements**: TBD
 **Depends on:** Phase 58
-**Plans:** 0 plans
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 58.5 to break down)
@@ -365,7 +365,7 @@ Plans:
 | 55. Server Code Quality Hardening | 2/2 | Complete    | 2026-03-06 | - |
 | 56. Test Gap Closure — Services & Stripe | 1/1 | Complete    | 2026-03-06 | - |
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
-| 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-07 | - |
+| 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-08 | - |
 | 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
 | 58.2. Launch Quick Wins — Do Now | 5/5 | Complete   | 2026-03-08 |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |

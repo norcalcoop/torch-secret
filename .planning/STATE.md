@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.3-03-PLAN.md (burn timer + preview panel)
-last_updated: "2026-03-08T13:59:47.591Z"
+stopped_at: Completed 58.3-02-PLAN.md (word-lists.ts + generalised passphrase)
+last_updated: "2026-03-08T14:04:12.358Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
   percent: 100
 ---
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.2-launch-quick-wins-do-now P05 | 120 | 1 tasks | 2 files |
 | Phase 58.3-small-gems P01 | 309 | 2 tasks | 4 files |
 | Phase 58.3-small-gems P03 | 8 | 2 tasks | 1 files |
+| Phase 58.3-small-gems P02 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,11 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - select.value = '30' set after option append to force DOM selection state — optEl.selected = true does not reflect through .selected property query in happy-dom test environment
 - id="preview-terminal" set on createTerminalBlock wrapper div for querySelector('#preview-terminal') targeting in tests
 - burnParam appended before # fragment per RFC 3986 §3.5 — reveal.ts reads window.location.search for burn timer trigger; burnTimerRow inserted unconditionally (no auth gate) per 58.3-CONTEXT.md
+
+### Phase 58.3 Plan 02 Decisions (2026-03-08)
+
+- buf[0] and wordList[index] require no type assertions — TypeScript infers number from Uint32Array; used ?? fallback for wordList access to satisfy strict checks without unsafe assertions
+- getUnbiasedIndex() renamed to getUnbiasedRandomIndex(listLength) — generalised from hard-coded WORD_COUNT=7776 to accept any list length; same rejection-sampling algorithm
 
 ### Phase 58.2 Plan 05 Decisions (2026-03-08)
 
@@ -202,7 +208,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T13:59:47.588Z
-Stopped at: Completed 58.3-03-PLAN.md (burn timer + preview panel)
+Last session: 2026-03-08T14:04:12.354Z
+Stopped at: Completed 58.3-02-PLAN.md (word-lists.ts + generalised passphrase)
 Resume file: None
 Next action: /gsd:execute-phase 55
