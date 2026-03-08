@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.3-02-PLAN.md (word-lists.ts + generalised passphrase)
-last_updated: "2026-03-08T14:04:12.358Z"
+stopped_at: Completed 58.3-04-PLAN.md (burn timer countdown on reveal page)
+last_updated: "2026-03-08T14:08:38.430Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 100
 ---
 
@@ -62,6 +62,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.3-small-gems P01 | 309 | 2 tasks | 4 files |
 | Phase 58.3-small-gems P03 | 8 | 2 tasks | 1 files |
 | Phase 58.3-small-gems P02 | 8 | 2 tasks | 2 files |
+| Phase 58.3-small-gems P04 | 480 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,12 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.3 Plan 04 Decisions (2026-03-08)
+
+- attachBurnTimer called inside renderRevealedSecret (not only after it in renderRevealPage) — Wave 0 tests call renderRevealedSecret directly; function must be self-contained to pass test suite without driving the full page flow
+- querySelector('.mb-6') used to find terminal element for status line insertion — createTerminalBlock mock returns plain div that gets mb-6 added; querySelector('pre') used only at T=0 with null guard for content hiding
+- burnSeconds > 0 guard: parseInt('abc', 10) returns NaN; !Number.isNaN filters it; negative/zero values also rejected
 
 ### Phase 58.3 Plan 03 Decisions (2026-03-08)
 
@@ -208,7 +215,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T14:04:12.354Z
-Stopped at: Completed 58.3-02-PLAN.md (word-lists.ts + generalised passphrase)
+Last session: 2026-03-08T14:08:38.427Z
+Stopped at: Completed 58.3-04-PLAN.md (burn timer countdown on reveal page)
 Resume file: None
 Next action: /gsd:execute-phase 55

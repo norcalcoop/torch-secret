@@ -251,7 +251,7 @@ Plans:
 **Goal:** Ship 4 remaining small gems: burn-after-reading reveal timer, one-click reshare from dashboard, inline secret preview on create page, and passphrase word list themes
 **Requirements**: (no formal IDs — 4 high-value UX features identified in 10x session-1 analysis)
 **Depends on:** Phase 58
-**Plans:** 2/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [ ] 58.3-01-PLAN.md — Wave 0: test scaffolding (dashboard.test.ts new, reveal/create/passphrase tests extended RED)
