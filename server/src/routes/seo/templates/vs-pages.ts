@@ -368,6 +368,150 @@ ${CTA_BUTTON}
     ],
   },
 
+  'bitwarden-send': {
+    meta: {
+      title: 'Torch Secret vs. Bitwarden Send — When Each Is Right',
+      canonical: 'https://torchsecret.com/vs/bitwarden-send',
+      metaDesc:
+        "Torch Secret and Bitwarden Send both share secrets securely — but they solve different problems. Here's when to use each.",
+      ogTitle: 'Torch Secret vs. Bitwarden Send',
+      ogDesc:
+        'Zero-knowledge one-time secrets without a Bitwarden account. Compare features and use cases.',
+    },
+    bodyHtml: `
+${CARD_OPEN}
+${H1('Torch Secret vs. Bitwarden Send')}
+${P(`${STRONG('TL;DR:')} Both tools protect sensitive data in transit. Bitwarden Send is built for teams already inside the Bitwarden ecosystem. Torch Secret is for anyone — no accounts, no apps, no setup on either end.`)}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('When Bitwarden Send is the right choice')}
+${UL_OPEN}
+${LI('Your whole team already uses Bitwarden for password management')}
+${LI('You want to share inside a controlled workspace with audit logs')}
+${LI('The recipient already has Bitwarden installed')}
+${LI('You need to send the same secret to multiple recipients')}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('When Torch Secret is the right choice')}
+${UL_OPEN}
+${LI('The recipient has no Bitwarden account — no setup required on their end')}
+${LI('You need one-time destruction — the secret vanishes after the first view, guaranteed')}
+${LI("You're sharing outside your organization (contractors, clients, anyone)")}
+${LI('Zero-knowledge architecture matters — the server never sees plaintext or the key')}
+${LI('You want a link that works in any browser, no app needed')}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('Feature comparison')}
+${P('Torch Secret vs. Bitwarden Send — key differences:')}
+${UL_OPEN}
+${LI(`${STRONG('Account required (recipient):')} Torch Secret — none. Bitwarden Send — none (link-based).`)}
+${LI(`${STRONG('Account required (sender):')} Torch Secret — optional (free tier, no signup). Bitwarden Send — yes, Bitwarden account required.`)}
+${LI(`${STRONG('Encryption key location:')} Torch Secret — URL fragment, never sent to server. Bitwarden Send — server-side key management.`)}
+${LI(`${STRONG('One-time destruction:')} Torch Secret — atomic delete on first view. Bitwarden Send — configurable (1–1000 views).`)}
+${LI(`${STRONG('Max expiration:')} Torch Secret Pro — 30 days. Bitwarden Send — 31 days.`)}
+${LI(`${STRONG('Price for sender:')} Torch Secret — free (up to 7-day expiry). Bitwarden — free tier includes Send.`)}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CTA_BUTTON}
+    `,
+    faqItems: [
+      {
+        question: 'Why pay $65/year for Torch Secret when Bitwarden Send is free?',
+        answer:
+          "Bitwarden Send requires the sender to have a Bitwarden account. Torch Secret Free requires no account at all — just paste and share. The Pro plan ($5.42/mo) adds 30-day expiry, a secret dashboard, and email notification when your secret is viewed. If you're already paying for Bitwarden, Send is a great bundled option. If you need to share with anyone outside your Bitwarden workspace without any setup friction, Torch Secret is faster.",
+      },
+      {
+        question: 'Is Torch Secret zero-knowledge in the same way Bitwarden is?',
+        answer:
+          'Different architectures. Bitwarden uses a zero-knowledge password vault where your vault key never leaves your device. Torch Secret uses a URL-fragment key: the AES-256 encryption key is generated in your browser, placed in the URL fragment (#key), and shared only via the link. The fragment is never sent to the server per HTTP spec (RFC 3986 §3.5). A full server breach reveals only encrypted blobs — no keys, no plaintext.',
+      },
+      {
+        question: 'Can I use both Bitwarden Send and Torch Secret?',
+        answer:
+          'Absolutely. Many security-conscious teams use Bitwarden for internal password management and Torch Secret for external one-time shares with contractors, clients, or anyone without a Bitwarden account.',
+      },
+    ],
+  },
+
+  'email-and-slack': {
+    meta: {
+      title: "Stop Sharing Passwords Over Email and Slack — There's a Safer Way",
+      canonical: 'https://torchsecret.com/vs/email-and-slack',
+      metaDesc:
+        'Passwords sent over email or Slack sit in message history forever. Torch Secret creates a one-time link that self-destructs after the recipient opens it.',
+      ogTitle: 'Stop Sharing Passwords Over Email and Slack',
+      ogDesc: 'One-time encrypted links that self-destruct. No accounts. No message history. Free.',
+    },
+    bodyHtml: `
+${CARD_OPEN}
+${H1('Stop Sharing Passwords Over Email and Slack')}
+${P(`${STRONG('The problem:')} Pasting a password into Slack or email leaves it in message history — searchable, forwarded, and exposed in every breach of that platform. There's a better way.`)}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('Why email and Slack are risky for credentials')}
+${UL_OPEN}
+${LI('Message history is permanent — that Slack DM or email thread lives forever, even after the job is done')}
+${LI('Breach exposure — if your Slack workspace or email is compromised, every password you ever shared is exposed')}
+${LI('No self-destruction — you cannot unsend an email or guarantee a Slack message was deleted')}
+${LI('Forwarding and screenshots — you cannot control what the recipient does with the message')}
+${LI('Audit risk — regulators increasingly scrutinize credential-sharing practices in audit logs')}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('How Torch Secret is different')}
+${UL_OPEN}
+${LI('Your secret is encrypted in the browser before it leaves your device — the server only stores ciphertext')}
+${LI('The decryption key lives in the URL fragment (#key) — it is never sent to the server per HTTP spec')}
+${LI('The secret is atomically destroyed on first view — a full server dump after the recipient opens it reveals nothing')}
+${LI('No account required for the recipient — share a link, they click it, the secret is gone')}
+${LI('Optional password protection and expiration for additional control')}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CARD_OPEN}
+${H2('Common use cases')}
+${UL_OPEN}
+${LI('Sharing an API key or database password with a contractor')}
+${LI('Sending a temporary admin password to a new employee')}
+${LI('Passing credentials to a client without an account or app on either side')}
+${LI('Securely sending a WiFi password, SSH key, or two-factor recovery code')}
+${UL_CLOSE}
+${CARD_CLOSE}
+
+${CTA_BUTTON}
+    `,
+    faqItems: [
+      {
+        question: 'Is this really more secure than sending over a company Slack?',
+        answer:
+          "Yes — for credentials specifically. Slack is a collaboration platform, not a secrets manager. Your Slack workspace message history is stored on Slack's servers, accessible to workspace admins, and exposed if the workspace is compromised. Torch Secret encrypts in your browser, keeps the key out of server reach, and destroys the secret after one view.",
+      },
+      {
+        question: 'What if I need to share the same password with multiple people?',
+        answer:
+          "Create a separate Torch Secret link for each recipient. Each link is one-time — after the first view, it's gone. This gives you per-recipient control and a clean audit trail.",
+      },
+      {
+        question: 'Does the recipient need to create an account?',
+        answer:
+          "No. The recipient clicks the link and sees the secret immediately. No signup, no app, no friction. That's intentional — the security model should not depend on the recipient having any particular software.",
+      },
+      {
+        question: 'What happens if I accidentally send the wrong person the link?',
+        answer:
+          'Open the link yourself before they do — viewing it destroys it. Or, if the link has not been viewed, it will automatically expire based on your chosen expiration time (1 hour to 30 days on Pro).',
+      },
+    ],
+  },
+
   privnote: {
     meta: {
       title: 'Torch Secret vs. Privnote — Open Source vs. Closed, Verified vs. Trust-Us',

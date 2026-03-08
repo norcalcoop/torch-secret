@@ -14,7 +14,7 @@ afterAll(async () => {
 
 // SEO-01: Competitor comparison pages (/vs/*)
 describe('SEO-01: VS pages server-rendered', () => {
-  test.each(['onetimesecret', 'pwpush', 'privnote'])(
+  test.each(['onetimesecret', 'pwpush', 'privnote', 'bitwarden-send', 'email-and-slack'])(
     'GET /vs/%s returns 200 with <h1> in body',
     async (slug) => {
       const res = await request(app).get(`/vs/${slug}`).expect(200);
