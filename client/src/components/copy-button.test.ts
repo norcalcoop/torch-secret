@@ -79,3 +79,52 @@ describe('createCopyButton — autoClearMs countdown', () => {
     expect(labelSpan?.textContent).toBe('Copy Link');
   });
 });
+
+describe('createCopyButton — focus-deferred clear', () => {
+  let mockHasFocus: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockWriteText.mockClear();
+    mockHasFocus = vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    mockHasFocus.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('defers clear to focus event when document is not focused at countdown expiry', async () => {
+    mockHasFocus.mockReturnValue(false);
+    const btn = createCopyButton(() => 'secret', 'Copy Link', { autoClearMs: 3_000 });
+    btn.click();
+    await Promise.resolve(); // flush microtask
+    mockWriteText.mockClear();
+    vi.advanceTimersByTime(3_000);
+    await Promise.resolve();
+    expect(mockWriteText).not.toHaveBeenCalled(); // deferred, not immediate
+    window.dispatchEvent(new Event('focus'));
+    await Promise.resolve();
+    expect(mockWriteText).toHaveBeenCalledWith(''); // fires on focus return
+  });
+
+  it('cleans up pending focus listener on re-copy', async () => {
+    mockHasFocus.mockReturnValue(false);
+    const btn = createCopyButton(() => 'secret', 'Copy Link', { autoClearMs: 3_000 });
+    btn.click();
+    await Promise.resolve();
+    vi.advanceTimersByTime(3_000); // countdown expires with no focus — deferred handler registered
+    await Promise.resolve();
+    // Tab becomes focused again; user re-copies
+    mockHasFocus.mockReturnValue(true);
+    btn.click(); // re-copy resets everything
+    await Promise.resolve();
+    mockWriteText.mockClear();
+    // dispatch focus — should NOT trigger the old stale handler
+    window.dispatchEvent(new Event('focus'));
+    await Promise.resolve();
+    // writeText('') must NOT have been called by the old handler
+    // (the new countdown is running; it will clear when its time comes)
+    expect(mockWriteText).not.toHaveBeenCalledWith('');
+  });
+});

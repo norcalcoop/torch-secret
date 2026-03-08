@@ -82,10 +82,32 @@ export function createCopyButton(
 
   // Countdown state — stored in closure so re-copy clears the previous interval
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
+  // Focus-deferred clear handler — non-null when a clear is pending focus return
+  let pendingFocusHandler: (() => void) | null = null;
+
+  function clearClipboard(): void {
+    if (document.hasFocus()) {
+      void navigator.clipboard.writeText('').catch(() => {});
+    } else {
+      // Document is unfocused — Clipboard API will be rejected silently.
+      // Register a one-shot focus listener to clear when the user returns.
+      const handler = () => {
+        pendingFocusHandler = null;
+        void navigator.clipboard.writeText('').catch(() => {});
+      };
+      pendingFocusHandler = handler;
+      window.addEventListener('focus', handler, { once: true });
+    }
+  }
 
   function startCountdown(): void {
     if (!options?.autoClearMs) return;
     if (countdownInterval !== null) clearInterval(countdownInterval);
+    // Remove any stale pending focus handler from a previous countdown
+    if (pendingFocusHandler !== null) {
+      window.removeEventListener('focus', pendingFocusHandler);
+      pendingFocusHandler = null;
+    }
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let remaining = Math.floor(options.autoClearMs / 1_000);
     if (!prefersReduced) {
@@ -96,7 +118,7 @@ export function createCopyButton(
       if (remaining <= 0) {
         clearInterval(countdownInterval!);
         countdownInterval = null;
-        void navigator.clipboard.writeText('').catch(() => {});
+        clearClipboard();
         labelSpan.textContent = defaultLabel;
       } else if (!prefersReduced) {
         labelSpan.textContent = `Copied \u2014 clears in ${remaining}s`;
