@@ -11,8 +11,10 @@ Object.defineProperty(navigator, 'clipboard', {
 // Mock toast (fire-and-forget side effect)
 vi.mock('./toast.js', () => ({ showToast: vi.fn() }));
 // Mock icons (DOM-only side effect)
+// Use createElementNS('svg') to match real icon output — a <span> mock causes
+// span:last-child queries to find the icon instead of the labelSpan.
 vi.mock('./icons.js', () => ({
-  createIcon: vi.fn(() => document.createElement('span')),
+  createIcon: vi.fn(() => document.createElementNS('http://www.w3.org/2000/svg', 'svg')),
 }));
 
 import { createCopyButton } from './copy-button.js';
