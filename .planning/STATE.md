@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Phase 58.5 context gathered
-last_updated: "2026-03-08T17:54:46.821Z"
+stopped_at: Completed 58.5-01-PLAN.md
+last_updated: "2026-03-08T19:12:31.776Z"
 last_activity: "2026-03-08 - Completed quick task 1: Create .github/dependabot.yml with github-actions and npm ecosystems"
 progress:
   total_phases: 13
-  completed_phases: 12
-  total_plans: 26
-  completed_plans: 26
+  completed_phases: 13
+  total_plans: 28
+  completed_plans: 28
   percent: 100
 ---
 
@@ -64,6 +64,8 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.3-small-gems P02 | 8 | 2 tasks | 2 files |
 | Phase 58.3-small-gems P04 | 480 | 1 tasks | 1 files |
 | Phase 58.3-small-gems P05 | 900 | 2 tasks | 3 files |
+| Phase 58.5-marketing-audit-fixes P02 | 128 | 2 tasks | 3 files |
+| Phase 58.5-marketing-audit-fixes P01 | 483 | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -95,6 +97,18 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.5 Plan 01 Decisions (2026-03-08)
+
+- Homepage email capture section deleted entirely (createEmailCaptureSection + replaceFormWithSuccess removed) — QW8 removes a conversion liability with no replacement
+- S4 /use/ links use plain `<a href>` on card titles without navigate() — /use/* pages are Express SSR routes; SPA navigate() would 404
+- QW2 Pro banner reads URLSearchParams only at render time (no sessionStorage) — per RESEARCH.md Pitfall 5, sessionStorage does not survive OAuth redirects
+- compareDocumentPosition document-order test uses both text fragments to uniquely identify guarantee `<p>` vs. FAQ answer element that also contains "7-day" text
+
+### Phase 58.5 Plan 02 Decisions (2026-03-08)
+
+- bitwarden-send framing: "different tools for different jobs" — measured, not aggressive; FAQ addresses the free objection directly with account-friction explanation
+- email-and-slack framing: educational problem/solution for credential-risk education targeting "share password without email" top-of-funnel query
 
 ### Phase 58.4 Plan 01 Decisions (2026-03-08)
 
@@ -236,7 +250,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T17:54:46.815Z
-Stopped at: Phase 58.5 context gathered
-Resume file: .planning/phases/58.5-marketing-audit-fixes/58.5-CONTEXT.md
+Last session: 2026-03-08T19:12:31.772Z
+Stopped at: Completed 58.5-01-PLAN.md
+Resume file: None
 Next action: /gsd:execute-phase 55

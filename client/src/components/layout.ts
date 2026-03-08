@@ -332,7 +332,7 @@ function createFooter(): HTMLElement {
   openSourceLink.target = '_blank';
   openSourceLink.rel = 'noopener noreferrer';
   openSourceLink.className = 'flex items-center gap-1 hover:text-text-secondary transition-colors';
-  openSourceLink.appendChild(createIcon(Github, { size: 'xs', class: 'flex-shrink-0' }));
+  openSourceLink.appendChild(createIcon(Github, { size: 'sm', class: 'flex-shrink-0' }));
   const osText = document.createElement('span');
   osText.textContent = 'Open Source';
   openSourceLink.appendChild(osText);

@@ -204,7 +204,7 @@ Plans:
 **Goal:** Homepage, registration, pricing, reveal, layout, and create pages implement all 10 marketing audit items — ZK-focused H1, Pro registration context, guarantee badge, viral reveal CTA, Open Source link, internal linking, Security Architecture section, email capture removal, Pro popover pricing, and two new competitor comparison pages
 **Requirements**: none (10 items from CONTEXT.md: QW1–QW4, QW6–QW8, S1, S2, S4)
 **Depends on:** Phase 58
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 58.5-01-PLAN.md — Wave 0 test stubs + SPA frontend changes (QW1–QW4, QW6–QW8, S2, S4)
@@ -369,7 +369,7 @@ Plans:
 | 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-08 | - |
 | 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
 | 58.2. Launch Quick Wins — Do Now | 5/5 | Complete   | 2026-03-08 |
-| 58.5. Marketing Audit Fixes | 0/2 | In Progress | - |
+| 58.5. Marketing Audit Fixes | 2/2 | Complete   | 2026-03-08 |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |
