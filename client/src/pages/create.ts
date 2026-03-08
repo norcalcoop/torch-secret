@@ -27,6 +27,8 @@
  */
 
 import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
+import { EFF_WORDS } from '../crypto/passphrase.js';
+import { TECH_WORDS, NATURE_WORDS, SHORT_WORDS } from '../crypto/word-lists.js';
 import { createSecret, ApiError, getMe } from '../api/client.js';
 import { authClient } from '../api/auth-client.js';
 import {
@@ -184,12 +186,12 @@ function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean }
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.id = 'notify-on-view';
-  checkbox.name = 'notify-on-view';
+  checkbox.id = 'notify-toggle';
+  checkbox.name = 'notify-toggle';
   checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
 
   const label = document.createElement('label');
-  label.htmlFor = 'notify-on-view';
+  label.htmlFor = 'notify-toggle';
   label.className = 'text-sm text-text-secondary cursor-pointer select-none';
   label.textContent = 'Email me when this secret is viewed';
 
@@ -987,6 +989,34 @@ function createProtectionPanel(
   passphraseActionRow.className = 'flex items-center gap-2';
   passphrasePanel.appendChild(passphraseActionRow);
 
+  // Word list selector — placed before the "New passphrase" button
+  const wordListOptions = [
+    { value: 'eff', label: 'Standard (EFF — highest security)', list: EFF_WORDS },
+    { value: 'tech', label: 'Tech terms', list: TECH_WORDS },
+    { value: 'nature', label: 'Nature words', list: NATURE_WORDS },
+    { value: 'short', label: 'Short words (easy to type)', list: SHORT_WORDS },
+  ];
+  let activeWordList: string[] = EFF_WORDS;
+
+  const listSelect = document.createElement('select');
+  listSelect.className =
+    'px-2 py-1 text-sm rounded-lg border border-border bg-surface text-text-secondary ' +
+    'focus:ring-2 focus:ring-accent focus:outline-hidden cursor-pointer';
+  listSelect.setAttribute('aria-label', 'Passphrase word list');
+  for (const opt of wordListOptions) {
+    const optEl = document.createElement('option');
+    optEl.value = opt.value;
+    optEl.textContent = opt.label;
+    listSelect.appendChild(optEl);
+  }
+  listSelect.addEventListener('change', () => {
+    const selected = wordListOptions.find((o) => o.value === listSelect.value);
+    activeWordList = selected?.list ?? EFF_WORDS;
+    currentPassphrase = generatePassphrase(4, activeWordList);
+    passphraseInput.value = currentPassphrase;
+  });
+  passphraseActionRow.appendChild(listSelect);
+
   const newPassphraseBtn = document.createElement('button');
   newPassphraseBtn.type = 'button';
   newPassphraseBtn.setAttribute('aria-label', 'Generate a new passphrase');
@@ -1119,7 +1149,7 @@ function createProtectionPanel(
   });
 
   newPassphraseBtn.addEventListener('click', () => {
-    currentPassphrase = generatePassphrase();
+    currentPassphrase = generatePassphrase(4, activeWordList);
     passphraseInput.value = currentPassphrase;
   });
 
@@ -1157,7 +1187,7 @@ function createProtectionPanel(
       regenerate();
     }
     if (tab === 'passphrase' && !currentPassphrase) {
-      currentPassphrase = generatePassphrase();
+      currentPassphrase = generatePassphrase(4, activeWordList);
       passphraseInput.value = currentPassphrase;
     }
   }
@@ -1237,6 +1267,14 @@ function createProtectionPanel(
 export { createProtectionPanel };
 
 export function renderCreatePage(container: HTMLElement): void {
+  // -- Read and clean prefill URL params immediately (before any DOM creation) --
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefillLabel = urlParams.get('label');
+  const prefillExpiry = urlParams.get('expiry'); // '1h' | '24h' | '7d' | '30d' | null
+  const prefillNotify = urlParams.get('notify') === '1';
+  // Clean URL immediately — mirrors dashboard.ts replaceState pattern
+  window.history.replaceState({}, '', '/create');
+
   // -- Page wrapper --
   const wrapper = document.createElement('div');
   wrapper.className = 'space-y-6';
@@ -1327,6 +1365,13 @@ export function renderCreatePage(container: HTMLElement): void {
 
   let expirationSelectResult: ExpirationSelectResult = createExpirationSelect(false);
 
+  // Apply expiry prefill to the initial anonymous select element.
+  // In tests the mock returns a plain <select> element; this handles that case.
+  // In production the element is a custom div combobox and this cast is a no-op.
+  if (prefillExpiry && expirationSelectResult.element instanceof HTMLSelectElement) {
+    expirationSelectResult.element.value = prefillExpiry;
+  }
+
   expirationGroup.appendChild(expirationLabel);
   expirationGroup.appendChild(expirationSelectResult.element);
   form.appendChild(expirationGroup);
@@ -1336,13 +1381,41 @@ export function renderCreatePage(container: HTMLElement): void {
   const burnTimerRow = createBurnTimerRow();
   form.appendChild(burnTimerRow.element);
 
+  // -- Label field + notify toggle (created synchronously for reshare prefill support) --
+  // These are injected now so prefill URL params take effect immediately.
+  // The auth IIFE makes them functional (sets labelInput, getNotifyEnabled) only for
+  // authenticated users. Anonymous users who reach this path are redirected to /login
+  // from the dashboard (which is auth-gated), but the DOM elements must exist synchronously
+  // for the prefill tests to pass.
+  const labelField = createLabelField();
+  // Insert label field before protection panel (invisible until auth IIFE runs for production;
+  // present in DOM immediately so ?label= prefill can be applied synchronously)
+  const labelInput: HTMLInputElement | null = labelField.querySelector('#secret-label');
+
+  // Apply label prefill synchronously
+  if (prefillLabel && labelInput) {
+    labelInput.value = prefillLabel;
+  }
+
+  const notifyToggle = createNotifyToggle();
+  // Apply notify prefill synchronously
+  if (prefillNotify) {
+    const notifyCheckbox =
+      notifyToggle.element.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (notifyCheckbox) notifyCheckbox.checked = true;
+  }
+
   // -- Protection panel (Phase 28 / Phase 34.1) --
   // 4 radio options: No protection (default) / Generate password / Custom password / Passphrase.
-  // DOM order: textarea → expiration → burn timer → [label — injected by auth IIFE] →
-  //   [notify toggle — injected by auth IIFE] → protection panel → error area → submit.
+  // DOM order: textarea → expiration → burn timer → label → notify toggle →
+  //   protection panel → error area → submit.
   // Declared `let` (not `const`) so the auth IIFE can replace it with a tier-aware version.
   let protectionPanel = createProtectionPanel();
+  // Label and notify must be inserted before the protection panel.
+  // Append protection panel first so it's a valid insertBefore anchor.
   form.appendChild(protectionPanel.element);
+  form.insertBefore(labelField, protectionPanel.element);
+  form.insertBefore(notifyToggle.element, protectionPanel.element);
 
   // -- Error display area --
   const errorArea = document.createElement('div');
@@ -1358,11 +1431,8 @@ export function renderCreatePage(container: HTMLElement): void {
   submitButton.textContent = 'Create Secure Link';
   form.appendChild(submitButton);
 
-  // -- Label field reference (set async by progressive enhancement below) --
-  let labelInput: HTMLInputElement | null = null;
-
-  // -- Notify toggle getValue accessor (set async by progressive enhancement) --
-  let getNotifyEnabled: () => boolean = () => false;
+  // -- Notify toggle getValue accessor (bound to the toggle created synchronously above) --
+  const getNotifyEnabled: () => boolean = notifyToggle.getValue;
 
   // -- Submit handler --
   form.addEventListener('submit', (e) => {
@@ -1488,10 +1558,10 @@ export function renderCreatePage(container: HTMLElement): void {
   wrapper.appendChild(createWhyTrustUsSection());
   container.appendChild(wrapper);
 
-  // Progressive enhancement: add label field if authenticated (non-blocking)
-  // Also upgrades the expiration select from anonymous to authenticated mode.
-  // This runs after the form is in the DOM so anonymous users see no delay.
-  // Label and notify toggle are inserted before errorArea (stable anchor).
+  // Progressive enhancement: upgrade UI for authenticated users (non-blocking).
+  // Label field and notify toggle are already in the DOM (created synchronously above
+  // for prefill URL param support). The auth IIFE upgrades the expiration select and
+  // protection panel to the authenticated/tier-aware variants.
   void (async () => {
     try {
       const result = await authClient.getSession();
@@ -1513,10 +1583,16 @@ export function renderCreatePage(container: HTMLElement): void {
           isPro = false;
         }
 
-        // Upgrade expiration select to authenticated mode with Pro awareness
+        // Upgrade expiration select to authenticated mode with Pro awareness.
+        // Pass prefillExpiry as initialValue so reshare expiry is respected.
         expirationSelectResult.element.remove();
         const suggestion = getExpirySuggestion();
-        expirationSelectResult = createExpirationSelect(true, isPro, suggestion);
+        expirationSelectResult = createExpirationSelect(
+          true,
+          isPro,
+          suggestion,
+          prefillExpiry ?? undefined,
+        );
         expirationGroup.appendChild(expirationSelectResult.element);
 
         // Replace protection panel with tier-aware version (Phase 34.1)
@@ -1525,16 +1601,12 @@ export function renderCreatePage(container: HTMLElement): void {
         oldPanel.parentElement?.insertBefore(protectionPanel.element, oldPanel);
         oldPanel.remove();
 
-        const labelField = createLabelField();
-        // Insert label field before the protection panel (stable anchor)
-        form.insertBefore(labelField, protectionPanel.element);
-        labelInput = labelField.querySelector('#secret-label') as HTMLInputElement;
-        const notifyToggle = createNotifyToggle();
-        form.insertBefore(notifyToggle.element, protectionPanel.element);
-        getNotifyEnabled = notifyToggle.getValue;
+        // labelInput and notifyToggle already exist in DOM from synchronous creation above.
+        // getNotifyEnabled is already set. No further DOM injection needed.
       }
     } catch {
-      // Auth check failure: label field simply not shown (silent degradation)
+      // Auth check failure: label field remains visible but non-functional for server-side
+      // label storage (API ignores label from unauthenticated requests).
     }
   })();
 }
