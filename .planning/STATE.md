@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.3-01-PLAN.md (Wave 0 TDD scaffolding)
-last_updated: "2026-03-08T13:54:26.911Z"
+stopped_at: Completed 58.3-03-PLAN.md (burn timer + preview panel)
+last_updated: "2026-03-08T13:59:47.591Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 25
-  completed_plans: 21
+  completed_plans: 22
   percent: 100
 ---
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.2 P04 | 196 | 3 tasks | 4 files |
 | Phase 58.2-launch-quick-wins-do-now P05 | 120 | 1 tasks | 2 files |
 | Phase 58.3-small-gems P01 | 309 | 2 tasks | 4 files |
+| Phase 58.3-small-gems P03 | 8 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,12 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.3 Plan 03 Decisions (2026-03-08)
+
+- select.value = '30' set after option append to force DOM selection state — optEl.selected = true does not reflect through .selected property query in happy-dom test environment
+- id="preview-terminal" set on createTerminalBlock wrapper div for querySelector('#preview-terminal') targeting in tests
+- burnParam appended before # fragment per RFC 3986 §3.5 — reveal.ts reads window.location.search for burn timer trigger; burnTimerRow inserted unconditionally (no auth gate) per 58.3-CONTEXT.md
 
 ### Phase 58.2 Plan 05 Decisions (2026-03-08)
 
@@ -195,7 +202,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T13:54:26.908Z
-Stopped at: Completed 58.3-01-PLAN.md (Wave 0 TDD scaffolding)
+Last session: 2026-03-08T13:59:47.588Z
+Stopped at: Completed 58.3-03-PLAN.md (burn timer + preview panel)
 Resume file: None
 Next action: /gsd:execute-phase 55
