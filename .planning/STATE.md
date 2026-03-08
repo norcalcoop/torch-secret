@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Phase 58.4 context gathered
-last_updated: "2026-03-08T15:30:03.622Z"
+stopped_at: Completed 58.4-01-PLAN.md
+last_updated: "2026-03-08T16:35:08.068Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 13
-  completed_phases: 11
-  total_plans: 25
-  completed_plans: 25
+  completed_phases: 12
+  total_plans: 26
+  completed_plans: 26
   percent: 100
 ---
 
@@ -95,6 +95,12 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.4 Plan 01 Decisions (2026-03-08)
+
+- RETRO_ENABLED=false gate: single exported constant from theme-toggle.ts gates dropdown, app.ts startup, and FOWT inline script — one-line re-enablement post-launch (flip to true in theme-toggle.ts + index.html)
+- helpers refactored from retroGroup.querySelectorAll to panel.querySelectorAll — retroGroup scoped inside if (RETRO_ENABLED) block, not accessible from outer scope
+- accessibility tests updated to RETRO_ENABLED-aware branches rather than deleted — tests remain useful when gate is flipped to true post-launch
 
 ### Phase 58.3 Plan 05 Decisions (2026-03-08)
 
@@ -224,7 +230,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T15:30:03.615Z
-Stopped at: Phase 58.4 context gathered
-Resume file: .planning/phases/58.4-de-activate-custome-themes/58.4-CONTEXT.md
+Last session: 2026-03-08T16:35:08.066Z
+Stopped at: Completed 58.4-01-PLAN.md
+Resume file: None
 Next action: /gsd:execute-phase 55
