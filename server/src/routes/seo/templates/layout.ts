@@ -62,6 +62,9 @@ const SHIELD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="1
 /** Lucide Moon SVG — theme toggle icon (static; JS applies .dark/.light class). */
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 
+/** Lucide GitHub SVG — matches the icon used in the SPA footer Open Source link. */
+const GITHUB_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
+
 /** Lucide tab bar icons — 20×20, matches SPA mobile nav. */
 const ICON_HOME = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 const ICON_PEN_LINE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
@@ -77,6 +80,7 @@ function renderNav(): string {
         <span class="ssr-brand-text">Torch Secret</span>
       </a>
       <div class="ssr-nav-right">
+        <a href="/use/" class="ssr-nav-link">Use Cases</a>
         <a href="/pricing" class="ssr-nav-link">Pricing</a>
         <a href="/dashboard" class="ssr-nav-link">Dashboard</a>
         <a href="/create" class="ssr-cta-nav">Create a Secret</a>
@@ -110,17 +114,72 @@ function renderMobileNav(): string {
   </nav>`;
 }
 
-function renderFooter(): string {
+function renderFooter(cspNonce: string): string {
+  // Submit handler uses textContent only — no innerHTML with user data (XSS-safe).
+  const emailScript =
+    `<script nonce="${cspNonce}">(function(){` +
+    `var form=document.getElementById('ssr-email-form');` +
+    `if(!form)return;` +
+    `form.addEventListener('submit',function(e){` +
+    `e.preventDefault();` +
+    `var input=document.getElementById('ssr-email-input');` +
+    `var consent=document.getElementById('ssr-email-consent');` +
+    `var email=(input.value||'').trim();` +
+    `var err=document.getElementById('ssr-email-error');` +
+    `var btn=document.getElementById('ssr-email-btn');` +
+    `err.classList.add('ssr-hidden');` +
+    `if(!email){err.textContent='Please enter your email address.';err.classList.remove('ssr-hidden');return;}` +
+    `if(!consent.checked){err.textContent='Please check the consent box to continue.';err.classList.remove('ssr-hidden');return;}` +
+    `btn.disabled=true;btn.textContent='Joining...';` +
+    `fetch('/api/subscribers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,consent:true})})` +
+    `.then(function(r){` +
+    `if(r.ok){` +
+    `form.classList.add('ssr-hidden');` +
+    `var body=document.getElementById('ssr-email-success-body');` +
+    `body.textContent='We sent a confirmation link to '+email+'. Click it to join the list.';` +
+    `document.getElementById('ssr-email-success').classList.remove('ssr-hidden');` +
+    `}else{btn.disabled=false;btn.textContent='Join the list';err.textContent='Something went wrong. Please try again.';err.classList.remove('ssr-hidden');}` +
+    `}).catch(function(){btn.disabled=false;btn.textContent='Join the list';err.textContent='Something went wrong. Please try again.';err.classList.remove('ssr-hidden');});` +
+    `});` +
+    `})();</script>`;
+
   return `
   <footer id="site-footer">
+    <section class="ssr-email-capture" aria-labelledby="ssr-email-heading">
+      <p id="ssr-email-heading" class="ssr-email-heading">Stay in the loop</p>
+      <p class="ssr-email-sub">Join our early access list. No spam, unsubscribe any time.</p>
+      <form id="ssr-email-form" novalidate class="ssr-email-form">
+        <div class="ssr-email-row">
+          <input type="email" id="ssr-email-input" name="email" placeholder="you@example.com" required autocomplete="email" class="ssr-email-input" />
+          <button type="submit" id="ssr-email-btn" class="ssr-email-btn">Join the list</button>
+        </div>
+        <p id="ssr-email-error" class="ssr-email-error ssr-hidden" role="alert"></p>
+        <div class="ssr-email-consent-row">
+          <input type="checkbox" id="ssr-email-consent" name="consent" class="ssr-email-checkbox" />
+          <label for="ssr-email-consent" class="ssr-email-consent-label">I agree to receive product updates and marketing emails from Torch Secret. You can unsubscribe at any time. See our <a href="/privacy" class="ssr-footer-link" style="text-decoration:underline">Privacy Policy</a>.</label>
+        </div>
+      </form>
+      <div id="ssr-email-success" class="ssr-hidden">
+        <p class="ssr-email-success-head">Check your inbox</p>
+        <p id="ssr-email-success-body" class="ssr-email-success-body"></p>
+      </div>
+    </section>
     <div class="ssr-footer-inner">
       <span>Zero-knowledge encryption</span>
       <span>AES-256-GCM</span>
-      <span>Open Source</span>
+      <a href="https://github.com/norcalcoop/torch-secret" target="_blank" rel="noopener noreferrer" class="ssr-footer-github-link">${GITHUB_SVG}<span>Open Source</span></a>
       <a href="/privacy" class="ssr-footer-link">Privacy Policy</a>
       <a href="/terms" class="ssr-footer-link">Terms of Service</a>
     </div>
-  </footer>`;
+    <div class="ssr-footer-link-row">
+      <a href="/use/share-api-keys" class="ssr-footer-link">Share API Keys</a>
+      <a href="/use/share-database-credentials" class="ssr-footer-link">Share DB Credentials</a>
+      <a href="/use/send-password-without-email" class="ssr-footer-link">Send Passwords Safely</a>
+      <a href="/vs/onetimesecret" class="ssr-footer-link">vs. OneTimeSecret</a>
+      <a href="/vs/bitwarden-send" class="ssr-footer-link">vs. Bitwarden Send</a>
+    </div>
+  </footer>
+  ${emailScript}`;
 }
 
 /**
@@ -331,6 +390,29 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-links-row { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.875rem; }
     .ssr-links-row a { color: var(--ds-color-accent); text-decoration: none; }
 
+    /* ── Footer: email capture section ──────────────────────────────── */
+    .ssr-email-capture { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .ssr-email-heading { font-size: 0.875rem; font-weight: 600; color: var(--ds-color-text-primary); text-align: center; }
+    .ssr-email-sub { font-size: 0.75rem; color: var(--ds-color-text-muted); text-align: center; }
+    .ssr-email-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ssr-email-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+    .ssr-email-input { flex: 1; padding: 0.5rem 0.75rem; min-height: 2.75rem; border: 1px solid var(--ds-color-border); border-radius: 0.5rem; background: var(--ds-color-bg); color: var(--ds-color-text-primary); font-size: 0.875rem; outline: none; }
+    .ssr-email-input:focus { box-shadow: 0 0 0 2px var(--ds-color-accent); }
+    .ssr-email-btn { padding: 0.5rem 1rem; min-height: 2.75rem; border-radius: 0.5rem; background: var(--ds-color-accent); color: #fff; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+    .ssr-email-btn:hover { background: var(--ds-color-accent-hover); }
+    .ssr-email-error { font-size: 0.75rem; color: var(--ds-color-danger); }
+    .ssr-email-consent-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .ssr-email-checkbox { margin-top: 0.125rem; width: 1rem; height: 1rem; border-radius: 0.25rem; border: 1px solid var(--ds-color-border); accent-color: var(--ds-color-accent); cursor: pointer; flex-shrink: 0; }
+    .ssr-email-consent-label { font-size: 0.75rem; color: var(--ds-color-text-muted); line-height: 1.5; cursor: pointer; }
+    .ssr-email-success-head { font-size: 0.875rem; font-weight: 600; color: var(--ds-color-text-primary); text-align: center; }
+    .ssr-email-success-body { font-size: 0.75rem; color: var(--ds-color-text-muted); text-align: center; }
+    .ssr-hidden { display: none !important; }
+    /* ── Footer: Open Source GitHub link ─────────────────────────────── */
+    .ssr-footer-github-link { display: flex; align-items: center; gap: 0.25rem; color: inherit; text-decoration: none; transition: color 0.15s; }
+    .ssr-footer-github-link:hover { color: var(--ds-color-text-secondary); }
+    /* ── Footer: internal SEO links row ─────────────────────────────── */
+    .ssr-footer-link-row { max-width: 42rem; margin: 0.5rem auto 0; padding: 0 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; font-size: 0.75rem; color: var(--ds-color-text-muted); }
+
     /* ── Touch targets: minimum 44×44px per WCAG 2.5.5 ───────────────── */
     .ssr-theme-btn { min-width: 2.75rem; min-height: 2.75rem; }
 
@@ -401,7 +483,7 @@ export function renderLayout(opts: LayoutOptions): string {
   <main id="main-content" class="ssr-main">
     ${opts.bodyHtml}
   </main>
-  ${renderFooter()}
+  ${renderFooter(opts.cspNonce)}
   ${renderMobileNav()}
   ${themeScript}
   <script nonce="${opts.cspNonce}">(function(){var p=window.location.pathname;var tabs=document.querySelectorAll('#ssr-mobile-nav .ssr-tab-btn');tabs.forEach(function(t){if(t.getAttribute('data-path')===p)t.classList.add('ssr-tab-active');});})()</script>
