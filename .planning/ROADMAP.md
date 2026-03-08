@@ -213,15 +213,18 @@ Plans:
 - [ ] 58.1-04-PLAN.md — Special effects engine: MatrixRain, PongBall, DosTyper, Blink, FloatingEmojis, scanlines
 - [ ] 58.1-05-PLAN.md — App wiring: font install, effects integration, initRetroThemeListener, PostHog analytics, E2E FOWT test
 
-### Phase 58.2: launch quick wins do now (INSERTED)
+### Phase 58.2: Launch Quick Wins — Do Now (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
-**Depends on:** Phase 58
-**Plans:** 0 plans
+**Goal:** The confirmation page offers all four sharing modalities (copy, native share, email, QR code) and auto-clears the clipboard after 60 seconds; the create page shows authenticated users a context-aware expiry suggestion based on day and time of day
+**Requirements**: (no formal IDs — 5 high-value UX features identified in 10x session-1 analysis)
+**Depends on:** Phase 58.1
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 58.2 to break down)
+- [ ] 58.2-01-PLAN.md — Install qrcode package, add vite.config.ts optimizeDeps, scaffold 4 test stub files (Wave 0)
+- [ ] 58.2-02-PLAN.md — Extend copy-button.ts (autoClearMs countdown) + expiration-select.ts (suggestion hint) (Wave 1)
+- [ ] 58.2-03-PLAN.md — Create qr-code-panel.ts and mailto-button.ts new components (Wave 1, parallel)
+- [ ] 58.2-04-PLAN.md — Wire all new components into confirmation.ts and create.ts (Wave 2)
 
 ### Phase 58.3: small gems (INSERTED)
 
@@ -339,7 +342,8 @@ Plans:
 | 56. Test Gap Closure — Services & Stripe | 1/1 | Complete    | 2026-03-06 | - |
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-07 | - |
-| 58.1. UI/UX Custom Themes | 5/5 | Complete   | 2026-03-07 |
+| 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
+| 58.2. Launch Quick Wins — Do Now | 0/4 | Planned | - |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |
