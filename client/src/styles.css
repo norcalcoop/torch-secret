@@ -253,6 +253,7 @@ html[data-retro-theme] .dot-grid-bg::before {
 /* Retro button token overrides (set inline on <html> by retro-theme.ts) */
 [data-retro-theme] button:not(.no-retro) {
   background-color: var(--retro-btn-bg, inherit);
+  color: var(--retro-btn-text, inherit);
   box-shadow: var(--retro-btn-shadow, none);
   border: var(--retro-btn-border, inherit);
 }

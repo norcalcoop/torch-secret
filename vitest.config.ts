@@ -25,6 +25,7 @@ export default defineConfig({
           environment: 'node',
           fileParallelism: false,
           testTimeout: 15_000,
+          env: { NODE_ENV: 'test' },
         },
       },
     ],

@@ -33,7 +33,7 @@ export function unmountRetroEffects(): void {
   document.getElementById(EFFECTS_ROOT_ID)?.remove();
 }
 
-export function mountRetroEffects(id: string, theme: RetroTheme): void {
+export function mountRetroEffects(_id: string, theme: RetroTheme): void {
   // Always clean up previous effects before mounting new ones
   unmountRetroEffects();
 

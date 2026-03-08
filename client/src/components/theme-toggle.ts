@@ -18,7 +18,7 @@
  */
 
 import { Sun, Moon, Monitor, Palette, Lock, type IconNode } from 'lucide';
-import { createIcon } from './icons.js';
+import { createIcon, createPixelIcon } from './icons.js';
 import { getThemePreference, setThemePreference, type ThemePreference } from '../theme.js';
 import { THEMES } from '../retro-data.js';
 import {
@@ -277,14 +277,21 @@ export function createThemeDropdown(): HTMLDivElement {
   function renderToggleIcon(): void {
     btn.textContent = '';
     const retroId = getRetroTheme();
-    let iconNode: IconNode;
     if (retroId !== null) {
-      iconNode = Palette;
-    } else {
-      const pref = getThemePreference();
-      iconNode = BASE_MODE_ICONS[pref];
+      const theme = THEMES[retroId];
+      // Show the theme's first nav pixel icon to indicate which retro theme is active
+      if (theme?.nav[0]) {
+        btn.appendChild(createPixelIcon(theme.nav[0].i, 16));
+        return;
+      }
+      // Fallback if theme data is missing
+      btn.appendChild(createIcon(Palette, { size: 'sm', class: 'text-text-secondary' }));
+      return;
     }
-    btn.appendChild(createIcon(iconNode, { size: 'sm', class: 'text-text-secondary' }));
+    const pref = getThemePreference();
+    btn.appendChild(
+      createIcon(BASE_MODE_ICONS[pref], { size: 'sm', class: 'text-text-secondary' }),
+    );
   }
 
   async function updateLockIcons(): Promise<void> {

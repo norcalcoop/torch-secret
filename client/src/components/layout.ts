@@ -76,13 +76,24 @@ function createHeader(): HTMLElement {
     navigate('/');
   });
 
-  const shieldIcon = createIcon(Shield, { size: 'sm', class: 'text-accent' });
+  let brandIcon: Element = createIcon(Shield, { size: 'sm', class: 'text-accent' });
   const wordmark = document.createElement('span');
   wordmark.className = 'font-heading font-semibold text-lg';
   wordmark.textContent = 'Torch Secret';
 
-  brand.appendChild(shieldIcon);
+  brand.appendChild(brandIcon);
   brand.appendChild(wordmark);
+
+  // Swap header brand icon when retro theme activates — use nav[4] (the theme's special icon)
+  window.addEventListener('retrothemechange', (e: Event) => {
+    const { themeId } = (e as CustomEvent<{ themeId: string | null }>).detail;
+    const retroNav = themeId ? THEMES[themeId]?.nav[4] : null;
+    const newIcon = retroNav
+      ? createPixelIcon(retroNav.i, 16)
+      : createIcon(Shield, { size: 'sm', class: 'text-accent' });
+    brand.replaceChild(newIcon, brandIcon);
+    brandIcon = newIcon;
+  });
   inner.appendChild(brand);
 
   // Right-side container: Pricing | Dashboard/Login | Create a Secret | ThemeToggle

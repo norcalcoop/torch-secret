@@ -165,6 +165,8 @@ function fallbackCopy(text: string): void {
   textarea.style.top = '-9999px';
   document.body.appendChild(textarea);
   textarea.select();
+  // document.execCommand is deprecated (TS6387) but is the only clipboard API available in insecure contexts.
+  // This is the fallback path only — navigator.clipboard is always tried first.
   document.execCommand('copy');
   document.body.removeChild(textarea);
 }

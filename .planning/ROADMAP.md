@@ -211,13 +211,13 @@ Plans:
 
 ### Phase 58.4: de-activate custome themes (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Soft-hide the retro themes feature before launch with a single RETRO_ENABLED=false constant — theme dropdown shows only Light/Dark/System, stale localStorage cleared on load, no retro listeners run; re-enable post-launch with a one-line flip
+**Requirements**: none (urgent inserted phase)
 **Depends on:** Phase 58
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 58.4 to break down)
+- [ ] 58.4-01-PLAN.md — Commit engine improvements, write gate tests, apply RETRO_ENABLED gate to theme-toggle.ts / app.ts / index.html
 
 ### Phase 58.1: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (INSERTED)
 

@@ -257,7 +257,8 @@ function createBurnTimerRow(): { element: HTMLElement; getValue: () => number | 
  */
 function createPreviewPanel(textarea: HTMLTextAreaElement): HTMLElement {
   const details = document.createElement('details');
-  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+  details.className =
+    'border border-border rounded-lg bg-surface/80 backdrop-blur-md overflow-hidden';
 
   const summary = document.createElement('summary');
   summary.className =

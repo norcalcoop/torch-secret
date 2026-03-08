@@ -91,6 +91,7 @@ export function applyRetroColors(theme: RetroTheme, preview = false): void {
 
   // Retro-specific button tokens (used by [data-retro-theme] CSS selectors in styles.css)
   if (theme.btnBg) el.style.setProperty('--retro-btn-bg', theme.btnBg);
+  if (theme.btnText) el.style.setProperty('--retro-btn-text', theme.btnText);
   if (theme.btnShadow) el.style.setProperty('--retro-btn-shadow', theme.btnShadow);
   if (theme.btnBorder) el.style.setProperty('--retro-btn-border', theme.btnBorder);
 }
@@ -113,6 +114,7 @@ export function clearRetroColors(): void {
     '--ds-color-surface-raised',
     '--ds-color-border',
     '--retro-btn-bg',
+    '--retro-btn-text',
     '--retro-btn-shadow',
     '--retro-btn-border',
   ];
