@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.2-04-PLAN.md
-last_updated: "2026-03-08T03:14:53.699Z"
+stopped_at: Completed 58.3-01-PLAN.md (Wave 0 TDD scaffolding)
+last_updated: "2026-03-08T13:54:26.911Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
-  total_phases: 11
+  total_phases: 13
   completed_phases: 10
-  total_plans: 19
-  completed_plans: 19
+  total_plans: 25
+  completed_plans: 21
   percent: 100
 ---
 
@@ -58,6 +58,8 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.1 P05 | 359 | 2 tasks | 6 files |
 | Phase 58.2-launch-quick-wins-do-now P01 | 229 | 2 tasks | 7 files |
 | Phase 58.2 P04 | 196 | 3 tasks | 4 files |
+| Phase 58.2-launch-quick-wins-do-now P05 | 120 | 1 tasks | 2 files |
+| Phase 58.3-small-gems P01 | 309 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -66,6 +68,8 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 58.1 inserted after Phase 58: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (URGENT) — retro theme definitions from /Users/ourcomputer/Downloads/retro-themes.jsx; must use frontend-design skill
 - Phase 58.2 inserted after Phase 58: launch quick wins do now (URGENT) — 5 "Do Now" small gems from 10x session-1 analysis: mobile share sheet, QR code, mailto button, clipboard auto-clear countdown, intelligent expiry suggestion (renumbered from 58.1)
 - Phase 58.3 inserted after Phase 58: small gems (URGENT) — all 9 Small Gems from 10x session-1 analysis (renumbered from 58.2)
+- Phase 58.4 inserted after Phase 58: de-activate custome themes (URGENT)
+- Phase 58.5 inserted after Phase 58: marketing audit fixes (URGENT)
 
 
 
@@ -87,6 +91,12 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.2 Plan 05 Decisions (2026-03-08)
+
+- clearClipboard() extracted as inner function inside createCopyButton closure so it closes over pendingFocusHandler without argument passing
+- pendingFocusHandler stored at closure level (not inside startCountdown) so re-copy can always remove stale handler before registering a new countdown
+- { once: true } event listener option used — listener self-removes after first focus event; manual removal only needed in the re-copy cleanup path
 
 ### Phase 58.2 Plan 04 Decisions (2026-03-08)
 
@@ -185,7 +195,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T03:09:59.890Z
-Stopped at: Completed 58.2-04-PLAN.md
+Last session: 2026-03-08T13:54:26.908Z
+Stopped at: Completed 58.3-01-PLAN.md (Wave 0 TDD scaffolding)
 Resume file: None
 Next action: /gsd:execute-phase 55

@@ -199,6 +199,55 @@ function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean }
 }
 
 /**
+ * Creates the burn timer selector row (auto-hide countdown trigger).
+ * Available to all users (anonymous and authenticated).
+ * Returns element and getValue() accessor returning seconds (or null for Off).
+ * Default selection: 30 seconds.
+ */
+function createBurnTimerRow(): { element: HTMLElement; getValue: () => number | null } {
+  // Default to 30s per plan spec
+  let selectedSeconds: number | null = 30;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'flex items-center justify-between gap-3 py-2';
+
+  const label = document.createElement('label');
+  label.htmlFor = 'burn-timer';
+  label.className = 'text-sm font-medium text-text-secondary';
+  label.textContent = 'Auto-hide after viewing';
+
+  const select = document.createElement('select');
+  select.id = 'burn-timer';
+  select.className =
+    'px-2 py-1 text-sm rounded-lg border border-border bg-surface text-text-secondary focus:ring-2 focus:ring-accent focus:outline-hidden cursor-pointer';
+  select.setAttribute('aria-label', 'Auto-hide content after this many seconds');
+
+  const options: Array<{ value: string; label: string }> = [
+    { value: '', label: 'Off' },
+    { value: '15', label: '15 seconds' },
+    { value: '30', label: '30 seconds' },
+    { value: '60', label: '60 seconds' },
+  ];
+  for (const opt of options) {
+    const optEl = document.createElement('option');
+    optEl.value = opt.value;
+    optEl.textContent = opt.label;
+    select.appendChild(optEl);
+  }
+  // Set default value after appending options so the DOM reflects the selection.
+  select.value = '30';
+
+  select.addEventListener('change', () => {
+    selectedSeconds = select.value ? parseInt(select.value, 10) : null;
+  });
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(select);
+
+  return { element: wrapper, getValue: () => selectedSeconds };
+}
+
+/**
  * Show an inline rate-limit upsell card when POST /api/secrets returns 429.
  *
  * Replaces generic red error text with a branded, informational card that
@@ -1238,9 +1287,14 @@ export function renderCreatePage(container: HTMLElement): void {
   expirationGroup.appendChild(expirationSelectResult.element);
   form.appendChild(expirationGroup);
 
+  // -- Burn timer row (unconditional; available to anonymous and authenticated users) --
+  // Placed above the protection panel. Default: 30 seconds.
+  const burnTimerRow = createBurnTimerRow();
+  form.appendChild(burnTimerRow.element);
+
   // -- Protection panel (Phase 28 / Phase 34.1) --
   // 4 radio options: No protection (default) / Generate password / Custom password / Passphrase.
-  // DOM order: textarea → expiration → [label — injected by auth IIFE] →
+  // DOM order: textarea → expiration → burn timer → [label — injected by auth IIFE] →
   //   [notify toggle — injected by auth IIFE] → protection panel → error area → submit.
   // Declared `let` (not `const`) so the auth IIFE can replace it with a tier-aware version.
   let protectionPanel = createProtectionPanel();
@@ -1332,7 +1386,11 @@ export function renderCreatePage(container: HTMLElement): void {
         );
 
         // Step 3: Build share URL with key in fragment
-        const shareUrl = `${window.location.origin}/secret/${response.id}#${result.keyBase64Url}`;
+        // Append ?burn=N before the fragment when a burn timer is selected.
+        // The fragment (#key) must come last per RFC 3986 §3.5.
+        const burnSeconds = burnTimerRow.getValue();
+        const burnParam = burnSeconds !== null ? `?burn=${burnSeconds}` : '';
+        const shareUrl = `${window.location.origin}/secret/${response.id}${burnParam}#${result.keyBase64Url}`;
 
         // Step 4: Fire analytics before navigating away from create context
         captureSecretCreated(expiresIn, !!password, analyticsProtectionType);
