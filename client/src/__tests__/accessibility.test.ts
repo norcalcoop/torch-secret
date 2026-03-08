@@ -279,8 +279,8 @@ describe('Theme dropdown', () => {
     expect(toggleBtn!.getAttribute('aria-label')).toBe('Change theme');
   });
 
-  it('retro theme buttons have role="menuitem"', async () => {
-    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+  it('retro theme buttons are absent when RETRO_ENABLED is false', async () => {
+    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
     const dropdown = createThemeDropdown();
     container.appendChild(dropdown);
 
@@ -289,13 +289,18 @@ describe('Theme dropdown', () => {
     toggleBtn!.click();
 
     const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
-    expect(retroGroup).not.toBeNull();
-
-    const menuItems = retroGroup!.querySelectorAll('[role="menuitem"]');
-    expect(menuItems.length).toBeGreaterThan(0);
-    menuItems.forEach((item) => {
-      expect(item.getAttribute('role')).toBe('menuitem');
-    });
+    if (RETRO_ENABLED) {
+      // When gate is on: retro group is present and all items have role="menuitem"
+      expect(retroGroup).not.toBeNull();
+      const menuItems = retroGroup!.querySelectorAll('[role="menuitem"]');
+      expect(menuItems.length).toBeGreaterThan(0);
+      menuItems.forEach((item) => {
+        expect(item.getAttribute('role')).toBe('menuitem');
+      });
+    } else {
+      // When gate is off: retro group is absent from the panel
+      expect(retroGroup).toBeNull();
+    }
   });
 });
 
@@ -395,8 +400,8 @@ describe('Theme dropdown — Pro gating', () => {
     window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: null } }));
   });
 
-  it('free user: click locked retro theme calls navigate("/pricing"), no localStorage write', async () => {
-    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+  it('free user: retro theme buttons absent when RETRO_ENABLED is false; navigate("/pricing") when enabled', async () => {
+    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
     const dropdown = createThemeDropdown();
     container.appendChild(dropdown);
 
@@ -405,20 +410,27 @@ describe('Theme dropdown — Pro gating', () => {
     expect(toggleBtn).not.toBeNull();
     toggleBtn!.click();
 
-    // Click the first retro theme button (all are locked for free users)
     const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
-    expect(retroGroup).not.toBeNull();
-    const firstRetroBtn = retroGroup!.querySelector<HTMLButtonElement>('[data-retro-theme]');
-    expect(firstRetroBtn).not.toBeNull();
-    firstRetroBtn!.click();
 
-    // Flush the fire-and-forget async IIFE in the click handler
-    await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    if (RETRO_ENABLED) {
+      // Click the first retro theme button (all are locked for free users)
+      expect(retroGroup).not.toBeNull();
+      const firstRetroBtn = retroGroup!.querySelector<HTMLButtonElement>('[data-retro-theme]');
+      expect(firstRetroBtn).not.toBeNull();
+      firstRetroBtn!.click();
 
-    // navigate('/pricing') must have been called — not setRetroTheme
-    expect(navigate).toHaveBeenCalledWith('/pricing');
+      // Flush the fire-and-forget async IIFE in the click handler
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
 
-    // No retro theme must be persisted to localStorage
-    expect(localStorage.getItem('retro-theme')).toBeNull();
+      // navigate('/pricing') must have been called — not setRetroTheme
+      expect(navigate).toHaveBeenCalledWith('/pricing');
+
+      // No retro theme must be persisted to localStorage
+      expect(localStorage.getItem('retro-theme')).toBeNull();
+    } else {
+      // When gate is off: no retro group — pricing redirect cannot happen
+      expect(retroGroup).toBeNull();
+      expect(localStorage.getItem('retro-theme')).toBeNull();
+    }
   });
 });

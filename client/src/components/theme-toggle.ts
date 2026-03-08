@@ -31,6 +31,11 @@ import { navigate } from '../router.js';
 import { getMe } from '../api/client.js';
 import { ApiError } from '../api/client.js';
 
+// ─── Feature gate ────────────────────────────────────────────────────────────
+
+// Set to true to re-enable retro themes post-launch
+export const RETRO_ENABLED = false;
+
 // ─── Module-level Pro cache ────────────────────────────────────────────────
 
 /** Cached Pro status: null = not yet fetched, true/false = known. */
@@ -157,84 +162,86 @@ export function createThemeDropdown(): HTMLDivElement {
     baseGroup.appendChild(item);
   }
 
-  // Separator
-  const hr = document.createElement('hr');
-  hr.setAttribute('aria-hidden', 'true');
-  hr.className = 'border-border my-1.5';
-  panel.appendChild(hr);
+  if (RETRO_ENABLED) {
+    // Separator
+    const hr = document.createElement('hr');
+    hr.setAttribute('aria-hidden', 'true');
+    hr.className = 'border-border my-1.5';
+    panel.appendChild(hr);
 
-  // ── Section 2: Retro Pro themes ────────────────────────────────────────
-  const retroSectionLabel = document.createElement('p');
-  retroSectionLabel.className =
-    'px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted';
-  retroSectionLabel.setAttribute('aria-hidden', 'true');
-  retroSectionLabel.textContent = 'Retro Pro — upgrade to unlock';
-  panel.appendChild(retroSectionLabel);
+    // ── Section 2: Retro Pro themes ──────────────────────────────────────
+    const retroSectionLabel = document.createElement('p');
+    retroSectionLabel.className =
+      'px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted';
+    retroSectionLabel.setAttribute('aria-hidden', 'true');
+    retroSectionLabel.textContent = 'Retro Pro — upgrade to unlock';
+    panel.appendChild(retroSectionLabel);
 
-  const retroGroup = document.createElement('div');
-  retroGroup.setAttribute('role', 'group');
-  retroGroup.setAttribute('aria-label', 'Retro Pro themes');
-  panel.appendChild(retroGroup);
+    const retroGroup = document.createElement('div');
+    retroGroup.setAttribute('role', 'group');
+    retroGroup.setAttribute('aria-label', 'Retro Pro themes');
+    panel.appendChild(retroGroup);
 
-  // Build one button per theme in THEMES
-  for (const theme of Object.values(THEMES)) {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.setAttribute('role', 'menuitem');
-    item.dataset['retroTheme'] = theme.id;
-    item.className =
-      'w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-text-primary ' +
-      'hover:bg-surface-raised transition-colors cursor-pointer';
+    // Build one button per theme in THEMES
+    for (const theme of Object.values(THEMES)) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.setAttribute('role', 'menuitem');
+      item.dataset['retroTheme'] = theme.id;
+      item.className =
+        'w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-text-primary ' +
+        'hover:bg-surface-raised transition-colors cursor-pointer';
 
-    // Lock icon placeholder — shown when free user
-    const lockWrapper = document.createElement('span');
-    lockWrapper.className = 'lock-icon text-text-muted flex-shrink-0';
-    lockWrapper.appendChild(createIcon(Lock, { size: 'sm' }));
-    item.appendChild(lockWrapper);
+      // Lock icon placeholder — shown when free user
+      const lockWrapper = document.createElement('span');
+      lockWrapper.className = 'lock-icon text-text-muted flex-shrink-0';
+      lockWrapper.appendChild(createIcon(Lock, { size: 'sm' }));
+      item.appendChild(lockWrapper);
 
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'flex-1 text-left truncate';
-    nameSpan.textContent = theme.name;
-    item.appendChild(nameSpan);
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'flex-1 text-left truncate';
+      nameSpan.textContent = theme.name;
+      item.appendChild(nameSpan);
 
-    // Hover preview with 50ms debounce on forward-apply; immediate revert on mouseleave
-    item.addEventListener('mouseenter', () => {
-      if (hoverTimer !== null) clearTimeout(hoverTimer);
-      hoverTimer = setTimeout(() => {
-        applyRetroColors(theme, true);
-      }, 50);
-    });
+      // Hover preview with 50ms debounce on forward-apply; immediate revert on mouseleave
+      item.addEventListener('mouseenter', () => {
+        if (hoverTimer !== null) clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(() => {
+          applyRetroColors(theme, true);
+        }, 50);
+      });
 
-    item.addEventListener('mouseleave', () => {
-      if (hoverTimer !== null) {
-        clearTimeout(hoverTimer);
-        hoverTimer = null;
-      }
-      // Revert immediately to committed state
-      const committed = getRetroTheme();
-      if (committed !== null && THEMES[committed]) {
-        applyRetroColors(THEMES[committed]);
-      } else {
-        clearRetroColors();
-      }
-    });
-
-    item.addEventListener('click', () => {
-      void (async () => {
-        const isPro = await fetchIsPro();
-        if (isPro) {
-          setRetroTheme(theme.id);
-          closePanel();
-          renderToggleIcon();
-          updateRetroActiveStates();
-        } else {
-          closePanel();
-          navigate('/pricing');
+      item.addEventListener('mouseleave', () => {
+        if (hoverTimer !== null) {
+          clearTimeout(hoverTimer);
+          hoverTimer = null;
         }
-      })();
-    });
+        // Revert immediately to committed state
+        const committed = getRetroTheme();
+        if (committed !== null && THEMES[committed]) {
+          applyRetroColors(THEMES[committed]);
+        } else {
+          clearRetroColors();
+        }
+      });
 
-    retroGroup.appendChild(item);
+      item.addEventListener('click', () => {
+        void (async () => {
+          const isPro = await fetchIsPro();
+          if (isPro) {
+            setRetroTheme(theme.id);
+            closePanel();
+            renderToggleIcon();
+            updateRetroActiveStates();
+          } else {
+            closePanel();
+            navigate('/pricing');
+          }
+        })();
+      });
+
+      retroGroup.appendChild(item);
+    }
   }
 
   // ── Assemble root ──────────────────────────────────────────────────────
@@ -296,7 +303,7 @@ export function createThemeDropdown(): HTMLDivElement {
 
   async function updateLockIcons(): Promise<void> {
     const isPro = await fetchIsPro();
-    const lockIcons = retroGroup.querySelectorAll<HTMLElement>('.lock-icon');
+    const lockIcons = panel.querySelectorAll<HTMLElement>('.lock-icon');
     lockIcons.forEach((el) => {
       el.classList.toggle('hidden', isPro);
     });
@@ -304,7 +311,7 @@ export function createThemeDropdown(): HTMLDivElement {
 
   function updateRetroActiveStates(): void {
     const committed = getRetroTheme();
-    const items = retroGroup.querySelectorAll<HTMLButtonElement>('[data-retro-theme]');
+    const items = panel.querySelectorAll<HTMLButtonElement>('[data-retro-theme]');
     items.forEach((item) => {
       const isActive = item.dataset['retroTheme'] === committed;
       // aria-pressed is not allowed on role="menuitem" — use data-active + CSS classes
