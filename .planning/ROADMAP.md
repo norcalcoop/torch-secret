@@ -218,7 +218,7 @@ Plans:
 **Goal:** The confirmation page offers all four sharing modalities (copy, native share, email, QR code) and auto-clears the clipboard after 60 seconds; the create page shows authenticated users a context-aware expiry suggestion based on day and time of day
 **Requirements**: (no formal IDs — 5 high-value UX features identified in 10x session-1 analysis)
 **Depends on:** Phase 58.1
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] 58.2-01-PLAN.md — Install qrcode package, add vite.config.ts optimizeDeps, scaffold 4 test stub files (Wave 0)
@@ -343,7 +343,7 @@ Plans:
 | 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
 | 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-07 | - |
 | 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
-| 58.2. Launch Quick Wins — Do Now | 0/4 | Planned | - |
+| 58.2. Launch Quick Wins — Do Now | 1/4 | In Progress|  |
 | 59. Repo Hygiene & Documentation | 1/1 | Complete    | 2026-03-07 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |

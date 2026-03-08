@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: "Paused at 58.1-05 checkpoint:human-verify (Tasks 1-2 complete)"
-last_updated: "2026-03-07T18:11:05.704Z"
+stopped_at: Completed 58.2-01-PLAN.md
+last_updated: "2026-03-08T01:52:47.828Z"
 last_activity: 2026-03-07 — Phase 61 Plan 02 complete (LAUNCH-05, LAUNCH-06 closed)
 progress:
   total_phases: 11
   completed_phases: 9
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 19
+  completed_plans: 16
   percent: 100
 ---
 
@@ -56,6 +56,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.1 P04 | 321s | 1 tasks | 3 files |
 | Phase 58.1 P03 | 500s | 2 tasks | 5 files |
 | Phase 58.1 P05 | 359 | 2 tasks | 6 files |
+| Phase 58.2-launch-quick-wins-do-now P01 | 229 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,12 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.2 Plan 01 Decisions (2026-03-08)
+
+- optimizeDeps.include: ['qrcode'] prevents require-is-not-defined runtime error — qrcode is CJS-only; Vite's esbuild pre-bundling converts it to ESM before the browser sees it
+- qr-code-panel.ts and mailto-button.ts were pre-implemented as WIP; Wave 0 test stubs exist and cover all 4 components; copy-button and expiration-select remain correctly RED for Wave 1
+- eslint-disable for no-base-to-string on QRCode.toString() — ESLint misidentifies qrcode API method as Object.prototype.toString; targeted disable is correct
 
 ### Phase 58.1 Plan 05 Decisions (2026-03-07)
 
@@ -172,7 +179,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-07T18:11:05.702Z
-Stopped at: Paused at 58.1-05 checkpoint:human-verify (Tasks 1-2 complete)
+Last session: 2026-03-08T01:52:47.825Z
+Stopped at: Completed 58.2-01-PLAN.md
 Resume file: None
 Next action: /gsd:execute-phase 55
