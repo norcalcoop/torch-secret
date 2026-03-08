@@ -57,6 +57,7 @@ import {
 } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
+import { createTerminalBlock } from '../components/terminal-block.js';
 
 const MAX_LENGTH = 10_000;
 
@@ -245,6 +246,45 @@ function createBurnTimerRow(): { element: HTMLElement; getValue: () => number | 
   wrapper.appendChild(select);
 
   return { element: wrapper, getValue: () => selectedSeconds };
+}
+
+/**
+ * Creates the collapsible secret preview panel.
+ * Uses details/summary pattern with a terminal-style block for live preview.
+ * The preview updates as the user types in the textarea.
+ */
+function createPreviewPanel(textarea: HTMLTextAreaElement): HTMLElement {
+  const details = document.createElement('details');
+  details.className = 'border border-border rounded-lg bg-surface/80 backdrop-blur-md';
+
+  const summary = document.createElement('summary');
+  summary.className =
+    'px-4 py-3 min-h-[44px] text-sm font-medium text-text-tertiary cursor-pointer select-none ' +
+    'focus:ring-2 focus:ring-accent focus:outline-hidden rounded-lg';
+  summary.textContent = 'Preview';
+
+  const content = document.createElement('div');
+  content.className = 'px-4 pb-4';
+
+  const previewTerminal = createTerminalBlock('', { headerTitle: 'preview' });
+  // Set ID so tests and reveal.ts can locate the terminal element directly.
+  previewTerminal.id = 'preview-terminal';
+  const previewPre = previewTerminal.querySelector('pre');
+
+  if (previewPre) {
+    previewPre.textContent = 'Type your secret above to see the preview.';
+
+    // Update live as user types
+    textarea.addEventListener('input', () => {
+      previewPre.textContent = textarea.value || 'Type your secret above to see the preview.';
+    });
+  }
+
+  content.appendChild(previewTerminal);
+  details.appendChild(summary);
+  details.appendChild(content);
+
+  return details;
 }
 
 /**
@@ -1269,6 +1309,10 @@ export function renderCreatePage(container: HTMLElement): void {
   textareaGroup.appendChild(counter);
   textareaGroup.appendChild(indicator);
   form.appendChild(textareaGroup);
+
+  // -- Preview panel (collapsible, below textarea, above expiration) --
+  const previewPanel = createPreviewPanel(textarea);
+  form.appendChild(previewPanel);
 
   // -- Expiration section --
   // Start with anonymous mode (locked "1 hour" display).
