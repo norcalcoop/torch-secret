@@ -43,11 +43,13 @@ export interface ExpirationSelectResult {
  *
  * @param isAuthenticated - Whether the current user has an active session.
  * @param isPro - Whether the current user has a Pro subscription.
+ * @param suggestion - Optional context-aware expiry hint for authenticated users only.
  * @returns ExpirationSelectResult with element and getValue accessor.
  */
 export function createExpirationSelect(
   isAuthenticated: boolean,
   isPro = false,
+  suggestion?: { value: string; reason: string },
 ): ExpirationSelectResult {
   if (!isAuthenticated) {
     // --- Anonymous locked display ---
@@ -59,7 +61,7 @@ export function createExpirationSelect(
     valueSpan.className = 'block text-text-primary';
     valueSpan.textContent = '1 hour';
 
-    const note = document.createElement('span');
+    const note = document.createElement('p');
     note.className = 'block text-xs text-text-muted';
     note.textContent = 'Create a free account for longer expiration.';
 
@@ -285,6 +287,23 @@ export function createExpirationSelect(
     { capture: true },
   );
 
-  // 14. Return result
+  // 14. Suggestion hint — authenticated users only
+  if (suggestion) {
+    const labelForValue: Record<string, string> = {
+      '1h': '1 hour',
+      '24h': '24 hours',
+      '7d': '7 days',
+      '30d': '30 days',
+    };
+    const hint = document.createElement('p');
+    hint.className = 'text-xs text-text-muted mt-1';
+    hint.textContent = `Suggested: ${labelForValue[suggestion.value] ?? suggestion.value} \u2014 ${suggestion.reason}`;
+    const outer = document.createElement('div');
+    outer.appendChild(container);
+    outer.appendChild(hint);
+    return { element: outer, getValue: () => selectedValue };
+  }
+
+  // 15. Return result
   return { element: container, getValue: () => selectedValue };
 }
