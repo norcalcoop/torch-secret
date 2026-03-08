@@ -45,7 +45,7 @@ describe('QW3 — Guarantee badge below Get Pro CTA', () => {
     expect(allText).toContain('no questions asked');
   });
 
-  it('guarantee element appears after the Get Pro CTA button in document order', async () => {
+  it('guarantee <p> element appears after the Get Pro CTA button in document order', async () => {
     const { renderPricingPage } = await import('../pages/pricing.js');
     renderPricingPage(container);
 
@@ -55,15 +55,17 @@ describe('QW3 — Guarantee badge below Get Pro CTA', () => {
     );
     expect(getProLink).not.toBeUndefined();
 
-    // Find the guarantee element
-    const guaranteeEl = Array.from(container.querySelectorAll('p, span, div')).find((el) =>
-      el.textContent?.includes('7-day money-back guarantee'),
+    // Find only <p> elements (not divs) containing the exact guarantee text — this is more
+    // specific than querying divs, which would match parent containers and skew position check
+    const guaranteeEl = Array.from(container.querySelectorAll('p')).find(
+      (el) =>
+        el.textContent?.includes('7-day money-back guarantee') &&
+        el.textContent?.includes('no questions asked'),
     );
     expect(guaranteeEl).not.toBeUndefined();
 
-    // Verify document order: guarantee must come after Get Pro
+    // Verify document order: guarantee must come after Get Pro (DOCUMENT_POSITION_FOLLOWING = 4)
     const order = getProLink!.compareDocumentPosition(guaranteeEl!);
-    // Node.DOCUMENT_POSITION_FOLLOWING = 4 — guaranteeEl follows getProLink
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

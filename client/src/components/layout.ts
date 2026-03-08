@@ -14,7 +14,7 @@
  *   <nav id="mobile-tab-bar">  (appended to document.body — fixed position)
  */
 
-import { Shield, Home, PenLine, CreditCard, LayoutDashboard } from 'lucide';
+import { Shield, Home, PenLine, CreditCard, LayoutDashboard, Github } from 'lucide';
 import { authClient } from '../api/auth-client.js';
 import { createIcon, createPixelIcon } from './icons.js';
 import { createThemeDropdown } from './theme-toggle.js';
@@ -100,7 +100,16 @@ function createHeader(): HTMLElement {
   const rightSide = document.createElement('div');
   rightSide.className = 'flex items-center gap-4';
 
-  // 1. Pricing link (desktop only — hidden on mobile where tab bar handles it)
+  // 1a. Use Cases link (desktop only — SSR route, plain <a href>, no navigate())
+  const useCasesLink = document.createElement('a');
+  useCasesLink.href = '/use/';
+  useCasesLink.className =
+    'hidden sm:block text-sm text-text-secondary hover:text-accent transition-colors';
+  useCasesLink.textContent = 'Use Cases';
+  // NO navigate() handler — /use/ is an SSR route, not an SPA route
+  rightSide.appendChild(useCasesLink);
+
+  // 1b. Pricing link (desktop only — hidden on mobile where tab bar handles it)
   const pricingLink = document.createElement('a');
   pricingLink.href = '/pricing';
   pricingLink.className =
@@ -309,13 +318,25 @@ function createFooter(): HTMLElement {
   inner.className =
     'max-w-2xl mx-auto px-4 flex flex-wrap justify-center gap-6 text-xs text-text-muted';
 
-  const signals = ['Zero-knowledge encryption', 'AES-256-GCM', 'Open Source'];
-
-  for (const text of signals) {
+  // Trust signals: plain spans except "Open Source" which links to GitHub (QW6)
+  const plainSignals = ['Zero-knowledge encryption', 'AES-256-GCM'];
+  for (const text of plainSignals) {
     const span = document.createElement('span');
     span.textContent = text;
     inner.appendChild(span);
   }
+
+  // QW6 — Open Source as anchor linking to GitHub repo
+  const openSourceLink = document.createElement('a');
+  openSourceLink.href = 'https://github.com/norcalcoop/torch-secret';
+  openSourceLink.target = '_blank';
+  openSourceLink.rel = 'noopener noreferrer';
+  openSourceLink.className = 'flex items-center gap-1 hover:text-text-secondary transition-colors';
+  openSourceLink.appendChild(createIcon(Github, { size: 'xs', class: 'flex-shrink-0' }));
+  const osText = document.createElement('span');
+  osText.textContent = 'Open Source';
+  openSourceLink.appendChild(osText);
+  inner.appendChild(openSourceLink);
 
   // Legal links
   const legalLinks = [
@@ -335,6 +356,33 @@ function createFooter(): HTMLElement {
     inner.appendChild(a);
   }
 
+  // S4 — Internal links to /use/ and /vs/ SSR pages (plain <a href> — no navigate())
+  const linkRow = document.createElement('div');
+  linkRow.className = 'flex flex-wrap justify-center gap-4 text-xs text-text-muted mt-2 w-full';
+
+  const internalLinks = [
+    { text: 'Share API Keys', href: '/use/share-api-keys' },
+    { text: 'Share DB Credentials', href: '/use/share-database-credentials' },
+    { text: 'Send Passwords Safely', href: '/use/send-password-without-email' },
+    { text: 'vs. OneTimeSecret', href: '/vs/onetimesecret' },
+    { text: 'vs. Bitwarden Send', href: '/vs/bitwarden-send' },
+  ];
+
+  for (const { text, href } of internalLinks) {
+    const a = document.createElement('a');
+    a.href = href;
+    a.textContent = text;
+    a.className = 'hover:text-text-secondary transition-colors';
+    // Plain <a href> — /use/* and /vs/* are SSR routes, NOT SPA routes
+    linkRow.appendChild(a);
+  }
+
+  // Append link row to the footer wrapper (inside footer element, after inner)
+  const linkRowWrapper = document.createElement('div');
+  linkRowWrapper.className = 'w-full flex justify-center';
+  linkRowWrapper.appendChild(linkRow);
+
   footer.appendChild(inner);
+  footer.appendChild(linkRowWrapper);
   return footer;
 }

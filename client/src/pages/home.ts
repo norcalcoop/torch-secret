@@ -1,17 +1,17 @@
 /**
  * Marketing homepage page module.
  *
- * Three sections rendered in order:
+ * Four sections rendered in order:
  *   1. Hero — headline, subhead, CTA to /create
  *   2. Trust strip — zero-knowledge proof points (AES-256-GCM, ZK, one-time view)
- *   3. Use Cases — three glassmorphism cards with job-aware scenarios
- *   4. Email Capture — GDPR-compliant form (backend wired in Phase 36)
+ *   3. Security Architecture — 3-column explainer (Client-Side Encryption, One-Time Destruction, ZK Proof)
+ *   4. Use Cases — three glassmorphism cards with job-aware scenarios and /use/ links
  *
  * Follows the vanilla TS DOM-construction pattern used throughout the codebase.
- * No innerHTML. No third-party UI frameworks. Semantic design tokens throughout.
+ * No DOM-unsafe APIs. No third-party UI frameworks. Semantic design tokens throughout.
  */
 
-import { KeyRound, Flame, StickyNote, ShieldCheck, Lock, Zap } from 'lucide';
+import { KeyRound, Flame, StickyNote, ShieldCheck, Lock, Zap, Shield } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { navigate } from '../router.js';
 
@@ -26,8 +26,8 @@ export function renderHomePage(container: HTMLElement): void {
 
   wrapper.appendChild(createHeroSection());
   wrapper.appendChild(createTrustStrip());
+  wrapper.appendChild(createSecurityArchSection());
   wrapper.appendChild(createUseCasesSection());
-  wrapper.appendChild(createEmailCaptureSection());
 
   container.appendChild(wrapper);
 }
@@ -43,17 +43,25 @@ function createHeroSection(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'py-12 sm:py-16 text-center space-y-6';
 
-  // H1
+  // H1 — QW1: two-line block spans for zero-knowledge value prop
   const heading = document.createElement('h1');
   heading.className =
     'text-3xl sm:text-4xl font-heading font-semibold text-text-primary leading-tight';
-  heading.textContent = 'Share sensitive info in seconds';
+  const line1 = document.createElement('span');
+  line1.className = 'block';
+  line1.textContent = "We can't read your secrets.";
+  const line2 = document.createElement('span');
+  line2.className = 'block';
+  line2.textContent = 'Not even under subpoena.';
+  heading.appendChild(line1);
+  heading.appendChild(line2);
   section.appendChild(heading);
 
-  // Subhead
+  // Subhead — QW1: zero-knowledge framing
   const subhead = document.createElement('p');
   subhead.className = 'text-lg text-text-secondary max-w-md mx-auto leading-relaxed';
-  subhead.textContent = 'No account needed. End-to-end encrypted. Self-destructs after one view.';
+  subhead.textContent =
+    'Zero-knowledge secret sharing — your encryption key never leaves your browser.';
   section.appendChild(subhead);
 
   // CTA button
@@ -107,6 +115,80 @@ function createTrustStrip(): HTMLElement {
 }
 
 /**
+ * Security Architecture section: 3-column explainer — S2 audit item.
+ *
+ * Placed between the trust strip and use cases section.
+ * Three columns: Client-Side Encryption, One-Time Destruction, Zero-Knowledge Proof.
+ */
+function createSecurityArchSection(): HTMLElement {
+  const section = document.createElement('section');
+  section.setAttribute('aria-labelledby', 'security-arch-heading');
+
+  const heading = document.createElement('h2');
+  heading.id = 'security-arch-heading';
+  heading.className = 'text-xl font-heading font-semibold text-text-primary text-center mb-6';
+  heading.textContent = 'How the security works';
+  section.appendChild(heading);
+
+  const container = document.createElement('div');
+  container.className = 'max-w-3xl mx-auto';
+  section.appendChild(container);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-4';
+  container.appendChild(grid);
+
+  const columns: Array<{
+    icon: Parameters<typeof createIcon>[0];
+    title: string;
+    body: string;
+  }> = [
+    {
+      icon: Lock,
+      title: 'Client-Side Encryption',
+      body: 'Encrypted in your browser before leaving your device. The server receives only ciphertext.',
+    },
+    {
+      icon: Flame,
+      title: 'One-Time Destruction',
+      body: 'Secret destroyed after the first view. Always.',
+    },
+    {
+      icon: Shield,
+      title: 'Zero-Knowledge Proof',
+      body: 'Even a full server breach reveals nothing. The key never left your browser.',
+    },
+  ];
+
+  for (const col of columns) {
+    const card = document.createElement('div');
+    card.className =
+      'bg-surface/60 backdrop-blur border border-border/40 rounded-xl p-6 space-y-2 text-center';
+
+    const iconWrapper = document.createElement('div');
+    iconWrapper.className =
+      'w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mx-auto';
+    iconWrapper.setAttribute('aria-hidden', 'true');
+    iconWrapper.appendChild(createIcon(col.icon, { size: 'sm', class: 'text-accent' }));
+    card.appendChild(iconWrapper);
+
+    const colHeading = document.createElement('h3');
+    colHeading.className = 'font-medium text-text-primary';
+    colHeading.textContent = col.title;
+    card.appendChild(colHeading);
+
+    const colBody = document.createElement('p');
+    colBody.className = 'text-sm text-text-secondary leading-relaxed';
+    colBody.textContent = col.body;
+    card.appendChild(colBody);
+
+    grid.appendChild(card);
+  }
+
+  return section;
+}
+
+/**
  * Use Cases section: three glassmorphism cards with job-aware scenarios.
  */
 function createUseCasesSection(): HTMLElement {
@@ -128,12 +210,14 @@ function createUseCasesSection(): HTMLElement {
     title: string;
     scenario: string;
     description: string;
+    useLink?: string;
   }> = [
     {
       icon: KeyRound,
       title: 'Passwords',
       scenario: 'Sharing a database password',
       description: 'Send credentials to a teammate once. No Slack DMs, no email trails.',
+      useLink: '/use/share-database-credentials',
     },
     {
       icon: Flame,
@@ -141,6 +225,7 @@ function createUseCasesSection(): HTMLElement {
       scenario: 'Handing off an API key',
       description:
         "Share a token that disappears the moment it's read. Audit-friendly and zero-trace.",
+      useLink: '/use/share-api-keys',
     },
     {
       icon: StickyNote,
@@ -160,12 +245,14 @@ function createUseCasesSection(): HTMLElement {
 
 /**
  * Build a single use-case glassmorphism card.
+ * If `useLink` is provided, wraps the title in a plain <a href> (SSR route — no navigate()).
  */
 function createUseCaseCard(card: {
   icon: Parameters<typeof createIcon>[0];
   title: string;
   scenario: string;
   description: string;
+  useLink?: string;
 }): HTMLElement {
   const el = document.createElement('div');
   el.className =
@@ -179,10 +266,20 @@ function createUseCaseCard(card: {
   iconWrapper.appendChild(icon);
   el.appendChild(iconWrapper);
 
-  // Title
+  // Title — wrap in <a href> for /use/ SSR routes when link is provided
   const title = document.createElement('h3');
   title.className = 'font-medium text-text-primary';
-  title.textContent = card.title;
+  if (card.useLink) {
+    const link = document.createElement('a');
+    link.href = card.useLink;
+    link.className =
+      'hover:text-accent transition-colors focus:outline-hidden focus:ring-2 focus:ring-accent rounded';
+    link.textContent = card.title;
+    // Plain <a href> — no navigate() — /use/* routes are SSR (not SPA)
+    title.appendChild(link);
+  } else {
+    title.textContent = card.title;
+  }
   el.appendChild(title);
 
   // Scenario label
@@ -198,208 +295,4 @@ function createUseCaseCard(card: {
   el.appendChild(desc);
 
   return el;
-}
-
-// ---------------------------------------------------------------------------
-// Email capture section
-// ---------------------------------------------------------------------------
-
-/**
- * Email capture section: GDPR-compliant form with real API call.
- *
- * On success, replaces the form with an inline success message echoing
- * the submitted email address. Non-2xx responses and network errors
- * restore the button and show an inline error.
- *
- * GDPR invariants:
- *   - Consent checkbox is unchecked by default (hard requirement)
- *   - Consent is explicitly re-checked in the submit handler (noValidate = true)
- *   - Inline error shown for unchecked consent (not just blocked)
- */
-function createEmailCaptureSection(): HTMLElement {
-  const section = document.createElement('section');
-  section.setAttribute('aria-labelledby', 'email-capture-heading');
-  section.className =
-    'p-6 rounded-lg border border-border bg-surface/80 backdrop-blur-md shadow-lg space-y-4';
-
-  // Heading
-  const heading = document.createElement('h2');
-  heading.id = 'email-capture-heading';
-  heading.className = 'text-xl font-heading font-semibold text-text-primary';
-  heading.textContent = 'Stay in the loop';
-  section.appendChild(heading);
-
-  // Subtext
-  const subtext = document.createElement('p');
-  subtext.className = 'text-sm text-text-secondary';
-  subtext.textContent = 'Join our early access list. No spam, unsubscribe any time.';
-  section.appendChild(subtext);
-
-  // Form
-  const form = document.createElement('form');
-  form.noValidate = true;
-  form.className = 'space-y-3';
-
-  // Email input row
-  const emailRow = document.createElement('div');
-  emailRow.className = 'flex gap-2 items-start';
-
-  const emailInput = document.createElement('input');
-  emailInput.type = 'email';
-  emailInput.id = 'email-capture';
-  emailInput.name = 'email';
-  emailInput.placeholder = 'you@example.com';
-  emailInput.required = true;
-  emailInput.autocomplete = 'email';
-  emailInput.className =
-    'flex-1 px-3 py-2 min-h-[44px] border border-border rounded-lg bg-bg text-text-primary ' +
-    'placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-accent';
-
-  const submitBtn = document.createElement('button');
-  submitBtn.type = 'submit';
-  submitBtn.className =
-    'px-4 py-2 min-h-[44px] rounded-lg bg-accent text-white font-medium ' +
-    'hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg ' +
-    'focus:outline-hidden transition-colors whitespace-nowrap cursor-pointer';
-  submitBtn.textContent = 'Join the list';
-
-  emailRow.appendChild(emailInput);
-  emailRow.appendChild(submitBtn);
-  form.appendChild(emailRow);
-
-  // Inline error element
-  const errorEl = document.createElement('p');
-  errorEl.id = 'email-error';
-  errorEl.setAttribute('role', 'alert');
-  errorEl.className = 'text-sm text-danger hidden';
-  form.appendChild(errorEl);
-
-  // GDPR consent row
-  const consentRow = document.createElement('div');
-  consentRow.className = 'flex items-start gap-3';
-
-  const consentCheckbox = document.createElement('input');
-  consentCheckbox.type = 'checkbox';
-  consentCheckbox.id = 'email-consent';
-  consentCheckbox.name = 'consent';
-  consentCheckbox.required = true;
-  consentCheckbox.checked = false; // GDPR: must be unchecked by default
-  consentCheckbox.className = 'mt-0.5 h-4 w-4 rounded border-border accent-accent cursor-pointer';
-
-  const consentLabel = document.createElement('label');
-  consentLabel.htmlFor = 'email-consent';
-  consentLabel.className = 'text-xs text-text-muted cursor-pointer leading-relaxed';
-
-  const consentText = document.createTextNode(
-    'I agree to receive product updates and marketing emails from Torch Secret. ' +
-      'You can unsubscribe at any time. See our ',
-  );
-  const privacyLink = document.createElement('a');
-  privacyLink.href = '/privacy';
-  privacyLink.className =
-    'underline hover:text-text-secondary focus:outline-hidden focus:ring-2 focus:ring-accent rounded';
-  privacyLink.textContent = 'Privacy Policy';
-  privacyLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigate('/privacy');
-  });
-  const periodText = document.createTextNode('.');
-
-  consentLabel.appendChild(consentText);
-  consentLabel.appendChild(privacyLink);
-  consentLabel.appendChild(periodText);
-
-  consentRow.appendChild(consentCheckbox);
-  consentRow.appendChild(consentLabel);
-  form.appendChild(consentRow);
-
-  // Async submit logic — called from the event handler below.
-  // Extracted to avoid @typescript-eslint/no-misused-promises on addEventListener.
-  async function handleSubmit(): Promise<void> {
-    const email = (emailInput.value ?? '').trim();
-
-    // Clear previous error
-    errorEl.classList.add('hidden');
-    errorEl.textContent = '';
-
-    if (!email) {
-      errorEl.textContent = 'Please enter your email address.';
-      errorEl.classList.remove('hidden');
-      emailInput.focus();
-      return;
-    }
-
-    if (!consentCheckbox.checked) {
-      errorEl.textContent = 'Please check the consent box to continue.';
-      errorEl.classList.remove('hidden');
-      consentCheckbox.focus();
-      return;
-    }
-
-    // In-flight state: spinner + disabled button with "Joining..." label
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Joining...';
-
-    try {
-      const res = await fetch('/api/subscribers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, consent: true }),
-      });
-
-      if (res.ok) {
-        // Replace form section with inline success message
-        replaceFormWithSuccess(section, email);
-      } else {
-        // Non-2xx: show inline error, restore button
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Join the list';
-        errorEl.textContent = 'Something went wrong. Please try again.';
-        errorEl.classList.remove('hidden');
-      }
-    } catch {
-      // Network error: restore button
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Join the list';
-      errorEl.textContent = 'Something went wrong. Please try again.';
-      errorEl.classList.remove('hidden');
-    }
-  }
-
-  // Submit handler — validate email + consent; call POST /api/subscribers on success
-  form.addEventListener('submit', (e: Event) => {
-    e.preventDefault();
-    void handleSubmit();
-  });
-
-  section.appendChild(form);
-  return section;
-}
-
-/**
- * Replace the email capture section content with a success message.
- *
- * Called after POST /api/subscribers returns 200. Clears the section and
- * renders a confirmation message echoing the submitted email address.
- *
- * @param container - The email capture section element
- * @param email - The email address that was successfully submitted
- */
-function replaceFormWithSuccess(container: HTMLElement, email: string): void {
-  // Clear section content, replace with success message
-  while (container.firstChild) {
-    container.removeChild(container.firstChild);
-  }
-
-  // Heading retained from original section
-  const heading = document.createElement('h2');
-  heading.className = 'text-xl font-heading font-semibold text-text-primary';
-  heading.textContent = 'Check your inbox';
-  container.appendChild(heading);
-
-  // Success message echoing the submitted email
-  const message = document.createElement('p');
-  message.className = 'text-sm text-text-secondary';
-  message.textContent = `Check your inbox — we sent a confirmation link to ${email}. Click it to join the list. Check spam if you don't see it.`;
-  container.appendChild(message);
 }
