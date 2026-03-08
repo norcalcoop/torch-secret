@@ -14,6 +14,9 @@ export default defineConfig({
   html: {
     cspNonce: '__CSP_NONCE__',
   },
+  optimizeDeps: {
+    include: ['qrcode'],
+  },
   server: {
     proxy: {
       '/api': {
