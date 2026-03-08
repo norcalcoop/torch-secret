@@ -7796,45 +7796,43 @@ export const EFF_WORDS: string[] = [
   'zoom',
 ];
 
-const WORD_COUNT = 7776; // 6^5 — must equal EFF_WORDS.length
-
 /**
- * Return a single unbiased random index in [0, WORD_COUNT) using rejection sampling.
+ * Return a single unbiased random index in [0, listLength) using rejection sampling.
  *
  * Generates a Uint32 value via crypto.getRandomValues. Values >= cutoff are
- * rejected to eliminate modulo bias. With WORD_COUNT=7776, the rejection cutoff
+ * rejected to eliminate modulo bias. For listLength=7776 (EFF_WORDS), the cutoff
  * is 4294964736 (= 2^32 - (2^32 % 7776)). Rejection probability is ~0.0000006
  * (2560 values out of 4,294,967,296), so the loop almost never iterates twice.
  *
  * Invariant: only crypto.getRandomValues may be used for randomness (no Math.random).
  */
-function getUnbiasedIndex(): number {
-  const cutoff = 2 ** 32 - (2 ** 32 % WORD_COUNT); // 4294964736
+function getUnbiasedRandomIndex(listLength: number): number {
+  const cutoff = 2 ** 32 - (2 ** 32 % listLength);
   const buf = new Uint32Array(1);
   while (true) {
     crypto.getRandomValues(buf);
-    if (buf[0] < cutoff) {
-      return buf[0] % WORD_COUNT;
-    }
+    // buf[0] is number (Uint32Array element) — no assertion needed
+    if (buf[0] < cutoff) return buf[0] % listLength;
   }
 }
 
 /**
- * Generate an EFF Diceware passphrase.
+ * Generate a diceware-style passphrase from an optional word list.
  *
  * @param wordCount - Number of words to include (default 4).
- *   - 4 words = log2(7776^4) ≈ 51.7 bits of entropy (Phase 24 default)
- *   - 6 words = log2(7776^6) ≈ 77.5 bits of entropy (v5.0 Pro tier, PRO-04)
+ *   - 4 words = log2(N^4) bits of entropy where N = wordList.length
+ *   - 6 words = log2(N^6) bits of entropy
+ * @param wordList - Source word array (default EFF_WORDS, 7776 words, ~51.7 bits at 4 words).
+ *   Pass TECH_WORDS, NATURE_WORDS, or SHORT_WORDS from word-lists.ts for alternate vocabularies.
  * @returns Space-separated lowercase passphrase (e.g. "abacus zoning climb velvet")
  *
- * Security note: EFF_WORDS[index] returns string|undefined in strict mode,
- * but getUnbiasedIndex() guarantees index is always in [0, WORD_COUNT-1].
- * The 'as string' cast is safe by construction.
+ * Security note: getUnbiasedRandomIndex() guarantees index is always in [0, listLength-1],
+ * so wordList[index] is always defined.
  */
-export function generatePassphrase(wordCount = 4): string {
+export function generatePassphrase(wordCount = 4, wordList: string[] = EFF_WORDS): string {
   const words: string[] = [];
   for (let i = 0; i < wordCount; i++) {
-    words.push(EFF_WORDS[getUnbiasedIndex()]);
+    words.push(wordList[getUnbiasedRandomIndex(wordList.length)] ?? '');
   }
   return words.join(' ');
 }
