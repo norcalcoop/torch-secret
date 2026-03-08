@@ -60,6 +60,39 @@ import { showToast } from '../components/toast.js';
 
 const MAX_LENGTH = 10_000;
 
+/**
+ * Returns an expiry suggestion based on current day and time.
+ * Used to populate the hint text below the expiration dropdown for authenticated users.
+ * Anonymous users are locked to 1h; they do not receive suggestions.
+ *
+ * Rules (from CONTEXT.md):
+ * - Friday after 3pm   → 7 days  (recipient may not check until Monday)
+ * - Business hours Mon–Thu (9am–5pm) → 1 hour (recipient likely available)
+ * - Evening (after 7pm) or weekend   → 24 hours
+ * - All other times                  → 24 hours (safe default)
+ */
+export function getExpirySuggestion(): { value: string; reason: string } {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+  const hour = now.getHours(); // 0–23
+
+  const isWeekend = day === 0 || day === 6;
+  const isFridayAfternoon = day === 5 && hour >= 15;
+  const isBusinessHours = !isWeekend && !isFridayAfternoon && hour >= 9 && hour < 17;
+  const isEvening = hour >= 19;
+
+  if (isFridayAfternoon) {
+    return { value: '7d', reason: 'recipient may not check until Monday' };
+  }
+  if (isBusinessHours) {
+    return { value: '1h', reason: 'recipient is likely available now' };
+  }
+  if (isEvening || isWeekend) {
+    return { value: '24h', reason: 'evening or weekend \u2014 try 24 hours' };
+  }
+  return { value: '24h', reason: 'default' };
+}
+
 // Session-scoped anonymous creation counter.
 // Triggers conversion prompts at count 1 (after 1st secret) and count 3.
 // Resets on full page refresh — same lifecycle as the dismissed state.
@@ -1380,7 +1413,8 @@ export function renderCreatePage(container: HTMLElement): void {
 
         // Upgrade expiration select to authenticated mode with Pro awareness
         expirationSelectResult.element.remove();
-        expirationSelectResult = createExpirationSelect(true, isPro);
+        const suggestion = getExpirySuggestion();
+        expirationSelectResult = createExpirationSelect(true, isPro, suggestion);
         expirationGroup.appendChild(expirationSelectResult.element);
 
         // Replace protection panel with tier-aware version (Phase 34.1)
