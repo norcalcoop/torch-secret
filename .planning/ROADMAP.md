@@ -380,7 +380,7 @@ Plans:
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
 | 62. Documentation & Code Hygiene | 1/1 | Complete    | 2026-03-09 | - |
-| 63. Nyquist Compliance — Phase 57 & 58.6 | 1/1 | Complete   | 2026-03-09 | - |
+| 63. Nyquist Compliance — Phase 57 & 58.6 | 1/1 | Complete    | 2026-03-09 | - |
 | 64. Pre-Launch Human Verification Checklist | v5.2 | 0/1 | Pending | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
