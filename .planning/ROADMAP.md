@@ -129,6 +129,9 @@ See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full phase details.
 - [x] **Phase 59: Repo Hygiene & Documentation** — Add Tally.so link to README, triage and close stale GitHub issues (completed 2026-03-07)
 - [x] **Phase 60: Launch Narrative Writing** — Demo screencast script, Show HN post, technical writeup (completed 2026-03-07)
 - [x] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list (completed 2026-03-07)
+- [ ] **Phase 62: Documentation & Code Hygiene** — Resolve INT-01 footer email capture, remove dead CSS, fix REQUIREMENTS.md traceability, fix SUMMARY frontmatter gaps
+- [ ] **Phase 63: Nyquist Compliance — Phase 57 & 58.6** — Fill validation gaps for two partially-compliant phases
+- [ ] **Phase 64: Pre-Launch Human Verification Checklist** — Execute all deferred human-verify items across 11 phases, capture gallery screenshots, confirm delivery reports
 
 ## Phase Details
 
@@ -376,8 +379,59 @@ Plans:
 | 59. Repo Hygiene & Documentation | 2/2 | Complete    | 2026-03-09 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
+| 62. Documentation & Code Hygiene | v5.2 | 0/1 | Pending | - |
+| 63. Nyquist Compliance — Phase 57 & 58.6 | v5.2 | 0/1 | Pending | - |
+| 64. Pre-Launch Human Verification Checklist | v5.2 | 0/1 | Pending | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
+
+### Phase 62: Documentation & Code Hygiene
+**Goal**: All documentation accurately reflects what was built — no SUMMARY overstatements, no stale traceability, no orphaned code; INT-01 integration ambiguity resolved
+**Depends on**: Phase 61
+**Requirements**: none (documentation and code hygiene; no new REQ-IDs)
+**Gap Closure**: Closes INT-01 from v5.2 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. INT-01 resolved: `createEmailCaptureSection()` in `client/src/components/layout.ts` either removed globally or Phase 58.5 SUMMARY updated to document homepage-only scope — no ambiguity remains
+  2. Dead CSS `.ssr-theme-btn` rules removed from `server/src/routes/seo/templates/layout.ts`
+  3. REQUIREMENTS.md traceability table: THEME-01 through THEME-05 updated from `Planned` to `Complete`
+  4. Phase 61 SUMMARY frontmatter: `61-01` and `61-02` include `requirements-completed: [LAUNCH-04, LAUNCH-05, LAUNCH-06]`
+  5. Phase 58.1 SUMMARY frontmatter: `58.1-01`, `58.1-03`, `58.1-04` include `requirements-completed` for THEME-01, THEME-03, THEME-04
+**Plans**: 1 plan
+
+Plans:
+- [ ] 62-01-PLAN.md — Resolve INT-01, remove dead CSS, fix traceability table and SUMMARY frontmatters
+
+### Phase 63: Nyquist Compliance — Phase 57 & 58.6
+**Goal**: Both partially-compliant phases have complete Nyquist VALIDATION.md files so the milestone can be archived cleanly
+**Depends on**: Phase 62
+**Requirements**: none (validation documentation)
+**Gap Closure**: Closes Nyquist partial findings for Phase 57 and Phase 58.6 from v5.2 audit
+**Success Criteria** (what must be TRUE):
+  1. Phase 57 VALIDATION.md updated: `nyquist_compliant: true`, `wave_0_complete: true`
+  2. Phase 58.6 VALIDATION.md updated: `nyquist_compliant: true`, `wave_0_complete: true`
+**Plans**: 1 plan
+
+Plans:
+- [ ] 63-01-PLAN.md — Fill Nyquist validation gaps for Phase 57 and Phase 58.6
+
+### Phase 64: Pre-Launch Human Verification Checklist
+**Goal**: All 28 deferred human-verify items are executed before launch day, gallery screenshots are captured, and delivery reports are confirmed
+**Depends on**: Phase 63
+**Requirements**: none (manual human verification; cannot be automated)
+**Success Criteria** (what must be TRUE):
+  1. Email delivery confirmed: DMARC aggregate reports reviewed at admin@torchsecret.com (2026-03-08 to 2026-03-10); Loops.so dashboard delivery status checked
+  2. UI/UX visual rendering verified: all 21 retro themes render correctly, hover preview timing correct, Press Start 2P font lazy-loads, mobile nav icon swap, FOWT prevention, prefers-reduced-motion, Pro gating lock icons, keyboard navigation, PostHog analytics event fires
+  3. Sharing modality verified: clipboard auto-clears after 60 seconds, QR code scans cleanly, email button opens OS mail client, context-aware expiry hint appears on live create page
+  4. Small gems verified: burn timer visual countdown, preview panel live update, word list passphrase quality, reshare E2E flow completes end-to-end
+  5. SSR visual parity verified: summary icon reflects stored preference on load, icon updates on click, terminal block color matches SPA dark mode
+  6. Marketing page verified: Pro registration banner appears above the fold, homepage two-line H1 renders correctly, reveal CTA tone and layout confirmed, Bitwarden comparison page framing reviewed
+  7. Launch asset final check: Product Hunt character limits confirmed in live form UI (60/260 limits), r/netsec tone reviewed by community-aware human, launch email founder voice reviewed
+  8. Gallery screenshots captured: 4 images at 1270×760px as required by Product Hunt listing draft
+  9. README screenshot accuracy verified: 5 PNG screenshots match current UI post-58.x changes
+**Plans**: 1 plan
+
+Plans:
+- [ ] 64-01-PLAN.md — Execute all human verification items, capture gallery screenshots, confirm delivery reports
 
 ### Phase 58.6: Fix SSR Navigation & Visual Consistency
 

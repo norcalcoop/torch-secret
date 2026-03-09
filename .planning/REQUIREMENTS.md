@@ -100,11 +100,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LAUNCH-04 | Phase 61 | Complete |
 | LAUNCH-05 | Phase 61 | Complete |
 | LAUNCH-06 | Phase 61 | Complete |
-| THEME-01 | Phase 58.1 | Planned |
-| THEME-02 | Phase 58.1 | Planned |
-| THEME-03 | Phase 58.1 | Planned |
-| THEME-04 | Phase 58.1 | Planned |
-| THEME-05 | Phase 58.1 | Planned |
+| THEME-01 | Phase 58.1 | Complete |
+| THEME-02 | Phase 58.1 | Complete |
+| THEME-03 | Phase 58.1 | Complete |
+| THEME-04 | Phase 58.1 | Complete |
+| THEME-05 | Phase 58.1 | Complete |
 
 **Coverage:**
 - v5.2 requirements: 24 total
@@ -113,4 +113,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-07 — THEME-01 through THEME-05 added for Phase 58.1*
+*Last updated: 2026-03-09 — THEME-01 through THEME-05 status updated to Complete; gap closure phases 62-64 added*
