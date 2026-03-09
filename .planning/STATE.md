@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: Tech Debt & Launch Prep
 status: completed
-stopped_at: Completed 58.5-01-PLAN.md
-last_updated: "2026-03-08T19:12:31.776Z"
+stopped_at: Completed 58.6-01-PLAN.md
+last_updated: "2026-03-09T00:31:49.100Z"
 last_activity: "2026-03-08 - Completed quick task 1: Create .github/dependabot.yml with github-actions and npm ecosystems"
 progress:
-  total_phases: 13
-  completed_phases: 13
-  total_plans: 28
-  completed_plans: 28
+  total_phases: 14
+  completed_phases: 14
+  total_plans: 29
+  completed_plans: 29
   percent: 100
 ---
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 | Phase 58.3-small-gems P05 | 900 | 2 tasks | 3 files |
 | Phase 58.5-marketing-audit-fixes P02 | 128 | 2 tasks | 3 files |
 | Phase 58.5-marketing-audit-fixes P01 | 483 | 3 tasks | 13 files |
+| Phase 58.6-fix-ssr-navigation-visual-consistency P01 | 356 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,7 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 58.3 inserted after Phase 58: small gems (URGENT) — all 9 Small Gems from 10x session-1 analysis (renumbered from 58.2)
 - Phase 58.4 inserted after Phase 58: de-activate custome themes (URGENT)
 - Phase 58.5 inserted after Phase 58: marketing audit fixes (URGENT)
+- Phase 58.6 inserted after Phase 58.5: fix SSR navigation & visual consistency — SSR pages must match client themes, colors, typography; consistent headers/footers across all vs/comparison pages
 
 
 
@@ -97,6 +99,13 @@ Progress: [██████████] 100% (10/10 plans complete across v5.
 - Phase 59: DOCS-01, DOCS-02 (README Tally link + issue triage)
 - Phase 60: LAUNCH-01–03 (screencast script + Show HN + technical writeup)
 - Phase 61: LAUNCH-04–06 (Reddit posts + PH listing + launch email)
+
+### Phase 58.6 Plan 01 Decisions (2026-03-08)
+
+- SSR-DARK-DOT test matches `@media (prefers-color-scheme: dark) {` (with brace) to skip CSS comment occurrence earlier in the style block; asserts `rgb(57 57 91` to distinguish definition from `var()` usage
+- themeDropdownScript replaces themeScript: same IIFE shape with nonce, adds active state on load via `classList.toggle('active', ...)`, close-on-outside and close-on-Escape handlers
+- getBuiltFontHref() returns '' during dev (no dist/css exists); fontPreload is a no-op until client is built — safe for dev and test environments
+- .ssr-theme-btn touch-target override removed — .ssr-theme-summary already enforces 2.75rem × 2.75rem minimum
 
 ### Phase 58.5 Plan 01 Decisions (2026-03-08)
 
@@ -250,7 +259,7 @@ None. DMARC monitoring action outstanding: check admin@torchsecret.com 1–3 day
 
 ## Session Continuity
 
-Last session: 2026-03-08T19:12:31.772Z
-Stopped at: Completed 58.5-01-PLAN.md
+Last session: 2026-03-09T00:27:14.149Z
+Stopped at: Completed 58.6-01-PLAN.md
 Resume file: None
 Next action: /gsd:execute-phase 55

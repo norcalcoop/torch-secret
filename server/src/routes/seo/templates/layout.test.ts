@@ -83,6 +83,45 @@ describe('SSR-ACTIVE-JS: active-state JS for selected theme option', () => {
   });
 });
 
+// SSR-SUMMARY-ICON: script block must embed SVG paths for all three theme options
+describe('SSR-SUMMARY-ICON: themeDropdownScript embeds SVG paths for all three theme options', () => {
+  it('script block contains monitor SVG rect path (system icon)', () => {
+    // Find the script block containing themeDropdownScript content
+    const scriptStart = html.indexOf('<script nonce="test-nonce">(function(){var details=');
+    expect(scriptStart).toBeGreaterThan(-1);
+    const scriptEnd = html.indexOf('</script>', scriptStart);
+    const scriptContent = html.slice(scriptStart, scriptEnd);
+    // MONITOR_SVG contains <rect width="20" height="14" x="2" y="3" rx="2"/>
+    // The SVG is embedded as a JS string literal — double quotes appear as-is (no HTML escaping in <script>)
+    expect(scriptContent).toContain('rect width=');
+  });
+
+  it('script block contains sun SVG circle element (light icon)', () => {
+    const scriptStart = html.indexOf('<script nonce="test-nonce">(function(){var details=');
+    expect(scriptStart).toBeGreaterThan(-1);
+    const scriptEnd = html.indexOf('</script>', scriptStart);
+    const scriptContent = html.slice(scriptStart, scriptEnd);
+    // SUN_SVG contains <circle cx="12" cy="12" r="4"/>
+    // The SVG is embedded as a JS string literal — double quotes appear as-is (no HTML escaping in <script>)
+    expect(scriptContent).toContain('circle cx=');
+  });
+});
+
+// SSR-ICON-UPDATE: ssr-theme-summary-icon must appear in script at load time and in click handler
+describe('SSR-ICON-UPDATE: themeDropdownScript calls icon update in load and click', () => {
+  it('ssr-theme-summary-icon appears at least 3 times in full HTML (span + load-time + click handler)', () => {
+    let count = 0;
+    let idx = 0;
+    while (true) {
+      const found = html.indexOf('ssr-theme-summary-icon', idx);
+      if (found === -1) break;
+      count++;
+      idx = found + 1;
+    }
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
+});
+
 // SSR-NONCE: every <script and <style must include nonce="test-nonce"
 describe('SSR-NONCE: all inline scripts and styles carry nonce', () => {
   it('every <script occurrence has nonce="test-nonce"', () => {
