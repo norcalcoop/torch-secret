@@ -130,7 +130,7 @@ See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full phase details.
 - [x] **Phase 60: Launch Narrative Writing** — Demo screencast script, Show HN post, technical writeup (completed 2026-03-07)
 - [x] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list (completed 2026-03-07)
 - [x] **Phase 62: Documentation & Code Hygiene** — Resolve INT-01 footer email capture, remove dead CSS, fix REQUIREMENTS.md traceability, fix SUMMARY frontmatter gaps (completed 2026-03-09)
-- [ ] **Phase 63: Nyquist Compliance — Phase 57 & 58.6** — Fill validation gaps for two partially-compliant phases
+- [x] **Phase 63: Nyquist Compliance — Phase 57 & 58.6** — Fill validation gaps for two partially-compliant phases (completed 2026-03-09)
 - [ ] **Phase 64: Pre-Launch Human Verification Checklist** — Execute all deferred human-verify items across 11 phases, capture gallery screenshots, confirm delivery reports
 
 ## Phase Details
@@ -380,7 +380,7 @@ Plans:
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
 | 62. Documentation & Code Hygiene | 1/1 | Complete    | 2026-03-09 | - |
-| 63. Nyquist Compliance — Phase 57 & 58.6 | v5.2 | 0/1 | Pending | - |
+| 63. Nyquist Compliance — Phase 57 & 58.6 | 1/1 | Complete   | 2026-03-09 | - |
 | 64. Pre-Launch Human Verification Checklist | v5.2 | 0/1 | Pending | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
