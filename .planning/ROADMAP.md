@@ -374,7 +374,7 @@ Plans:
 | 58.2. Launch Quick Wins — Do Now | 5/5 | Complete   | 2026-03-08 |
 | 58.5. Marketing Audit Fixes | 2/2 | Complete    | 2026-03-08 |
 | 59. Repo Hygiene & Documentation | 2/2 | Complete    | 2026-03-09 | - |
-| 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-07 | - |
+| 60. Launch Narrative Writing | 1/1 | Complete   | 2026-03-09 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-07 | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
@@ -384,7 +384,7 @@ _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase deta
 **Goal:** SSR content pages (/vs/*, /alternatives/*, /use/*) are visually indistinguishable from SPA client pages — matching design tokens, theme dropdown, and JetBrains Mono font loading
 **Requirements**: SSR pages must match client pages in themes, colors, and typography. Headers and footers must be consistent across all pages. Look and feel must be the same for all vs/comparison pages.
 **Depends on:** Phase 58.5
-**Plans:** 2/2 plans complete
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 58.6-01-PLAN.md — Token audit + theme dropdown upgrade + font preload (SSR-TOKENS, SSR-DARK-DOT, SSR-DROPDOWN, SSR-ACTIVE-JS, SSR-NONCE)
