@@ -246,15 +246,29 @@ export function renderLayout(opts: LayoutOptions): string {
   const fowtScript = `<script nonce="${opts.cspNonce}">(function(){var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d&&t==='light');document.documentElement.style.colorScheme=d?'dark':'light';})()</script>`;
 
   // Theme dropdown: active state on load + click handlers + close-on-outside + close-on-Escape
-  // Summary icon update uses setAttribute on the span so no unsafe DOM manipulation occurs.
+  // updateSummaryIcon sets the summary span's innerHTML to a hardcoded SVG string selected from a
+  // static lookup table embedded at server build time. There is no user input involved — the SVG
+  // strings are TS module constants copied verbatim into the JS literal. This is XSS-safe.
   const themeDropdownScript =
     `<script nonce="${opts.cspNonce}">(function(){` +
     `var details=document.getElementById('ssr-theme-details');` +
     `if(!details)return;` +
     `var items=details.querySelectorAll('[data-theme]');` +
-    // Mark active option on load
+    // updateSummaryIcon: maps localStorage preference to the matching SVG string (all hardcoded)
+    `function updateSummaryIcon(){` +
+    `var pref=localStorage.getItem('theme')||'system';` +
+    `var svgs={` +
+    `light:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',` +
+    `dark:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',` +
+    `system:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'` +
+    `};` +
+    `var icon=details.querySelector('.ssr-theme-summary-icon');` +
+    `if(icon)icon.innerHTML=svgs[pref]||svgs.system;` +
+    `}` +
+    // Mark active option on load and update summary icon to match stored preference
     `var stored=localStorage.getItem('theme')||'system';` +
     `items.forEach(function(o){o.classList.toggle('active',o.getAttribute('data-theme')===stored);});` +
+    `updateSummaryIcon();` +
     // Attach click handler to each option
     `items.forEach(function(o){o.addEventListener('click',function(){` +
     `var pref=o.getAttribute('data-theme');` +
@@ -264,6 +278,7 @@ export function renderLayout(opts: LayoutOptions): string {
     `document.documentElement.classList.toggle('light',!d&&pref==='light');` +
     `document.documentElement.style.colorScheme=d?'dark':'light';` +
     `items.forEach(function(x){x.classList.toggle('active',x===o);});` +
+    `updateSummaryIcon();` +
     `details.open=false;` +
     `});});` +
     // Close on click outside
