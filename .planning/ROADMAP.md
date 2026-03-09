@@ -129,7 +129,7 @@ See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full phase details.
 - [x] **Phase 59: Repo Hygiene & Documentation** — Add Tally.so link to README, triage and close stale GitHub issues (completed 2026-03-07)
 - [x] **Phase 60: Launch Narrative Writing** — Demo screencast script, Show HN post, technical writeup (completed 2026-03-07)
 - [x] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list (completed 2026-03-07)
-- [ ] **Phase 62: Documentation & Code Hygiene** — Resolve INT-01 footer email capture, remove dead CSS, fix REQUIREMENTS.md traceability, fix SUMMARY frontmatter gaps
+- [x] **Phase 62: Documentation & Code Hygiene** — Resolve INT-01 footer email capture, remove dead CSS, fix REQUIREMENTS.md traceability, fix SUMMARY frontmatter gaps (completed 2026-03-09)
 - [ ] **Phase 63: Nyquist Compliance — Phase 57 & 58.6** — Fill validation gaps for two partially-compliant phases
 - [ ] **Phase 64: Pre-Launch Human Verification Checklist** — Execute all deferred human-verify items across 11 phases, capture gallery screenshots, confirm delivery reports
 
@@ -379,7 +379,7 @@ Plans:
 | 59. Repo Hygiene & Documentation | 2/2 | Complete    | 2026-03-09 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
 | 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
-| 62. Documentation & Code Hygiene | v5.2 | 0/1 | Pending | - |
+| 62. Documentation & Code Hygiene | 1/1 | Complete    | 2026-03-09 | - |
 | 63. Nyquist Compliance — Phase 57 & 58.6 | v5.2 | 0/1 | Pending | - |
 | 64. Pre-Launch Human Verification Checklist | v5.2 | 0/1 | Pending | - |
 
@@ -438,7 +438,7 @@ Plans:
 **Goal:** SSR content pages (/vs/*, /alternatives/*, /use/*) are visually indistinguishable from SPA client pages — matching design tokens, theme dropdown, and JetBrains Mono font loading
 **Requirements**: SSR pages must match client pages in themes, colors, and typography. Headers and footers must be consistent across all pages. Look and feel must be the same for all vs/comparison pages.
 **Depends on:** Phase 58.5
-**Plans:** 2/2 plans complete
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 58.6-01-PLAN.md — Token audit + theme dropdown upgrade + font preload (SSR-TOKENS, SSR-DARK-DOT, SSR-DROPDOWN, SSR-ACTIVE-JS, SSR-NONCE)
