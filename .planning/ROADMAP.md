@@ -262,17 +262,20 @@ Plans:
 - [ ] 58.3-05-PLAN.md — Reshare button in dashboard.ts + create.ts prefill + passphrase selector wiring
 
 ### Phase 59: Repo Hygiene & Documentation
-**Goal**: The public GitHub repository is clean, well-maintained, and surfaces the feedback link that appears on confirmation and reveal pages
-**Depends on**: Phase 53
+**Goal**: The public GitHub repository is clean, well-maintained, documentation is current for all 58.x features, and the feedback link appears across all three surfaces
+**Depends on**: Phase 53, Phase 58.x (scope expanded to cover documentation debt from inserted phases)
 **Requirements**: DOCS-01, DOCS-02
 **Success Criteria** (what must be TRUE):
-  1. The README includes a Tally.so feedback form link — all three feedback surfaces (confirmation page, reveal page, README) now point to the same form
-  2. All open GitHub issues are triaged: stale issues are closed with a comment, and remaining open issues carry appropriate labels (bug, enhancement, question, etc.)
-  3. No issue older than 30 days remains unlabeled or without a resolution decision
-**Plans**: 1 plan
+  1. The README includes a Tally.so feedback form link — all three feedback surfaces (confirmation page, reveal page, README) now point to the same form (complete)
+  2. All open GitHub issues are triaged: stale issues are closed with a comment, and remaining open issues carry appropriate labels (complete)
+  3. CHANGELOG has [5.1.0] and [5.2.0] milestone entries covering all shipped features
+  4. README feature list and screenshots reflect current post-58.x UI (QR sharing, burn timer, reshare, confirmation-flow screenshot added)
+  5. dependabot.yml covers Docker ecosystem; CONTRIBUTING.md has word list extension guide
+**Plans**: 2 plans
 
 Plans:
-- [ ] 59-01-PLAN.md — Add README feedback link (DOCS-01) and run GitHub issue triage (DOCS-02)
+- [ ] 59-01-PLAN.md — CHANGELOG 5.1.0+5.2.0 entries, README feature list update, dependabot Docker, CONTRIBUTING word list guide (DOCS-01, DOCS-02)
+- [ ] 59-02-PLAN.md — README screenshots section update + retake 5 screenshots of current UI (DOCS-01, DOCS-02)
 
 ### Phase 60: Launch Narrative Writing
 **Goal**: The core launch narrative exists as complete written artifacts — a demo script, the Show HN post, and a technical writeup that explains the zero-knowledge architecture to a technical audience

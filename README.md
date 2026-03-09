@@ -190,13 +190,15 @@ The Worker is deployed manually from a developer machine — it rarely needs upd
 
 ## Screenshots
 
-![Torch Secret marketing homepage in dark mode — hero section with zero-knowledge tagline and one-click create CTA](screenshots/homepage-dark.png)
+![Torch Secret homepage — "We can't read your secrets" zero-knowledge value proposition, Security Architecture section, light mode](screenshots/homepage-light.png)
 
-![Torch Secret marketing homepage in light mode — same layout with light glassmorphism surfaces](screenshots/homepage-light.png)
+![Create a secret — paste sensitive text, burn-after-reading timer, secret preview panel, intelligent expiry hint](screenshots/create-flow.png)
 
-![Create a secret form — paste sensitive text, set expiration and optional passphrase protection](screenshots/create-flow.png)
+![Confirmation page — 4-way sharing: Copy Link, Share (native), Email, and QR code panel open](screenshots/confirmation-flow.png)
 
-![Secret reveal page — terminal-style one-time display after the secret is viewed and destroyed](screenshots/reveal-flow.png)
+![Secret reveal page — burn-after-reading countdown active, terminal display, Create Your Own CTA](screenshots/reveal-flow.png)
+
+![Secret dashboard — manage secrets, one-click reshare button pre-fills create form](screenshots/dashboard-flow.png)
 
 ---
 
