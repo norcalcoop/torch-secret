@@ -437,8 +437,6 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-nav-link:hover { color: var(--ds-color-accent); }
     .ssr-cta-nav { font-size: 0.875rem; padding: 0.375rem 0.75rem; border-radius: 0.5rem; background: var(--ds-color-accent); color: #fff; font-weight: 500; text-decoration: none; transition: background 0.15s; }
     .ssr-cta-nav:hover { background: var(--ds-color-accent-hover); color: #fff; }
-    .ssr-theme-btn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.375rem; border: none; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; padding: 0; transition: color 0.15s; }
-    .ssr-theme-btn:hover { color: var(--ds-color-text-primary); }
     /* ── Theme dropdown (replaces moon-button cycle) ───────────────────── */
     .ssr-theme-details { position: relative; }
     .ssr-theme-summary { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 0.375rem; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; list-style: none; padding: 0; transition: color 0.15s; }
