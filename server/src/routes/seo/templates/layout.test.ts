@@ -35,7 +35,11 @@ describe('SSR-TOKENS: terminal design tokens in :root', () => {
 // SSR-DARK-DOT: the dark media query block must define --ds-color-dot-grid with the dark value
 describe('SSR-DARK-DOT: dot-grid token in dark media query block', () => {
   it('dark @media block defines --ds-color-dot-grid with dark rgb value', () => {
-    const darkMediaStart = html.indexOf('@media (prefers-color-scheme: dark)');
+    // Look for the actual CSS rule (followed immediately by whitespace+{), not the CSS comment
+    // The comment inside the <style> block also contains "@media (prefers-color-scheme: dark)"
+    // so we specifically match the rule form: @media (...) {
+    const rulePattern = '@media (prefers-color-scheme: dark) {';
+    const darkMediaStart = html.indexOf(rulePattern);
     expect(darkMediaStart).toBeGreaterThan(-1);
     // Find the outer @media block by tracking brace depth from the opening {
     const afterMedia = html.slice(darkMediaStart);

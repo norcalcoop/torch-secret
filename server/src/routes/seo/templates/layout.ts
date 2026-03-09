@@ -31,6 +31,26 @@ function getBuiltCssHref(): string {
 
 const BUILT_CSS_HREF = getBuiltCssHref();
 
+/**
+ * Parse the JetBrains Mono Latin woff2 path from the compiled CSS file.
+ * Vite writes url(/assets/jetbrains-mono-latin-wght-normal-[hash].woff2) — no quotes.
+ * Returns '' during development when dist/CSS does not exist.
+ */
+function getBuiltFontHref(): string {
+  if (!BUILT_CSS_HREF) return '';
+  const cssPath = resolve(
+    import.meta.dirname,
+    '../../../../client/dist',
+    BUILT_CSS_HREF.replace(/^\//, ''),
+  );
+  if (!existsSync(cssPath)) return '';
+  const css = readFileSync(cssPath, 'utf-8');
+  const match = css.match(/url\((\/assets\/jetbrains-mono-latin-wght-normal-[^)]+\.woff2)\)/);
+  return match?.[1] ?? '';
+}
+
+const BUILT_FONT_HREF = getBuiltFontHref();
+
 export interface LayoutOptions {
   title: string;
   canonical: string;
@@ -62,6 +82,12 @@ const SHIELD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="1
 /** Lucide Moon SVG — theme toggle icon (static; JS applies .dark/.light class). */
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 
+/** Lucide Sun SVG — theme dropdown Light option icon. */
+const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+
+/** Lucide Monitor SVG — theme dropdown System option icon. */
+const MONITOR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`;
+
 /** Lucide GitHub SVG — matches the icon used in the SPA footer Open Source link. */
 const GITHUB_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
 
@@ -84,7 +110,17 @@ function renderNav(): string {
         <a href="/pricing" class="ssr-nav-link">Pricing</a>
         <a href="/dashboard" class="ssr-nav-link">Dashboard</a>
         <a href="/create" class="ssr-cta-nav">Create a Secret</a>
-        <button id="ssr-theme-btn" class="ssr-theme-btn" aria-label="Toggle theme">${MOON_SVG}</button>
+        <details id="ssr-theme-details" class="ssr-theme-details">
+          <summary class="ssr-theme-summary" aria-label="Change theme">
+            <span class="ssr-theme-summary-icon" aria-hidden="true">${MOON_SVG}</span>
+          </summary>
+          <div class="ssr-theme-panel" role="menu" aria-label="Theme selector">
+            <p class="ssr-theme-section-label" aria-hidden="true">Base Modes</p>
+            <button class="ssr-theme-option" data-theme="light" role="menuitem" type="button">${SUN_SVG} Light</button>
+            <button class="ssr-theme-option" data-theme="dark" role="menuitem" type="button">${MOON_SVG} Dark</button>
+            <button class="ssr-theme-option" data-theme="system" role="menuitem" type="button">${MONITOR_SVG} System</button>
+          </div>
+        </details>
       </div>
     </div>
   </header>`;
@@ -191,6 +227,11 @@ function renderFooter(cspNonce: string): string {
  * - Renders shared nav and footer
  */
 export function renderLayout(opts: LayoutOptions): string {
+  // Font preload: no nonce required — <link rel="preload"> is not a script or style.
+  const fontPreload = BUILT_FONT_HREF
+    ? `<link rel="preload" href="${escHtml(BUILT_FONT_HREF)}" as="font" type="font/woff2" crossorigin />`
+    : '';
+
   // Link to the compiled Tailwind bundle. Nonce required by Helmet's styleSrc CSP directive.
   const cssLink = BUILT_CSS_HREF
     ? `<link rel="stylesheet" href="${escHtml(BUILT_CSS_HREF)}" nonce="${opts.cspNonce}" />`
@@ -204,8 +245,32 @@ export function renderLayout(opts: LayoutOptions): string {
   // FOWT: apply stored theme class before first paint (mirrors client/index.html)
   const fowtScript = `<script nonce="${opts.cspNonce}">(function(){var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d&&t==='light');document.documentElement.style.colorScheme=d?'dark':'light';})()</script>`;
 
-  // Theme toggle click handler — cycles light → dark → system (same as SPA ThemeToggle)
-  const themeScript = `<script nonce="${opts.cspNonce}">(function(){var btn=document.getElementById('ssr-theme-btn');if(!btn)return;btn.addEventListener('click',function(){var t=localStorage.getItem('theme');var next=t==='dark'?'light':t==='light'?null:'dark';if(next){localStorage.setItem('theme',next);}else{localStorage.removeItem('theme');}var d=next==='dark'||(!next&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d&&next==='light');document.documentElement.style.colorScheme=d?'dark':'light';});})()</script>`;
+  // Theme dropdown: active state on load + click handlers + close-on-outside + close-on-Escape
+  // Summary icon update uses setAttribute on the span so no unsafe DOM manipulation occurs.
+  const themeDropdownScript =
+    `<script nonce="${opts.cspNonce}">(function(){` +
+    `var details=document.getElementById('ssr-theme-details');` +
+    `if(!details)return;` +
+    `var items=details.querySelectorAll('[data-theme]');` +
+    // Mark active option on load
+    `var stored=localStorage.getItem('theme')||'system';` +
+    `items.forEach(function(o){o.classList.toggle('active',o.getAttribute('data-theme')===stored);});` +
+    // Attach click handler to each option
+    `items.forEach(function(o){o.addEventListener('click',function(){` +
+    `var pref=o.getAttribute('data-theme');` +
+    `if(pref==='system'){localStorage.removeItem('theme');}else{localStorage.setItem('theme',pref);}` +
+    `var d=pref==='dark'||(!pref&&matchMedia('(prefers-color-scheme:dark)').matches);` +
+    `document.documentElement.classList.toggle('dark',d);` +
+    `document.documentElement.classList.toggle('light',!d&&pref==='light');` +
+    `document.documentElement.style.colorScheme=d?'dark':'light';` +
+    `items.forEach(function(x){x.classList.toggle('active',x===o);});` +
+    `details.open=false;` +
+    `});});` +
+    // Close on click outside
+    `document.addEventListener('click',function(e){if(details&&!details.contains(e.target))details.open=false;});` +
+    // Close on Escape
+    `document.addEventListener('keydown',function(e){if(e.key==='Escape')details.open=false;});` +
+    `})()</script>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -227,6 +292,7 @@ export function renderLayout(opts: LayoutOptions): string {
   <meta name="twitter:title" content="${escHtml(opts.ogTitle)}" />
   <meta name="twitter:description" content="${escHtml(opts.ogDesc)}" />
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  ${fontPreload}
   ${cssLink}
   <style nonce="${opts.cspNonce}">
     /*
@@ -252,6 +318,9 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-warning: #7e4f04;
       --ds-color-icon: #5c6375;
       --ds-color-dot-grid: rgb(173 176 186 / 0.12);
+      --ds-color-terminal-bg: #f2f6f4;
+      --ds-color-terminal-text: #1d442c;
+      --ds-color-terminal-header: #e7ede9;
       --font-heading: 'JetBrains Mono Variable', ui-monospace, monospace;
       --font-body: ui-sans-serif, system-ui, sans-serif;
     }
@@ -272,6 +341,10 @@ export function renderLayout(opts: LayoutOptions): string {
         --ds-color-success: #1bc45e;
         --ds-color-warning: #f69e0b;
         --ds-color-icon: #9292b2;
+        --ds-color-dot-grid: rgb(57 57 91 / 0.15);
+        --ds-color-terminal-bg: #0e1913;
+        --ds-color-terminal-text: #7ba488;
+        --ds-color-terminal-header: #17251d;
       }
     }
     /* Explicit .dark class (set by localStorage theme toggle — mirrors SPA behaviour) */
@@ -291,6 +364,10 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-success: #1bc45e;
       --ds-color-warning: #f69e0b;
       --ds-color-icon: #9292b2;
+      --ds-color-dot-grid: rgb(57 57 91 / 0.15);
+      --ds-color-terminal-bg: #0e1913;
+      --ds-color-terminal-text: #7ba488;
+      --ds-color-terminal-header: #17251d;
     }
     /* Explicit .light class overrides @media (prefers-color-scheme: dark) */
     html.light {
@@ -347,6 +424,17 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-cta-nav:hover { background: var(--ds-color-accent-hover); color: #fff; }
     .ssr-theme-btn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.375rem; border: none; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; padding: 0; transition: color 0.15s; }
     .ssr-theme-btn:hover { color: var(--ds-color-text-primary); }
+    /* ── Theme dropdown (replaces moon-button cycle) ───────────────────── */
+    .ssr-theme-details { position: relative; }
+    .ssr-theme-summary { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 0.375rem; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; list-style: none; padding: 0; transition: color 0.15s; }
+    .ssr-theme-summary:hover { color: var(--ds-color-text-primary); }
+    .ssr-theme-summary::marker, .ssr-theme-summary::-webkit-details-marker { display: none; }
+    .ssr-theme-summary-icon { display: flex; align-items: center; pointer-events: none; }
+    .ssr-theme-panel { position: absolute; top: calc(100% + 0.25rem); right: 0; z-index: 50; background: color-mix(in srgb, var(--ds-color-surface) 90%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--ds-color-border); border-radius: 0.75rem; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12); width: 13rem; padding: 0.5rem 0; }
+    .ssr-theme-section-label { padding: 0.25rem 0.75rem; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ds-color-text-muted); }
+    .ssr-theme-option { display: flex; align-items: center; gap: 0.625rem; width: 100%; padding: 0.375rem 0.75rem; font-size: 0.875rem; color: var(--ds-color-text-primary); background: transparent; border: none; cursor: pointer; text-align: left; transition: background 0.1s; }
+    .ssr-theme-option:hover { background: var(--ds-color-surface-raised); }
+    .ssr-theme-option.active { color: var(--ds-color-accent); font-weight: 500; }
     .ssr-icon-accent { color: var(--ds-color-accent); }
     /* Footer structural classes */
     #site-footer { border-top: 1px solid var(--ds-color-border); background: var(--ds-color-bg); padding: 1.5rem 0; }
@@ -412,9 +500,6 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-footer-github-link:hover { color: var(--ds-color-text-secondary); }
     /* ── Footer: internal SEO links row ─────────────────────────────── */
     .ssr-footer-link-row { max-width: 42rem; margin: 0.5rem auto 0; padding: 0 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; font-size: 0.75rem; color: var(--ds-color-text-muted); }
-
-    /* ── Touch targets: minimum 44×44px per WCAG 2.5.5 ───────────────── */
-    .ssr-theme-btn { min-width: 2.75rem; min-height: 2.75rem; }
 
     /* ── Mobile bottom tab bar (mirrors SPA mobile-tab-bar) ─────────── */
     #ssr-mobile-nav {
@@ -485,7 +570,7 @@ export function renderLayout(opts: LayoutOptions): string {
   </main>
   ${renderFooter(opts.cspNonce)}
   ${renderMobileNav()}
-  ${themeScript}
+  ${themeDropdownScript}
   <script nonce="${opts.cspNonce}">(function(){var p=window.location.pathname;var tabs=document.querySelectorAll('#ssr-mobile-nav .ssr-tab-btn');tabs.forEach(function(t){if(t.getAttribute('data-path')===p)t.classList.add('ssr-tab-active');});})()</script>
 </body>
 </html>`;
