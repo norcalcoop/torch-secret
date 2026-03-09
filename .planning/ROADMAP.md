@@ -375,7 +375,7 @@ Plans:
 | 58.5. Marketing Audit Fixes | 2/2 | Complete    | 2026-03-08 |
 | 59. Repo Hygiene & Documentation | 2/2 | Complete    | 2026-03-09 | - |
 | 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
-| 61. Launch Distribution Assets | 2/2 | Complete   | 2026-03-09 | - |
+| 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
 
 _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
 
