@@ -26,7 +26,11 @@ When a secret is retrieved, the server performs an atomic three-step transaction
 - **One-time viewing** — atomic retrieve-and-destroy; secrets cannot be replayed
 - **Anonymous + account hybrid** — use without an account or sign in for a secret dashboard
 - **Secret dashboard** — view, manage, and track your created secrets when signed in
-- **Password protection** — EFF Diceware passphrase generation; Argon2id server-side hashing (OWASP parameters)
+- **Password protection** — EFF Diceware passphrase generation with Tech, Nature, and Short word list themes; Argon2id server-side hashing (OWASP parameters)
+- **4-way secret sharing** — copy link, native share sheet, email mailto, and QR code on the confirmation page
+- **Burn-after-reading timer** — optional countdown on the reveal page auto-hides content after 15, 30, or 60 seconds
+- **Clipboard auto-clear** — secret link removed from clipboard after 60 seconds
+- **Secret preview panel** — terminal-style preview before creating; one-click reshare from the dashboard with pre-filled settings
 - **Configurable expiration** — 1 hour, 24 hours, 7 days, or 30 days
 - **Email notification** — optional alert when your secret is viewed
 - **PADME padding** — prevents ciphertext length analysis with at most 12% overhead
