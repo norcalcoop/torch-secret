@@ -381,7 +381,7 @@ _See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase deta
 **Goal:** SSR content pages (/vs/*, /alternatives/*, /use/*) are visually indistinguishable from SPA client pages — matching design tokens, theme dropdown, and JetBrains Mono font loading
 **Requirements**: SSR pages must match client pages in themes, colors, and typography. Headers and footers must be consistent across all pages. Look and feel must be the same for all vs/comparison pages.
 **Depends on:** Phase 58.5
-**Plans:** 1/1 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 58.6-01-PLAN.md — Token audit + theme dropdown upgrade + font preload (SSR-TOKENS, SSR-DARK-DOT, SSR-DROPDOWN, SSR-ACTIVE-JS, SSR-NONCE)
