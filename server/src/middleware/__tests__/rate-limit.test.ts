@@ -59,3 +59,17 @@ describe('createVerifyTightLimiter — configuration unit test (SR-015, nyquist)
     expect(typeof mod.createVerifyTightLimiter).toBe('function');
   });
 });
+
+describe('createHealthLimiter — configuration unit test (GH-02, nyquist)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  test('exports createHealthLimiter as a function that returns middleware', async () => {
+    const { createHealthLimiter } = await import('../rate-limit.js');
+    expect(typeof createHealthLimiter).toBe('function');
+    const middleware = createHealthLimiter();
+    expect(typeof middleware).toBe('function');
+  });
+});

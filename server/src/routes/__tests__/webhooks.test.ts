@@ -56,7 +56,7 @@ describe('POST /api/webhooks/stripe — signature verification (Gap 1)', () => {
       // No stripe-signature header
       .send(JSON.stringify({ type: 'checkout.session.completed' }))
       .expect(400);
-    expect(res.text).toBeTruthy(); // handler sends plain text error
+    expect(res.body).toEqual({ error: 'Missing stripe-signature header' });
   });
 
   test('invalid/tampered stripe-signature returns 400', async () => {
@@ -66,7 +66,7 @@ describe('POST /api/webhooks/stripe — signature verification (Gap 1)', () => {
       .set('stripe-signature', 'totally-invalid-signature')
       .send(JSON.stringify({ type: 'checkout.session.completed' }))
       .expect(400);
-    expect(res.text).toContain('Webhook Error');
+    expect(res.body).toEqual({ error: 'Webhook signature verification failed' });
   });
 
   test('tampered checkout.session.completed webhook does NOT upgrade user to Pro', async () => {
