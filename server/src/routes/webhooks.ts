@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { stripe } from '../config/stripe.js';
 import { env } from '../config/env.js';
 import { activatePro, deactivatePro } from '../services/billing.service.js';
+import { sendDunningEmail } from '../services/notification.service.js';
 import { logger } from '../middleware/logger.js';
 
 /**
@@ -17,8 +18,10 @@ import { logger } from '../middleware/logger.js';
  * No code path in this handler joins userId + secretId. See INVARIANTS.md.
  *
  * Handles:
- *   checkout.session.completed  -> activatePro(customerId)
- *   customer.subscription.deleted -> deactivatePro(customerId)
+ *   checkout.session.completed      -> activatePro(customerId)
+ *   customer.subscription.deleted   -> deactivatePro(customerId)
+ *   invoice.payment_failed          -> sendDunningEmail(customerId) fire-and-forget
+ *   customer.subscription.updated   -> activatePro (active) or deactivatePro (canceled/unpaid); past_due no-op
  * All other event types are acknowledged (200) and ignored.
  */
 export async function stripeWebhookHandler(req: Request, res: Response): Promise<void> {
@@ -61,6 +64,32 @@ export async function stripeWebhookHandler(req: Request, res: Response): Promise
           ? subscription.customer
           : subscription.customer.id;
       await deactivatePro(customerId);
+      break;
+    }
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object;
+      const customerId =
+        typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer?.id ?? null);
+      if (customerId) {
+        // Fire-and-forget — do NOT await; delaying webhook response risks Stripe retries and duplicate emails
+        void sendDunningEmail(customerId).catch((err: unknown) => {
+          logger.warn({ err }, 'dunning_email_send_failed');
+        });
+      }
+      break;
+    }
+    case 'customer.subscription.updated': {
+      const subscription = event.data.object;
+      const customerId =
+        typeof subscription.customer === 'string'
+          ? subscription.customer
+          : subscription.customer.id;
+      if (subscription.status === 'active') {
+        await activatePro(customerId);
+      } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+        await deactivatePro(customerId);
+      }
+      // past_due, trialing, paused → no action; fall through to res.json({ received: true })
       break;
     }
     default:
