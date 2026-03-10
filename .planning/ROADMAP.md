@@ -182,7 +182,12 @@ Plans:
   1. When Stripe fires `invoice.payment_failed`, a dunning email is dispatched via Resend notifying the user of the payment failure
   2. When Stripe fires `customer.subscription.updated`, the user's `subscriptionTier` in the database is updated to reflect the new plan — mid-period upgrades and downgrades are handled correctly
   3. When `verify-checkout` sees `session.customer` set but `dbUser.stripeCustomerId` is null, it returns 403 — the race window bypass is closed
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 66-01-PLAN.md — Wave 0 TDD stubs for BILL-01, BILL-02, BILL-03 across three test files
+- [ ] 66-02-PLAN.md — sendDunningEmail + invoice.payment_failed + customer.subscription.updated webhook cases
+- [ ] 66-03-PLAN.md — verify-checkout fail-closed guard + column projection fix
 
 ### Phase 67: Bundle Performance
 **Goal**: Production JavaScript bundle sheds approximately 2,880 lines of retro theme code and 280KB of passphrase wordlist data that are never needed on initial page load
@@ -237,8 +242,8 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 65. Quick Wins | 3/3 | Complete   | 2026-03-10 | - |
-| 66. Billing Lifecycle | v5.3 | 0/TBD | Not started | - |
+| 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
+| 66. Billing Lifecycle | 1/3 | In Progress|  | - |
 | 67. Bundle Performance | v5.3 | 0/TBD | Not started | - |
 | 68. API & Schema Quality | v5.3 | 0/TBD | Not started | - |
 | 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
