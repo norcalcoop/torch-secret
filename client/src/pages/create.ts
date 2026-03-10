@@ -30,7 +30,7 @@ import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.j
 import { EFF_WORDS } from '../crypto/passphrase.js';
 import { TECH_WORDS, NATURE_WORDS, SHORT_WORDS } from '../crypto/word-lists.js';
 import { createSecret, ApiError, getMe } from '../api/client.js';
-import { authClient } from '../api/auth-client.js';
+import { authClient, isSession } from '../api/auth-client.js';
 import {
   captureSecretCreated,
   captureConversionPromptShown,
@@ -104,33 +104,6 @@ let anonymousSecretCount = 0;
 // Session-level auth flag: set to true when auth IIFE resolves a valid session.
 // Authenticated users never see conversion prompts on the confirmation page.
 let isAuthenticated = false;
-
-/**
- * Shape of a Better Auth session user.
- * Typed explicitly to avoid unsafe `any` member access on the library return value.
- */
-interface SessionUser {
-  name?: string | null;
-  email: string;
-}
-
-/**
- * Shape of the session object returned by getSession().
- */
-interface Session {
-  user: SessionUser;
-}
-
-/**
- * Type guard: verify that a value matches the Session shape.
- */
-function isSession(value: unknown): value is Session {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  if (typeof obj['user'] !== 'object' || obj['user'] === null) return false;
-  const user = obj['user'] as Record<string, unknown>;
-  return typeof user['email'] === 'string';
-}
 
 /**
  * Creates the collapsible label field for authenticated users.

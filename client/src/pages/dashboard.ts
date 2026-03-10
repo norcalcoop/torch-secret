@@ -8,7 +8,8 @@
  */
 
 import { Circle, CheckCircle2, Clock, Trash2, Lock, Bell, TriangleAlert } from 'lucide';
-import { authClient } from '../api/auth-client.js';
+import { authClient, isSession } from '../api/auth-client.js';
+import type { Session } from '../api/auth-client.js';
 import {
   fetchDashboardSecrets,
   deleteDashboardSecret,
@@ -30,38 +31,6 @@ import {
   captureSubscriptionActivated,
 } from '../analytics/posthog.js';
 import type { DashboardSecretItem } from '../../../shared/types/api.js';
-
-// ---------------------------------------------------------------------------
-// Auth session types + guard (same pattern as Phase 22)
-// ---------------------------------------------------------------------------
-
-/**
- * Shape of a Better Auth session user.
- * Typed explicitly to avoid unsafe `any` member access on the library return value.
- */
-interface SessionUser {
-  id: string;
-  name?: string | null;
-  email: string;
-}
-
-/**
- * Shape of the session object returned by getSession().
- */
-interface Session {
-  user: SessionUser;
-}
-
-/**
- * Type guard: verify that a value matches the Session shape.
- */
-function isSession(value: unknown): value is Session {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  if (typeof obj['user'] !== 'object' || obj['user'] === null) return false;
-  const user = obj['user'] as Record<string, unknown>;
-  return typeof user['id'] === 'string' && typeof user['email'] === 'string';
-}
 
 // ---------------------------------------------------------------------------
 // Status configuration

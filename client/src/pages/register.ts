@@ -12,7 +12,7 @@
  * if the user is already authenticated.
  */
 
-import { authClient } from '../api/auth-client.js';
+import { authClient, isSession } from '../api/auth-client.js';
 import { navigate } from '../router.js';
 import { Github, Mail, Flame } from 'lucide';
 import { createIcon } from '../components/icons.js';
@@ -26,7 +26,7 @@ export async function renderRegisterPage(container: HTMLElement): Promise<void> 
   try {
     const result = await authClient.getSession();
     const data: unknown = result.data as unknown;
-    if (isSessionData(data)) {
+    if (isSession(data)) {
       navigate('/dashboard');
       return;
     }
@@ -643,14 +643,4 @@ function createProUpgradeBanner(): HTMLElement {
   banner.appendChild(features);
 
   return banner;
-}
-
-/**
- * Type guard: verify that a getSession() return value contains an active session.
- * Better Auth's client returns `any` for result.data, so we narrow via unknown.
- */
-function isSessionData(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  return typeof obj['session'] === 'object' && obj['session'] !== null;
 }

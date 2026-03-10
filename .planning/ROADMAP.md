@@ -237,7 +237,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 65. Quick Wins | 1/3 | In Progress|  | - |
+| 65. Quick Wins | 2/3 | In Progress|  | - |
 | 66. Billing Lifecycle | v5.3 | 0/TBD | Not started | - |
 | 67. Bundle Performance | v5.3 | 0/TBD | Not started | - |
 | 68. API & Schema Quality | v5.3 | 0/TBD | Not started | - |
