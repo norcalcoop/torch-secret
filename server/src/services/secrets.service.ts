@@ -211,6 +211,20 @@ export async function verifyAndRetrieve(
   { success: true; secret: Secret } | { success: false; attemptsRemaining: number } | null
 > {
   return db.transaction(async (tx) => {
+    // Step 0: Acquire a pessimistic row-level lock (FOR UPDATE) before reading.
+    // Without this lock, concurrent correct-password requests all read the secret
+    // before any of them deletes it — all pass argon2.verify and all receive the
+    // ciphertext (race condition). FOR UPDATE serializes concurrent calls: the
+    // second caller blocks until the first transaction commits (row deleted), then
+    // sees no row and returns null → 404. Drizzle ORM does not expose FOR UPDATE
+    // natively, so we use a raw execute() exclusively for the lock acquisition.
+    // The subsequent Drizzle ORM SELECT (Step 1) runs inside the same transaction
+    // and inherits the lock without contention.
+    const lockRows = await tx.execute(sql`SELECT id FROM secrets WHERE id = ${id} FOR UPDATE`);
+    if (lockRows.rows.length === 0) {
+      return null;
+    }
+
     // Step 1: SELECT the full secret row with owner email via JOIN (single DB round-trip)
     const [secret] = await tx
       .select({

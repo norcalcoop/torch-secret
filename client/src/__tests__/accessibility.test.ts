@@ -8,9 +8,20 @@
  * verified manually in a separate checkpoint.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { navigate } from '../router.js';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
+
+// Mock the router so navigate() is a spy and doesn't touch history API in tests.
+// Vitest hoists vi.mock() above imports — all components that import navigate
+// will receive this spy automatically.
+vi.mock('../router.js', () => ({
+  navigate: vi.fn(),
+  initRouter: vi.fn(),
+  updatePageMeta: vi.fn(),
+  focusPageHeading: vi.fn(),
+}));
 
 expect.extend(matchers);
 
@@ -219,6 +230,80 @@ describe('Component accessibility', () => {
   });
 });
 
+describe('Theme dropdown', () => {
+  it('has no accessibility violations in closed state', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const results = await axe(container, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results).toHaveNoViolations();
+  });
+
+  it('has no accessibility violations in open state', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the dropdown panel
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    toggleBtn!.click();
+
+    const results = await axe(container, {
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results).toHaveNoViolations();
+  });
+
+  it('toggle button has aria-expanded attribute', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    expect(toggleBtn!.hasAttribute('aria-expanded')).toBe(true);
+    expect(toggleBtn!.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('toggle button has aria-label attribute', async () => {
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    expect(toggleBtn!.getAttribute('aria-label')).toBe('Change theme');
+  });
+
+  it('retro theme buttons are absent when RETRO_ENABLED is false', async () => {
+    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the panel to render menu items
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    toggleBtn!.click();
+
+    const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
+    if (RETRO_ENABLED) {
+      // When gate is on: retro group is present and all items have role="menuitem"
+      expect(retroGroup).not.toBeNull();
+      const menuItems = retroGroup!.querySelectorAll('[role="menuitem"]');
+      expect(menuItems.length).toBeGreaterThan(0);
+      menuItems.forEach((item) => {
+        expect(item.getAttribute('role')).toBe('menuitem');
+      });
+    } else {
+      // When gate is off: retro group is absent from the panel
+      expect(retroGroup).toBeNull();
+    }
+  });
+});
+
 describe('PROT-02 brute-force label integration', () => {
   it('high tier yields centuries or eons brute-force estimate', async () => {
     const { generatePassword } = await import('../crypto/password-generator.js');
@@ -303,5 +388,49 @@ describe('PROT-02 brute-force label integration', () => {
     const text = entropyLine!.textContent ?? '';
     expect(text).toMatch(/\d+(\.\d+)? bits/);
     expect(text).toMatch(/at 10B guesses\/sec/);
+  });
+});
+
+describe('Theme dropdown — Pro gating', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Reset the module-level cachedIsPro in theme-toggle.ts by dispatching
+    // retrothemechange — theme-toggle listens to this and nulls the cache.
+    window.dispatchEvent(new CustomEvent('retrothemechange', { detail: { themeId: null } }));
+  });
+
+  it('free user: retro theme buttons absent when RETRO_ENABLED is false; navigate("/pricing") when enabled', async () => {
+    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
+    const dropdown = createThemeDropdown();
+    container.appendChild(dropdown);
+
+    // Open the dropdown panel
+    const toggleBtn = dropdown.querySelector<HTMLButtonElement>('#theme-dropdown-btn');
+    expect(toggleBtn).not.toBeNull();
+    toggleBtn!.click();
+
+    const retroGroup = dropdown.querySelector('[aria-label="Retro Pro themes"]');
+
+    if (RETRO_ENABLED) {
+      // Click the first retro theme button (all are locked for free users)
+      expect(retroGroup).not.toBeNull();
+      const firstRetroBtn = retroGroup!.querySelector<HTMLButtonElement>('[data-retro-theme]');
+      expect(firstRetroBtn).not.toBeNull();
+      firstRetroBtn!.click();
+
+      // Flush the fire-and-forget async IIFE in the click handler
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
+      // navigate('/pricing') must have been called — not setRetroTheme
+      expect(navigate).toHaveBeenCalledWith('/pricing');
+
+      // No retro theme must be persisted to localStorage
+      expect(localStorage.getItem('retro-theme')).toBeNull();
+    } else {
+      // When gate is off: no retro group — pricing redirect cannot happen
+      expect(retroGroup).toBeNull();
+      expect(localStorage.getItem('retro-theme')).toBeNull();
+    }
   });
 });

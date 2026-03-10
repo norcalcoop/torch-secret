@@ -1050,3 +1050,39 @@ describe('POST /api/secrets/:id/verify — race condition (Gap 6)', () => {
     expect(rows).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// TEST-03: Race condition — concurrent correct-password requests
+// ---------------------------------------------------------------------------
+describe('POST /api/secrets/:id/verify — race condition correct-password (TEST-03)', () => {
+  test('5 concurrent correct-password requests: exactly one returns 200, secret destroyed exactly once', async () => {
+    // Create anonymous password-protected secret (no session cookie → hard-delete on correct retrieval)
+    const createRes = await request(app)
+      .post('/api/secrets')
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', password: 'correct-password' })
+      .expect(201);
+    const id = createRes.body.id as string;
+
+    // Fire 5 concurrent correct-password requests — MUST use Promise.all
+    // Argon2id ~300ms each; 5 concurrent fits within 15s testTimeout
+    const results = await Promise.all([
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'correct-password' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'correct-password' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'correct-password' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'correct-password' }),
+      request(app).post(`/api/secrets/${id}/verify`).send({ password: 'correct-password' }),
+    ]);
+
+    const successes = results.filter((r) => r.status === 200);
+    const notFounds = results.filter((r) => r.status === 404);
+
+    // Exactly one request wins; all others see the secret already destroyed
+    expect(successes).toHaveLength(1);
+    expect(notFounds).toHaveLength(4);
+    expect(successes[0].body.ciphertext).toBeDefined();
+
+    // DB confirms secret is fully destroyed — anonymous secret → hard-delete → 0 rows
+    const rows = await db.select().from(secrets).where(eq(secrets.id, id));
+    expect(rows).toHaveLength(0);
+  });
+});

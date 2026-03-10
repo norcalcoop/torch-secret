@@ -147,6 +147,17 @@ torch-secret/
 
 The PR template includes a checklist -- please make sure all applicable items are checked before requesting review.
 
+## Contributing a Passphrase Word List
+
+Torch Secret ships four passphrase word lists (EFF, Tech, Nature, Short). You can propose a new list:
+
+1. **File:** `client/src/crypto/word-lists.ts`
+2. **Format:** Export a `string[]` constant following the existing pattern (e.g., `export const MY_WORDS: string[] = [...]`)
+3. **Register:** Add your list to the `WORD_LISTS` map in the same file: `{ label: 'My Theme', words: MY_WORDS }`
+4. **Criteria:** Words should be 3–8 characters, memorable, unambiguous when spoken aloud, and free of offensive terms
+
+Open a pull request with your new list and a brief rationale for the theme.
+
 ## Reporting Bugs
 
 Found a bug? Please [open an issue](https://github.com/norcalcoop/torch-secret/issues/new?template=bug-report.yml) using the Bug Report template. Include steps to reproduce, expected behavior, and any relevant screenshots.

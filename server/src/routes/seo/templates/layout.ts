@@ -31,6 +31,26 @@ function getBuiltCssHref(): string {
 
 const BUILT_CSS_HREF = getBuiltCssHref();
 
+/**
+ * Parse the JetBrains Mono Latin woff2 path from the compiled CSS file.
+ * Vite writes url(/assets/jetbrains-mono-latin-wght-normal-[hash].woff2) — no quotes.
+ * Returns '' during development when dist/CSS does not exist.
+ */
+function getBuiltFontHref(): string {
+  if (!BUILT_CSS_HREF) return '';
+  const cssPath = resolve(
+    import.meta.dirname,
+    '../../../../client/dist',
+    BUILT_CSS_HREF.replace(/^\//, ''),
+  );
+  if (!existsSync(cssPath)) return '';
+  const css = readFileSync(cssPath, 'utf-8');
+  const match = css.match(/url\((\/assets\/jetbrains-mono-latin-wght-normal-[^)]+\.woff2)\)/);
+  return match?.[1] ?? '';
+}
+
+const BUILT_FONT_HREF = getBuiltFontHref();
+
 export interface LayoutOptions {
   title: string;
   canonical: string;
@@ -62,6 +82,15 @@ const SHIELD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="1
 /** Lucide Moon SVG — theme toggle icon (static; JS applies .dark/.light class). */
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 
+/** Lucide Sun SVG — theme dropdown Light option icon. */
+const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+
+/** Lucide Monitor SVG — theme dropdown System option icon. */
+const MONITOR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`;
+
+/** Lucide GitHub SVG — matches the icon used in the SPA footer Open Source link. */
+const GITHUB_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
+
 /** Lucide tab bar icons — 20×20, matches SPA mobile nav. */
 const ICON_HOME = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 const ICON_PEN_LINE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
@@ -77,10 +106,21 @@ function renderNav(): string {
         <span class="ssr-brand-text">Torch Secret</span>
       </a>
       <div class="ssr-nav-right">
+        <a href="/use/" class="ssr-nav-link">Use Cases</a>
         <a href="/pricing" class="ssr-nav-link">Pricing</a>
         <a href="/dashboard" class="ssr-nav-link">Dashboard</a>
         <a href="/create" class="ssr-cta-nav">Create a Secret</a>
-        <button id="ssr-theme-btn" class="ssr-theme-btn" aria-label="Toggle theme">${MOON_SVG}</button>
+        <details id="ssr-theme-details" class="ssr-theme-details">
+          <summary class="ssr-theme-summary" aria-label="Change theme">
+            <span class="ssr-theme-summary-icon" aria-hidden="true">${MOON_SVG}</span>
+          </summary>
+          <div class="ssr-theme-panel" role="menu" aria-label="Theme selector">
+            <p class="ssr-theme-section-label" aria-hidden="true">Base Modes</p>
+            <button class="ssr-theme-option" data-theme="light" role="menuitem" type="button">${SUN_SVG} Light</button>
+            <button class="ssr-theme-option" data-theme="dark" role="menuitem" type="button">${MOON_SVG} Dark</button>
+            <button class="ssr-theme-option" data-theme="system" role="menuitem" type="button">${MONITOR_SVG} System</button>
+          </div>
+        </details>
       </div>
     </div>
   </header>`;
@@ -110,17 +150,72 @@ function renderMobileNav(): string {
   </nav>`;
 }
 
-function renderFooter(): string {
+function renderFooter(cspNonce: string): string {
+  // Submit handler uses textContent only — no innerHTML with user data (XSS-safe).
+  const emailScript =
+    `<script nonce="${cspNonce}">(function(){` +
+    `var form=document.getElementById('ssr-email-form');` +
+    `if(!form)return;` +
+    `form.addEventListener('submit',function(e){` +
+    `e.preventDefault();` +
+    `var input=document.getElementById('ssr-email-input');` +
+    `var consent=document.getElementById('ssr-email-consent');` +
+    `var email=(input.value||'').trim();` +
+    `var err=document.getElementById('ssr-email-error');` +
+    `var btn=document.getElementById('ssr-email-btn');` +
+    `err.classList.add('ssr-hidden');` +
+    `if(!email){err.textContent='Please enter your email address.';err.classList.remove('ssr-hidden');return;}` +
+    `if(!consent.checked){err.textContent='Please check the consent box to continue.';err.classList.remove('ssr-hidden');return;}` +
+    `btn.disabled=true;btn.textContent='Joining...';` +
+    `fetch('/api/subscribers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,consent:true})})` +
+    `.then(function(r){` +
+    `if(r.ok){` +
+    `form.classList.add('ssr-hidden');` +
+    `var body=document.getElementById('ssr-email-success-body');` +
+    `body.textContent='We sent a confirmation link to '+email+'. Click it to join the list.';` +
+    `document.getElementById('ssr-email-success').classList.remove('ssr-hidden');` +
+    `}else{btn.disabled=false;btn.textContent='Join the list';err.textContent='Something went wrong. Please try again.';err.classList.remove('ssr-hidden');}` +
+    `}).catch(function(){btn.disabled=false;btn.textContent='Join the list';err.textContent='Something went wrong. Please try again.';err.classList.remove('ssr-hidden');});` +
+    `});` +
+    `})();</script>`;
+
   return `
   <footer id="site-footer">
+    <section class="ssr-email-capture" aria-labelledby="ssr-email-heading">
+      <p id="ssr-email-heading" class="ssr-email-heading">Stay in the loop</p>
+      <p class="ssr-email-sub">Join our early access list. No spam, unsubscribe any time.</p>
+      <form id="ssr-email-form" novalidate class="ssr-email-form">
+        <div class="ssr-email-row">
+          <input type="email" id="ssr-email-input" name="email" placeholder="you@example.com" required autocomplete="email" class="ssr-email-input" />
+          <button type="submit" id="ssr-email-btn" class="ssr-email-btn">Join the list</button>
+        </div>
+        <p id="ssr-email-error" class="ssr-email-error ssr-hidden" role="alert"></p>
+        <div class="ssr-email-consent-row">
+          <input type="checkbox" id="ssr-email-consent" name="consent" class="ssr-email-checkbox" />
+          <label for="ssr-email-consent" class="ssr-email-consent-label">I agree to receive product updates and marketing emails from Torch Secret. You can unsubscribe at any time. See our <a href="/privacy" class="ssr-footer-link" style="text-decoration:underline">Privacy Policy</a>.</label>
+        </div>
+      </form>
+      <div id="ssr-email-success" class="ssr-hidden">
+        <p class="ssr-email-success-head">Check your inbox</p>
+        <p id="ssr-email-success-body" class="ssr-email-success-body"></p>
+      </div>
+    </section>
     <div class="ssr-footer-inner">
       <span>Zero-knowledge encryption</span>
       <span>AES-256-GCM</span>
-      <span>Open Source</span>
+      <a href="https://github.com/norcalcoop/torch-secret" target="_blank" rel="noopener noreferrer" class="ssr-footer-github-link">${GITHUB_SVG}<span>Open Source</span></a>
       <a href="/privacy" class="ssr-footer-link">Privacy Policy</a>
       <a href="/terms" class="ssr-footer-link">Terms of Service</a>
     </div>
-  </footer>`;
+    <div class="ssr-footer-link-row">
+      <a href="/use/share-api-keys" class="ssr-footer-link">Share API Keys</a>
+      <a href="/use/share-database-credentials" class="ssr-footer-link">Share DB Credentials</a>
+      <a href="/use/send-password-without-email" class="ssr-footer-link">Send Passwords Safely</a>
+      <a href="/vs/onetimesecret" class="ssr-footer-link">vs. OneTimeSecret</a>
+      <a href="/vs/bitwarden-send" class="ssr-footer-link">vs. Bitwarden Send</a>
+    </div>
+  </footer>
+  ${emailScript}`;
 }
 
 /**
@@ -132,6 +227,11 @@ function renderFooter(): string {
  * - Renders shared nav and footer
  */
 export function renderLayout(opts: LayoutOptions): string {
+  // Font preload: no nonce required — <link rel="preload"> is not a script or style.
+  const fontPreload = BUILT_FONT_HREF
+    ? `<link rel="preload" href="${escHtml(BUILT_FONT_HREF)}" as="font" type="font/woff2" crossorigin />`
+    : '';
+
   // Link to the compiled Tailwind bundle. Nonce required by Helmet's styleSrc CSP directive.
   const cssLink = BUILT_CSS_HREF
     ? `<link rel="stylesheet" href="${escHtml(BUILT_CSS_HREF)}" nonce="${opts.cspNonce}" />`
@@ -145,8 +245,47 @@ export function renderLayout(opts: LayoutOptions): string {
   // FOWT: apply stored theme class before first paint (mirrors client/index.html)
   const fowtScript = `<script nonce="${opts.cspNonce}">(function(){var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d&&t==='light');document.documentElement.style.colorScheme=d?'dark':'light';})()</script>`;
 
-  // Theme toggle click handler — cycles light → dark → system (same as SPA ThemeToggle)
-  const themeScript = `<script nonce="${opts.cspNonce}">(function(){var btn=document.getElementById('ssr-theme-btn');if(!btn)return;btn.addEventListener('click',function(){var t=localStorage.getItem('theme');var next=t==='dark'?'light':t==='light'?null:'dark';if(next){localStorage.setItem('theme',next);}else{localStorage.removeItem('theme');}var d=next==='dark'||(!next&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.toggle('light',!d&&next==='light');document.documentElement.style.colorScheme=d?'dark':'light';});})()</script>`;
+  // Theme dropdown: active state on load + click handlers + close-on-outside + close-on-Escape
+  // updateSummaryIcon sets the summary span's innerHTML to a hardcoded SVG string selected from a
+  // static lookup table embedded at server build time. There is no user input involved — the SVG
+  // strings are TS module constants copied verbatim into the JS literal. This is XSS-safe.
+  const themeDropdownScript =
+    `<script nonce="${opts.cspNonce}">(function(){` +
+    `var details=document.getElementById('ssr-theme-details');` +
+    `if(!details)return;` +
+    `var items=details.querySelectorAll('[data-theme]');` +
+    // updateSummaryIcon: maps localStorage preference to the matching SVG string (all hardcoded)
+    `function updateSummaryIcon(){` +
+    `var pref=localStorage.getItem('theme')||'system';` +
+    `var svgs={` +
+    `light:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',` +
+    `dark:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',` +
+    `system:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'` +
+    `};` +
+    `var icon=details.querySelector('.ssr-theme-summary-icon');` +
+    `if(icon)icon.innerHTML=svgs[pref]||svgs.system;` +
+    `}` +
+    // Mark active option on load and update summary icon to match stored preference
+    `var stored=localStorage.getItem('theme')||'system';` +
+    `items.forEach(function(o){o.classList.toggle('active',o.getAttribute('data-theme')===stored);});` +
+    `updateSummaryIcon();` +
+    // Attach click handler to each option
+    `items.forEach(function(o){o.addEventListener('click',function(){` +
+    `var pref=o.getAttribute('data-theme');` +
+    `if(pref==='system'){localStorage.removeItem('theme');}else{localStorage.setItem('theme',pref);}` +
+    `var d=pref==='dark'||(!pref&&matchMedia('(prefers-color-scheme:dark)').matches);` +
+    `document.documentElement.classList.toggle('dark',d);` +
+    `document.documentElement.classList.toggle('light',!d&&pref==='light');` +
+    `document.documentElement.style.colorScheme=d?'dark':'light';` +
+    `items.forEach(function(x){x.classList.toggle('active',x===o);});` +
+    `updateSummaryIcon();` +
+    `details.open=false;` +
+    `});});` +
+    // Close on click outside
+    `document.addEventListener('click',function(e){if(details&&!details.contains(e.target))details.open=false;});` +
+    // Close on Escape
+    `document.addEventListener('keydown',function(e){if(e.key==='Escape')details.open=false;});` +
+    `})()</script>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -168,6 +307,7 @@ export function renderLayout(opts: LayoutOptions): string {
   <meta name="twitter:title" content="${escHtml(opts.ogTitle)}" />
   <meta name="twitter:description" content="${escHtml(opts.ogDesc)}" />
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  ${fontPreload}
   ${cssLink}
   <style nonce="${opts.cspNonce}">
     /*
@@ -193,6 +333,9 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-warning: #7e4f04;
       --ds-color-icon: #5c6375;
       --ds-color-dot-grid: rgb(173 176 186 / 0.12);
+      --ds-color-terminal-bg: #f2f6f4;
+      --ds-color-terminal-text: #1d442c;
+      --ds-color-terminal-header: #e7ede9;
       --font-heading: 'JetBrains Mono Variable', ui-monospace, monospace;
       --font-body: ui-sans-serif, system-ui, sans-serif;
     }
@@ -213,6 +356,10 @@ export function renderLayout(opts: LayoutOptions): string {
         --ds-color-success: #1bc45e;
         --ds-color-warning: #f69e0b;
         --ds-color-icon: #9292b2;
+        --ds-color-dot-grid: rgb(57 57 91 / 0.15);
+        --ds-color-terminal-bg: #0e1913;
+        --ds-color-terminal-text: #7ba488;
+        --ds-color-terminal-header: #17251d;
       }
     }
     /* Explicit .dark class (set by localStorage theme toggle — mirrors SPA behaviour) */
@@ -232,6 +379,10 @@ export function renderLayout(opts: LayoutOptions): string {
       --ds-color-success: #1bc45e;
       --ds-color-warning: #f69e0b;
       --ds-color-icon: #9292b2;
+      --ds-color-dot-grid: rgb(57 57 91 / 0.15);
+      --ds-color-terminal-bg: #0e1913;
+      --ds-color-terminal-text: #7ba488;
+      --ds-color-terminal-header: #17251d;
     }
     /* Explicit .light class overrides @media (prefers-color-scheme: dark) */
     html.light {
@@ -286,8 +437,17 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-nav-link:hover { color: var(--ds-color-accent); }
     .ssr-cta-nav { font-size: 0.875rem; padding: 0.375rem 0.75rem; border-radius: 0.5rem; background: var(--ds-color-accent); color: #fff; font-weight: 500; text-decoration: none; transition: background 0.15s; }
     .ssr-cta-nav:hover { background: var(--ds-color-accent-hover); color: #fff; }
-    .ssr-theme-btn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 0.375rem; border: none; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; padding: 0; transition: color 0.15s; }
-    .ssr-theme-btn:hover { color: var(--ds-color-text-primary); }
+    /* ── Theme dropdown (replaces moon-button cycle) ───────────────────── */
+    .ssr-theme-details { position: relative; }
+    .ssr-theme-summary { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 0.375rem; background: transparent; color: var(--ds-color-text-muted); cursor: pointer; list-style: none; padding: 0; transition: color 0.15s; }
+    .ssr-theme-summary:hover { color: var(--ds-color-text-primary); }
+    .ssr-theme-summary::marker, .ssr-theme-summary::-webkit-details-marker { display: none; }
+    .ssr-theme-summary-icon { display: flex; align-items: center; pointer-events: none; }
+    .ssr-theme-panel { position: absolute; top: calc(100% + 0.25rem); right: 0; z-index: 50; background: color-mix(in srgb, var(--ds-color-surface) 90%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--ds-color-border); border-radius: 0.75rem; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12); width: 13rem; padding: 0.5rem 0; }
+    .ssr-theme-section-label { padding: 0.25rem 0.75rem; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ds-color-text-muted); }
+    .ssr-theme-option { display: flex; align-items: center; gap: 0.625rem; width: 100%; padding: 0.375rem 0.75rem; font-size: 0.875rem; color: var(--ds-color-text-primary); background: transparent; border: none; cursor: pointer; text-align: left; transition: background 0.1s; }
+    .ssr-theme-option:hover { background: var(--ds-color-surface-raised); }
+    .ssr-theme-option.active { color: var(--ds-color-accent); font-weight: 500; }
     .ssr-icon-accent { color: var(--ds-color-accent); }
     /* Footer structural classes */
     #site-footer { border-top: 1px solid var(--ds-color-border); background: var(--ds-color-bg); padding: 1.5rem 0; }
@@ -331,8 +491,28 @@ export function renderLayout(opts: LayoutOptions): string {
     .ssr-links-row { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.875rem; }
     .ssr-links-row a { color: var(--ds-color-accent); text-decoration: none; }
 
-    /* ── Touch targets: minimum 44×44px per WCAG 2.5.5 ───────────────── */
-    .ssr-theme-btn { min-width: 2.75rem; min-height: 2.75rem; }
+    /* ── Footer: email capture section ──────────────────────────────── */
+    .ssr-email-capture { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .ssr-email-heading { font-size: 0.875rem; font-weight: 600; color: var(--ds-color-text-primary); text-align: center; }
+    .ssr-email-sub { font-size: 0.75rem; color: var(--ds-color-text-muted); text-align: center; }
+    .ssr-email-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ssr-email-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+    .ssr-email-input { flex: 1; padding: 0.5rem 0.75rem; min-height: 2.75rem; border: 1px solid var(--ds-color-border); border-radius: 0.5rem; background: var(--ds-color-bg); color: var(--ds-color-text-primary); font-size: 0.875rem; outline: none; }
+    .ssr-email-input:focus { box-shadow: 0 0 0 2px var(--ds-color-accent); }
+    .ssr-email-btn { padding: 0.5rem 1rem; min-height: 2.75rem; border-radius: 0.5rem; background: var(--ds-color-accent); color: #fff; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+    .ssr-email-btn:hover { background: var(--ds-color-accent-hover); }
+    .ssr-email-error { font-size: 0.75rem; color: var(--ds-color-danger); }
+    .ssr-email-consent-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .ssr-email-checkbox { margin-top: 0.125rem; width: 1rem; height: 1rem; border-radius: 0.25rem; border: 1px solid var(--ds-color-border); accent-color: var(--ds-color-accent); cursor: pointer; flex-shrink: 0; }
+    .ssr-email-consent-label { font-size: 0.75rem; color: var(--ds-color-text-muted); line-height: 1.5; cursor: pointer; }
+    .ssr-email-success-head { font-size: 0.875rem; font-weight: 600; color: var(--ds-color-text-primary); text-align: center; }
+    .ssr-email-success-body { font-size: 0.75rem; color: var(--ds-color-text-muted); text-align: center; }
+    .ssr-hidden { display: none !important; }
+    /* ── Footer: Open Source GitHub link ─────────────────────────────── */
+    .ssr-footer-github-link { display: flex; align-items: center; gap: 0.25rem; color: inherit; text-decoration: none; transition: color 0.15s; }
+    .ssr-footer-github-link:hover { color: var(--ds-color-text-secondary); }
+    /* ── Footer: internal SEO links row ─────────────────────────────── */
+    .ssr-footer-link-row { max-width: 42rem; margin: 0.5rem auto 0; padding: 0 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; font-size: 0.75rem; color: var(--ds-color-text-muted); }
 
     /* ── Mobile bottom tab bar (mirrors SPA mobile-tab-bar) ─────────── */
     #ssr-mobile-nav {
@@ -401,9 +581,9 @@ export function renderLayout(opts: LayoutOptions): string {
   <main id="main-content" class="ssr-main">
     ${opts.bodyHtml}
   </main>
-  ${renderFooter()}
+  ${renderFooter(opts.cspNonce)}
   ${renderMobileNav()}
-  ${themeScript}
+  ${themeDropdownScript}
   <script nonce="${opts.cspNonce}">(function(){var p=window.location.pathname;var tabs=document.querySelectorAll('#ssr-mobile-nav .ssr-tab-btn');tabs.forEach(function(t){if(t.getAttribute('data-path')===p)t.classList.add('ssr-tab-active');});})()</script>
 </body>
 </html>`;

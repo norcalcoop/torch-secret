@@ -119,6 +119,23 @@ function formatDate(dateStr: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Reshare helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Rounds the duration (expiresAt - createdAt) to the nearest supported expiry option.
+ * Used by the reshare button to pre-fill the create form's expiry select.
+ */
+export function roundToNearestExpiry(createdAt: string, expiresAt: string): string {
+  const durationMs = new Date(expiresAt).getTime() - new Date(createdAt).getTime();
+  const hours = durationMs / (1000 * 60 * 60);
+  if (hours < 2) return '1h';
+  if (hours < 48) return '24h';
+  if (hours <= 168) return '7d';
+  return '30d';
+}
+
+// ---------------------------------------------------------------------------
 // Confirmation modal
 // ---------------------------------------------------------------------------
 
@@ -503,6 +520,32 @@ function renderTableBody(
 
     const trashIcon = createIcon(Trash2, { size: 'sm' });
     deleteBtn.appendChild(trashIcon);
+
+    // Reshare button — only for viewed/expired rows (active has live link; deleted is intentional)
+    const showReshare = item.status === 'viewed' || item.status === 'expired';
+    if (showReshare) {
+      const reshareBtn = document.createElement('button');
+      reshareBtn.type = 'button';
+      reshareBtn.setAttribute(
+        'aria-label',
+        item.label ? `Reshare ${item.label}` : 'Reshare secret',
+      );
+      reshareBtn.className =
+        'mr-2 text-text-muted hover:text-accent focus:ring-2 focus:ring-accent focus:ring-offset-2 ' +
+        'focus:ring-offset-bg focus:outline-hidden rounded transition-colors cursor-pointer text-sm font-medium';
+      reshareBtn.textContent = 'Reshare';
+
+      reshareBtn.addEventListener('click', () => {
+        const params = new URLSearchParams();
+        if (item.label) params.set('label', item.label);
+        params.set('expiry', roundToNearestExpiry(item.createdAt, item.expiresAt));
+        if (item.notify) params.set('notify', '1');
+        navigate(`/create?${params.toString()}`);
+      });
+
+      deleteCell.appendChild(reshareBtn);
+    }
+
     deleteCell.appendChild(deleteBtn);
     row.appendChild(deleteCell);
 

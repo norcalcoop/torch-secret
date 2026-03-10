@@ -33,6 +33,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.16.0",
+    "@types/qrcode": "^1.5.6",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.18",
     "drizzle-kit": "^0.31.9",
@@ -56,6 +57,7 @@
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource/press-start-2p": "^5.2.7",
     "argon2": "^0.44.0",
     "better-auth": "^1.4.18",
     "dotenv": "^17.3.1",
@@ -73,6 +75,7 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "posthog-js": "^1.352.0",
+    "qrcode": "^1.5.4",
     "rate-limit-redis": "^4.3.1",
     "resend": "^6.9.2",
     "stripe": "^20.3.1",

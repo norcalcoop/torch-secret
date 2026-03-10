@@ -301,4 +301,29 @@ describe('Success Criterion 6: X-Robots-Tag', () => {
     const res = await request(spaApp).get('/about');
     expect(res.headers['x-robots-tag']).toBeUndefined();
   });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /login', async () => {
+    const res = await request(spaApp).get('/login');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /register', async () => {
+    const res = await request(spaApp).get('/register');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /forgot-password', async () => {
+    const res = await request(spaApp).get('/forgot-password');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /reset-password', async () => {
+    const res = await request(spaApp).get('/reset-password');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
+  test('sets X-Robots-Tag: noindex, nofollow for /dashboard', async () => {
+    const res = await request(spaApp).get('/dashboard');
+    expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
 });

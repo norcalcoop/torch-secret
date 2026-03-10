@@ -27,7 +27,11 @@ When a secret is retrieved, the server performs an atomic three-step transaction
 - **One-time viewing** — atomic retrieve-and-destroy; secrets cannot be replayed
 - **Anonymous + account hybrid** — use without an account or sign in for a secret dashboard
 - **Secret dashboard** — view, manage, and track your created secrets when signed in
-- **Password protection** — EFF Diceware passphrase generation; Argon2id server-side hashing (OWASP parameters)
+- **Password protection** — EFF Diceware passphrase generation with Tech, Nature, and Short word list themes; Argon2id server-side hashing (OWASP parameters)
+- **4-way secret sharing** — copy link, native share sheet, email mailto, and QR code on the confirmation page
+- **Burn-after-reading timer** — optional countdown on the reveal page auto-hides content after 15, 30, or 60 seconds
+- **Clipboard auto-clear** — secret link removed from clipboard after 60 seconds
+- **Secret preview panel** — terminal-style preview before creating; one-click reshare from the dashboard with pre-filled settings
 - **Configurable expiration** — 1 hour, 24 hours, 7 days, or 30 days
 - **Email notification** — optional alert when your secret is viewed
 - **PADME padding** — prevents ciphertext length analysis with at most 12% overhead
@@ -191,16 +195,20 @@ The Worker is deployed manually from a developer machine — it rarely needs upd
 
 ## Screenshots
 
-![Torch Secret marketing homepage in dark mode — hero section with zero-knowledge tagline and one-click create CTA](screenshots/homepage-dark.png)
+![Torch Secret homepage — "We can't read your secrets" zero-knowledge value proposition, Security Architecture section, light mode](screenshots/homepage-light.png)
 
-![Torch Secret marketing homepage in light mode — same layout with light glassmorphism surfaces](screenshots/homepage-light.png)
+![Create a secret — paste sensitive text, burn-after-reading timer, secret preview panel, intelligent expiry hint](screenshots/create-flow.png)
 
-![Create a secret form — paste sensitive text, set expiration and optional passphrase protection](screenshots/create-flow.png)
+![Confirmation page — 4-way sharing: Copy Link, Share (native), Email, and QR code panel open](screenshots/confirmation-flow.png)
 
-![Secret reveal page — terminal-style one-time display after the secret is viewed and destroyed](screenshots/reveal-flow.png)
+![Secret reveal page — burn-after-reading countdown active, terminal display, Create Your Own CTA](screenshots/reveal-flow.png)
+
+![Secret dashboard — manage secrets, one-click reshare button pre-fills create form](screenshots/dashboard-flow.png)
 
 ---
 
 ## Contributing
 
 We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding conventions, and the pull request process.
+
+Have feedback about Torch Secret? → [Share it here](https://tally.so/r/Y5ZV56)

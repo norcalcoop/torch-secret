@@ -43,11 +43,14 @@ export interface ExpirationSelectResult {
  *
  * @param isAuthenticated - Whether the current user has an active session.
  * @param isPro - Whether the current user has a Pro subscription.
+ * @param suggestion - Optional context-aware expiry hint for authenticated users only.
  * @returns ExpirationSelectResult with element and getValue accessor.
  */
 export function createExpirationSelect(
   isAuthenticated: boolean,
   isPro = false,
+  suggestion?: { value: string; reason: string },
+  initialValue?: string,
 ): ExpirationSelectResult {
   if (!isAuthenticated) {
     // --- Anonymous locked display ---
@@ -59,7 +62,7 @@ export function createExpirationSelect(
     valueSpan.className = 'block text-text-primary';
     valueSpan.textContent = '1 hour';
 
-    const note = document.createElement('span');
+    const note = document.createElement('p');
     note.className = 'block text-xs text-text-muted';
     note.textContent = 'Create a free account for longer expiration.';
 
@@ -79,8 +82,12 @@ export function createExpirationSelect(
   ];
   const thirtyDayOption = { value: '30d', label: '30 days' };
 
-  // Closure state
-  let selectedValue = '24h';
+  // Closure state — initialValue overrides the default '24h' if it's a supported option
+  const validValues = ['1h', '24h', '7d', '30d'] as const;
+  let selectedValue: string =
+    initialValue && (validValues as readonly string[]).includes(initialValue)
+      ? initialValue
+      : '24h';
   let isOpen = false;
 
   // 1. Create outer container
@@ -101,8 +108,14 @@ export function createExpirationSelect(
     'focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden ' +
     'cursor-pointer';
 
+  const labelForValue: Record<string, string> = {
+    '1h': '1 hour',
+    '24h': '24 hours',
+    '7d': '7 days',
+    '30d': '30 days',
+  };
   const triggerLabel = document.createElement('span');
-  triggerLabel.textContent = '24 hours'; // default
+  triggerLabel.textContent = labelForValue[selectedValue] ?? '24 hours';
   trigger.appendChild(triggerLabel);
   trigger.appendChild(createIcon(ChevronDown, { size: 'sm', class: 'text-text-muted shrink-0' }));
   container.appendChild(trigger);
@@ -285,6 +298,17 @@ export function createExpirationSelect(
     { capture: true },
   );
 
-  // 14. Return result
+  // 14. Suggestion hint — authenticated users only
+  if (suggestion) {
+    const hint = document.createElement('p');
+    hint.className = 'text-xs text-text-muted mt-1';
+    hint.textContent = `Suggested: ${labelForValue[suggestion.value] ?? suggestion.value} \u2014 ${suggestion.reason}`;
+    const outer = document.createElement('div');
+    outer.appendChild(container);
+    outer.appendChild(hint);
+    return { element: outer, getValue: () => selectedValue };
+  }
+
+  // 15. Return result
   return { element: container, getValue: () => selectedValue };
 }

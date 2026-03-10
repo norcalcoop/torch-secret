@@ -20,7 +20,7 @@ import { decrypt } from '../crypto/index.js';
 import { getSecret, getSecretMeta, verifySecretPassword, ApiError } from '../api/client.js';
 import { captureSecretViewed } from '../analytics/posthog.js';
 import { createTerminalBlock } from '../components/terminal-block.js';
-import { Shield, Lock, CircleCheck, Eye, EyeOff } from 'lucide';
+import { Shield, Lock, CircleCheck, Eye, EyeOff, Flame } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js';
@@ -101,7 +101,7 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
       // Decrypt client-side using Phase 1 crypto module
       const plaintext = await decrypt(ciphertext, key!);
 
-      // Render the revealed secret
+      // Render the revealed secret (attachBurnTimer is called internally by renderRevealedSecret)
       renderRevealedSecret(container, plaintext);
 
       // Best-effort memory cleanup: clear key reference
@@ -303,7 +303,7 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
           // Decrypt client-side
           const plaintext = await decrypt(ciphertext, encryptionKey);
 
-          // Render the revealed secret
+          // Render the revealed secret (attachBurnTimer is called internally by renderRevealedSecret)
           renderRevealedSecret(container, plaintext);
 
           // Best-effort memory cleanup
@@ -361,6 +361,56 @@ export async function renderRevealPage(container: HTMLElement): Promise<void> {
 }
 
 /**
+ * Attach a burn timer countdown below the terminal block.
+ *
+ * Reads the ?burn= URL search param (already read before replaceState, but also
+ * available here since replaceState preserves window.location.search).
+ *
+ * The status line is inserted after the terminal element (.mb-6). The content
+ * (<pre>) is cleared when the countdown reaches zero.
+ *
+ * Under prefers-reduced-motion, the countdown text is NOT updated each tick,
+ * but the timer still fires and hides content at zero.
+ *
+ * @internal — exported for test isolation only.
+ */
+export function attachBurnTimer(container: HTMLElement, seconds: number): void {
+  // Find the terminal block by its class (added by renderRevealedSecret)
+  const terminalEl = container.querySelector('.mb-6');
+  if (!terminalEl) return;
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const statusLine = document.createElement('p');
+  statusLine.className = 'text-sm text-text-muted mt-2 text-center';
+  if (!prefersReduced) {
+    statusLine.textContent = `Content hides in ${seconds}s`;
+  }
+  terminalEl.insertAdjacentElement('afterend', statusLine);
+
+  let remaining = seconds;
+  const interval = setInterval(() => {
+    // Guard: if the terminal has been removed (navigation), stop silently
+    if (!terminalEl.isConnected) {
+      clearInterval(interval);
+      return;
+    }
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      // Hide the secret content — querySelector('pre') may be null in test environments
+      const preEl = container.querySelector('pre');
+      if (preEl) {
+        preEl.textContent = '[Content hidden \u2014 copy it before closing]';
+      }
+      statusLine.textContent = 'Content has been hidden.';
+    } else if (!prefersReduced) {
+      statusLine.textContent = `Content hides in ${remaining}s`;
+    }
+  }, 1_000);
+}
+
+/**
  * Render the decrypted secret with destruction badge and terminal code block.
  *
  * Layout order: heading -> destruction badge (green success) -> terminal
@@ -400,21 +450,45 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
   const terminal = createTerminalBlock(plaintext);
   terminal.classList.add('mb-6');
 
-  // Actions row (just "Create a New Secret" -- terminal block has its own copy)
+  // Actions row — viral CTA block (QW4) + feedback link
   const actions = document.createElement('div');
   actions.className = 'flex flex-col items-center gap-4';
 
-  // "Create a New Secret" link
-  const newSecretLink = document.createElement('a');
-  newSecretLink.href = '/create';
-  newSecretLink.className =
-    'inline-block min-h-[44px] py-2 text-accent hover:text-accent-hover focus:ring-2 focus:ring-accent focus:outline-hidden rounded font-medium transition-colors';
-  newSecretLink.textContent = 'Create a New Secret';
-  newSecretLink.addEventListener('click', (e) => {
+  // QW4 — Viral CTA block replacing the plain "Create a New Secret" link
+  const ctaBlock = document.createElement('div');
+  ctaBlock.className =
+    'p-6 rounded-xl border border-border bg-surface/60 backdrop-blur-md shadow-sm flex flex-col items-center gap-3 text-center w-full';
+
+  const ctaIconWrapper = document.createElement('div');
+  ctaIconWrapper.className = 'w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center';
+  ctaIconWrapper.setAttribute('aria-hidden', 'true');
+  ctaIconWrapper.appendChild(createIcon(Flame, { size: 'md', class: 'text-accent' }));
+
+  const ctaHeading = document.createElement('h2');
+  ctaHeading.className = 'text-lg font-heading font-semibold text-text-primary';
+  ctaHeading.textContent = 'Create your own secret';
+
+  const ctaBody = document.createElement('p');
+  ctaBody.className = 'text-sm text-text-secondary';
+  ctaBody.textContent = 'Share passwords and credentials safely — free, no account needed';
+
+  const ctaButton = document.createElement('a');
+  ctaButton.href = '/create';
+  ctaButton.className =
+    'inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg bg-accent text-white font-semibold ' +
+    'hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg ' +
+    'focus:outline-hidden transition-all cursor-pointer';
+  ctaButton.textContent = 'Create a Free Secret \u2192';
+  ctaButton.addEventListener('click', (e) => {
     e.preventDefault();
     navigate('/create');
   });
-  actions.appendChild(newSecretLink);
+
+  ctaBlock.appendChild(ctaIconWrapper);
+  ctaBlock.appendChild(ctaHeading);
+  ctaBlock.appendChild(ctaBody);
+  ctaBlock.appendChild(ctaButton);
+  actions.appendChild(ctaBlock);
 
   // -- Feedback link (Phase 38 -- opens Tally.so form in new tab) --
   const feedbackLink = createFeedbackLink(TALLY_FEEDBACK_URL);
@@ -427,6 +501,13 @@ export function renderRevealedSecret(container: HTMLElement, plaintext: string):
   wrapper.appendChild(actions);
   container.appendChild(wrapper);
   captureSecretViewed();
+
+  // Attach burn timer if ?burn= param is present (read from current search params)
+  const burnParam = new URLSearchParams(window.location.search).get('burn');
+  const burnSecs = burnParam ? parseInt(burnParam, 10) : null;
+  if (burnSecs !== null && !Number.isNaN(burnSecs) && burnSecs > 0) {
+    attachBurnTimer(container, burnSecs);
+  }
 }
 
 /**

@@ -178,9 +178,9 @@ function handleRoute(): void {
 
   if (path === '/') {
     updatePageMeta({
-      title: 'Torch Secret — Zero-Knowledge Secret Sharing',
+      title: 'Zero-Knowledge One-Time Secret Sharing',
       description:
-        'Share sensitive info in seconds. End-to-end encrypted, one-time view, no accounts needed.',
+        'Zero-knowledge secret sharing — your encryption key never leaves your browser. One-time view, no accounts needed.',
     });
     import('./pages/home.js')
       .then((mod) => mod.renderHomePage(container))

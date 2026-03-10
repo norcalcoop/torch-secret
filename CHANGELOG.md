@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-03-09
+
+### Added
+
+- QR code sharing on confirmation page — scan-to-open link without copy-paste
+- Email mailto button — 4-way secret sharing UI: Copy Link, Share (native), Email, QR code
+- Burn-after-reading reveal timer — auto-hides secret content after 15, 30, or 60 seconds
+- Smart expiry hints on create page — time and day-aware expiration suggestions for authenticated users
+- Clipboard auto-clear countdown — secret URL removed from clipboard after 60 seconds for security
+- One-click reshare from dashboard — pre-fills the create form with previous expiration and protection settings
+- Secret preview panel on create page — terminal-style preview before committing to create
+- Passphrase word list themes — Tech, Nature, and Short variants alongside the default EFF word list
+- Two new competitor comparison pages: `/vs/bitwarden-send` and `/vs/email-and-slack`
+- Dependabot coverage for Docker base image updates
+
+### Changed
+
+- Marketing homepage: ZK-focused H1 ("We can't read your secrets"), security architecture section, guarantee badge, viral reveal CTA, internal linking improvements
+- SSR comparison pages visually consistent with SPA: matching theme dropdown, design tokens, and JetBrains Mono font loading
+- Email capture section removed from homepage (conversion liability)
+
+### Fixed
+
+- Race condition: concurrent password verification under load correctly destroys the secret exactly once (atomic transaction + pessimistic lock test suite)
+- ZK invariant systematically enforced via test suite — no Pino log line, DB row, or PostHog event payload contains both userId and secretId
+- Server code quality: auth/dashboard routes return `X-Robots-Tag: noindex`, console.error migrated to Pino logger in service files, E2E rate-limit bypass unreachable outside test environment
+- Stripe customer creation is idempotent — idempotency key prevents duplicate customers on network retries
+- DMARC upgraded from p=none to p=quarantine — active spoofing enforcement for torchsecret.com
+
+## [5.1.0] - 2026-03-06
+
+### Added
+
+- Cloudflare Email Routing: `admin@torchsecret.com` and `hello@torchsecret.com` forward to Gmail; apex catch-all in place
+- Domain verification: DKIM, SPF, and DMARC records configured for `torchsecret.com`; Resend and Loops both sending from custom domain
+- Gmail Send Mail As: team can reply from `hello@torchsecret.com` directly in Gmail
+- SECURITY.md with private vulnerability reporting instructions and contact addresses
+- Privacy Policy updated with Loops.so and PostHog data processing contacts
+
+### Changed
+
+- Repository made public on GitHub (`norcalcoop/torch-secret`) with `.planning/` and `CLAUDE.md` gitignored
+- `.env.example` updated to reflect Infisical-managed secrets; only public key names listed, no values
+
 ## [5.0.0] - 2026-03-02
 
 ### Added
@@ -114,7 +158,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accessibility foundations: skip links, aria-live route announcer, focus management
 - Vanilla TypeScript SPA with Vite and Tailwind CSS
 
-[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.0...HEAD
+[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.2...HEAD
+[5.2.0]: https://github.com/norcalcoop/torch-secret/compare/v5.1...v5.2
+[5.1.0]: https://github.com/norcalcoop/torch-secret/compare/v5.0...v5.1
 [5.0.0]: https://github.com/norcalcoop/torch-secret/compare/v4.0...v5.0
 [4.0.0]: https://github.com/norcalcoop/torch-secret/compare/v3.0...v4.0
 [3.0.0]: https://github.com/norcalcoop/torch-secret/compare/v2.0...v3.0

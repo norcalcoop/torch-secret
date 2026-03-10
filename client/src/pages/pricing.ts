@@ -350,6 +350,12 @@ function createProCard(): {
   });
   card.appendChild(cta);
 
+  // QW3 — Guarantee badge below Get Pro CTA
+  const guarantee = document.createElement('p');
+  guarantee.className = 'text-xs text-text-muted text-center mt-2';
+  guarantee.textContent = '7-day money-back guarantee — no questions asked';
+  card.appendChild(guarantee);
+
   // Price updater — called by the billing toggle on each click
   function updatePrice(isAnnual: boolean): void {
     if (isAnnual) {

@@ -75,3 +75,80 @@ describe('reveal page — feedback link (FBCK-02)', () => {
     expect(anchor?.textContent).toBe('Share feedback');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Burn timer tests (RED — Plan 04 will implement the ?burn= feature)
+// ---------------------------------------------------------------------------
+
+describe('reveal page — burn timer (?burn= URL param)', () => {
+  let container: HTMLElement;
+  let originalLocation: Location;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+
+    // Preserve original location so we can restore it in afterEach
+    originalLocation = window.location;
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+
+    // Restore window.location if it was stubbed
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: originalLocation,
+    });
+
+    vi.restoreAllMocks();
+  });
+
+  it('shows a burn-timer status line when ?burn=30 is present in search params', () => {
+    // Stub window.location.search to simulate ?burn=30
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: {
+        ...window.location,
+        search: '?burn=30',
+        href: 'http://localhost/s/abc123abc123abc123abc?burn=30',
+      },
+    });
+
+    renderRevealedSecret(container, 'top secret data');
+
+    // Plan 04 will render a status line matching "Content hides in 30s"
+    const allText = container.textContent ?? '';
+    expect(allText).toMatch(/Content hides in \d+s/);
+  });
+
+  it('does NOT show countdown text under prefers-reduced-motion', () => {
+    // Stub window.location.search to simulate ?burn=30
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: {
+        ...window.location,
+        search: '?burn=30',
+        href: 'http://localhost/s/abc123abc123abc123abc?burn=30',
+      },
+    });
+
+    // Stub window.matchMedia to return prefers-reduced-motion: reduce
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    renderRevealedSecret(container, 'top secret data');
+
+    // Under reduced motion, countdown text should NOT appear (timer still fires but no visible countdown)
+    const allText = container.textContent ?? '';
+    expect(allText).not.toMatch(/Content hides in \d+s/);
+  });
+});

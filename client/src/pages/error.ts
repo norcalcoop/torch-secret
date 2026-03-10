@@ -24,7 +24,13 @@ export type ErrorType =
  */
 const ERROR_CONFIG: Record<
   ErrorType,
-  { heading: string; message: string; icon: IconNode; iconClass: string }
+  {
+    heading: string;
+    message: string;
+    icon: IconNode;
+    iconClass: string;
+    cta: { label: string; href: string };
+  }
 > = {
   not_available: {
     heading: 'Secret Not Available',
@@ -32,12 +38,14 @@ const ERROR_CONFIG: Record<
       'This secret is no longer available. It may have already been viewed, expired, or the link is invalid.',
     icon: Lock,
     iconClass: 'text-danger',
+    cta: { label: 'Create a New Secret', href: '/create' },
   },
   no_key: {
     heading: 'Invalid Link',
     message: 'The decryption key is missing from the URL. Please ask the sender for a new link.',
     icon: KeyRound,
     iconClass: 'text-warning',
+    cta: { label: 'Create a New Secret', href: '/create' },
   },
   decrypt_failed: {
     heading: 'Decryption Failed',
@@ -45,12 +53,14 @@ const ERROR_CONFIG: Record<
       'Unable to decrypt this secret. The link may be corrupted. Please ask the sender for a new link.',
     icon: TriangleAlert,
     iconClass: 'text-warning',
+    cta: { label: 'Create a New Secret', href: '/create' },
   },
   not_found: {
     heading: 'Page Not Found',
     message: 'The page you are looking for does not exist.',
     icon: Search,
     iconClass: 'text-text-muted',
+    cta: { label: 'Back to Homepage', href: '/' },
   },
   destroyed: {
     heading: 'Secret Destroyed',
@@ -58,12 +68,14 @@ const ERROR_CONFIG: Record<
       'This secret has been permanently destroyed due to too many incorrect password attempts.',
     icon: Bomb,
     iconClass: 'text-danger',
+    cta: { label: 'Create a New Secret', href: '/create' },
   },
   already_viewed: {
     heading: 'Secret Already Viewed',
     message: 'This secret has already been viewed and destroyed. Secrets can only be viewed once.',
     icon: CircleCheck,
     iconClass: 'text-text-muted',
+    cta: { label: 'Create a New Secret', href: '/create' },
   },
 };
 
@@ -107,13 +119,13 @@ export function renderErrorPage(container: HTMLElement, type: ErrorType): void {
 
   // Back link
   const link = document.createElement('a');
-  link.href = '/';
+  link.href = config.cta.href;
   link.className =
     'inline-flex items-center gap-2 px-6 py-3 min-h-[44px] rounded-lg bg-accent text-white hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg focus:outline-hidden transition-colors font-medium';
-  link.textContent = 'Create a New Secret';
+  link.textContent = config.cta.label;
   link.addEventListener('click', (e) => {
     e.preventDefault();
-    navigate('/');
+    navigate(config.cta.href);
   });
 
   wrapper.appendChild(icon);

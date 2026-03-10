@@ -19,6 +19,8 @@ import { ShieldCheck } from 'lucide';
 import { createIcon } from '../components/icons.js';
 import { createCopyButton } from '../components/copy-button.js';
 import { createShareButton } from '../components/share-button.js';
+import { createQrCodePanel } from '../components/qr-code-panel.js';
+import { createMailtoButton } from '../components/mailto-button.js';
 import { createFeedbackLink, TALLY_FEEDBACK_URL } from '../components/feedback-link.js';
 import { navigate, updatePageMeta, focusPageHeading } from '../router.js';
 import {
@@ -166,11 +168,13 @@ export function renderConfirmationPage(
   urlDisplay.appendChild(urlCode);
   urlCard.appendChild(urlDisplay);
 
-  // Button row: copy (primary) + share (secondary, conditional)
+  // Button order: Copy Link → Share (conditional) → Email → Show QR
+  // Mobile: no reorder — Copy Link is the reliable primary; flex-wrap handles overflow.
+  // Claude's Discretion (CONTEXT.md 58.2): assessed and decided 2026-03-07.
   const buttonRow = document.createElement('div');
-  buttonRow.className = 'flex items-center gap-3 mt-3';
+  buttonRow.className = 'flex flex-wrap items-center gap-3 mt-3';
 
-  const copyButton = createCopyButton(() => shareUrl, 'Copy Link');
+  const copyButton = createCopyButton(() => shareUrl, 'Copy Link', { autoClearMs: 60_000 });
   copyButton.classList.remove('transition-colors');
   copyButton.classList.add(
     'transition-all',
@@ -184,7 +188,16 @@ export function renderConfirmationPage(
     buttonRow.appendChild(shareBtn);
   }
 
+  // Add mailto button
+  const mailtoBtn = createMailtoButton(shareUrl);
+  buttonRow.appendChild(mailtoBtn);
+
+  // Add QR toggle button to button row; append QR panel below buttonRow inside urlCard
+  const qrCodePanel = createQrCodePanel(shareUrl);
+  buttonRow.appendChild(qrCodePanel.toggleButton);
+
   urlCard.appendChild(buttonRow);
+  urlCard.appendChild(qrCodePanel.panel);
   wrapper.appendChild(urlCard);
 
   // -- Conversion prompt for anonymous users (CONV-04, CONV-05) --
@@ -227,7 +240,9 @@ export function renderConfirmationPage(
     passphraseDisplay.appendChild(code);
     passphraseCard.appendChild(passphraseDisplay);
 
-    const copyPassphraseBtn = createCopyButton(() => passphrase, 'Copy Passphrase');
+    const copyPassphraseBtn = createCopyButton(() => passphrase, 'Copy Passphrase', {
+      autoClearMs: 60_000,
+    });
     copyPassphraseBtn.classList.remove('transition-colors');
     copyPassphraseBtn.classList.add(
       'transition-all',

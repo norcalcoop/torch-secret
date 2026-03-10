@@ -82,10 +82,15 @@ export async function getOrCreateStripeCustomer(user: AuthUser): Promise<string>
 
   // Create new Stripe customer. Do NOT include userId in metadata — only non-identifying data.
   // Email is stored in Stripe because it is required for receipts; it is not a secretId.
-  const customer = await stripe.customers.create({
-    email: user.email,
-    metadata: { app: 'torch-secret' },
-  });
+  const customer = await stripe.customers.create(
+    {
+      email: user.email,
+      metadata: { app: 'torch-secret' },
+    },
+    {
+      idempotencyKey: `torch-secret-${user.id}`,
+    },
+  );
 
   await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, user.id));
 

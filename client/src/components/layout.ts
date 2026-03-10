@@ -14,11 +14,12 @@
  *   <nav id="mobile-tab-bar">  (appended to document.body — fixed position)
  */
 
-import { Shield, Home, PenLine, CreditCard, LayoutDashboard } from 'lucide';
+import { Shield, Home, PenLine, CreditCard, LayoutDashboard, Github } from 'lucide';
 import { authClient } from '../api/auth-client.js';
-import { createIcon } from './icons.js';
-import { createThemeToggle } from './theme-toggle.js';
+import { createIcon, createPixelIcon } from './icons.js';
+import { createThemeDropdown } from './theme-toggle.js';
 import { navigate } from '../router.js';
+import { THEMES } from '../retro-data.js';
 
 /**
  * Build and insert the persistent layout shell around <main>.
@@ -75,20 +76,40 @@ function createHeader(): HTMLElement {
     navigate('/');
   });
 
-  const shieldIcon = createIcon(Shield, { size: 'sm', class: 'text-accent' });
+  let brandIcon: Element = createIcon(Shield, { size: 'sm', class: 'text-accent' });
   const wordmark = document.createElement('span');
   wordmark.className = 'font-heading font-semibold text-lg';
   wordmark.textContent = 'Torch Secret';
 
-  brand.appendChild(shieldIcon);
+  brand.appendChild(brandIcon);
   brand.appendChild(wordmark);
+
+  // Swap header brand icon when retro theme activates — use nav[4] (the theme's special icon)
+  window.addEventListener('retrothemechange', (e: Event) => {
+    const { themeId } = (e as CustomEvent<{ themeId: string | null }>).detail;
+    const retroNav = themeId ? THEMES[themeId]?.nav[4] : null;
+    const newIcon = retroNav
+      ? createPixelIcon(retroNav.i, 16)
+      : createIcon(Shield, { size: 'sm', class: 'text-accent' });
+    brand.replaceChild(newIcon, brandIcon);
+    brandIcon = newIcon;
+  });
   inner.appendChild(brand);
 
   // Right-side container: Pricing | Dashboard/Login | Create a Secret | ThemeToggle
   const rightSide = document.createElement('div');
   rightSide.className = 'flex items-center gap-4';
 
-  // 1. Pricing link (desktop only — hidden on mobile where tab bar handles it)
+  // 1a. Use Cases link (desktop only — SSR route, plain <a href>, no navigate())
+  const useCasesLink = document.createElement('a');
+  useCasesLink.href = '/use/';
+  useCasesLink.className =
+    'hidden sm:block text-sm text-text-secondary hover:text-accent transition-colors';
+  useCasesLink.textContent = 'Use Cases';
+  // NO navigate() handler — /use/ is an SSR route, not an SPA route
+  rightSide.appendChild(useCasesLink);
+
+  // 1b. Pricing link (desktop only — hidden on mobile where tab bar handles it)
   const pricingLink = document.createElement('a');
   pricingLink.href = '/pricing';
   pricingLink.className =
@@ -126,8 +147,8 @@ function createHeader(): HTMLElement {
   });
   rightSide.appendChild(createLink);
 
-  // 4. Theme toggle (rightmost)
-  const themeToggle = createThemeToggle();
+  // 4. Theme dropdown (rightmost)
+  const themeToggle = createThemeDropdown();
   rightSide.appendChild(themeToggle);
 
   inner.appendChild(rightSide);
@@ -255,11 +276,192 @@ function createMobileNav(): HTMLElement {
   window.addEventListener('routechange', updateActiveTabs);
   updateActiveTabs(); // initial state
 
+  // Lucide icon data for each tab (used when reverting from retro theme)
+  const LUCIDE_TAB_ICONS = [Home, PenLine, CreditCard, LayoutDashboard] as const;
+
+  window.addEventListener('retrothemechange', (e: Event) => {
+    const { themeId } = (e as CustomEvent<{ themeId: string | null }>).detail;
+    const theme = themeId ? THEMES[themeId] : null;
+
+    tabButtons.forEach((btn, i) => {
+      // Remove existing icon (first child element)
+      const existingIcon = btn.firstElementChild;
+      if (existingIcon) existingIcon.remove();
+
+      const navEntry = theme?.nav[i]; // use nav[0..3] only — nav has 5 entries, we have 4 tabs
+      const newIcon = navEntry
+        ? createPixelIcon(navEntry.i, 16)
+        : createIcon(LUCIDE_TAB_ICONS[i], { size: 'sm' });
+
+      btn.insertBefore(newIcon, btn.firstChild);
+
+      // Update label text — truncate to 10 chars to prevent overflow
+      const labelEl = btn.querySelector('span');
+      if (labelEl) {
+        labelEl.textContent = navEntry ? navEntry.l.substring(0, 10) : tabs[i].label;
+      }
+    });
+  });
+
   return nav;
 }
 
 /**
- * Create the footer with trust signal spans.
+ * Email capture section for the footer.
+ *
+ * GDPR-compliant: consent checkbox is required and unchecked by default.
+ * On success, the form is replaced with a confirmation message.
+ * POSTs to /api/subscribers — same endpoint as the old homepage form.
+ */
+function createEmailCaptureSection(): HTMLElement {
+  const section = document.createElement('section');
+  section.setAttribute('aria-labelledby', 'email-capture-heading');
+  section.className = 'max-w-2xl mx-auto px-4 py-6 space-y-4';
+
+  const heading = document.createElement('h2');
+  heading.id = 'email-capture-heading';
+  heading.className = 'text-sm font-semibold text-text-primary text-center';
+  heading.textContent = 'Stay in the loop';
+  section.appendChild(heading);
+
+  const subtext = document.createElement('p');
+  subtext.className = 'text-xs text-text-muted text-center';
+  subtext.textContent = 'Join our early access list. No spam, unsubscribe any time.';
+  section.appendChild(subtext);
+
+  const form = document.createElement('form');
+  form.noValidate = true;
+  form.className = 'space-y-3';
+
+  const emailRow = document.createElement('div');
+  emailRow.className = 'flex gap-2 items-start';
+
+  const emailInput = document.createElement('input');
+  emailInput.type = 'email';
+  emailInput.id = 'footer-email-capture';
+  emailInput.name = 'email';
+  emailInput.placeholder = 'you@example.com';
+  emailInput.required = true;
+  emailInput.autocomplete = 'email';
+  emailInput.className =
+    'flex-1 px-3 py-2 min-h-[44px] border border-border rounded-lg bg-bg text-text-primary ' +
+    'placeholder:text-text-muted focus:outline-hidden focus:ring-2 focus:ring-accent text-sm';
+
+  const submitBtn = document.createElement('button');
+  submitBtn.type = 'submit';
+  submitBtn.className =
+    'px-4 py-2 min-h-[44px] rounded-lg bg-accent text-white font-medium text-sm ' +
+    'hover:bg-accent-hover focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg ' +
+    'focus:outline-hidden transition-colors whitespace-nowrap cursor-pointer';
+  submitBtn.textContent = 'Join the list';
+
+  emailRow.appendChild(emailInput);
+  emailRow.appendChild(submitBtn);
+  form.appendChild(emailRow);
+
+  const errorEl = document.createElement('p');
+  errorEl.setAttribute('role', 'alert');
+  errorEl.className = 'text-xs text-danger hidden';
+  form.appendChild(errorEl);
+
+  const consentRow = document.createElement('div');
+  consentRow.className = 'flex items-start gap-3';
+
+  const consentCheckbox = document.createElement('input');
+  consentCheckbox.type = 'checkbox';
+  consentCheckbox.id = 'footer-email-consent';
+  consentCheckbox.name = 'consent';
+  consentCheckbox.required = true;
+  consentCheckbox.checked = false;
+  consentCheckbox.className = 'mt-0.5 h-4 w-4 rounded border-border accent-accent cursor-pointer';
+
+  const consentLabel = document.createElement('label');
+  consentLabel.htmlFor = 'footer-email-consent';
+  consentLabel.className = 'text-xs text-text-muted cursor-pointer leading-relaxed';
+
+  const consentText = document.createTextNode(
+    'I agree to receive product updates and marketing emails from Torch Secret. ' +
+      'You can unsubscribe at any time. See our ',
+  );
+  const privacyLink = document.createElement('a');
+  privacyLink.href = '/privacy';
+  privacyLink.className =
+    'underline hover:text-text-secondary focus:outline-hidden focus:ring-2 focus:ring-accent rounded';
+  privacyLink.textContent = 'Privacy Policy';
+  privacyLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigate('/privacy');
+  });
+  consentLabel.appendChild(consentText);
+  consentLabel.appendChild(privacyLink);
+  consentLabel.appendChild(document.createTextNode('.'));
+
+  consentRow.appendChild(consentCheckbox);
+  consentRow.appendChild(consentLabel);
+  form.appendChild(consentRow);
+
+  async function handleSubmit(): Promise<void> {
+    const email = (emailInput.value ?? '').trim();
+    errorEl.classList.add('hidden');
+    errorEl.textContent = '';
+
+    if (!email) {
+      errorEl.textContent = 'Please enter your email address.';
+      errorEl.classList.remove('hidden');
+      emailInput.focus();
+      return;
+    }
+    if (!consentCheckbox.checked) {
+      errorEl.textContent = 'Please check the consent box to continue.';
+      errorEl.classList.remove('hidden');
+      consentCheckbox.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Joining...';
+
+    try {
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, consent: true }),
+      });
+      if (res.ok) {
+        while (section.firstChild) section.removeChild(section.firstChild);
+        const successHeading = document.createElement('p');
+        successHeading.className = 'text-sm font-semibold text-text-primary text-center';
+        successHeading.textContent = 'Check your inbox';
+        const successMsg = document.createElement('p');
+        successMsg.className = 'text-xs text-text-muted text-center';
+        successMsg.textContent = `We sent a confirmation link to ${email}. Click it to join the list.`;
+        section.appendChild(successHeading);
+        section.appendChild(successMsg);
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Join the list';
+        errorEl.textContent = 'Something went wrong. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+    } catch {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Join the list';
+      errorEl.textContent = 'Something went wrong. Please try again.';
+      errorEl.classList.remove('hidden');
+    }
+  }
+
+  form.addEventListener('submit', (e: Event) => {
+    e.preventDefault();
+    void handleSubmit();
+  });
+
+  section.appendChild(form);
+  return section;
+}
+
+/**
+ * Create the footer with email capture, trust signals, and internal links.
  */
 function createFooter(): HTMLElement {
   const footer = document.createElement('footer');
@@ -270,13 +472,25 @@ function createFooter(): HTMLElement {
   inner.className =
     'max-w-2xl mx-auto px-4 flex flex-wrap justify-center gap-6 text-xs text-text-muted';
 
-  const signals = ['Zero-knowledge encryption', 'AES-256-GCM', 'Open Source'];
-
-  for (const text of signals) {
+  // Trust signals: plain spans except "Open Source" which links to GitHub (QW6)
+  const plainSignals = ['Zero-knowledge encryption', 'AES-256-GCM'];
+  for (const text of plainSignals) {
     const span = document.createElement('span');
     span.textContent = text;
     inner.appendChild(span);
   }
+
+  // QW6 — Open Source as anchor linking to GitHub repo
+  const openSourceLink = document.createElement('a');
+  openSourceLink.href = 'https://github.com/norcalcoop/torch-secret';
+  openSourceLink.target = '_blank';
+  openSourceLink.rel = 'noopener noreferrer';
+  openSourceLink.className = 'flex items-center gap-1 hover:text-text-secondary transition-colors';
+  openSourceLink.appendChild(createIcon(Github, { size: 'sm', class: 'flex-shrink-0' }));
+  const osText = document.createElement('span');
+  osText.textContent = 'Open Source';
+  openSourceLink.appendChild(osText);
+  inner.appendChild(openSourceLink);
 
   // Legal links
   const legalLinks = [
@@ -296,6 +510,34 @@ function createFooter(): HTMLElement {
     inner.appendChild(a);
   }
 
+  // S4 — Internal links to /use/ and /vs/ SSR pages (plain <a href> — no navigate())
+  const linkRow = document.createElement('div');
+  linkRow.className = 'flex flex-wrap justify-center gap-4 text-xs text-text-muted mt-2 w-full';
+
+  const internalLinks = [
+    { text: 'Share API Keys', href: '/use/share-api-keys' },
+    { text: 'Share DB Credentials', href: '/use/share-database-credentials' },
+    { text: 'Send Passwords Safely', href: '/use/send-password-without-email' },
+    { text: 'vs. OneTimeSecret', href: '/vs/onetimesecret' },
+    { text: 'vs. Bitwarden Send', href: '/vs/bitwarden-send' },
+  ];
+
+  for (const { text, href } of internalLinks) {
+    const a = document.createElement('a');
+    a.href = href;
+    a.textContent = text;
+    a.className = 'hover:text-text-secondary transition-colors';
+    // Plain <a href> — /use/* and /vs/* are SSR routes, NOT SPA routes
+    linkRow.appendChild(a);
+  }
+
+  // Append link row to the footer wrapper (inside footer element, after inner)
+  const linkRowWrapper = document.createElement('div');
+  linkRowWrapper.className = 'w-full flex justify-center';
+  linkRowWrapper.appendChild(linkRow);
+
+  footer.appendChild(createEmailCaptureSection());
   footer.appendChild(inner);
+  footer.appendChild(linkRowWrapper);
   return footer;
 }

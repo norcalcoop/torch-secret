@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const { mockCustomersCreate } = vi.hoisted(() => ({
+  mockCustomersCreate: vi.fn().mockResolvedValue({ id: 'cus_mock123' }),
+}));
+
 const { mockUpdateContact } = vi.hoisted(() => ({
   mockUpdateContact: vi.fn().mockResolvedValue({ success: true }),
 }));
@@ -17,6 +21,10 @@ const { mockSelect, mockUpdate } = vi.hoisted(() => ({
   }),
 }));
 
+vi.mock('../config/stripe.js', () => ({
+  stripe: { customers: { create: mockCustomersCreate } },
+}));
+
 vi.mock('../config/loops.js', () => ({
   loops: { updateContact: mockUpdateContact },
 }));
@@ -25,7 +33,8 @@ vi.mock('../db/connection.js', () => ({
   db: { select: mockSelect, update: mockUpdate },
 }));
 
-import { activatePro, deactivatePro } from './billing.service.js';
+import { activatePro, deactivatePro, getOrCreateStripeCustomer } from './billing.service.js';
+import type { AuthUser } from '../auth.js';
 
 describe('activatePro — Loops contact update (ESEQ-03)', () => {
   beforeEach(() => {
@@ -126,5 +135,43 @@ describe('deactivatePro — Loops contact sync (ESEQ-03)', () => {
     await deactivatePro('cus_unknown');
     await Promise.resolve();
     expect(mockUpdateContact).not.toHaveBeenCalled();
+  });
+});
+
+describe('getOrCreateStripeCustomer — Stripe idempotency (QUAL-04)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCustomersCreate.mockResolvedValue({ id: 'cus_mock123' });
+    mockSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ stripeCustomerId: null }]),
+      }),
+    });
+    mockUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
+      }),
+    });
+  });
+
+  it('passes idempotencyKey torch-secret-${user.id} to stripe.customers.create', async () => {
+    await getOrCreateStripeCustomer({ id: 'user-abc', email: 'a@b.com' } as AuthUser);
+    expect(mockCustomersCreate).toHaveBeenCalledOnce();
+    const [, options] = mockCustomersCreate.mock.calls[0] as [unknown, { idempotencyKey: string }];
+    expect(options.idempotencyKey).toBe('torch-secret-user-abc');
+  });
+
+  it('returns existing stripeCustomerId without calling stripe.customers.create', async () => {
+    mockSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ stripeCustomerId: 'cus_existing' }]),
+      }),
+    });
+    const result = await getOrCreateStripeCustomer({
+      id: 'user-abc',
+      email: 'a@b.com',
+    } as AuthUser);
+    expect(result).toBe('cus_existing');
+    expect(mockCustomersCreate).not.toHaveBeenCalled();
   });
 });

@@ -261,3 +261,15 @@ export function captureDashboardViewed(): void {
   if (!isInitialized()) return;
   posthog.capture('dashboard_viewed');
 }
+
+/**
+ * Capture a retro theme activation event.
+ * ZK-safe: only captures themeId (e.g. 'mario') — never userId+secretId together (INVARIANTS.md).
+ *
+ * ZERO-KNOWLEDGE INVARIANT: no userId, no secretId.
+ * Safe props: { theme_id: string } — anonymous-safe, no PII.
+ */
+export function captureRetroThemeActivated(themeId: string): void {
+  if (!isInitialized()) return;
+  posthog.capture('retro_theme_activated', { theme_id: themeId });
+}

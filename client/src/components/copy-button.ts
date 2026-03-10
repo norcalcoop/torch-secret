@@ -5,6 +5,11 @@
  * Success/failure feedback is shown via the shared toast notification
  * system. On success, the Copy icon swaps to a Check icon for 1.5s
  * with a subtle scale animation (respects prefers-reduced-motion).
+ *
+ * When `options.autoClearMs` is provided, the button label shows a live
+ * countdown after copying and clears the clipboard with an empty string
+ * when the countdown reaches zero. Under prefers-reduced-motion the label
+ * is not updated, but the clipboard is still cleared.
  */
 
 import { Copy, Check } from 'lucide';
@@ -45,11 +50,20 @@ function swapToCheckIcon(iconSpan: HTMLElement): void {
  * Shows a Copy icon that swaps to a Check icon on success (reverts
  * after 1.5s). Toast notification provides additional feedback.
  *
+ * When `options.autoClearMs` is provided, the button label shows a live
+ * countdown after copying and clears the clipboard with an empty string
+ * when the countdown reaches zero. Re-copying resets the countdown.
+ *
  * @param getText - Function that returns the text to copy (called on each click)
  * @param label - Button label (defaults to "Copy")
+ * @param options - Optional settings; `autoClearMs` enables clipboard auto-clear countdown
  * @returns A styled button element
  */
-export function createCopyButton(getText: () => string, label?: string): HTMLButtonElement {
+export function createCopyButton(
+  getText: () => string,
+  label?: string,
+  options?: { autoClearMs?: number },
+): HTMLButtonElement {
   const button = document.createElement('button');
   const defaultLabel = label ?? 'Copy';
   button.type = 'button';
@@ -66,6 +80,52 @@ export function createCopyButton(getText: () => string, label?: string): HTMLBut
   labelSpan.textContent = defaultLabel;
   button.appendChild(labelSpan);
 
+  // Countdown state — stored in closure so re-copy clears the previous interval
+  let countdownInterval: ReturnType<typeof setInterval> | null = null;
+  // Focus-deferred clear handler — non-null when a clear is pending focus return
+  let pendingFocusHandler: (() => void) | null = null;
+
+  function clearClipboard(): void {
+    if (document.hasFocus()) {
+      void navigator.clipboard.writeText('').catch(() => {});
+    } else {
+      // Document is unfocused — Clipboard API will be rejected silently.
+      // Register a one-shot focus listener to clear when the user returns.
+      const handler = () => {
+        pendingFocusHandler = null;
+        void navigator.clipboard.writeText('').catch(() => {});
+      };
+      pendingFocusHandler = handler;
+      window.addEventListener('focus', handler, { once: true });
+    }
+  }
+
+  function startCountdown(): void {
+    if (!options?.autoClearMs) return;
+    if (countdownInterval !== null) clearInterval(countdownInterval);
+    // Remove any stale pending focus handler from a previous countdown
+    if (pendingFocusHandler !== null) {
+      window.removeEventListener('focus', pendingFocusHandler);
+      pendingFocusHandler = null;
+    }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let remaining = Math.floor(options.autoClearMs / 1_000);
+    if (!prefersReduced) {
+      labelSpan.textContent = `Copied \u2014 clears in ${remaining}s`;
+    }
+    countdownInterval = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(countdownInterval!);
+        countdownInterval = null;
+        clearClipboard();
+        labelSpan.textContent = defaultLabel;
+      } else if (!prefersReduced) {
+        labelSpan.textContent = `Copied \u2014 clears in ${remaining}s`;
+      }
+    }, 1_000);
+  }
+
   button.addEventListener('click', () => {
     void (async () => {
       const text = getText();
@@ -74,12 +134,14 @@ export function createCopyButton(getText: () => string, label?: string): HTMLBut
         await navigator.clipboard.writeText(text);
         showToast('Copied to clipboard');
         swapToCheckIcon(iconSpan);
+        startCountdown();
       } catch {
         // Fallback for older browsers or insecure contexts
         try {
           fallbackCopy(text);
           showToast('Copied to clipboard');
           swapToCheckIcon(iconSpan);
+          startCountdown();
         } catch {
           showToast('Failed to copy');
         }
@@ -103,6 +165,8 @@ function fallbackCopy(text: string): void {
   textarea.style.top = '-9999px';
   document.body.appendChild(textarea);
   textarea.select();
+  // document.execCommand is deprecated (TS6387) but is the only clipboard API available in insecure contexts.
+  // This is the fallback path only — navigator.clipboard is always tried first.
   document.execCommand('copy');
   document.body.removeChild(textarea);
 }
