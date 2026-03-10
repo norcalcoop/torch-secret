@@ -7,6 +7,7 @@ import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { AuthUser } from '../auth.js';
+import { logger } from '../middleware/logger.js';
 
 export const billingRouter = Router();
 
@@ -43,8 +44,14 @@ billingRouter.post('/checkout', requireAuth, async (_req, res) => {
  * Verifies a completed Stripe Checkout session directly via Stripe API (BILL-05).
  * Does NOT rely on webhook timing — called immediately after the user returns from Checkout.
  *
- * Security: validates session.customer matches the authenticated user's stripe_customer_id
- * to prevent session ID spoofing (one user passing another user's session ID).
+ * Security guards (in order):
+ *   1. sessionId format check — must start with 'cs_'
+ *   2. dbUser null guard — 403 if account was deleted between checkout redirect and verify
+ *   3. Stripe session status check — 402 if payment incomplete
+ *   4. Race window guard (BILL-03) — 403 if session.customer is set but dbUser.stripeCustomerId
+ *      is null; this closes the window where verify-checkout fires before the
+ *      checkout.session.completed webhook has written stripeCustomerId to the DB
+ *   5. Customer mismatch guard — 403 if session.customer differs from dbUser.stripeCustomerId
  *
  * Returns: { status: 'active', tier: 'pro' } on success.
  */
@@ -58,12 +65,34 @@ billingRouter.get('/verify-checkout', requireAuth, async (req, res) => {
     return;
   }
 
-  const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
+  // Project only the column we need — avoid select-star on user rows.
+  const [dbUser] = await db
+    .select({ stripeCustomerId: users.stripeCustomerId })
+    .from(users)
+    .where(eq(users.id, user.id));
+
+  // Fail-closed: null dbUser means account was deleted between checkout redirect and verify.
+  if (!dbUser) {
+    res.status(403).json({ error: 'session_mismatch' });
+    return;
+  }
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
 
   if (session.status !== 'complete') {
     res.status(402).json({ error: 'payment_incomplete' });
+    return;
+  }
+
+  // Race window guard (BILL-03): session.customer set but DB has no stripeCustomerId.
+  // Closes the window where verify-checkout fires before checkout.session.completed webhook
+  // writes stripeCustomerId to the DB.
+  if (session.customer && !dbUser.stripeCustomerId) {
+    logger.warn(
+      { sessionId, reason: 'customer_set_but_no_stripe_id' },
+      'verify_checkout_fail_closed',
+    );
+    res.status(403).json({ error: 'session_mismatch' });
     return;
   }
 
