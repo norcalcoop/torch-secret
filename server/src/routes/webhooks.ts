@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { stripe } from '../config/stripe.js';
 import { env } from '../config/env.js';
 import { activatePro, deactivatePro } from '../services/billing.service.js';
+import { logger } from '../middleware/logger.js';
 
 /**
  * Stripe webhook handler — MUST be mounted with express.raw() BEFORE express.json().
@@ -24,7 +25,11 @@ export async function stripeWebhookHandler(req: Request, res: Response): Promise
   const sig = req.headers['stripe-signature'] as string | undefined;
 
   if (!sig) {
-    res.status(400).send('Missing stripe-signature header');
+    logger.warn(
+      { err: new Error('Missing stripe-signature header') },
+      'stripe_webhook_missing_sig',
+    );
+    res.status(400).json({ error: 'Missing stripe-signature header' });
     return;
   }
 
@@ -33,7 +38,8 @@ export async function stripeWebhookHandler(req: Request, res: Response): Promise
     event = stripe.webhooks.constructEvent(req.body as Buffer, sig, env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     // Signature verification failed — reject immediately (do not process)
-    res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+    logger.warn({ err }, 'stripe_webhook_signature_failed');
+    res.status(400).json({ error: 'Webhook signature verification failed' });
     return;
   }
 

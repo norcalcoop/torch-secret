@@ -24,12 +24,15 @@ describe('createVerifyTightLimiter — configuration unit test (SR-015, nyquist)
   });
 
   test('isE2E guard requires BOTH NODE_ENV=test AND E2E_TEST=true', async () => {
-    // With only E2E_TEST=true but NODE_ENV=production, isE2E must be false.
-    // We validate this by confirming the module exports are still correct shapes.
+    // With E2E_TEST=true but NODE_ENV=production, the SRVR-02 env guard throws at startup.
+    // This is stronger than isE2E=false — the process refuses to start entirely.
+    // Since env.ts runs at import time, importing rate-limit.ts (which imports env.ts)
+    // must reject with the E2E_TEST guard error.
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('E2E_TEST', 'true');
-    const { createVerifyTightLimiter } = await import('../rate-limit.js');
-    expect(typeof createVerifyTightLimiter()).toBe('function');
+    await expect(import('../rate-limit.js')).rejects.toThrow(
+      'E2E_TEST=true is only permitted when NODE_ENV=test',
+    );
   });
 
   test('uses limit=5 in production (NODE_ENV !== test)', async () => {

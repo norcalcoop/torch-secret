@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db/connection.js';
 import { env } from '../config/env.js';
+import { createHealthLimiter } from '../middleware/rate-limit.js';
 
 /**
  * Health check router.
@@ -11,7 +12,7 @@ import { env } from '../config/env.js';
  */
 export const healthRouter = Router();
 
-healthRouter.get('/', async (_req, res) => {
+healthRouter.get('/', createHealthLimiter(), async (_req, res) => {
   const health: {
     status: 'ok' | 'degraded';
     database: 'connected' | 'disconnected';
