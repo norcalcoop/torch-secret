@@ -28,6 +28,7 @@ import { getThemePreference, setThemePreference, type ThemePreference } from '..
 import { navigate } from '../router.js';
 import { getMe } from '../api/client.js';
 import { ApiError } from '../api/client.js';
+import type { RetroTheme } from '../retro-data.js';
 
 // ─── Module-level retro data cache ───────────────────────────────────────────
 
@@ -35,8 +36,7 @@ import { ApiError } from '../api/client.js';
  * Holds the THEMES object after the async retro-data import resolves.
  * Null when retro is disabled or not yet loaded.
  */
-let loadedThemes: Record<string, { id: string; name: string; nav: Array<{ i: number[] }> }> | null =
-  null;
+let loadedThemes: Record<string, RetroTheme> | null = null;
 
 /**
  * Retro theme module API — populated alongside loadedThemes when retro loads.
@@ -45,10 +45,7 @@ let loadedThemes: Record<string, { id: string; name: string; nav: Array<{ i: num
 let retroApi: {
   getRetroTheme: () => string | null;
   setRetroTheme: (id: string | null) => void;
-  applyRetroColors: (
-    theme: { id: string; name: string; nav: Array<{ i: number[] }> },
-    preview?: boolean,
-  ) => void;
+  applyRetroColors: (theme: RetroTheme, preview?: boolean) => void;
   clearRetroColors: () => void;
 } | null = null;
 
