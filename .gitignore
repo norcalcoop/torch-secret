@@ -15,6 +15,7 @@ cached-*.md
 !docs/screenshots/*.png
 !screenshots/*.png
 .playwright-mcp/
+docs/archive/
 
 # Playwright
 test-results/
