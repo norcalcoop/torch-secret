@@ -196,7 +196,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. With `VITE_RETRO_ENABLED=false` (production default), retro theme modules (`retro-data.ts`, `retro-icons.ts`, `retro-theme.ts`, `retro-effects.ts`) are not included in any Vite output chunk — Vite bundle analysis shows zero retro code in production build
   2. The passphrase wordlist is not present in the initial bundle — it loads on demand via dynamic import the first time the passphrase tab is selected, and all passphrase generation tests continue to pass
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 67-01-PLAN.md — Wave 0 scaffolding: install visualizer, migrate retro-gate.test.ts to vi.stubEnv, create passphrase-lazy-load.test.ts stubs
+- [ ] 67-02-PLAN.md — BNDL-01: retro gate dynamic imports in app.ts + theme-toggle.ts, strip retro FOWT from index.html
+- [ ] 67-03-PLAN.md — BNDL-02: passphrase lazy-load in create.ts, loading UX, error/retry, test migration
 
 ### Phase 68: API & Schema Quality
 **Goal**: Three targeted backend improvements ship together: expired secrets are cleaned up opportunistically on meta lookup, billing queries no longer select-star user rows, and status columns are enforced at the database level with pgEnum
@@ -243,8 +248,8 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
-| 66. Billing Lifecycle | 3/3 | Complete   | 2026-03-10 | - |
-| 67. Bundle Performance | v5.3 | 0/TBD | Not started | - |
+| 66. Billing Lifecycle | 3/3 | Complete    | 2026-03-10 | - |
+| 67. Bundle Performance | 1/3 | In Progress|  | - |
 | 68. API & Schema Quality | v5.3 | 0/TBD | Not started | - |
 | 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
 | 70. Auth Observability & GDPR Export | v5.3 | 0/TBD | Not started | - |
