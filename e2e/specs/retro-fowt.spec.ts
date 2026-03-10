@@ -8,7 +8,8 @@ import { test, expect } from '@playwright/test';
  * This test verifies no color flash occurs on page reload with an active theme.
  */
 test.describe('Retro theme FOWT prevention', () => {
-  test('mario theme colors applied before JS bundle executes', async ({ page }) => {
+  // Requires RETRO_ENABLED = true in client/index.html — skipped while retro themes are off pre-launch
+  test.skip('mario theme colors applied before JS bundle executes', async ({ page }) => {
     // Inject retro-theme into localStorage BEFORE page load
     await page.addInitScript(() => {
       window.localStorage.setItem('retro-theme', 'mario');
@@ -55,7 +56,8 @@ test.describe('Retro theme FOWT prevention', () => {
     expect(retroAttr).toBeNull();
   });
 
-  test('matrix theme colors applied before JS bundle executes', async ({ page }) => {
+  // Requires RETRO_ENABLED = true in client/index.html — skipped while retro themes are off pre-launch
+  test.skip('matrix theme colors applied before JS bundle executes', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('retro-theme', 'matrix');
     });
