@@ -27,5 +27,23 @@ function shutdown(signal: string) {
   });
 }
 
+/**
+ * Fatal process event handler.
+ *
+ * Registered for both 'unhandledRejection' and 'uncaughtException'.
+ * Logs at fatal level (includes stack trace via Pino serializer) and exits immediately.
+ *
+ * Intentionally does NOT call server.close() or pool.end() — graceful shutdown
+ * risks deadlocking if the error originated in those code paths.
+ * The process manager (Docker/Render) detects the exit code and auto-restarts.
+ */
+function fatalHandler(err: unknown, origin: string): never {
+  logger.fatal({ err, origin }, 'fatal process event');
+  process.exit(1);
+}
+
+process.on('unhandledRejection', (reason) => fatalHandler(reason, 'unhandledRejection'));
+process.on('uncaughtException', (error, origin) => fatalHandler(error, origin));
+
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
