@@ -7,6 +7,9 @@
  * Critical note: the webhook route uses express.raw() (not express.json()).
  * Supertest must send raw JSON string body with Content-Type: application/json.
  * buildApp() already mounts the route with express.raw() before express.json().
+ *
+ * BILL-01: invoice.payment_failed → sendDunningEmail
+ * BILL-02: customer.subscription.updated → activatePro / deactivatePro / neither
  */
 import { describe, test, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 
@@ -18,6 +21,14 @@ const { mockActivatePro, mockDeactivatePro } = vi.hoisted(() => ({
 vi.mock('../../services/billing.service.js', () => ({
   activatePro: mockActivatePro,
   deactivatePro: mockDeactivatePro,
+}));
+
+const { mockSendDunningEmail } = vi.hoisted(() => ({
+  mockSendDunningEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../services/notification.service.js', () => ({
+  sendDunningEmail: mockSendDunningEmail,
 }));
 import request from 'supertest';
 import type { Express } from 'express';
@@ -129,5 +140,167 @@ describe('POST /api/webhooks/stripe — valid signature (positive path)', () => 
     expect(res.body).toEqual({ received: true });
     expect(mockActivatePro).toHaveBeenCalledOnce();
     expect(mockActivatePro).toHaveBeenCalledWith('cus_test_positive_path');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BILL-01: invoice.payment_failed → sendDunningEmail
+// ---------------------------------------------------------------------------
+describe('POST /api/webhooks/stripe — invoice.payment_failed (BILL-01)', () => {
+  test('null invoice.customer does NOT call sendDunningEmail (returns 200)', async () => {
+    const payload = JSON.stringify({
+      type: 'invoice.payment_failed',
+      data: {
+        object: { customer: null },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockSendDunningEmail).not.toHaveBeenCalled();
+  });
+
+  test('valid string invoice.customer calls sendDunningEmail with customerId', async () => {
+    const payload = JSON.stringify({
+      type: 'invoice.payment_failed',
+      data: {
+        object: { customer: 'cus_dunning_test' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockSendDunningEmail).toHaveBeenCalledOnce();
+    expect(mockSendDunningEmail).toHaveBeenCalledWith('cus_dunning_test');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BILL-02: customer.subscription.updated → activatePro / deactivatePro / neither
+// ---------------------------------------------------------------------------
+describe('POST /api/webhooks/stripe — customer.subscription.updated (BILL-02)', () => {
+  test('status "active" calls activatePro and does NOT call deactivatePro', async () => {
+    const payload = JSON.stringify({
+      type: 'customer.subscription.updated',
+      data: {
+        object: { customer: 'cus_sub_updated', status: 'active' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockActivatePro).toHaveBeenCalledOnce();
+    expect(mockActivatePro).toHaveBeenCalledWith('cus_sub_updated');
+    expect(mockDeactivatePro).not.toHaveBeenCalled();
+  });
+
+  test('status "canceled" calls deactivatePro and does NOT call activatePro', async () => {
+    const payload = JSON.stringify({
+      type: 'customer.subscription.updated',
+      data: {
+        object: { customer: 'cus_sub_canceled', status: 'canceled' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockDeactivatePro).toHaveBeenCalledOnce();
+    expect(mockDeactivatePro).toHaveBeenCalledWith('cus_sub_canceled');
+    expect(mockActivatePro).not.toHaveBeenCalled();
+  });
+
+  test('status "unpaid" calls deactivatePro and does NOT call activatePro', async () => {
+    const payload = JSON.stringify({
+      type: 'customer.subscription.updated',
+      data: {
+        object: { customer: 'cus_sub_unpaid', status: 'unpaid' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockDeactivatePro).toHaveBeenCalledOnce();
+    expect(mockDeactivatePro).toHaveBeenCalledWith('cus_sub_unpaid');
+    expect(mockActivatePro).not.toHaveBeenCalled();
+  });
+
+  test('status "past_due" calls neither activatePro nor deactivatePro (returns 200)', async () => {
+    const payload = JSON.stringify({
+      type: 'customer.subscription.updated',
+      data: {
+        object: { customer: 'cus_sub_past_due', status: 'past_due' },
+      },
+    });
+
+    const sig = stripe.webhooks.generateTestHeaderString({
+      payload,
+      secret: env.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const res = await request(app)
+      .post('/api/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', sig)
+      .send(payload)
+      .expect(200);
+
+    expect(res.body).toEqual({ received: true });
+    expect(mockActivatePro).not.toHaveBeenCalled();
+    expect(mockDeactivatePro).not.toHaveBeenCalled();
   });
 });
