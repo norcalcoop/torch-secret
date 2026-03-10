@@ -8,7 +8,8 @@
 - ✅ **v4.0 Hybrid Anonymous + Account Model** — Phases 21-30 (shipped 2026-02-22)
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 - ✅ **v5.1 Email Infrastructure** — Phases 46-53 (complete 2026-03-06)
-- 🚧 **v5.2 Tech Debt & Launch Prep** — Phases 54-61 (in progress)
+- ✅ **v5.2 Tech Debt & Launch Prep** — Phases 54-63 (complete 2026-03-09)
+- 🚧 **v5.3 Pre-Launch Verification** — Phase 64 (in progress)
 
 ## Phases
 
@@ -117,195 +118,56 @@ See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v5.2 Tech Debt & Launch Prep (In Progress)
+<details>
+<summary>✅ v5.2 Tech Debt & Launch Prep (Phases 54-63) — SHIPPED 2026-03-09</summary>
 
-**Milestone Goal:** Close codebase tech debt, fix broken production issues, harden security test coverage, and produce all written launch assets needed for Show HN and Product Hunt.
+- [x] Phase 54: Production Bug Fixes (1/1 plans) — completed 2026-03-06
+- [x] Phase 55: Server Code Quality Hardening (2/2 plans) — completed 2026-03-06
+- [x] Phase 56: Test Gap Closure — Services & Stripe (1/1 plans) — completed 2026-03-06
+- [x] Phase 57: Security Test Suite — Race Conditions & ZK Invariant (1/1 plans) — completed 2026-03-06
+- [x] Phase 58: DMARC Upgrade (1/1 plans) — completed 2026-03-07
+- [x] Phase 58.1: UI/UX Custom Themes (5/5 plans) — completed 2026-03-07
+- [x] Phase 58.2: Launch Quick Wins — Do Now (5/5 plans) — completed 2026-03-08
+- [x] Phase 58.3: Small Gems (5/5 plans) — completed 2026-03-08
+- [x] Phase 58.4: De-activate Custom Themes (1/1 plans) — completed 2026-03-08
+- [x] Phase 58.5: Marketing Audit Fixes (2/2 plans) — completed 2026-03-08
+- [x] Phase 58.6: Fix SSR Navigation & Visual Consistency (2/2 plans) — completed 2026-03-09
+- [x] Phase 59: Repo Hygiene & Documentation (2/2 plans) — completed 2026-03-09
+- [x] Phase 60: Launch Narrative Writing (1/1 plans) — completed 2026-03-09
+- [x] Phase 61: Launch Distribution Assets (2/2 plans) — completed 2026-03-09
+- [x] Phase 62: Documentation & Code Hygiene (1/1 plans) — completed 2026-03-09
+- [x] Phase 63: Nyquist Compliance — Phase 57 & 58.6 (1/1 plans) — completed 2026-03-09
 
-- [x] **Phase 54: Production Bug Fixes** — Fix error-page CTA destination and broken social media preview domain
-- [x] **Phase 55: Server Code Quality Hardening** — Extend noindex to auth/dashboard routes, migrate console.error to logger, gate E2E bypass, add Stripe idempotency key (completed 2026-03-06)
-- [x] **Phase 56: Test Gap Closure — Services & Stripe** — Fill notification service todo, add Stripe webhook signature verification test suite (completed 2026-03-06)
-- [x] **Phase 57: Security Test Suite — Race Conditions & ZK Invariant** — Test password auto-destroy under concurrent load and systematic ZK invariant enforcement (completed 2026-03-06)
-- [x] **Phase 58: DMARC Upgrade** — Upgrade DMARC from p=none to p=quarantine in DNS (completed 2026-03-07)
-- [x] **Phase 59: Repo Hygiene & Documentation** — Add Tally.so link to README, triage and close stale GitHub issues (completed 2026-03-07)
-- [x] **Phase 60: Launch Narrative Writing** — Demo screencast script, Show HN post, technical writeup (completed 2026-03-07)
-- [x] **Phase 61: Launch Distribution Assets** — Reddit community posts, Product Hunt listing, launch email for subscriber list (completed 2026-03-07)
-- [x] **Phase 62: Documentation & Code Hygiene** — Resolve INT-01 footer email capture, remove dead CSS, fix REQUIREMENTS.md traceability, fix SUMMARY frontmatter gaps (completed 2026-03-09)
-- [x] **Phase 63: Nyquist Compliance — Phase 57 & 58.6** — Fill validation gaps for two partially-compliant phases (completed 2026-03-09)
+See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
+
+</details>
+
+### 🚧 v5.3 Pre-Launch Verification (In Progress)
+
+**Milestone Goal:** Deploy v5.2 to production and execute the full pre-launch human verification checklist against the live site — confirming every deferred human-verify item, gallery screenshots, and delivery reports before announcing on Product Hunt and Show HN.
+
 - [ ] **Phase 64: Pre-Launch Human Verification Checklist** — Execute all deferred human-verify items across 11 phases, capture gallery screenshots, confirm delivery reports
 
 ## Phase Details
 
-### Phase 54: Production Bug Fixes
-**Goal**: The app has no embarrassing production-visible regressions before launch
-**Depends on**: Phase 53
-**Requirements**: BUG-01, BUG-02
+### Phase 64: Pre-Launch Human Verification Checklist
+**Goal**: All 28 deferred human-verify items are executed before launch day, gallery screenshots are captured, and delivery reports are confirmed
+**Depends on**: Phase 63
+**Requirements**: none (manual human verification; cannot be automated)
 **Success Criteria** (what must be TRUE):
-  1. Clicking "Create a New Secret" on the error page navigates to `/create`, not `/`
-  2. Sharing a torchsecret.com URL on Twitter/LinkedIn/Slack shows the correct domain in the preview card — not `secureshare.example.com`
-  3. OG and Twitter meta tags in `client/index.html` reference `torchsecret.com` throughout
+  1. Email delivery confirmed: DMARC aggregate reports reviewed at admin@torchsecret.com (2026-03-08 to 2026-03-10); Loops.so dashboard delivery status checked
+  2. UI/UX visual rendering verified: all 21 retro themes render correctly, hover preview timing correct, Press Start 2P font lazy-loads, mobile nav icon swap, FOWT prevention, prefers-reduced-motion, Pro gating lock icons, keyboard navigation, PostHog analytics event fires
+  3. Sharing modality verified: clipboard auto-clears after 60 seconds, QR code scans cleanly, email button opens OS mail client, context-aware expiry hint appears on live create page
+  4. Small gems verified: burn timer visual countdown, preview panel live update, word list passphrase quality, reshare E2E flow completes end-to-end
+  5. SSR visual parity verified: summary icon reflects stored preference on load, icon updates on click, terminal block color matches SPA dark mode
+  6. Marketing page verified: Pro registration banner appears above the fold, homepage two-line H1 renders correctly, reveal CTA tone and layout confirmed, Bitwarden comparison page framing reviewed
+  7. Launch asset final check: Product Hunt character limits confirmed in live form UI (60/260 limits), r/netsec tone reviewed by community-aware human, launch email founder voice reviewed
+  8. Gallery screenshots captured: 4 images at 1270×760px as required by Product Hunt listing draft
+  9. README screenshot accuracy verified: 5 PNG screenshots match current UI post-58.x changes
 **Plans**: 1 plan
 
 Plans:
-- [x] 54-01-PLAN.md — Fix error page CTA routing (BUG-01) and add twitter:image meta tag (BUG-02)
-
-### Phase 55: Server Code Quality Hardening
-**Goal**: Server-side code is production-safe: auth routes are properly noindexed, email delivery failures appear in structured logs, the E2E rate-limit bypass cannot fire in production, and Stripe customer creation is idempotent
-**Depends on**: Phase 54
-**Requirements**: QUAL-01, QUAL-02, QUAL-03, QUAL-04
-**Success Criteria** (what must be TRUE):
-  1. Visiting `/login`, `/register`, `/forgot-password`, `/reset-password`, and `/dashboard` returns an `X-Robots-Tag: noindex` HTTP response header (verifiable with curl)
-  2. Email delivery failures in `notification.service.ts` and `subscribers.service.ts` appear as structured JSON in Pino log output — no bare `console.error` calls remain in service files
-  3. The `E2E_TEST` rate-limit bypass is unreachable unless `NODE_ENV === 'test'` — setting `E2E_TEST=true` in a non-test environment has no effect on rate limiting
-  4. Stripe customer creation with the same `user.id` called twice (e.g., on network retry) results in one customer, not two — idempotency key `torch-secret-${user.id}` prevents duplication
-**Plans**: 2 plans
-
-Plans:
-- [ ] 55-01-PLAN.md — Verify and test QUAL-01 noindex headers, confirm QUAL-02 logger usage and QUAL-03 rate-limit gate
-- [ ] 55-02-PLAN.md — Add Stripe idempotency key (QUAL-04) and fix subscribers email error handling
-
-### Phase 56: Test Gap Closure — Services & Stripe
-**Goal**: The test suite covers email delivery error paths and Stripe webhook security — two gaps that existed before launch
-**Depends on**: Phase 55
-**Requirements**: TEST-01, TEST-02
-**Success Criteria** (what must be TRUE):
-  1. `notification.service.test.ts` has zero `test.todo` entries — the previously skipped logger.error migration test passes
-  2. A Stripe webhook test suite exists and verifies that: requests with no signature header are rejected, requests with a tampered body are rejected, and only requests with a valid `STRIPE_WEBHOOK_SECRET` signature are processed
-  3. The test suite passes cleanly in CI with no new skips introduced
-**Plans**: 1 plan
-
-Plans:
-- [ ] 56-01-PLAN.md — Fill notification.service logger.error test.todo (TEST-01) and add Stripe webhook positive-path security test (TEST-02)
-
-### Phase 57: Security Test Suite — Race Conditions & ZK Invariant
-**Goal**: The two highest-severity security properties — password auto-destroy atomicity and the zero-knowledge invariant — are provably enforced by the test suite, not just by convention
-**Depends on**: Phase 56
-**Requirements**: TEST-03, TEST-04
-**Success Criteria** (what must be TRUE):
-  1. A concurrent-load test fires multiple simultaneous password verification attempts against a secret at `attemptsRemaining = 1` and confirms that exactly one attempt succeeds and the secret is destroyed — no race allows a second successful attempt
-  2. A systematic integration test asserts that no Pino log line, no DB row across all tables, and no PostHog event payload contains both a `userId` value and a `secretId` value in the same record
-  3. Both test suites are integrated into the existing Vitest run and pass in CI
-**Plans**: 1 plan
-
-Plans:
-- [ ] 57-01-PLAN.md — Append TEST-03 correct-password race test and create TEST-04 ZK invariant schema test
-
-### Phase 58: DMARC Upgrade
-**Goal**: Torch Secret's DMARC policy is hardened from monitoring-only to active enforcement, protecting the domain from spoofing
-**Depends on**: Phase 53
-**Requirements**: INFRA-01
-**Success Criteria** (what must be TRUE):
-  1. The `_dmarc.torchsecret.com` TXT record reads `p=quarantine` (verifiable with `dig TXT _dmarc.torchsecret.com`)
-  2. Cloudflare DMARC reports show no legitimate mail sources failing alignment after the upgrade
-  3. Outbound mail from `noreply@torchsecret.com` and `hello@torchsecret.com` continues to deliver successfully
-**Plans**: 1 plan
-
-Plans:
-- [ ] 58-01-PLAN.md — DNS runbook: pre-flight report review, p=quarantine edit, smoke test verification (INFRA-01)
-
-### Phase 58.5: marketing audit fixes (INSERTED)
-
-**Goal:** Homepage, registration, pricing, reveal, layout, and create pages implement all 10 marketing audit items — ZK-focused H1, Pro registration context, guarantee badge, viral reveal CTA, Open Source link, internal linking, Security Architecture section, email capture removal, Pro popover pricing, and two new competitor comparison pages
-**Requirements**: none (10 items from CONTEXT.md: QW1–QW4, QW6–QW8, S1, S2, S4)
-**Depends on:** Phase 58
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] 58.5-01-PLAN.md — Wave 0 test stubs + SPA frontend changes (QW1–QW4, QW6–QW8, S2, S4)
-- [ ] 58.5-02-PLAN.md — VS comparison pages (S1: bitwarden-send + email-and-slack)
-
-### Phase 58.4: de-activate custome themes (INSERTED)
-
-**Goal:** Soft-hide the retro themes feature before launch with a single RETRO_ENABLED=false constant — theme dropdown shows only Light/Dark/System, stale localStorage cleared on load, no retro listeners run; re-enable post-launch with a one-line flip
-**Requirements**: none (urgent inserted phase)
-**Depends on:** Phase 58
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 58.4-01-PLAN.md — Commit engine improvements, write gate tests, apply RETRO_ENABLED gate to theme-toggle.ts / app.ts / index.html
-
-### Phase 58.1: UI/UX custom themes with theme selectors, light and dark mode, custom SVG (INSERTED)
-
-**Goal:** Users can select from 22 retro-themed visual skins (games, anime, cartoon) via a header dropdown; Pro users activate themes with live hover previews, pixel SVG icons, animated background effects, and persistent selection; free users see the selector and are gated to /pricing
-**Requirements**: THEME-01, THEME-02, THEME-03, THEME-04, THEME-05
-**Depends on:** Phase 58
-**Plans:** 5/5 plans complete
-
-Plans:
-- [ ] 58.1-01-PLAN.md — Theme data module (retro-data.ts) + retro theme engine (retro-theme.ts) + unit tests
-- [ ] 58.1-02-PLAN.md — Theme dropdown component replacing toggle, hover preview, Pro gating, accessibility scan
-- [ ] 58.1-03-PLAN.md — Pixel SVG icon system (retro-icons.ts), createPixelIcon factory, mobile nav swap, FOWT extension
-- [ ] 58.1-04-PLAN.md — Special effects engine: MatrixRain, PongBall, DosTyper, Blink, FloatingEmojis, scanlines
-- [ ] 58.1-05-PLAN.md — App wiring: font install, effects integration, initRetroThemeListener, PostHog analytics, E2E FOWT test
-
-### Phase 58.2: Launch Quick Wins — Do Now (INSERTED)
-
-**Goal:** The confirmation page offers all four sharing modalities (copy, native share, email, QR code) and auto-clears the clipboard after 60 seconds; the create page shows authenticated users a context-aware expiry suggestion based on day and time of day
-**Requirements**: (no formal IDs — 5 high-value UX features identified in 10x session-1 analysis)
-**Depends on:** Phase 58.1
-**Plans:** 5/5 plans complete
-
-Plans:
-- [ ] 58.2-01-PLAN.md — Install qrcode package, add vite.config.ts optimizeDeps, scaffold 4 test stub files (Wave 0)
-- [ ] 58.2-02-PLAN.md — Extend copy-button.ts (autoClearMs countdown) + expiration-select.ts (suggestion hint) (Wave 1)
-- [ ] 58.2-03-PLAN.md — Create qr-code-panel.ts and mailto-button.ts new components (Wave 1, parallel)
-- [ ] 58.2-04-PLAN.md — Wire all new components into confirmation.ts and create.ts (Wave 2)
-
-### Phase 58.3: small gems (INSERTED)
-
-**Goal:** Ship 4 remaining small gems: burn-after-reading reveal timer, one-click reshare from dashboard, inline secret preview on create page, and passphrase word list themes
-**Requirements**: (no formal IDs — 4 high-value UX features identified in 10x session-1 analysis)
-**Depends on:** Phase 58
-**Plans:** 5/5 plans complete
-
-Plans:
-- [ ] 58.3-01-PLAN.md — Wave 0: test scaffolding (dashboard.test.ts new, reveal/create/passphrase tests extended RED)
-- [ ] 58.3-02-PLAN.md — Passphrase word lists (word-lists.ts new, passphrase.ts extended)
-- [ ] 58.3-03-PLAN.md — Burn timer dropdown + preview panel in create.ts
-- [ ] 58.3-04-PLAN.md — Burn timer countdown in reveal.ts
-- [ ] 58.3-05-PLAN.md — Reshare button in dashboard.ts + create.ts prefill + passphrase selector wiring
-
-### Phase 59: Repo Hygiene & Documentation
-**Goal**: The public GitHub repository is clean, well-maintained, documentation is current for all 58.x features, and the feedback link appears across all three surfaces
-**Depends on**: Phase 53, Phase 58.x (scope expanded to cover documentation debt from inserted phases)
-**Requirements**: DOCS-01, DOCS-02
-**Success Criteria** (what must be TRUE):
-  1. The README includes a Tally.so feedback form link — all three feedback surfaces (confirmation page, reveal page, README) now point to the same form (complete)
-  2. All open GitHub issues are triaged: stale issues are closed with a comment, and remaining open issues carry appropriate labels (complete)
-  3. CHANGELOG has [5.1.0] and [5.2.0] milestone entries covering all shipped features
-  4. README feature list and screenshots reflect current post-58.x UI (QR sharing, burn timer, reshare, confirmation-flow screenshot added)
-  5. dependabot.yml covers Docker ecosystem; CONTRIBUTING.md has word list extension guide
-**Plans**: 2 plans
-
-Plans:
-- [ ] 59-01-PLAN.md — CHANGELOG 5.1.0+5.2.0 entries, README feature list update, dependabot Docker, CONTRIBUTING word list guide (DOCS-01, DOCS-02)
-- [ ] 59-02-PLAN.md — README screenshots section update + retake 5 screenshots of current UI (DOCS-01, DOCS-02)
-
-### Phase 60: Launch Narrative Writing
-**Goal**: The core launch narrative exists as complete written artifacts — a demo script, the Show HN post, and a technical writeup that explains the zero-knowledge architecture to a technical audience
-**Depends on**: Phase 59
-**Requirements**: LAUNCH-01, LAUNCH-02, LAUNCH-03
-**Success Criteria** (what must be TRUE):
-  1. A demo screencast script and shot list exists covering the complete 30–60 second flow: paste secret → create → share link → recipient reveals → secret is gone
-  2. A Show HN post draft exists with a title leading with the RFC 3986 / URL fragment angle and includes a submitter-comment template with technical depth
-  3. A technical writeup draft exists titled around the zero-knowledge property ("mathematically cannot read your data") covering the AES-256-GCM + URL fragment architecture, PADME padding, and the atomic destroy transaction
-**Plans**: 1 plan
-
-Plans:
-- [ ] 60-01-PLAN.md — Write demo script, technical writeup, and Show HN post (LAUNCH-01, LAUNCH-02, LAUNCH-03)
-
-### Phase 61: Launch Distribution Assets
-**Goal**: All channel-specific launch assets are written and ready to post simultaneously on launch day — Reddit, Product Hunt, and the subscriber email list
-**Depends on**: Phase 60
-**Requirements**: LAUNCH-04, LAUNCH-05, LAUNCH-06
-**Success Criteria** (what must be TRUE):
-  1. Three distinct Reddit post drafts exist — one each for r/netsec, r/selfhosted, and r/devops — each under 300 words with a community-specific angle and no cross-posting boilerplate
-  2. A Product Hunt listing draft exists with: tagline, full description, a checklist of required gallery images, FAQ section, and a first-comment template
-  3. A "we launched on Product Hunt" email draft exists for the subscriber list, formatted for Resend or Loops delivery
-**Plans**: 2 plans
-
-Plans:
-- [ ] 61-01-PLAN.md — Write Reddit community posts for r/netsec, r/selfhosted, r/devops (LAUNCH-04)
-- [ ] 61-02-PLAN.md — Write Product Hunt listing and subscriber launch email (LAUNCH-05, LAUNCH-06)
+- [ ] 64-01-PLAN.md — Execute all human verification items, capture gallery screenshots, confirm delivery reports
 
 ## Progress
 
@@ -368,77 +230,20 @@ Plans:
 | 51. Public Repo Preparation | v5.1 | 3/3 | Complete | 2026-03-05 |
 | 52. Audit Launch Checklist | v5.1 | 2/2 | Complete | 2026-03-05 |
 | 53. v5.1 Gap Closure | v5.1 | 2/2 | Complete | 2026-03-06 |
-| 54. Production Bug Fixes | v5.2 | Complete    | 2026-03-06 | - |
-| 55. Server Code Quality Hardening | 2/2 | Complete    | 2026-03-06 | - |
-| 56. Test Gap Closure — Services & Stripe | 1/1 | Complete    | 2026-03-06 | - |
-| 57. Security Test Suite — Race Conditions & ZK Invariant | 1/1 | Complete    | 2026-03-06 | - |
-| 58. DMARC Upgrade | 1/1 | Complete   | 2026-03-08 | - |
-| 58.1. UI/UX Custom Themes | 5/5 | Complete    | 2026-03-07 |
-| 58.2. Launch Quick Wins — Do Now | 5/5 | Complete   | 2026-03-08 |
-| 58.5. Marketing Audit Fixes | 2/2 | Complete    | 2026-03-08 |
-| 59. Repo Hygiene & Documentation | 2/2 | Complete    | 2026-03-09 | - |
-| 60. Launch Narrative Writing | 1/1 | Complete    | 2026-03-09 | - |
-| 61. Launch Distribution Assets | 2/2 | Complete    | 2026-03-09 | - |
-| 62. Documentation & Code Hygiene | 1/1 | Complete    | 2026-03-09 | - |
-| 63. Nyquist Compliance — Phase 57 & 58.6 | 1/1 | Complete    | 2026-03-09 | - |
-| 64. Pre-Launch Human Verification Checklist | v5.2 | 0/1 | Pending | - |
-
-_See [v5.1 Roadmap Archive](milestones/v5.1-ROADMAP.md) for full v5.1 phase details._
-
-### Phase 62: Documentation & Code Hygiene
-**Goal**: All documentation accurately reflects what was built — no SUMMARY overstatements, no stale traceability, no orphaned code; INT-01 integration ambiguity resolved
-**Depends on**: Phase 61
-**Requirements**: none (documentation and code hygiene; no new REQ-IDs)
-**Gap Closure**: Closes INT-01 from v5.2 milestone audit
-**Success Criteria** (what must be TRUE):
-  1. INT-01 resolved: `createEmailCaptureSection()` in `client/src/components/layout.ts` either removed globally or Phase 58.5 SUMMARY updated to document homepage-only scope — no ambiguity remains
-  2. Dead CSS `.ssr-theme-btn` rules removed from `server/src/routes/seo/templates/layout.ts`
-  3. REQUIREMENTS.md traceability table: THEME-01 through THEME-05 updated from `Planned` to `Complete`
-  4. Phase 61 SUMMARY frontmatter: `61-01` and `61-02` include `requirements-completed: [LAUNCH-04, LAUNCH-05, LAUNCH-06]`
-  5. Phase 58.1 SUMMARY frontmatter: `58.1-01`, `58.1-03`, `58.1-04` include `requirements-completed` for THEME-01, THEME-03, THEME-04
-**Plans**: 1 plan
-
-Plans:
-- [ ] 62-01-PLAN.md — Resolve INT-01, remove dead CSS, fix traceability table and SUMMARY frontmatters
-
-### Phase 63: Nyquist Compliance — Phase 57 & 58.6
-**Goal**: Both partially-compliant phases have complete Nyquist VALIDATION.md files so the milestone can be archived cleanly
-**Depends on**: Phase 62
-**Requirements**: none (validation documentation)
-**Gap Closure**: Closes Nyquist partial findings for Phase 57 and Phase 58.6 from v5.2 audit
-**Success Criteria** (what must be TRUE):
-  1. Phase 57 VALIDATION.md updated: `nyquist_compliant: true`, `wave_0_complete: true`
-  2. Phase 58.6 VALIDATION.md updated: `nyquist_compliant: true`, `wave_0_complete: true`
-**Plans**: 1 plan
-
-Plans:
-- [ ] 63-01-PLAN.md — Fill Nyquist validation gaps for Phase 57 and Phase 58.6
-
-### Phase 64: Pre-Launch Human Verification Checklist
-**Goal**: All 28 deferred human-verify items are executed before launch day, gallery screenshots are captured, and delivery reports are confirmed
-**Depends on**: Phase 63
-**Requirements**: none (manual human verification; cannot be automated)
-**Success Criteria** (what must be TRUE):
-  1. Email delivery confirmed: DMARC aggregate reports reviewed at admin@torchsecret.com (2026-03-08 to 2026-03-10); Loops.so dashboard delivery status checked
-  2. UI/UX visual rendering verified: all 21 retro themes render correctly, hover preview timing correct, Press Start 2P font lazy-loads, mobile nav icon swap, FOWT prevention, prefers-reduced-motion, Pro gating lock icons, keyboard navigation, PostHog analytics event fires
-  3. Sharing modality verified: clipboard auto-clears after 60 seconds, QR code scans cleanly, email button opens OS mail client, context-aware expiry hint appears on live create page
-  4. Small gems verified: burn timer visual countdown, preview panel live update, word list passphrase quality, reshare E2E flow completes end-to-end
-  5. SSR visual parity verified: summary icon reflects stored preference on load, icon updates on click, terminal block color matches SPA dark mode
-  6. Marketing page verified: Pro registration banner appears above the fold, homepage two-line H1 renders correctly, reveal CTA tone and layout confirmed, Bitwarden comparison page framing reviewed
-  7. Launch asset final check: Product Hunt character limits confirmed in live form UI (60/260 limits), r/netsec tone reviewed by community-aware human, launch email founder voice reviewed
-  8. Gallery screenshots captured: 4 images at 1270×760px as required by Product Hunt listing draft
-  9. README screenshot accuracy verified: 5 PNG screenshots match current UI post-58.x changes
-**Plans**: 1 plan
-
-Plans:
-- [ ] 64-01-PLAN.md — Execute all human verification items, capture gallery screenshots, confirm delivery reports
-
-### Phase 58.6: Fix SSR Navigation & Visual Consistency
-
-**Goal:** SSR content pages (/vs/*, /alternatives/*, /use/*) are visually indistinguishable from SPA client pages — matching design tokens, theme dropdown, and JetBrains Mono font loading
-**Requirements**: SSR pages must match client pages in themes, colors, and typography. Headers and footers must be consistent across all pages. Look and feel must be the same for all vs/comparison pages.
-**Depends on:** Phase 58.5
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 58.6-01-PLAN.md — Token audit + theme dropdown upgrade + font preload (SSR-TOKENS, SSR-DARK-DOT, SSR-DROPDOWN, SSR-ACTIVE-JS, SSR-NONCE)
+| 54. Production Bug Fixes | v5.2 | 1/1 | Complete | 2026-03-06 |
+| 55. Server Code Quality Hardening | v5.2 | 2/2 | Complete | 2026-03-06 |
+| 56. Test Gap Closure — Services & Stripe | v5.2 | 1/1 | Complete | 2026-03-06 |
+| 57. Security Test Suite — Race Conditions & ZK Invariant | v5.2 | 1/1 | Complete | 2026-03-06 |
+| 58. DMARC Upgrade | v5.2 | 1/1 | Complete | 2026-03-07 |
+| 58.1. UI/UX Custom Themes | v5.2 | 5/5 | Complete | 2026-03-07 |
+| 58.2. Launch Quick Wins — Do Now | v5.2 | 5/5 | Complete | 2026-03-08 |
+| 58.3. Small Gems | v5.2 | 5/5 | Complete | 2026-03-08 |
+| 58.4. De-activate Custom Themes | v5.2 | 1/1 | Complete | 2026-03-08 |
+| 58.5. Marketing Audit Fixes | v5.2 | 2/2 | Complete | 2026-03-08 |
+| 58.6. Fix SSR Navigation & Visual Consistency | v5.2 | 2/2 | Complete | 2026-03-09 |
+| 59. Repo Hygiene & Documentation | v5.2 | 2/2 | Complete | 2026-03-09 |
+| 60. Launch Narrative Writing | v5.2 | 1/1 | Complete | 2026-03-09 |
+| 61. Launch Distribution Assets | v5.2 | 2/2 | Complete | 2026-03-09 |
+| 62. Documentation & Code Hygiene | v5.2 | 1/1 | Complete | 2026-03-09 |
+| 63. Nyquist Compliance — Phase 57 & 58.6 | v5.2 | 1/1 | Complete | 2026-03-09 |
+| 64. Pre-Launch Human Verification Checklist | v5.3 | 0/1 | Pending | - |
