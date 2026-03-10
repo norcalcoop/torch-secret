@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [
+    tailwindcss(),
+    visualizer({ open: false, filename: 'client/dist/stats.html', gzipSize: true }),
+  ],
   root: 'client',
   // envDir defaults to `root` when root is overridden. Since our .env lives
   // in the project root (one level above client/), point envDir back there.

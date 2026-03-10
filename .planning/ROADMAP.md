@@ -147,7 +147,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 **Milestone Goal:** Address the highest-impact technical debt, security vulnerabilities, performance bottlenecks, and GDPR compliance gaps identified in the post-launch codebase and GitHub audit.
 
 - [x] **Phase 65: Quick Wins** — Process stability handlers, GitHub/CI fixes, canonical isSession guard (completed 2026-03-10)
-- [ ] **Phase 66: Billing Lifecycle** — Dunning email, subscription sync, verify-checkout fail-closed guard
+- [x] **Phase 66: Billing Lifecycle** — Dunning email, subscription sync, verify-checkout fail-closed guard (completed 2026-03-10)
 - [ ] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load
 - [ ] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration
 - [ ] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI
@@ -243,7 +243,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
-| 66. Billing Lifecycle | 1/3 | In Progress|  | - |
+| 66. Billing Lifecycle | 3/3 | Complete   | 2026-03-10 | - |
 | 67. Bundle Performance | v5.3 | 0/TBD | Not started | - |
 | 68. API & Schema Quality | v5.3 | 0/TBD | Not started | - |
 | 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
