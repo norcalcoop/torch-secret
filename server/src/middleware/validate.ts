@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { ZodType } from 'zod';
+import { z, type ZodType } from 'zod';
 
 /**
  * Express middleware factory that validates request body against a Zod schema.
@@ -14,7 +14,7 @@ export function validateBody<T>(schema: ZodType<T>) {
     if (!result.success) {
       res.status(400).json({
         error: 'validation_error',
-        details: result.error.flatten(),
+        details: z.flattenError(result.error),
       });
       return;
     }
@@ -37,7 +37,7 @@ export function validateQuery<T>(schema: ZodType<T>) {
     if (!result.success) {
       res.status(400).json({
         error: 'validation_error',
-        details: result.error.flatten(),
+        details: z.flattenError(result.error),
       });
       return;
     }
@@ -61,7 +61,7 @@ export function validateParams<T>(schema: ZodType<T>) {
     if (!result.success) {
       res.status(400).json({
         error: 'validation_error',
-        details: result.error.flatten(),
+        details: z.flattenError(result.error),
       });
       return;
     }
