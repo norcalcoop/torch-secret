@@ -162,12 +162,10 @@ describe('passphrase lazy-load (BNDL-02)', () => {
 
   it('replaces spinner with passphrase input after module resolves', async () => {
     // Arrange: a passphrase mock that resolves immediately
-    vi.doMock('../crypto/passphrase.js', () =>
-      Promise.resolve({
-        EFF_WORDS: ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb'],
-        generatePassphrase: vi.fn().mockReturnValue('word-word-word-word-word'),
-      }),
-    );
+    vi.doMock('../crypto/passphrase.js', () => ({
+      EFF_WORDS: ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb'],
+      generatePassphrase: vi.fn().mockReturnValue('word-word-word-word-word'),
+    }));
 
     const { createProtectionPanel } = await import('../pages/create.js');
     const panel = createProtectionPanel({ isAuthenticated: true, isPro: false });
@@ -178,9 +176,8 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     expect(passphraseTab).not.toBeNull();
     passphraseTab!.click();
 
-    // Flush microtasks so the dynamic import settles
-    await Promise.resolve();
-    await Promise.resolve();
+    // Flush microtasks so the dynamic import settles and initPassphrasePanel() completes
+    await new Promise((r) => setTimeout(r, 50));
 
     // Assert: passphrase input is in the DOM
     const passphraseInput = container.querySelector('#passphrase-input');
@@ -212,9 +209,7 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     passphraseTab!.click();
 
     // Flush microtasks so the catch block runs and renders error DOM
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Assert: error message contains "Failed to load"
     const errorText = container.querySelector('.text-error');
@@ -253,8 +248,7 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     // First activation — triggers error
     const passphraseTab = container.querySelector<HTMLButtonElement>('#tab-btn-passphrase');
     passphraseTab!.click();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Confirm error state
     const retryBtn = Array.from(container.querySelectorAll('button')).find((b) =>
@@ -264,8 +258,7 @@ describe('passphrase lazy-load (BNDL-02)', () => {
 
     // Act: click Retry — should reset cache and re-attempt
     retryBtn!.click();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Assert: a second import attempt was made (callCount incremented)
     expect(callCount).toBeGreaterThanOrEqual(2);
@@ -276,10 +269,10 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     let importCallCount = 0;
     vi.doMock('../crypto/passphrase.js', () => {
       importCallCount++;
-      return Promise.resolve({
+      return {
         EFF_WORDS: ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb'],
         generatePassphrase: vi.fn().mockReturnValue('word-word-word-word-word'),
-      });
+      };
     });
 
     const { createProtectionPanel } = await import('../pages/create.js');
@@ -289,8 +282,7 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     // Activate passphrase tab — first import
     const passphraseTab = container.querySelector<HTMLButtonElement>('#tab-btn-passphrase');
     passphraseTab!.click();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
 
     const beforeCount = importCallCount;
 
@@ -302,8 +294,7 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     );
     expect(newPassphraseBtn).not.toBeNull();
     newPassphraseBtn!.click();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Assert: no additional import calls after first successful load
     expect(importCallCount).toBe(beforeCount);

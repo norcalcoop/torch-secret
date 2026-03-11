@@ -26,9 +26,9 @@
  * a masked input with eye toggle and New passphrase button.
  */
 
-import { encrypt, generatePassphrase, generatePassword } from '../crypto/index.js';
-import { EFF_WORDS } from '../crypto/passphrase.js';
+import { encrypt, generatePassword } from '../crypto/index.js';
 import { TECH_WORDS, NATURE_WORDS, SHORT_WORDS } from '../crypto/word-lists.js';
+import { createLoadingSpinner } from '../components/loading-spinner.js';
 import { createSecret, ApiError, getMe } from '../api/client.js';
 import { authClient, isSession } from '../api/auth-client.js';
 import {
@@ -62,6 +62,22 @@ import { showToast } from '../components/toast.js';
 import { createTerminalBlock } from '../components/terminal-block.js';
 
 const MAX_LENGTH = 10_000;
+
+// ---- Passphrase lazy-load (BNDL-02) ----
+// EFF_WORDS (~280KB) is only needed when the user selects the passphrase tab.
+// Loading it on demand reduces parse/compile cost for all users on first visit.
+
+interface PassphraseModule {
+  EFF_WORDS: string[];
+  generatePassphrase: (wordCount: number, wordList: string[]) => string;
+}
+
+let passphraseModule: PassphraseModule | null = null;
+
+async function getPassphraseModule(): Promise<PassphraseModule> {
+  passphraseModule ??= await import('../crypto/passphrase.js');
+  return passphraseModule;
+}
 
 /**
  * Returns an expiry suggestion based on current day and time.
@@ -964,30 +980,41 @@ function createProtectionPanel(
   passphrasePanel.appendChild(passphraseActionRow);
 
   // Word list selector — placed before the "New passphrase" button
-  const wordListOptions = [
-    { value: 'eff', label: 'Standard (EFF — highest security)', list: EFF_WORDS },
-    { value: 'tech', label: 'Tech terms', list: TECH_WORDS },
-    { value: 'nature', label: 'Nature words', list: NATURE_WORDS },
-    { value: 'short', label: 'Short words (easy to type)', list: SHORT_WORDS },
+  // EFF_WORDS is lazily loaded; other lists are small and statically imported.
+  const staticWordLists: Record<string, string[]> = {
+    tech: TECH_WORDS,
+    nature: NATURE_WORDS,
+    short: SHORT_WORDS,
+  };
+  const wordListLabels = [
+    { value: 'eff', label: 'Standard (EFF — highest security)' },
+    { value: 'tech', label: 'Tech terms' },
+    { value: 'nature', label: 'Nature words' },
+    { value: 'short', label: 'Short words (easy to type)' },
   ];
-  let activeWordList: string[] = EFF_WORDS;
+  // activeWordList is set to EFF_WORDS after the module loads in initPassphrasePanel()
+  let activeWordList: string[] = [];
 
   const listSelect = document.createElement('select');
   listSelect.className =
     'px-2 py-1 text-sm rounded-lg border border-border bg-surface text-text-secondary ' +
     'focus:ring-2 focus:ring-accent focus:outline-hidden cursor-pointer';
   listSelect.setAttribute('aria-label', 'Passphrase word list');
-  for (const opt of wordListOptions) {
+  for (const opt of wordListLabels) {
     const optEl = document.createElement('option');
     optEl.value = opt.value;
     optEl.textContent = opt.label;
     listSelect.appendChild(optEl);
   }
   listSelect.addEventListener('change', () => {
-    const selected = wordListOptions.find((o) => o.value === listSelect.value);
-    activeWordList = selected?.list ?? EFF_WORDS;
-    currentPassphrase = generatePassphrase(4, activeWordList);
-    passphraseInput.value = currentPassphrase;
+    void (async () => {
+      const { EFF_WORDS, generatePassphrase } = await getPassphraseModule();
+      const selectedValue = listSelect.value;
+      activeWordList =
+        selectedValue === 'eff' ? EFF_WORDS : (staticWordLists[selectedValue] ?? EFF_WORDS);
+      currentPassphrase = generatePassphrase(4, activeWordList);
+      passphraseInput.value = currentPassphrase;
+    })();
   });
   passphraseActionRow.appendChild(listSelect);
 
@@ -1123,8 +1150,13 @@ function createProtectionPanel(
   });
 
   newPassphraseBtn.addEventListener('click', () => {
-    currentPassphrase = generatePassphrase(4, activeWordList);
-    passphraseInput.value = currentPassphrase;
+    void (async () => {
+      const { generatePassphrase } = await getPassphraseModule(); // cached after first load
+      currentPassphrase = generatePassphrase(4, activeWordList);
+      passphraseInput.value = currentPassphrase;
+      if (passphraseVisible) passphraseInput.type = 'text';
+      else passphraseInput.type = 'password';
+    })();
   });
 
   // ---- Tab activation ----
@@ -1161,8 +1193,49 @@ function createProtectionPanel(
       regenerate();
     }
     if (tab === 'passphrase' && !currentPassphrase) {
+      void initPassphrasePanel();
+    }
+  }
+
+  // ---- Passphrase panel async initialisation (BNDL-02) ----
+  // Called on first passphrase tab activation. Shows a spinner while the
+  // EFF_WORDS module loads, then replaces it with the passphrase input.
+  // On failure, shows an error message with a Retry button.
+  async function initPassphrasePanel(): Promise<void> {
+    // Show spinner while loading
+    while (passphraseWrapper.firstChild) {
+      passphraseWrapper.removeChild(passphraseWrapper.firstChild);
+    }
+    passphraseWrapper.appendChild(createLoadingSpinner('Generating...'));
+
+    try {
+      const { EFF_WORDS, generatePassphrase } = await getPassphraseModule();
+      while (passphraseWrapper.firstChild) {
+        passphraseWrapper.removeChild(passphraseWrapper.firstChild);
+      }
+      activeWordList = EFF_WORDS;
       currentPassphrase = generatePassphrase(4, activeWordList);
       passphraseInput.value = currentPassphrase;
+      passphraseWrapper.appendChild(passphraseInput);
+      passphraseWrapper.appendChild(passphraseRevealToggle);
+      passphraseWrapper.appendChild(passphraseCopyBtn);
+    } catch {
+      while (passphraseWrapper.firstChild) {
+        passphraseWrapper.removeChild(passphraseWrapper.firstChild);
+      }
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-sm text-error';
+      errorEl.textContent = 'Failed to load passphrase generator.';
+      const retryBtn = document.createElement('button');
+      retryBtn.type = 'button';
+      retryBtn.className = 'mt-2 text-sm text-accent underline cursor-pointer';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', () => {
+        passphraseModule = null; // reset module-scope cache
+        void initPassphrasePanel();
+      });
+      passphraseWrapper.appendChild(errorEl);
+      passphraseWrapper.appendChild(retryBtn);
     }
   }
 
