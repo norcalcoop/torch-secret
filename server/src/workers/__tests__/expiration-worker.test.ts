@@ -1,11 +1,18 @@
-import { describe, test, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
+import type { MockInstance } from 'vitest';
 import { db } from '../../db/connection.js';
 import { pool } from '../../db/connection.js';
 import { secrets, users } from '../../db/schema.js';
 import { sql, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { hashPassword } from '../../services/password.service.js';
-import { cleanExpiredSecrets } from '../expiration-worker.js';
+import * as cron from 'node-cron';
+import type { Redis } from 'ioredis';
+import {
+  cleanExpiredSecrets,
+  startExpirationWorker,
+  stopExpirationWorker,
+} from '../expiration-worker.js';
 
 // Valid base64-encoded ciphertext for tests
 const VALID_CIPHERTEXT = 'dGVzdCBjaXBoZXJ0ZXh0';
@@ -237,5 +244,78 @@ describe('cleanExpiredSecrets — user-owned secrets (soft-expire)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].ciphertext).toBe(VALID_CIPHERTEXT);
     expect(rows[0].status).toBe('active');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// INFR-02 — distributed lock guard (startExpirationWorker)
+// ---------------------------------------------------------------------------
+describe('INFR-02 — distributed lock guard (startExpirationWorker)', () => {
+  let capturedCallback: (() => Promise<void>) | undefined;
+  let _cronSpy: MockInstance;
+
+  beforeEach(() => {
+    capturedCallback = undefined;
+    _cronSpy = vi.spyOn(cron, 'schedule').mockImplementation((_pattern, cb) => {
+      capturedCallback = cb as () => Promise<void>;
+      return { stop: vi.fn() } as unknown as cron.ScheduledTask;
+    });
+  });
+
+  afterEach(() => {
+    stopExpirationWorker();
+    vi.restoreAllMocks();
+  });
+
+  test('skips cleanup when lock is held by another instance (null reply)', async () => {
+    const mockRedis = {
+      set: vi.fn().mockResolvedValue(null),
+    } as unknown as Redis;
+    const cleanSpy = vi.spyOn(await import('../expiration-worker.js'), 'cleanExpiredSecrets');
+
+    startExpirationWorker(mockRedis);
+    expect(capturedCallback).toBeDefined();
+    await capturedCallback!();
+
+    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'NX', 'EX', 299);
+    expect(cleanSpy).not.toHaveBeenCalled();
+  });
+
+  test('runs cleanup when lock is acquired (OK reply)', async () => {
+    const mockRedis = {
+      set: vi.fn().mockResolvedValue('OK'),
+    } as unknown as Redis;
+    const cleanSpy = vi
+      .spyOn(await import('../expiration-worker.js'), 'cleanExpiredSecrets')
+      .mockResolvedValue(0);
+
+    startExpirationWorker(mockRedis);
+    await capturedCallback!();
+
+    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'NX', 'EX', 299);
+    expect(cleanSpy).toHaveBeenCalledOnce();
+  });
+
+  test('logs warn and skips cleanup when Redis fails mid-flight', async () => {
+    const mockRedis = {
+      set: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+    } as unknown as Redis;
+    const cleanSpy = vi.spyOn(await import('../expiration-worker.js'), 'cleanExpiredSecrets');
+
+    startExpirationWorker(mockRedis);
+    // Must not throw — process survival is the key invariant
+    await expect(capturedCallback!()).resolves.toBeUndefined();
+    expect(cleanSpy).not.toHaveBeenCalled();
+  });
+
+  test('runs cleanup without lock guard when redisClient is undefined', async () => {
+    const cleanSpy = vi
+      .spyOn(await import('../expiration-worker.js'), 'cleanExpiredSecrets')
+      .mockResolvedValue(0);
+
+    startExpirationWorker(undefined);
+    await capturedCallback!();
+
+    expect(cleanSpy).toHaveBeenCalledOnce();
   });
 });
