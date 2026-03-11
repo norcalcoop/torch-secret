@@ -3,12 +3,19 @@ import { env } from './config/env.js';
 import { logger } from './middleware/logger.js';
 import { pool } from './db/connection.js';
 import { startExpirationWorker, stopExpirationWorker } from './workers/expiration-worker.js';
+import { Redis } from 'ioredis';
 
-const app = buildApp();
+// Create Redis client once — shared between rate limiters (via buildApp) and expiration worker
+let redisClient: InstanceType<typeof Redis> | undefined;
+if (env.REDIS_URL) {
+  redisClient = new Redis(env.REDIS_URL);
+}
+
+const app = buildApp(redisClient);
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, 'Torch Secret server started');
-  startExpirationWorker();
+  startExpirationWorker(redisClient);
 });
 
 /**

@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import { toNodeHandler } from 'better-auth/node';
 import {
   cspNonceMiddleware,
@@ -41,14 +41,8 @@ import { env } from './config/env.js';
  * 10. static assets + SPA catch-all (production only, when client/dist exists)
  * 11. errorHandler  -- MUST be last
  */
-export function buildApp() {
+export function buildApp(redisClient?: Redis): express.Application {
   const app = express();
-
-  // Create Redis client for distributed rate limiting (opt-in via REDIS_URL)
-  let redisClient: InstanceType<typeof Redis> | undefined;
-  if (env.REDIS_URL) {
-    redisClient = new Redis(env.REDIS_URL);
-  }
 
   // Trust first proxy hop (enables correct req.ip for rate limiting
   // and req.secure for HTTPS redirect behind reverse proxy)
