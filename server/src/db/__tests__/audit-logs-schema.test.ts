@@ -1,17 +1,19 @@
 /**
- * AUTH-01 — DB-level pgEnum enforcement tests for audit_logs table.
+ * AUTH-01 — DB-level pgEnum enforcement tests for audit_logs table + audit.service.ts.
  *
- * Verifies that the auditEventTypeEnum pgEnum type and audit_logs table
- * are correctly created with the required columns, and that the pgEnum
- * rejects invalid values at the PostgreSQL level.
+ * Verifies:
+ * 1. The auth_event_type pgEnum rejects invalid values at the PostgreSQL level.
+ * 2. The audit_logs table exists with the expected columns.
+ * 3. writeAuditEvent() inserts rows correctly (valid eventType, userId, optional fields).
+ * 4. hashIpForAudit() returns a 64-char hex SHA-256 string.
  *
  * These are integration tests against the real database — no mocks.
  */
 
 import { describe, test, expect, afterAll, afterEach } from 'vitest';
 import { db, pool } from '../connection.js';
-import { users } from '../schema.js';
-import { sql } from 'drizzle-orm';
+import { auditLogs, users } from '../schema.js';
+import { sql, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 afterAll(async () => {
@@ -83,5 +85,111 @@ describe('audit_logs schema enforcement (AUTH-01)', () => {
 
     expect(result.rows).toHaveLength(1);
     expect((result.rows[0] as { event_type: string }).event_type).toBe('sign_in');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeAuditEvent() integration tests (AUTH-01)
+// ---------------------------------------------------------------------------
+
+describe('writeAuditEvent() (AUTH-01)', () => {
+  const TEST_USER_ID_PREFIX = 'audit-service-test-';
+
+  afterEach(async () => {
+    await db.execute(sql`DELETE FROM users WHERE id LIKE ${TEST_USER_ID_PREFIX + '%'}`);
+  });
+
+  async function createTestUser(): Promise<string> {
+    const userId = `${TEST_USER_ID_PREFIX}${nanoid()}`;
+    await db.insert(users).values({
+      id: userId,
+      name: 'audit-service-test',
+      email: `audit-svc-${nanoid()}@test.local`,
+      emailVerified: false,
+    });
+    return userId;
+  }
+
+  test('inserts a row with eventType, userId, ipHash, and userAgent', async () => {
+    const { writeAuditEvent } = await import('../../services/audit.service.js');
+    const userId = await createTestUser();
+
+    await writeAuditEvent({
+      eventType: 'sign_in',
+      userId,
+      ipHash: 'abc123hash',
+      userAgent: 'TestAgent/1.0',
+    });
+
+    const rows = await db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].eventType).toBe('sign_in');
+    expect(rows[0].ipHash).toBe('abc123hash');
+    expect(rows[0].userAgent).toBe('TestAgent/1.0');
+    expect(rows[0].metadata).toBeNull();
+  });
+
+  test('inserts a row with null ipHash and null userAgent (password_reset_requested pattern)', async () => {
+    const { writeAuditEvent } = await import('../../services/audit.service.js');
+    const userId = await createTestUser();
+
+    await writeAuditEvent({
+      eventType: 'password_reset_requested',
+      userId,
+    });
+
+    const rows = await db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].eventType).toBe('password_reset_requested');
+    expect(rows[0].ipHash).toBeNull();
+    expect(rows[0].userAgent).toBeNull();
+  });
+
+  test('inserts a row with metadata JSONB (oauth_connect)', async () => {
+    const { writeAuditEvent } = await import('../../services/audit.service.js');
+    const userId = await createTestUser();
+
+    await writeAuditEvent({
+      eventType: 'oauth_connect',
+      userId,
+      metadata: { provider: 'google' },
+    });
+
+    const rows = await db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].metadata).toMatchObject({ provider: 'google' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hashIpForAudit() unit tests (AUTH-01)
+// ---------------------------------------------------------------------------
+
+describe('hashIpForAudit() (AUTH-01)', () => {
+  test('returns a 64-char hex string (SHA-256 output)', async () => {
+    const { hashIpForAudit } = await import('../../services/audit.service.js');
+
+    const result = hashIpForAudit('1.2.3.4');
+    expect(result).toHaveLength(64);
+    expect(result).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test('returns different hashes for different IPs', async () => {
+    const { hashIpForAudit } = await import('../../services/audit.service.js');
+
+    const hash1 = hashIpForAudit('1.2.3.4');
+    const hash2 = hashIpForAudit('5.6.7.8');
+    expect(hash1).not.toBe(hash2);
+  });
+
+  test('returns same hash for same IP (deterministic)', async () => {
+    const { hashIpForAudit } = await import('../../services/audit.service.js');
+
+    const hash1 = hashIpForAudit('10.0.0.1');
+    const hash2 = hashIpForAudit('10.0.0.1');
+    expect(hash1).toBe(hash2);
   });
 });

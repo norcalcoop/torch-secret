@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, pgEnum, text, timestamp, integer, boolean, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  pgEnum,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  index,
+  jsonb,
+} from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro']);
@@ -8,6 +17,14 @@ export const subscriberStatusEnum = pgEnum('subscriber_status', [
   'pending',
   'confirmed',
   'unsubscribed',
+]);
+
+export const authEventTypeEnum = pgEnum('auth_event_type', [
+  'sign_up',
+  'sign_in',
+  'password_reset_requested',
+  'oauth_connect',
+  'logout',
 ]);
 
 /**
@@ -31,6 +48,7 @@ export const subscriberStatusEnum = pgEnum('subscriber_status', [
  *   Stripe billing:         webhook handler receives stripe_customer_id; activatePro/deactivatePro look up by stripe_customer_id only — no code path joins userId + secretId — Phase 34
  *   Email capture:          marketing_subscribers stores email + GDPR evidence; no userId or secretId column — Phase 36
  *   Loops onboarding:     databaseHooks hook logs only err.message on failure — no userId in Loops error logs — Phase 37
+ *   audit_logs (DB):      audit_logs.user_id is FK to users; no secretId column permitted — Phase 70
  *
  * To extend this list: update INVARIANTS.md first, then update this comment.
  */
@@ -227,3 +245,33 @@ export const marketingSubscribers = pgTable(
 
 export type MarketingSubscriber = typeof marketingSubscribers.$inferSelect;
 export type NewMarketingSubscriber = typeof marketingSubscribers.$inferInsert;
+
+/**
+ * Audit log table: records auth lifecycle events for observability and GDPR compliance.
+ *
+ * Zero-knowledge invariant: this table has NO secretId column.
+ * userId FK is present (cascades on account deletion — all audit rows deleted with account).
+ * ip_hash is SHA-256(IP_HASH_SALT + req.ip) — never stores plain IP.
+ * password_reset_requested events have null ip_hash and user_agent (no req in sendResetPassword).
+ * See INVARIANTS.md for the full enforcement rule (Phase 70).
+ */
+export const auditLogs = pgTable(
+  'audit_logs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    eventType: authEventTypeEnum('event_type').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    ipHash: text('ip_hash'),
+    userAgent: text('user_agent'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('audit_logs_user_id_idx').on(table.userId)],
+);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
