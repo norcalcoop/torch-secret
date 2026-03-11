@@ -149,7 +149,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 - [x] **Phase 65: Quick Wins** — Process stability handlers, GitHub/CI fixes, canonical isSession guard (completed 2026-03-10)
 - [x] **Phase 66: Billing Lifecycle** — Dunning email, subscription sync, verify-checkout fail-closed guard (completed 2026-03-10)
 - [x] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load (completed 2026-03-11)
-- [ ] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration
+- [x] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration (completed 2026-03-11)
 - [ ] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI
 - [ ] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint
 - [ ] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock
@@ -255,7 +255,7 @@ Plans:
 | 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
 | 66. Billing Lifecycle | 3/3 | Complete    | 2026-03-10 | - |
 | 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
-| 68. API & Schema Quality | 2/3 | In Progress|  | - |
+| 68. API & Schema Quality | 3/3 | Complete   | 2026-03-11 | - |
 | 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
 | 70. Auth Observability & GDPR Export | v5.3 | 0/TBD | Not started | - |
 | 71. Infrastructure Hardening | v5.3 | 0/TBD | Not started | - |
