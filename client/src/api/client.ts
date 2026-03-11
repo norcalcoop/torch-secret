@@ -143,11 +143,22 @@ export async function verifySecretPassword(
 }
 
 /**
- * Fetch the authenticated user's secret history (metadata only).
+ * Fetch the authenticated user's secret history (metadata only) with optional pagination.
+ *
+ * @param options.cursor - Opaque cursor from a previous response's nextCursor field
+ * @param options.status - Filter by status; omit or 'all' to return all statuses
+ *
  * Requires an active session cookie — throws ApiError 401 if unauthenticated.
  */
-export async function fetchDashboardSecrets(): Promise<DashboardListResponse> {
-  const res = await fetch('/api/dashboard/secrets');
+export async function fetchDashboardSecrets(options?: {
+  cursor?: string;
+  status?: string;
+}): Promise<DashboardListResponse> {
+  const params = new URLSearchParams();
+  if (options?.cursor) params.set('cursor', options.cursor);
+  if (options?.status && options.status !== 'all') params.set('status', options.status);
+  const qs = params.toString() !== '' ? `?${params.toString()}` : '';
+  const res = await fetch(`/api/dashboard/secrets${qs}`);
   if (!res.ok) {
     throw new ApiError(res.status, await res.json());
   }
