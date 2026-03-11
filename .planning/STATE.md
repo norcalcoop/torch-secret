@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Post-Launch Hardening
 status: executing
-stopped_at: Completed 67-01-PLAN.md
-last_updated: "2026-03-10T23:19:41.496Z"
+stopped_at: Completed 67-02-PLAN.md
+last_updated: "2026-03-11T00:14:20.129Z"
 last_activity: "2026-03-10 — 65-02 complete: fatalHandler, E2E guard, webhook JSON errors, health limiter (SRVR-01, SRVR-02, GH-01, GH-02)"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 67
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-10 after v5.3 milestone started)
 
 ## Current Position
 
-Phase: 65 of 71 (Quick Wins)
-Plan: 02 complete, ready for 65-03
+Phase: 67 of 71 (Bundle Performance)
+Plan: 02 complete, ready for 67-03
 Status: In Progress
-Last activity: 2026-03-10 — 65-02 complete: fatalHandler, E2E guard, webhook JSON errors, health limiter (SRVR-01, SRVR-02, GH-01, GH-02)
+Last activity: 2026-03-10 — 67-02 complete: BNDL-01 retro modules tree-shaken from production bundle via VITE_RETRO_ENABLED env gate
 
-Progress: [███████░░░] 67%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [███████░░░] 67%
 | Phase 66-billing-lifecycle P03 | 2min | 1 tasks | 1 files |
 | Phase 66 P02 | 2 | 2 tasks | 2 files |
 | Phase 67 P01 | 2m | 2 tasks | 5 files |
+| Phase 67-bundle-performance P02 | 20min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -62,7 +63,7 @@ Progress: [███████░░░] 67%
 - DMARC at p=quarantine — promote to p=reject after confirming clean aggregate reports post-launch
 - Redis required in production as of Phase 71 — MemoryStore is dev-only (enforced by Zod schema)
 - Repository is public: https://github.com/norcalcoop/torch-secret; .planning/ and CLAUDE.md are gitignored
-- RETRO_ENABLED=false gate: one-line post-launch re-enable (flip to true in theme-toggle.ts + index.html)
+- BNDL-01 complete: VITE_RETRO_ENABLED env gate — set to 'true' to re-enable retro modules (dynamic import pattern; retro modules absent from prod bundle by default)
 
 ### v5.3 Phase Order
 
@@ -87,7 +88,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T23:19:41.495Z
-Stopped at: Completed 67-01-PLAN.md
+Last session: 2026-03-11T00:14:20.127Z
+Stopped at: Completed 67-02-PLAN.md
 Resume file: None
 Next action: /gsd:plan-phase 65
