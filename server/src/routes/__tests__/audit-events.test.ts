@@ -11,7 +11,7 @@
  * All tests are RED (failing) until Phase 70-03 wires the event hooks.
  */
 
-import { describe, test, expect, beforeEach, afterAll, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterAll, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import type { Express } from 'express';
 import { buildApp } from '../../app.js';
