@@ -273,4 +273,4 @@ Plans:
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
-| 71. Infrastructure Hardening | v5.3 | 0/2 | Not started | - |
+| 71. Infrastructure Hardening | 1/2 | In Progress|  | - |
