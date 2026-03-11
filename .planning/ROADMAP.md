@@ -241,7 +241,13 @@ Plans:
   1. An `audit_logs` table exists in the database with columns `id`, `event_type`, `user_id`, `ip_hash`, `user_agent`, `created_at` — the table has no `secretId` column (ZK-safe by design) and a cascading FK to users
   2. The five auth lifecycle events — `sign_up`, `sign_in`, `password_reset_requested`, `oauth_connect`, `logout` — each write a row to `audit_logs` at the moment the event occurs
   3. An authenticated `GET /api/me/export` request returns a JSON payload containing the user's profile metadata and their audit log entries — no ciphertext is included (secrets are zeroed/deleted at retrieval time)
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 70-01-PLAN.md — Wave 0: RED test scaffolds for audit-logs-schema, audit-events, zk-invariant update, me/export stubs
+- [ ] 70-02-PLAN.md — Wave 1: audit_logs schema + authEventTypeEnum + migration + audit.service.ts
+- [ ] 70-03-PLAN.md — Wave 2a: event wiring in auth.ts (sign_up, oauth_connect, password_reset_requested, sign_in, logout)
+- [ ] 70-04-PLAN.md — Wave 2b: GET /api/me/export route on meRouter
 
 ### Phase 71: Infrastructure Hardening
 **Goal**: Redis is enforced as a production requirement rather than an optional convenience, and the expiration worker acquires a distributed lock so horizontal scaling does not cause duplicate cleanup runs
@@ -262,5 +268,5 @@ Plans:
 | 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
-| 70. Auth Observability & GDPR Export | v5.3 | 0/TBD | Not started | - |
+| 70. Auth Observability & GDPR Export | v5.3 | 0/4 | Not started | - |
 | 71. Infrastructure Hardening | v5.3 | 0/TBD | Not started | - |
