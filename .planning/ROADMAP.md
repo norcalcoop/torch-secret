@@ -257,7 +257,11 @@ Plans:
   1. Starting the server in `NODE_ENV=production` without `REDIS_URL` set causes Zod env validation to fail at startup — the server does not start with MemoryStore in production
   2. The expiration worker attempts to acquire a Redis `SET NX EX 299` lock before each cleanup run — if the lock is already held by another instance, the worker skips that run rather than performing duplicate DB deletes
   3. `.env.example` documents `REDIS_URL` as required in production with a clear comment explaining that MemoryStore is dev-only
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 71-01-PLAN.md — INFR-01: env guard Zod refine + REDIS_URL production tests + .env.example update
+- [ ] 71-02-PLAN.md — INFR-02: Redis client threading (server.ts → app.ts → worker) + distributed lock guard + tests
 
 ## Progress
 
@@ -269,4 +273,4 @@ Plans:
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
-| 71. Infrastructure Hardening | v5.3 | 0/TBD | Not started | - |
+| 71. Infrastructure Hardening | v5.3 | 0/2 | Not started | - |
