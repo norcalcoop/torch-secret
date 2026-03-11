@@ -25,6 +25,30 @@ export function validateBody<T>(schema: ZodType<T>) {
 }
 
 /**
+ * Express middleware factory that validates query string params against a Zod schema.
+ *
+ * On validation failure: responds 400 with structured error details.
+ * On success: replaces req.validatedQuery with parsed (type-safe, defaulted) data and calls next().
+ */
+export function validateQuery<T>(schema: ZodType<T>) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      res.status(400).json({
+        error: 'validation_error',
+        details: result.error.flatten(),
+      });
+      return;
+    }
+
+    // Attach parsed data — cast needed because Express types req.query as ParsedQs
+    (req as Request & { validatedQuery: T }).validatedQuery = result.data;
+    next();
+  };
+}
+
+/**
  * Express middleware factory that validates request params against a Zod schema.
  *
  * On validation failure: responds 400 with structured error details.

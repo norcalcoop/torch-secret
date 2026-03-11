@@ -100,7 +100,16 @@ export interface DashboardSecretItem {
 /** Response from GET /api/dashboard/secrets */
 export interface DashboardListResponse {
   secrets: DashboardSecretItem[];
+  nextCursor: string | null;
 }
+
+/** Query params schema for GET /api/dashboard/secrets (API-02 cursor pagination) */
+export const DashboardQuerySchema = z.object({
+  cursor: z.string().optional(),
+  status: z.enum(['all', 'active', 'viewed', 'expired', 'deleted']).optional().default('all'),
+});
+
+export type DashboardQuery = z.infer<typeof DashboardQuerySchema>;
 
 /** Response from DELETE /api/dashboard/secrets/:id on success */
 export interface DashboardDeleteResponse {
