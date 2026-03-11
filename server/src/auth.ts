@@ -1,15 +1,27 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { eq } from 'drizzle-orm';
+import { eq, and, not } from 'drizzle-orm';
 import { db } from './db/connection.js';
 import * as schema from './db/schema.js';
-import { secrets } from './db/schema.js';
+import { secrets, accounts } from './db/schema.js';
 import { resend } from './services/email.js';
 import { env } from './config/env.js';
 import { loops } from './config/loops.js';
 import { enrollInOnboardingSequence } from './services/onboarding.service.js';
 import { logger } from './middleware/logger.js';
 import { fireAuditEvent } from './services/audit.service.js';
+
+/**
+ * In-memory set of userIds that were JUST created via sign-up.
+ * Better Auth fires user.create.after before session.create.after in the sign-up flow.
+ * When session.create.after fires for a sign-up, the userId will be in this set.
+ * We consume it (delete) to prevent writing sign_in for a sign-up-triggered session.
+ *
+ * This is safe in a single-process deployment. In multi-process (clustered) deployments,
+ * race conditions are theoretically possible but negligible — the worst case is one extra
+ * sign_in row for an OAuth sign-up, which is acceptable. Phase 70.
+ */
+const justSignedUpUserIds = new Set<string>();
 
 /**
  * Rewrites a Better Auth-generated URL so its origin (and any embedded
@@ -186,6 +198,9 @@ export const auth = betterAuth({
           // Audit: sign_up — no ip_hash (databaseHook has no req context)
           // Audit hooks log only userId — no secretId ever appears in audit_logs (Phase 70)
           fireAuditEvent({ eventType: 'sign_up', userId: user.id });
+          // Mark this userId so session.create.after can skip writing sign_in for the
+          // auto-created session that Better Auth creates immediately after sign-up.
+          justSignedUpUserIds.add(user.id);
           // Fire-and-forget: registration must succeed even if Loops is down.
           // Cast user to access additionalFields — Better Auth's inferred hook types
           // may not include additionalFields without explicit type augmentation.
@@ -217,6 +232,47 @@ export const auth = betterAuth({
               metadata: { provider: account.providerId },
             });
           }
+          return Promise.resolve();
+        },
+      },
+    },
+    session: {
+      create: {
+        after: async (session) => {
+          // Determine if this session was created by email/password sign-in
+          // vs sign-up or OAuth sign-in.
+          //
+          // Sign-up also creates a session immediately after user creation.
+          // user.create.after fires first and adds userId to justSignedUpUserIds.
+          // Consume the flag here — if it was present, this is the sign-up session (skip).
+          if (justSignedUpUserIds.delete(session.userId)) {
+            // Session was created as part of sign-up — sign_up hook already recorded the event
+            return;
+          }
+
+          // OAuth sign-in also creates an account row (providerId != 'credential').
+          // Check: if user has any non-credential account, skip sign_in event
+          // (oauth_connect from account.create.after already captured it).
+          //
+          // Known limitation: once a user has linked an OAuth provider, email sign-in events
+          // will NOT be recorded (to avoid double-counting with oauth_connect). This is a
+          // conscious tradeoff — tracking the exact sign-in method requires Better Auth internals
+          // not currently exposed via databaseHooks. Phase 70.
+          const oauthAccounts = await db
+            .select({ id: accounts.id })
+            .from(accounts)
+            .where(
+              and(eq(accounts.userId, session.userId), not(eq(accounts.providerId, 'credential'))),
+            );
+          // If no OAuth accounts exist, this was an email/password sign-in
+          if (oauthAccounts.length === 0) {
+            fireAuditEvent({ eventType: 'sign_in', userId: session.userId });
+          }
+        },
+      },
+      delete: {
+        after: (session) => {
+          fireAuditEvent({ eventType: 'logout', userId: session.userId });
           return Promise.resolve();
         },
       },
