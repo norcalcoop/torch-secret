@@ -65,7 +65,7 @@ export function startExpirationWorker(redisClient?: Redis): void {
     // Lock guard — own try/catch so Redis errors get warn (not error) level
     if (redisClient) {
       try {
-        const lockResult = await redisClient.set('expiration-lock', '1', 'NX', 'EX', 299);
+        const lockResult = await redisClient.set('expiration-lock', '1', 'EX', 299, 'NX');
         if (lockResult === null) {
           logger.debug({}, 'Expiration worker skipped: lock held by another instance');
           return;

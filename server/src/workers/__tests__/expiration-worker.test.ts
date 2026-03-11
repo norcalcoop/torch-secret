@@ -277,7 +277,7 @@ describe('INFR-02 — distributed lock guard (startExpirationWorker)', () => {
     await capturedCallback!();
 
     // Lock check fired with correct args
-    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'NX', 'EX', 299);
+    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'EX', 299, 'NX');
     // Callback resolved without error (lock held → early return → no DB work)
   });
 
@@ -290,7 +290,7 @@ describe('INFR-02 — distributed lock guard (startExpirationWorker)', () => {
     // Lock acquired → cleanup runs. DB connection exists in test env so no throw expected.
     await expect(capturedCallback!()).resolves.toBeUndefined();
 
-    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'NX', 'EX', 299);
+    expect(mockRedis.set).toHaveBeenCalledWith('expiration-lock', '1', 'EX', 299, 'NX');
   });
 
   test('logs warn and skips cleanup when Redis fails mid-flight', async () => {
