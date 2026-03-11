@@ -148,7 +148,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 
 - [x] **Phase 65: Quick Wins** — Process stability handlers, GitHub/CI fixes, canonical isSession guard (completed 2026-03-10)
 - [x] **Phase 66: Billing Lifecycle** — Dunning email, subscription sync, verify-checkout fail-closed guard (completed 2026-03-10)
-- [ ] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load
+- [x] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load (completed 2026-03-11)
 - [ ] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration
 - [ ] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI
 - [ ] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint
@@ -211,7 +211,12 @@ Plans:
   1. When `getSecretMeta()` encounters a row where `expiresAt <= now`, it deletes the row and returns the same not-found response as if the secret never existed — no stale expired rows accumulate from meta-only lookups
   2. The billing route and `/api/me` endpoint query the database projecting only `stripeCustomerId` — no full user row is fetched and transmitted for operations that need only the customer ID
   3. `secrets.status` and `marketingSubscribers.status` columns are backed by Postgres `pgEnum` types — inserting an invalid status value is rejected at the database level; a migration applies the change without data loss
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 68-01-PLAN.md — Wave 0 test scaffolding: RED tests for getSecretMeta() expired-row cleanup
+- [ ] 68-02-PLAN.md — API-01 + API-03: getSecretMeta() cleanup + select projection fixes
+- [ ] 68-03-PLAN.md — QUAL-01: pgEnum schema declarations and migration
 
 ### Phase 69: Dashboard Pagination
 **Goal**: The dashboard secret list supports cursor-based pagination so users with many secrets are not forced to load the full history in a single response
@@ -249,7 +254,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
 | 66. Billing Lifecycle | 3/3 | Complete    | 2026-03-10 | - |
-| 67. Bundle Performance | 2/3 | In Progress|  | - |
+| 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
 | 68. API & Schema Quality | v5.3 | 0/TBD | Not started | - |
 | 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
 | 70. Auth Observability & GDPR Export | v5.3 | 0/TBD | Not started | - |
