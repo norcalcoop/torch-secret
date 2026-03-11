@@ -11,11 +11,15 @@
  *   else         → '30d'
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { roundToNearestExpiry, renderSecretsTable } from './dashboard.js';
+import type { DashboardSecretItem } from '../../../shared/types/api.js';
 
-// roundToNearestExpiry is not yet exported from dashboard.ts — tests will be RED (Plan 05 makes them GREEN).
-
-import { roundToNearestExpiry } from './dashboard.js';
+// Mock the API client for dashboard rendering tests
+vi.mock('../api/client.js', () => ({
+  fetchDashboardSecrets: vi.fn(),
+  deleteDashboardSecret: vi.fn(),
+}));
 
 describe('roundToNearestExpiry', () => {
   it('rounds exactly 1h → "1h"', () => {
@@ -49,19 +53,43 @@ describe('roundToNearestExpiry', () => {
 
 // ---------------------------------------------------------------------------
 // Load More button visibility (API-02)
-// renderSecretsTable will be exported in Plan 03 — these stubs are RED until then.
 // ---------------------------------------------------------------------------
+
+function makeFakeSecrets(count: number): DashboardSecretItem[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `secret-id-${i.toString().padStart(3, '0')}`,
+    label: `Secret ${i.toString()}`,
+    createdAt: new Date(Date.now() - i * 1000).toISOString(),
+    expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+    status: 'active' as const,
+    notify: false,
+    viewedAt: null,
+  }));
+}
+
 describe('Load More button visibility (API-02)', () => {
-  it('Load More button is hidden when nextCursor is null', async () => {
-    // Will be implemented when renderSecretsTable is exported (Plan 03)
-    // For now: assert that renderSecretsTable export exists
-    const mod = await import('./dashboard.js');
-    expect(typeof (mod as Record<string, unknown>)['renderSecretsTable']).toBe('function');
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('Load More button is visible when nextCursor is non-null', async () => {
-    // Will be implemented when renderSecretsTable is exported (Plan 03)
-    const mod = await import('./dashboard.js');
-    expect(typeof (mod as Record<string, unknown>)['renderSecretsTable']).toBe('function');
+  it('Load More button is hidden when nextCursor is null', () => {
+    const container = document.createElement('div');
+    renderSecretsTable(container, makeFakeSecrets(5), null);
+    // Button must exist in DOM but be hidden
+    const buttons = Array.from(container.querySelectorAll('button')).filter((b) =>
+      b.textContent?.toLowerCase().includes('load more'),
+    );
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].style.display).toBe('none');
+  });
+
+  it('Load More button is visible when nextCursor is non-null', () => {
+    const container = document.createElement('div');
+    renderSecretsTable(container, makeFakeSecrets(20), 'cursor-abc123');
+    const buttons = Array.from(container.querySelectorAll('button')).filter((b) =>
+      b.textContent?.toLowerCase().includes('load more'),
+    );
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].style.display).not.toBe('none');
   });
 });
