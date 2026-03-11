@@ -4,8 +4,8 @@ milestone: v5.3
 milestone_name: Post-Launch Hardening
 status: executing
 stopped_at: Completed 69-03-PLAN.md
-last_updated: "2026-03-11T13:47:04.347Z"
-last_activity: "2026-03-11 — 68-03 complete: secretStatusEnum + subscriberStatusEnum pgEnum migration; Drizzle bug #4147 split (0007 CREATE TYPE, 0008 ALTER COLUMN); QUAL-01 done; 611 tests GREEN"
+last_updated: "2026-03-11T15:16:13.564Z"
+last_activity: "2026-03-11 — 69-03 complete: fetchDashboardSecrets cursor/status options, renderSecretsTable exported with Load More button, filterSecrets() removed, API-02 done; 632 tests GREEN"
 progress:
   total_phases: 7
   completed_phases: 5
