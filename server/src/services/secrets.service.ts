@@ -157,9 +157,13 @@ export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
  * Non-destructive metadata check for a secret.
  *
  * Returns whether the secret requires a password and how many
- * password attempts remain. Does NOT consume or modify the secret.
+ * password attempts remain.
  *
- * Returns null if the secret does not exist.
+ * Expired secrets are opportunistically cleaned up (mirrors retrieveAndDestroy):
+ * - Anonymous: hard-deleted after ciphertext is zeroed
+ * - User-owned: ciphertext zeroed and status set to 'expired' (row preserved for dashboard history)
+ *
+ * Returns null if the secret does not exist or has expired.
  */
 export async function getSecretMeta(id: string): Promise<{
   requiresPassword: boolean;
@@ -170,6 +174,8 @@ export async function getSecretMeta(id: string): Promise<{
       passwordHash: secrets.passwordHash,
       passwordAttempts: secrets.passwordAttempts,
       expiresAt: secrets.expiresAt,
+      userId: secrets.userId,
+      ciphertext: secrets.ciphertext,
     })
     .from(secrets)
     .where(eq(secrets.id, id));
@@ -179,8 +185,20 @@ export async function getSecretMeta(id: string): Promise<{
   }
 
   // Expiration guard: treat expired secrets as not-found (SECR-07 anti-enumeration)
-  // No inline cleanup here (no transaction context) -- worker or next retrieval will clean up
+  // Opportunistically clean up the expired row (no transaction wrapper — cleanup is idempotent)
   if (secret.expiresAt <= new Date()) {
+    // Zero ciphertext first (data remanence mitigation — matches retrieveAndDestroy pattern)
+    await db
+      .update(secrets)
+      .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+      .where(eq(secrets.id, id));
+    if (secret.userId !== null) {
+      // User-owned: soft-expire — preserve row for dashboard history
+      await db.update(secrets).set({ status: 'expired' }).where(eq(secrets.id, id));
+    } else {
+      // Anonymous: hard-delete
+      await db.delete(secrets).where(eq(secrets.id, id));
+    }
     return null;
   }
 
