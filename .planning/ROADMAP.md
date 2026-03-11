@@ -226,7 +226,12 @@ Plans:
   1. `GET /api/dashboard/secrets` accepts an optional `cursor` query parameter and returns at most a defined page size of secrets plus a `nextCursor` field in the response body
   2. When more secrets exist beyond the current page, a "Load more" control is visible on the dashboard — clicking it fetches the next page and appends the results below the existing list without a full-page reload
   3. When no further secrets exist, `nextCursor` is null and the "Load more" control is hidden
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 69-01-PLAN.md — Wave 1: RED test scaffolds for server pagination + client Load More button; fix breaking `{ secrets: [] }` assertion
+- [ ] 69-02-PLAN.md — Wave 2: Server implementation — DashboardQuerySchema, validateQuery(), getUserSecrets() cursor pagination, route update
+- [ ] 69-03-PLAN.md — Wave 3: Client implementation — fetchDashboardSecrets() options, renderSecretsTable() server-driven tabs + Load More button
 
 ### Phase 70: Auth Observability & GDPR Export
 **Goal**: Auth events are durably recorded in an audit log table and users can export their own data as required by GDPR Article 20
@@ -256,6 +261,6 @@ Plans:
 | 66. Billing Lifecycle | 3/3 | Complete    | 2026-03-10 | - |
 | 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
-| 69. Dashboard Pagination | v5.3 | 0/TBD | Not started | - |
+| 69. Dashboard Pagination | v5.3 | 0/3 | Not started | - |
 | 70. Auth Observability & GDPR Export | v5.3 | 0/TBD | Not started | - |
 | 71. Infrastructure Hardening | v5.3 | 0/TBD | Not started | - |
