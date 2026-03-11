@@ -3,6 +3,12 @@ import { pgTable, pgEnum, text, timestamp, integer, boolean, index } from 'drizz
 import { nanoid } from 'nanoid';
 
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro']);
+export const secretStatusEnum = pgEnum('secret_status', ['active', 'viewed', 'expired', 'deleted']);
+export const subscriberStatusEnum = pgEnum('subscriber_status', [
+  'pending',
+  'confirmed',
+  'unsubscribed',
+]);
 
 /**
  * ZERO-KNOWLEDGE INVARIANT — canonical rule (see also CLAUDE.md and INVARIANTS.md)
@@ -148,7 +154,7 @@ export const secrets = pgTable(
 
     /** Lifecycle status. 'active' = unviewed; 'viewed' = consumed; 'expired' = past expiresAt;
      *  'deleted' = owner pre-deleted via dashboard. User-owned rows soft-delete; anonymous rows hard-delete. */
-    status: text('status').notNull().default('active'),
+    status: secretStatusEnum('status').notNull().default('active'),
 
     /** Timestamp when secret was viewed and consumed. NULL until viewed. */
     viewedAt: timestamp('viewed_at', { withTimezone: true }),
@@ -194,8 +200,7 @@ export const marketingSubscribers = pgTable(
       .primaryKey()
       .$defaultFn(() => nanoid()),
     email: text('email').notNull().unique(),
-    /** 'pending' | 'confirmed' | 'unsubscribed' */
-    status: text('status').notNull().default('pending'),
+    status: subscriberStatusEnum('status').notNull().default('pending'),
     /** 21-char nanoid — cleared after confirmation; NULL if confirmed or unsubscribed */
     confirmationToken: text('confirmation_token'),
     /** Expiry for confirmationToken (24h from creation) */

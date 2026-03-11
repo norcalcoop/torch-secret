@@ -353,7 +353,7 @@ export async function getUserSecrets(userId: string): Promise<
     label: string | null;
     createdAt: Date;
     expiresAt: Date;
-    status: string;
+    status: 'active' | 'viewed' | 'expired' | 'deleted';
     notify: boolean;
     viewedAt: Date | null;
   }[]
