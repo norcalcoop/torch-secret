@@ -46,3 +46,22 @@ describe('roundToNearestExpiry', () => {
     expect(roundToNearestExpiry('2026-01-01T00:00:00Z', '2026-01-31T00:00:00Z')).toBe('30d');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Load More button visibility (API-02)
+// renderSecretsTable will be exported in Plan 03 — these stubs are RED until then.
+// ---------------------------------------------------------------------------
+describe('Load More button visibility (API-02)', () => {
+  it('Load More button is hidden when nextCursor is null', async () => {
+    // Will be implemented when renderSecretsTable is exported (Plan 03)
+    // For now: assert that renderSecretsTable export exists
+    const mod = await import('./dashboard.js');
+    expect(typeof (mod as Record<string, unknown>)['renderSecretsTable']).toBe('function');
+  });
+
+  it('Load More button is visible when nextCursor is non-null', async () => {
+    // Will be implemented when renderSecretsTable is exported (Plan 03)
+    const mod = await import('./dashboard.js');
+    expect(typeof (mod as Record<string, unknown>)['renderSecretsTable']).toBe('function');
+  });
+});
