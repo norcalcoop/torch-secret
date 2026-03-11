@@ -47,6 +47,13 @@ const EnvSchema = z
     message:
       'E2E_TEST=true is only permitted when NODE_ENV=test. Refusing to start to prevent rate-limit bypass on non-test environments.',
     path: ['E2E_TEST'],
+  })
+  // INFR-01: Redis is required in production. MemoryStore is not shared across instances
+  // and breaks rate limiting correctness under horizontal scaling.
+  .refine((data) => !(data.NODE_ENV === 'production' && !data.REDIS_URL), {
+    message:
+      'REDIS_URL is required in production. MemoryStore is dev-only and unsafe for multi-instance deployments.',
+    path: ['REDIS_URL'],
   });
 
 export type Env = z.infer<typeof EnvSchema>;
