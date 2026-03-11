@@ -151,7 +151,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 - [x] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load (completed 2026-03-11)
 - [x] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration (completed 2026-03-11)
 - [x] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI (completed 2026-03-11)
-- [ ] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint
+- [x] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint (completed 2026-03-11)
 - [ ] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock
 
 ## Phase Details
@@ -268,5 +268,5 @@ Plans:
 | 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
-| 70. Auth Observability & GDPR Export | 3/4 | In Progress|  | - |
+| 70. Auth Observability & GDPR Export | 4/4 | Complete   | 2026-03-11 | - |
 | 71. Infrastructure Hardening | v5.3 | 0/TBD | Not started | - |
