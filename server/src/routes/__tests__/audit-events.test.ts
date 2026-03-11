@@ -86,7 +86,9 @@ async function cleanupTestUsers(emailPattern: string): Promise<void> {
 
 describe('AUTH-02 — audit event writes', () => {
   const EMAIL_PREFIX = 'audit-events-test-';
-  const makeEmail = () => `${EMAIL_PREFIX}${nanoid()}@test.local`;
+  // Better Auth normalizes emails to lowercase before storing.
+  // nanoid() can produce uppercase letters — toLowerCase() ensures the query matches the stored value.
+  const makeEmail = () => `${EMAIL_PREFIX}${nanoid().toLowerCase()}@test.local`;
   const PASSWORD = 'AuditTest99!';
 
   afterEach(async () => {
@@ -149,8 +151,9 @@ describe('AUTH-02 — audit event writes', () => {
     const userId = userRow.id;
 
     // Trigger password reset request
+    // Better Auth 1.x endpoint is /api/auth/request-password-reset (not /forget-password)
     await request(app)
-      .post('/api/auth/forget-password')
+      .post('/api/auth/request-password-reset')
       .send({ email, redirectTo: 'http://localhost/reset-password' });
 
     const result = await db.execute(sql`

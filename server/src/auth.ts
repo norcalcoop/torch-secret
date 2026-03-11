@@ -9,6 +9,7 @@ import { env } from './config/env.js';
 import { loops } from './config/loops.js';
 import { enrollInOnboardingSequence } from './services/onboarding.service.js';
 import { logger } from './middleware/logger.js';
+import { fireAuditEvent } from './services/audit.service.js';
 
 /**
  * Rewrites a Better Auth-generated URL so its origin (and any embedded
@@ -74,6 +75,9 @@ export const auth = betterAuth({
     requireEmailVerification: env.NODE_ENV !== 'test',
     minPasswordLength: 8,
     sendResetPassword: ({ user, url }) => {
+      // Audit: password_reset_requested — no ip_hash (no req object in this callback)
+      // Audit hooks log only userId — no secretId ever appears in audit_logs (Phase 70)
+      fireAuditEvent({ eventType: 'password_reset_requested', userId: user.id });
       // void fires email without awaiting — avoids timing attacks that leak email existence
       void resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
@@ -179,6 +183,9 @@ export const auth = betterAuth({
     user: {
       create: {
         after: (user) => {
+          // Audit: sign_up — no ip_hash (databaseHook has no req context)
+          // Audit hooks log only userId — no secretId ever appears in audit_logs (Phase 70)
+          fireAuditEvent({ eventType: 'sign_up', userId: user.id });
           // Fire-and-forget: registration must succeed even if Loops is down.
           // Cast user to access additionalFields — Better Auth's inferred hook types
           // may not include additionalFields without explicit type augmentation.
@@ -195,6 +202,21 @@ export const auth = betterAuth({
               'Loops onboarding enrollment failed',
             );
           });
+          return Promise.resolve();
+        },
+      },
+    },
+    account: {
+      create: {
+        after: (account) => {
+          // Only fire for OAuth accounts — skip email/password ('credential') provider
+          if (account.providerId !== 'credential') {
+            fireAuditEvent({
+              eventType: 'oauth_connect',
+              userId: account.userId,
+              metadata: { provider: account.providerId },
+            });
+          }
           return Promise.resolve();
         },
       },
