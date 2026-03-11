@@ -122,3 +122,55 @@ describe('DELETE /api/me', () => {
     await request(app).get('/api/me').set('Cookie', cookie).expect(401);
   });
 });
+
+// ---------------------------------------------------------------------------
+// GET /api/me/export — GDPR-01: user data export
+// ---------------------------------------------------------------------------
+describe('GET /api/me/export', () => {
+  test('returns 401 without authentication', async () => {
+    await request(app).get('/api/me/export').expect(401);
+  });
+
+  test('returns exportedAt, profile, and auditLog for authenticated user', async () => {
+    const cookie = await createAuthenticatedSession(app, 'export-test@test.local', 'password123');
+
+    const res = await request(app).get('/api/me/export').set('Cookie', cookie).expect(200);
+
+    expect(typeof res.body.exportedAt).toBe('string');
+    expect(res.body.profile).toHaveProperty('id');
+    expect(res.body.profile).toHaveProperty('email', 'export-test@test.local');
+    expect(res.body.profile).toHaveProperty('subscriptionTier', 'free');
+    expect(Array.isArray(res.body.auditLog)).toBe(true);
+  });
+
+  test('profile excludes stripeCustomerId', async () => {
+    const cookie = await createAuthenticatedSession(
+      app,
+      'export-stripe-test@test.local',
+      'password123',
+    );
+
+    const res = await request(app).get('/api/me/export').set('Cookie', cookie).expect(200);
+
+    expect(res.body.profile.stripeCustomerId).toBeUndefined();
+  });
+
+  test('auditLog sorted newest-first', async () => {
+    const cookie = await createAuthenticatedSession(
+      app,
+      'export-sort-test@test.local',
+      'password123',
+    );
+
+    const res = await request(app).get('/api/me/export').set('Cookie', cookie).expect(200);
+
+    const auditLog = res.body.auditLog as Array<{ created_at: string }>;
+    expect(Array.isArray(auditLog)).toBe(true);
+    // If two or more entries exist, verify descending order
+    if (auditLog.length >= 2) {
+      const first = new Date(auditLog[0].created_at).getTime();
+      const second = new Date(auditLog[1].created_at).getTime();
+      expect(first).toBeGreaterThanOrEqual(second);
+    }
+  });
+});
