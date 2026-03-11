@@ -134,7 +134,11 @@ billingRouter.get('/verify-checkout', requireAuth, async (req, res) => {
 
 billingRouter.post('/portal', requireAuth, async (_req, res) => {
   const user = res.locals.user as AuthUser;
-  const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
+  // Project only the column we need — avoid select-star on user rows.
+  const [dbUser] = await db
+    .select({ stripeCustomerId: users.stripeCustomerId })
+    .from(users)
+    .where(eq(users.id, user.id));
 
   if (!dbUser?.stripeCustomerId) {
     res.status(404).json({ error: 'no_subscription' });

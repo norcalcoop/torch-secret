@@ -111,7 +111,7 @@ export interface DashboardDeleteResponse {
 // Phase 34: Stripe Pro Billing
 // ---------------------------------------------------------------------------
 
-/** Response from GET /api/me — includes subscription tier (Phase 34) */
+/** Response from GET /api/me — includes subscription tier and Stripe customer ID (Phase 34, 68) */
 export interface MeResponse {
   user: {
     id: string;
@@ -121,6 +121,7 @@ export interface MeResponse {
     image: string | null;
     createdAt: string; // ISO string
     subscriptionTier: 'free' | 'pro';
+    stripeCustomerId: string | null;
   };
 }
 

@@ -19,7 +19,10 @@ export const meRouter = Router();
  * type does not include custom schema columns (stripe_customer_id, subscription_tier).
  * See Research.md Pitfall 4 for details.
  *
- * Response: { user: { id, email, name, emailVerified, image, createdAt, subscriptionTier } }
+ * Response: { user: { id, email, name, emailVerified, image, createdAt, subscriptionTier, stripeCustomerId } }
+ *
+ * Returns 401 if the DB user row is missing (race condition defense — account deleted
+ * between session validation and DB lookup).
  *
  * ZERO-KNOWLEDGE INVARIANT: Returns userId (user.id).
  * MUST NOT include secretId in the response body. See INVARIANTS.md.
@@ -28,8 +31,20 @@ export const meRouter = Router();
 meRouter.get('/', requireAuth, async (_req, res) => {
   const user = res.locals.user as AuthUser;
 
-  // Fetch from DB to get subscriptionTier (not available on Better Auth session user)
-  const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
+  // Project only the columns we need — avoid select-star on user rows.
+  const [dbUser] = await db
+    .select({
+      subscriptionTier: users.subscriptionTier,
+      stripeCustomerId: users.stripeCustomerId,
+    })
+    .from(users)
+    .where(eq(users.id, user.id));
+
+  // Null guard: dbUser missing means account was deleted between session validation and DB lookup
+  if (!dbUser) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
 
   res.json({
     user: {
@@ -39,7 +54,8 @@ meRouter.get('/', requireAuth, async (_req, res) => {
       emailVerified: user.emailVerified,
       image: user.image,
       createdAt: user.createdAt,
-      subscriptionTier: dbUser?.subscriptionTier ?? 'free',
+      subscriptionTier: dbUser.subscriptionTier,
+      stripeCustomerId: dbUser.stripeCustomerId,
     },
   });
 });
