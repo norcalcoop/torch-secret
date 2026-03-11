@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/require-auth.js';
-import { validateParams } from '../middleware/validate.js';
-import { SecretIdParamSchema } from '../../../shared/types/api.js';
+import { validateParams, validateQuery } from '../middleware/validate.js';
+import { SecretIdParamSchema, DashboardQuerySchema } from '../../../shared/types/api.js';
 import { getUserSecrets, deleteUserSecret } from '../services/secrets.service.js';
 import type { AuthUser } from '../auth.js';
 
@@ -23,13 +23,47 @@ export function createDashboardRouter() {
 
   /**
    * GET /api/dashboard/secrets
-   * Returns the authenticated user's secret history (metadata only).
+   * Returns the authenticated user's secret history (metadata only) with cursor pagination.
+   * Supports ?cursor=<opaque> and ?status=<active|viewed|expired|deleted|all>.
    * Never returns ciphertext, passwordHash, or encryption keys (DASH-05).
    */
-  router.get('/secrets', async (_req, res) => {
+  router.get('/secrets', validateQuery(DashboardQuerySchema), async (req, res) => {
     const user = res.locals.user as AuthUser;
-    const secretsList = await getUserSecrets(user.id);
-    res.status(200).json({ secrets: secretsList });
+    const { cursor, status } = (
+      req as typeof req & { validatedQuery: { cursor?: string; status: string } }
+    ).validatedQuery;
+
+    // Validate cursor decodability if provided (route is the guard layer — 400 on bad cursor)
+    if (cursor !== undefined) {
+      try {
+        const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8')) as unknown;
+        if (
+          typeof decoded !== 'object' ||
+          decoded === null ||
+          !('id' in decoded) ||
+          typeof (decoded as Record<string, unknown>).id !== 'string' ||
+          !('createdAt' in decoded) ||
+          typeof (decoded as Record<string, unknown>).createdAt !== 'string'
+        ) {
+          res
+            .status(400)
+            .json({ error: 'validation_error', details: { cursor: 'Invalid cursor format' } });
+          return;
+        }
+      } catch {
+        res
+          .status(400)
+          .json({ error: 'validation_error', details: { cursor: 'Invalid cursor format' } });
+        return;
+      }
+    }
+
+    const result = await getUserSecrets(user.id, {
+      cursor,
+      status: status as 'all' | 'active' | 'viewed' | 'expired' | 'deleted',
+    });
+
+    res.status(200).json({ secrets: result.secrets, nextCursor: result.nextCursor });
   });
 
   /**
