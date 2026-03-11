@@ -152,7 +152,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 - [x] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration (completed 2026-03-11)
 - [x] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI (completed 2026-03-11)
 - [x] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint (completed 2026-03-11)
-- [ ] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock
+- [x] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock (completed 2026-03-11)
 
 ## Phase Details
 
@@ -273,4 +273,4 @@ Plans:
 | 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
-| 71. Infrastructure Hardening | 1/2 | In Progress|  | - |
+| 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
