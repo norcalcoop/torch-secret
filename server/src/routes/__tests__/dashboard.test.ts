@@ -234,7 +234,7 @@ describe('GET /api/dashboard/secrets — authenticated', () => {
       .update(secrets)
       .set({ createdAt: new Date(Date.now() - 5000) })
       .where(eq(secrets.id, id1));
-    const _id2 = await insertTestSecret({ userId: userAId, label: 'Second' });
+    await insertTestSecret({ userId: userAId, label: 'Second' });
 
     const res = await request(app)
       .get('/api/dashboard/secrets')
