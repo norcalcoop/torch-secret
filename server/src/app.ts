@@ -12,7 +12,7 @@ import {
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createSecretsRouter } from './routes/secrets.js';
-import { healthRouter } from './routes/health.js';
+import { createHealthRouter } from './routes/health.js';
 import { auth } from './auth.js';
 import { meRouter } from './routes/me.js';
 import { createDashboardRouter } from './routes/dashboard.js';
@@ -103,7 +103,7 @@ export function buildApp(redisClient?: Redis): Express {
   app.use(express.json({ limit: '100kb' }));
 
   // Health check -- before rate-limited routes
-  app.use('/api/health', healthRouter);
+  app.use('/api/health', createHealthRouter(redisClient));
 
   // Mount API routes (factory creates fresh router + rate limiter per app)
   app.use('/api/secrets', createSecretsRouter(redisClient));
