@@ -79,10 +79,6 @@ vi.mock('../crypto/index.js', () => ({
   }),
 }));
 
-vi.mock('../crypto/passphrase.js', () => ({
-  EFF_WORDS: ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb'],
-}));
-
 vi.mock('../crypto/word-lists.js', () => ({
   TECH_WORDS: ['alpha', 'beta', 'gamma'],
   NATURE_WORDS: ['oak', 'elm', 'ash'],
@@ -92,6 +88,12 @@ vi.mock('../crypto/word-lists.js', () => ({
 let container: HTMLDivElement;
 
 beforeEach(() => {
+  vi.resetModules();
+  vi.doMock('../crypto/passphrase.js', () => ({
+    EFF_WORDS: ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb'],
+    generatePassphrase: vi.fn().mockReturnValue('word-word-word-word-word'),
+  }));
+
   container = document.createElement('div');
   container.id = 'app';
   document.body.appendChild(container);

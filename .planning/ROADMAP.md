@@ -9,7 +9,7 @@
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 - ✅ **v5.1 Email Infrastructure** — Phases 46-53 (complete 2026-03-06)
 - ✅ **v5.2 Tech Debt & Launch Prep** — Phases 54-63 (complete 2026-03-09)
-- 🚧 **v5.3 Pre-Launch Verification** — Phase 64 (in progress)
+- ✅ **v5.3 Post-Launch Hardening** — Phases 65-73 (shipped 2026-03-12)
 
 ## Phases
 
@@ -142,108 +142,19 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v5.3 Pre-Launch Verification (In Progress)
+<details>
+<summary>✅ v5.3 Post-Launch Hardening (Phases 65-73) — SHIPPED 2026-03-12</summary>
 
-**Milestone Goal:** Deploy v5.2 to production and execute the full pre-launch human verification checklist against the live site — confirming every deferred human-verify item, gallery screenshots, and delivery reports before announcing on Product Hunt and Show HN.
+- [x] Phase 65: Quick Wins (3/3 plans) — completed 2026-03-10
+- [x] Phase 66: Billing Lifecycle (3/3 plans) — completed 2026-03-10
+- [x] Phase 67: Bundle Performance (3/3 plans) — completed 2026-03-11
+- [x] Phase 68: API & Schema Quality (3/3 plans) — completed 2026-03-11
+- [x] Phase 69: Dashboard Pagination (3/3 plans) — completed 2026-03-11
+- [x] Phase 70: Auth Observability & GDPR Export (4/4 plans) — completed 2026-03-11
+- [x] Phase 71: Infrastructure Hardening (2/2 plans) — completed 2026-03-11
+- [x] Phase 72: TypeScript + Docs Cleanup (2/2 plans) — completed 2026-03-12
+- [x] Phase 73: Health Router Redis Wiring (2/2 plans) — completed 2026-03-12
 
-- [ ] **Phase 64: Pre-Launch Human Verification Checklist** — Execute all deferred human-verify items across 11 phases, capture gallery screenshots, confirm delivery reports
+See [v5.3 Roadmap Archive](milestones/v5.3-ROADMAP.md) for full phase details.
 
-## Phase Details
-
-### Phase 64: Pre-Launch Human Verification Checklist
-**Goal**: All 28 deferred human-verify items are executed before launch day, gallery screenshots are captured, and delivery reports are confirmed
-**Depends on**: Phase 63
-**Requirements**: none (manual human verification; cannot be automated)
-**Success Criteria** (what must be TRUE):
-  1. Email delivery confirmed: DMARC aggregate reports reviewed at admin@torchsecret.com (2026-03-08 to 2026-03-10); Loops.so dashboard delivery status checked
-  2. UI/UX visual rendering verified: all 21 retro themes render correctly, hover preview timing correct, Press Start 2P font lazy-loads, mobile nav icon swap, FOWT prevention, prefers-reduced-motion, Pro gating lock icons, keyboard navigation, PostHog analytics event fires
-  3. Sharing modality verified: clipboard auto-clears after 60 seconds, QR code scans cleanly, email button opens OS mail client, context-aware expiry hint appears on live create page
-  4. Small gems verified: burn timer visual countdown, preview panel live update, word list passphrase quality, reshare E2E flow completes end-to-end
-  5. SSR visual parity verified: summary icon reflects stored preference on load, icon updates on click, terminal block color matches SPA dark mode
-  6. Marketing page verified: Pro registration banner appears above the fold, homepage two-line H1 renders correctly, reveal CTA tone and layout confirmed, Bitwarden comparison page framing reviewed
-  7. Launch asset final check: Product Hunt character limits confirmed in live form UI (60/260 limits), r/netsec tone reviewed by community-aware human, launch email founder voice reviewed
-  8. Gallery screenshots captured: 4 images at 1270×760px as required by Product Hunt listing draft
-  9. README screenshot accuracy verified: 5 PNG screenshots match current UI post-58.x changes
-**Plans**: 1 plan
-
-Plans:
-- [ ] 64-01-PLAN.md — Execute all human verification items, capture gallery screenshots, confirm delivery reports
-
-## Progress
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Encryption Foundation | v1.0 | 4/4 | Complete | 2026-02-13 |
-| 2. Database and API | v1.0 | 3/3 | Complete | 2026-02-14 |
-| 3. Security Hardening | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 4. Frontend Create and Reveal | v1.0 | 4/4 | Complete | 2026-02-14 |
-| 5. Password Protection | v1.0 | 3/3 | Complete | 2026-02-14 |
-| 6. Expiration Worker | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 7. Trust and Accessibility | v1.0 | 2/2 | Complete | 2026-02-15 |
-| 8. Tech Debt Cleanup | v1.0 | 2/2 | Complete | 2026-02-14 |
-| 9. Design System Foundation | v2.0 | 3/3 | Complete | 2026-02-15 |
-| 10. SEO Static Assets | v2.0 | 2/2 | Complete | 2026-02-15 |
-| 11. Layout Shell + Component Migration | v2.0 | 2/2 | Complete | 2026-02-16 |
-| 12. Page-Level UI Enhancements | v2.0 | 3/3 | Complete | 2026-02-16 |
-| 13. Theme Toggle + Visual Polish | v2.0 | 2/2 | Complete | 2026-02-16 |
-| 14. SEO Router Integration | v2.0 | 2/2 | Complete | 2026-02-16 |
-| 15. Code Quality Foundation | v3.0 | 3/3 | Complete | 2026-02-17 |
-| 16. Docker & Local Development | v3.0 | 4/4 | Complete | 2026-02-17 |
-| 17. E2E Testing with Playwright | v3.0 | 2/2 | Complete | 2026-02-17 |
-| 18. CI/CD Pipeline | v3.0 | 2/2 | Complete | 2026-02-18 |
-| 19. GitHub Repository Polish | v3.0 | 3/3 | Complete | 2026-02-18 |
-| 20. Fix Multi-Browser CI | v3.0 | 1/1 | Complete | 2026-02-18 |
-| 21. Schema Foundation | v4.0 | 3/3 | Complete | 2026-02-19 |
-| 22. Authentication | v4.0 | 7/7 | Complete | 2026-02-19 |
-| 23. Secret Dashboard | v4.0 | 5/5 | Complete | 2026-02-20 |
-| 24. EFF Diceware Passphrase Generator | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 25. PostHog Analytics | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 26. Email Notifications | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 27. Conversion Prompts + Rate Limits + Legal Pages | v4.0 | 4/4 | Complete | 2026-02-21 |
-| 28. Optional Password or Passphrase Protection | v4.0 | 3/3 | Complete | 2026-02-21 |
-| 29. v4.0 Tech Debt Cleanup | v4.0 | 5/5 | Complete | 2026-02-22 |
-| 30. Docker & Render Deployment Fixes | v4.0 | 2/2 | Complete | 2026-02-22 |
-| 31. Rebrand + Tech Debt | v5.0 | 4/4 | Complete | 2026-02-22 |
-| 32. Marketing Homepage + /create Split | v5.0 | 4/4 | Complete | 2026-02-23 |
-| 33. Pricing Page | v5.0 | 3/3 | Complete | 2026-02-23 |
-| 34. Stripe Pro Billing | v5.0 | 5/5 | Complete | 2026-02-26 |
-| 34.1. Passphrase/Password Tier Enforcement | v5.0 | 2/2 | Complete | 2026-02-26 |
-| 35. SEO Content Pages (Express SSR) | v5.0 | 4/4 | Complete | 2026-02-26 |
-| 36. Email Capture | v5.0 | 4/4 | Complete | 2026-02-26 |
-| 37. Email Onboarding Sequence | v5.0 | 3/3 | Complete | 2026-02-27 |
-| 37.1. PostHog Free Tier Enrichment | v5.0 | 3/3 | Complete | 2026-02-27 |
-| 37.2. Infisical Free Tier Integration | v5.0 | 4/4 | Complete | 2026-02-28 |
-| 37.3. Free Tier Integrations | v5.0 | 6/6 | Complete | 2026-02-28 |
-| 38. Feedback Links | v5.0 | 2/2 | Complete | 2026-03-01 |
-| 39. Google + GitHub OAuth | v5.0 | 3/3 | Complete | 2026-03-01 |
-| 40. Security Hardening | v5.0 | 5/5 | Complete | 2026-03-02 |
-| 41. Documentation Update | v5.0 | 4/4 | Complete | 2026-03-02 |
-| 42. Resend Account Migration | v5.0 | 3/3 | Complete | 2026-03-02 |
-| 43. Phase 37 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-02 |
-| 44. Phase 37.1 Gap Closure | v5.0 | 1/1 | Complete | 2026-03-03 |
-| 45. Billing Service Gap Closure | v5.0 | 2/2 | Complete | 2026-03-03 |
-| 46. Cloudflare Email Routing | v5.1 | 2/2 | Complete | 2026-03-04 |
-| 47. Domain Verification + DMARC | v5.1 | 2/2 | Complete | 2026-03-04 |
-| 48. Activate Custom Domain Sending | v5.1 | 2/2 | Complete | 2026-03-05 |
-| 49. Gmail Send Mail As | v5.1 | 2/2 | Complete | 2026-03-05 |
-| 50. Documentation Updates | v5.1 | 1/1 | Complete | 2026-03-05 |
-| 51. Public Repo Preparation | v5.1 | 3/3 | Complete | 2026-03-05 |
-| 52. Audit Launch Checklist | v5.1 | 2/2 | Complete | 2026-03-05 |
-| 53. v5.1 Gap Closure | v5.1 | 2/2 | Complete | 2026-03-06 |
-| 54. Production Bug Fixes | v5.2 | 1/1 | Complete | 2026-03-06 |
-| 55. Server Code Quality Hardening | v5.2 | 2/2 | Complete | 2026-03-06 |
-| 56. Test Gap Closure — Services & Stripe | v5.2 | 1/1 | Complete | 2026-03-06 |
-| 57. Security Test Suite — Race Conditions & ZK Invariant | v5.2 | 1/1 | Complete | 2026-03-06 |
-| 58. DMARC Upgrade | v5.2 | 1/1 | Complete | 2026-03-07 |
-| 58.1. UI/UX Custom Themes | v5.2 | 5/5 | Complete | 2026-03-07 |
-| 58.2. Launch Quick Wins — Do Now | v5.2 | 5/5 | Complete | 2026-03-08 |
-| 58.3. Small Gems | v5.2 | 5/5 | Complete | 2026-03-08 |
-| 58.4. De-activate Custom Themes | v5.2 | 1/1 | Complete | 2026-03-08 |
-| 58.5. Marketing Audit Fixes | v5.2 | 2/2 | Complete | 2026-03-08 |
-| 58.6. Fix SSR Navigation & Visual Consistency | v5.2 | 2/2 | Complete | 2026-03-09 |
-| 59. Repo Hygiene & Documentation | v5.2 | 2/2 | Complete | 2026-03-09 |
-| 60. Launch Narrative Writing | v5.2 | 1/1 | Complete | 2026-03-09 |
-| 61. Launch Distribution Assets | v5.2 | 2/2 | Complete | 2026-03-09 |
-| 62. Documentation & Code Hygiene | v5.2 | 1/1 | Complete | 2026-03-09 |
-| 63. Nyquist Compliance — Phase 57 & 58.6 | v5.2 | 1/1 | Complete | 2026-03-09 |
-| 64. Pre-Launch Human Verification Checklist | v5.3 | 0/1 | Pending | - |
+</details>

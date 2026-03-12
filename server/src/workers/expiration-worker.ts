@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
+import type { Redis } from 'ioredis';
 import { lte, and, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { secrets } from '../db/schema.js';
@@ -49,12 +50,33 @@ export async function cleanExpiredSecrets(): Promise<number> {
 /**
  * Start the expiration cleanup worker.
  *
- * Runs every 5 minutes to expire/delete expired secrets using split logic:
- * user-owned rows are soft-expired (status='expired', row kept);
+ * When a Redis client is provided, acquires a SET NX EX 299 distributed lock
+ * before each cleanup run to prevent duplicate work under horizontal scaling.
+ * If another instance holds the lock (null reply), skips the run silently.
+ * If Redis fails mid-flight, logs at warn level and skips — never crashes.
+ *
+ * When no Redis client is provided (dev/test), runs cleanup without lock guard.
+ *
+ * Runs every 5 minutes. User-owned rows are soft-expired (status='expired', row kept);
  * anonymous rows are hard-deleted. Never logs secret IDs (SECR-09).
  */
-export function startExpirationWorker(): void {
+export function startExpirationWorker(redisClient?: Redis): void {
   task = cron.schedule('*/5 * * * *', async () => {
+    // Lock guard — own try/catch so Redis errors get warn (not error) level
+    if (redisClient) {
+      try {
+        const lockResult = await redisClient.set('expiration-lock', '1', 'EX', 299, 'NX');
+        if (lockResult === null) {
+          logger.debug({}, 'Expiration worker skipped: lock held by another instance');
+          return;
+        }
+      } catch (err) {
+        logger.warn({ err }, 'Expiration worker lock error — skipping run');
+        return;
+      }
+    }
+
+    // Cleanup — own try/catch preserves existing error logging (unchanged from before)
     try {
       const deletedCount = await cleanExpiredSecrets();
 

@@ -4,8 +4,8 @@ import type { Express } from 'express';
 import { buildApp } from '../../app.js';
 import { db } from '../../db/connection.js';
 import { pool } from '../../db/connection.js';
-import { secrets } from '../../db/schema.js';
-import { sql } from 'drizzle-orm';
+import { secrets, users } from '../../db/schema.js';
+import { sql, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { hashPassword } from '../../services/password.service.js';
 
@@ -56,13 +56,17 @@ afterAll(async () => {
  * Helper: insert an expired secret directly into the database.
  * Uses a past expiresAt to bypass API validation and test expiration immediately.
  */
-async function insertExpiredSecret(opts?: { passwordHash?: string | null }): Promise<string> {
+async function insertExpiredSecret(opts?: {
+  passwordHash?: string | null;
+  userId?: string | null;
+}): Promise<string> {
   const id = nanoid();
   await db.insert(secrets).values({
     id,
     ciphertext: VALID_CIPHERTEXT,
     expiresAt: new Date(Date.now() - 60_000), // 1 minute ago
     passwordHash: opts?.passwordHash ?? null,
+    userId: opts?.userId ?? null,
   });
   return id;
 }
@@ -133,6 +137,68 @@ describe('GET /api/secrets/:id/meta expiration', () => {
     expect(res.body).toEqual({
       error: 'not_found',
       message: 'This secret does not exist, has already been viewed, or has expired.',
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getSecretMeta() opportunistic cleanup (RED — API-01, Plan 68-01)
+  // These tests FAIL until Plan 68-02 implements cleanup in getSecretMeta().
+  // ---------------------------------------------------------------------------
+  describe('getSecretMeta() opportunistic cleanup', () => {
+    let META_CLEANUP_USER_ID: string;
+
+    beforeAll(async () => {
+      // Insert a real user row so FK constraint on secrets.user_id is satisfied.
+      // Uses ON CONFLICT DO NOTHING to be idempotent across re-runs.
+      META_CLEANUP_USER_ID = nanoid();
+      await db.execute(sql`
+        INSERT INTO users (id, name, email, email_verified, created_at, updated_at)
+        VALUES (
+          ${META_CLEANUP_USER_ID},
+          'Meta Cleanup Test User',
+          'meta-cleanup-test@test.secureshare.dev',
+          false,
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT DO NOTHING
+      `);
+    });
+
+    afterAll(async () => {
+      // Remove test user (secrets already cleaned by outer afterEach)
+      await db.delete(users).where(eq(users.id, META_CLEANUP_USER_ID));
+    });
+
+    test('expired anonymous secret is deleted from database after meta lookup', async () => {
+      const id = await insertExpiredSecret(); // userId = null (anonymous)
+
+      // Should return 404
+      await request(app).get(`/api/secrets/${id}/meta`).expect(404);
+
+      // Row must be hard-deleted from DB — fails RED because getSecretMeta() does no cleanup
+      const rows = await db
+        .select()
+        .from(secrets)
+        .where(sql`${secrets.id} = ${id}`);
+
+      expect(rows).toHaveLength(0);
+    });
+
+    test('expired user-owned secret has status set to expired and row preserved after meta lookup', async () => {
+      const id = await insertExpiredSecret({ userId: META_CLEANUP_USER_ID });
+
+      // Should return 404
+      await request(app).get(`/api/secrets/${id}/meta`).expect(404);
+
+      // Row must be preserved with status='expired' — fails RED because getSecretMeta() does no cleanup
+      const rows = await db
+        .select()
+        .from(secrets)
+        .where(sql`${secrets.id} = ${id}`);
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].status).toBe('expired');
     });
   });
 });

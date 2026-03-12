@@ -112,6 +112,11 @@ const MOCK_DB_USER = {
   subscriptionTier: 'free',
 };
 
+/** DB row with no Stripe customer ID — used for BILL-03 fail-closed guard tests */
+const MOCK_DB_USER_NO_STRIPE = {
+  stripeCustomerId: null,
+};
+
 /** Valid Stripe checkout session — complete, subscription mode */
 const MOCK_SESSION_COMPLETE = {
   id: 'cs_test_valid',
@@ -203,6 +208,52 @@ describe('GET /api/billing/verify-checkout — activatePro() wiring (BILL-05)', 
       ...MOCK_SESSION_COMPLETE,
       customer: 'cus_DIFFERENT_CUSTOMER',
     });
+
+    const app = buildApp();
+    const res = await request(app)
+      .get('/api/billing/verify-checkout?session_id=cs_test_valid')
+      .expect(403);
+
+    expect(res.body).toEqual({ error: 'session_mismatch' });
+    expect(mockActivatePro).not.toHaveBeenCalled();
+  });
+
+  // BILL-03: fail-closed guard — dbUser is null (account deleted between checkout and verify)
+  it('returns 403 when dbUser is null (account deleted between checkout and verify)', async () => {
+    mockAuthGetSession.mockResolvedValue({
+      user: MOCK_USER,
+      session: { id: 'session_xyz', userId: MOCK_USER.id },
+    });
+    // db.select() returns empty array — user record no longer exists
+    mockDbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
+      }),
+    });
+    mockStripeCheckoutRetrieve.mockResolvedValue(MOCK_SESSION_COMPLETE);
+
+    const app = buildApp();
+    const res = await request(app)
+      .get('/api/billing/verify-checkout?session_id=cs_test_valid')
+      .expect(403);
+
+    expect(res.body).toEqual({ error: 'session_mismatch' });
+    expect(mockActivatePro).not.toHaveBeenCalled();
+  });
+
+  // BILL-03: fail-closed guard — session.customer set but dbUser.stripeCustomerId is null
+  it('returns 403 when session.customer is set but dbUser.stripeCustomerId is null (race window guard)', async () => {
+    mockAuthGetSession.mockResolvedValue({
+      user: MOCK_USER,
+      session: { id: 'session_xyz', userId: MOCK_USER.id },
+    });
+    // db.select() returns user row with null stripeCustomerId
+    mockDbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([MOCK_DB_USER_NO_STRIPE]),
+      }),
+    });
+    mockStripeCheckoutRetrieve.mockResolvedValue(MOCK_SESSION_COMPLETE);
 
     const app = buildApp();
     const res = await request(app)

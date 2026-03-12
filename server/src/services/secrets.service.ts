@@ -1,4 +1,4 @@
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and, or, lt } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { secrets, users, type Secret } from '../db/schema.js';
 import { hashPassword, verifyPassword } from './password.service.js';
@@ -157,9 +157,13 @@ export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
  * Non-destructive metadata check for a secret.
  *
  * Returns whether the secret requires a password and how many
- * password attempts remain. Does NOT consume or modify the secret.
+ * password attempts remain.
  *
- * Returns null if the secret does not exist.
+ * Expired secrets are opportunistically cleaned up (mirrors retrieveAndDestroy):
+ * - Anonymous: hard-deleted after ciphertext is zeroed
+ * - User-owned: ciphertext zeroed and status set to 'expired' (row preserved for dashboard history)
+ *
+ * Returns null if the secret does not exist or has expired.
  */
 export async function getSecretMeta(id: string): Promise<{
   requiresPassword: boolean;
@@ -170,6 +174,8 @@ export async function getSecretMeta(id: string): Promise<{
       passwordHash: secrets.passwordHash,
       passwordAttempts: secrets.passwordAttempts,
       expiresAt: secrets.expiresAt,
+      userId: secrets.userId,
+      ciphertext: secrets.ciphertext,
     })
     .from(secrets)
     .where(eq(secrets.id, id));
@@ -179,8 +185,20 @@ export async function getSecretMeta(id: string): Promise<{
   }
 
   // Expiration guard: treat expired secrets as not-found (SECR-07 anti-enumeration)
-  // No inline cleanup here (no transaction context) -- worker or next retrieval will clean up
+  // Opportunistically clean up the expired row (no transaction wrapper — cleanup is idempotent)
   if (secret.expiresAt <= new Date()) {
+    // Zero ciphertext first (data remanence mitigation — matches retrieveAndDestroy pattern)
+    await db
+      .update(secrets)
+      .set({ ciphertext: '0'.repeat(secret.ciphertext.length) })
+      .where(eq(secrets.id, id));
+    if (secret.userId !== null) {
+      // User-owned: soft-expire — preserve row for dashboard history
+      await db.update(secrets).set({ status: 'expired' }).where(eq(secrets.id, id));
+    } else {
+      // Anonymous: hard-delete
+      await db.delete(secrets).where(eq(secrets.id, id));
+    }
     return null;
   }
 
@@ -323,24 +341,85 @@ export async function verifyAndRetrieve(
   });
 }
 
+/** Number of secrets returned per dashboard page (API-02) */
+const DASHBOARD_PAGE_SIZE = 20;
+
+function encodeCursor(id: string, createdAt: Date): string {
+  return Buffer.from(JSON.stringify({ id, createdAt: createdAt.toISOString() })).toString('base64');
+}
+
+function decodeCursor(cursor: string): { id: string; createdAt: Date } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8')) as unknown;
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'id' in parsed &&
+      typeof (parsed as Record<string, unknown>).id === 'string' &&
+      'createdAt' in parsed &&
+      typeof (parsed as Record<string, unknown>).createdAt === 'string'
+    ) {
+      const { id, createdAt } = parsed as { id: string; createdAt: string };
+      return { id, createdAt: new Date(createdAt) };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Returns the authenticated user's secrets (metadata only — no ciphertext, no passwordHash).
- * Ordered newest first. All statuses included (active, viewed, expired, deleted).
+ * Supports cursor-based pagination and optional status filtering.
  *
  * DASH-05: This SELECT explicitly lists safe columns only. Never add ciphertext or passwordHash.
+ *
+ * @param userId - The authenticated user's ID
+ * @param options.cursor - Opaque base64 cursor encoding { id, createdAt } of last seen item
+ * @param options.status - Filter by status; 'all' returns all statuses (default)
+ * @param options.limit - Override page size (defaults to DASHBOARD_PAGE_SIZE)
+ * @returns { secrets, nextCursor } where nextCursor is null on the last page
  */
-export async function getUserSecrets(userId: string): Promise<
-  {
+export async function getUserSecrets(
+  userId: string,
+  options?: {
+    cursor?: string;
+    status?: 'all' | 'active' | 'viewed' | 'expired' | 'deleted';
+    limit?: number;
+  },
+): Promise<{
+  secrets: {
     id: string;
     label: string | null;
     createdAt: Date;
     expiresAt: Date;
-    status: string;
+    status: 'active' | 'viewed' | 'expired' | 'deleted';
     notify: boolean;
     viewedAt: Date | null;
-  }[]
-> {
-  return db
+  }[];
+  nextCursor: string | null;
+}> {
+  const pageSize = options?.limit ?? DASHBOARD_PAGE_SIZE;
+  const status = options?.status ?? 'all';
+
+  // Status filter: undefined for 'all' — Drizzle's and() silently drops undefined
+  const statusFilter = status === 'all' ? undefined : eq(secrets.status, status);
+
+  // Cursor filter: undefined for first page (no cursor)
+  let cursorFilter: ReturnType<typeof or> | undefined;
+  if (options?.cursor) {
+    const decoded = decodeCursor(options.cursor);
+    if (decoded) {
+      cursorFilter = or(
+        lt(secrets.createdAt, decoded.createdAt),
+        and(eq(secrets.createdAt, decoded.createdAt), lt(secrets.id, decoded.id)),
+      );
+    }
+    // Invalid cursor: treat as no cursor (route validates before calling service)
+  }
+
+  // Fetch pageSize + 1 to detect if a next page exists
+  const rows = await db
     .select({
       id: secrets.id,
       label: secrets.label,
@@ -353,8 +432,19 @@ export async function getUserSecrets(userId: string): Promise<
       // passwordHash intentionally excluded (DASH-05)
     })
     .from(secrets)
-    .where(eq(secrets.userId, userId))
-    .orderBy(desc(secrets.createdAt));
+    .where(and(eq(secrets.userId, userId), statusFilter, cursorFilter))
+    .orderBy(desc(secrets.createdAt), desc(secrets.id))
+    .limit(pageSize + 1);
+
+  // N+1 detection
+  if (rows.length > pageSize) {
+    // There IS a next page — encode cursor from the last item in the current page (index pageSize - 1)
+    const lastItem = rows[pageSize - 1];
+    const nextCursor = encodeCursor(lastItem.id, lastItem.createdAt);
+    return { secrets: rows.slice(0, pageSize), nextCursor };
+  }
+
+  return { secrets: rows, nextCursor: null };
 }
 
 /**

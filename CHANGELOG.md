@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.3.0] - 2026-03-12
+
+### Added
+
+- Auth audit log: five auth lifecycle events (sign_up, sign_in, logout, password_reset_requested, oauth_connect) write durable rows to a new `audit_logs` table — ZK-safe by design (no secretId column) with cascading FK to users (AUTH-01, AUTH-02)
+- GDPR data export: authenticated `GET /api/me/export` returns a JSON payload with profile metadata and audit log entries — no ciphertext included (GDPR-01)
+- Dashboard cursor pagination: `GET /api/dashboard/secrets` accepts an optional `cursor` parameter and returns `nextCursor`; "Load More" control on dashboard appends results without a full-page reload (API-02)
+- Distributed expiration lock: expiration worker acquires a Redis `SET NX EX 299` lock before each cleanup run — prevents duplicate deletes under horizontal scaling (INFR-02)
+- Dunning email: `invoice.payment_failed` Stripe webhook dispatches a payment failure notification via Resend (BILL-01)
+- Dependabot coverage for GitHub Actions workflows (GH-03)
+
+### Changed
+
+- Redis is now required in production (`REDIS_URL` must be set; `NODE_ENV=production` without it fails at startup via Zod env validation) — MemoryStore is dev-only (INFR-01)
+- Stripe `customer.subscription.updated` webhook syncs the user's `subscriptionTier` in the database — mid-period upgrades and downgrades handled (BILL-02)
+- `verify-checkout` endpoint is fail-closed: returns 403 when `session.customer` is set but `dbUser.stripeCustomerId` is null, closing a race-window bypass (BILL-03)
+- `secrets.status` and `marketingSubscribers.status` columns converted to Postgres `pgEnum` types — invalid status values are rejected at the database level (QUAL-01)
+- `getSecretMeta()` opportunistically deletes expired rows on meta lookup — stale expired rows no longer accumulate from meta-only requests (API-01)
+- Billing and `/api/me` queries project only `stripeCustomerId` — no full user row fetched for operations that need only the customer ID (API-03)
+- Retro theme modules excluded from production bundle by default — dynamic import gate controlled by `VITE_RETRO_ENABLED` env var (BNDL-01)
+- Passphrase wordlist (~280 KB) lazy-loaded via dynamic import on first passphrase tab selection — absent from initial bundle (BNDL-02)
+- `isSession()` type guard consolidated to a single export in `client/src/api/auth-client.ts` — duplicate implementations removed from dashboard, create, login, and register pages (QUAL-02)
+
+### Fixed
+
+- Unhandled Promise rejections and uncaught exceptions now log at fatal level and exit the process — no more silent crashes without a trace (SRVR-01)
+- Server startup with `E2E_TEST=true` outside of test mode now throws immediately — prevents accidental rate-limit disable on staging or production (SRVR-02)
+- GitHub Actions pinned to commit SHAs; workflow declares `permissions: contents: read` at workflow level (GH-01, GH-02)
+
 ## [5.2.0] - 2026-03-09
 
 ### Added
@@ -158,7 +187,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accessibility foundations: skip links, aria-live route announcer, focus management
 - Vanilla TypeScript SPA with Vite and Tailwind CSS
 
-[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.2...HEAD
+[Unreleased]: https://github.com/norcalcoop/torch-secret/compare/v5.3...HEAD
+[5.3.0]: https://github.com/norcalcoop/torch-secret/compare/v5.2...v5.3
 [5.2.0]: https://github.com/norcalcoop/torch-secret/compare/v5.1...v5.2
 [5.1.0]: https://github.com/norcalcoop/torch-secret/compare/v5.0...v5.1
 [5.0.0]: https://github.com/norcalcoop/torch-secret/compare/v4.0...v5.0

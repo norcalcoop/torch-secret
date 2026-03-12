@@ -280,7 +280,8 @@ describe('Theme dropdown', () => {
   });
 
   it('retro theme buttons are absent when RETRO_ENABLED is false', async () => {
-    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const RETRO_ENABLED = import.meta.env.VITE_RETRO_ENABLED === 'true';
     const dropdown = createThemeDropdown();
     container.appendChild(dropdown);
 
@@ -401,7 +402,8 @@ describe('Theme dropdown — Pro gating', () => {
   });
 
   it('free user: retro theme buttons absent when RETRO_ENABLED is false; navigate("/pricing") when enabled', async () => {
-    const { createThemeDropdown, RETRO_ENABLED } = await import('../components/theme-toggle.js');
+    const { createThemeDropdown } = await import('../components/theme-toggle.js');
+    const RETRO_ENABLED = import.meta.env.VITE_RETRO_ENABLED === 'true';
     const dropdown = createThemeDropdown();
     container.appendChild(dropdown);
 

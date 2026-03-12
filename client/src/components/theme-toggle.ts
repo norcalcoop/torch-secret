@@ -15,26 +15,39 @@
  *
  * Pro status is cached in a module-level variable and refreshed on
  * the 'retrothemechange' event to avoid repeated /api/me fetches.
+ *
+ * Retro theme modules (retro-data.js, retro-theme.js) are dynamically
+ * imported inside a VITE_RETRO_ENABLED guard. When that env var is unset
+ * (production default), Rollup dead-code-eliminates the entire import block
+ * and all retro modules from the bundle.
  */
 
 import { Sun, Moon, Monitor, Palette, Lock, type IconNode } from 'lucide';
 import { createIcon, createPixelIcon } from './icons.js';
 import { getThemePreference, setThemePreference, type ThemePreference } from '../theme.js';
-import { THEMES } from '../retro-data.js';
-import {
-  getRetroTheme,
-  setRetroTheme,
-  applyRetroColors,
-  clearRetroColors,
-} from '../retro-theme.js';
 import { navigate } from '../router.js';
 import { getMe } from '../api/client.js';
 import { ApiError } from '../api/client.js';
+import type { RetroTheme } from '../retro-data.js';
 
-// ─── Feature gate ────────────────────────────────────────────────────────────
+// ─── Module-level retro data cache ───────────────────────────────────────────
 
-// Set to true to re-enable retro themes post-launch
-export const RETRO_ENABLED = false;
+/**
+ * Holds the THEMES object after the async retro-data import resolves.
+ * Null when retro is disabled or not yet loaded.
+ */
+let loadedThemes: Record<string, RetroTheme> | null = null;
+
+/**
+ * Retro theme module API — populated alongside loadedThemes when retro loads.
+ * Null when retro is disabled.
+ */
+let retroApi: {
+  getRetroTheme: () => string | null;
+  setRetroTheme: (id: string | null) => void;
+  applyRetroColors: (theme: RetroTheme, preview?: boolean) => void;
+  clearRetroColors: () => void;
+} | null = null;
 
 // ─── Module-level Pro cache ────────────────────────────────────────────────
 
@@ -154,7 +167,8 @@ export function createThemeDropdown(): HTMLDivElement {
     item.addEventListener('click', () => {
       setThemePreference(pref);
       // Clearing a base mode click should also clear any active retro theme
-      setRetroTheme(null);
+      // Only available if retro modules are loaded (VITE_RETRO_ENABLED is 'true')
+      retroApi?.setRetroTheme(null);
       closePanel();
       renderToggleIcon();
     });
@@ -162,86 +176,96 @@ export function createThemeDropdown(): HTMLDivElement {
     baseGroup.appendChild(item);
   }
 
-  if (RETRO_ENABLED) {
-    // Separator
-    const hr = document.createElement('hr');
-    hr.setAttribute('aria-hidden', 'true');
-    hr.className = 'border-border my-1.5';
-    panel.appendChild(hr);
+  if (import.meta.env.VITE_RETRO_ENABLED === 'true') {
+    void (async () => {
+      const { THEMES } = await import('../retro-data.js');
+      const retro = await import('../retro-theme.js');
+      const { getRetroTheme, setRetroTheme, applyRetroColors, clearRetroColors } = retro;
+      loadedThemes = THEMES;
+      retroApi = { getRetroTheme, setRetroTheme, applyRetroColors, clearRetroColors };
 
-    // ── Section 2: Retro Pro themes ──────────────────────────────────────
-    const retroSectionLabel = document.createElement('p');
-    retroSectionLabel.className =
-      'px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted';
-    retroSectionLabel.setAttribute('aria-hidden', 'true');
-    retroSectionLabel.textContent = 'Retro Pro — upgrade to unlock';
-    panel.appendChild(retroSectionLabel);
+      // Separator
+      const hr = document.createElement('hr');
+      hr.setAttribute('aria-hidden', 'true');
+      hr.className = 'border-border my-1.5';
+      panel.appendChild(hr);
 
-    const retroGroup = document.createElement('div');
-    retroGroup.setAttribute('role', 'group');
-    retroGroup.setAttribute('aria-label', 'Retro Pro themes');
-    panel.appendChild(retroGroup);
+      // ── Section 2: Retro Pro themes ──────────────────────────────────────
+      const retroSectionLabel = document.createElement('p');
+      retroSectionLabel.className =
+        'px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted';
+      retroSectionLabel.setAttribute('aria-hidden', 'true');
+      retroSectionLabel.textContent = 'Retro Pro — upgrade to unlock';
+      panel.appendChild(retroSectionLabel);
 
-    // Build one button per theme in THEMES
-    for (const theme of Object.values(THEMES)) {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.setAttribute('role', 'menuitem');
-      item.dataset['retroTheme'] = theme.id;
-      item.className =
-        'w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-text-primary ' +
-        'hover:bg-surface-raised transition-colors cursor-pointer';
+      const retroGroup = document.createElement('div');
+      retroGroup.setAttribute('role', 'group');
+      retroGroup.setAttribute('aria-label', 'Retro Pro themes');
+      panel.appendChild(retroGroup);
 
-      // Lock icon placeholder — shown when free user
-      const lockWrapper = document.createElement('span');
-      lockWrapper.className = 'lock-icon text-text-muted flex-shrink-0';
-      lockWrapper.appendChild(createIcon(Lock, { size: 'sm' }));
-      item.appendChild(lockWrapper);
+      // Build one button per theme in THEMES
+      for (const theme of Object.values(THEMES)) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.setAttribute('role', 'menuitem');
+        item.dataset['retroTheme'] = theme.id;
+        item.className =
+          'w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-text-primary ' +
+          'hover:bg-surface-raised transition-colors cursor-pointer';
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'flex-1 text-left truncate';
-      nameSpan.textContent = theme.name;
-      item.appendChild(nameSpan);
+        // Lock icon placeholder — shown when free user
+        const lockWrapper = document.createElement('span');
+        lockWrapper.className = 'lock-icon text-text-muted flex-shrink-0';
+        lockWrapper.appendChild(createIcon(Lock, { size: 'sm' }));
+        item.appendChild(lockWrapper);
 
-      // Hover preview with 50ms debounce on forward-apply; immediate revert on mouseleave
-      item.addEventListener('mouseenter', () => {
-        if (hoverTimer !== null) clearTimeout(hoverTimer);
-        hoverTimer = setTimeout(() => {
-          applyRetroColors(theme, true);
-        }, 50);
-      });
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'flex-1 text-left truncate';
+        nameSpan.textContent = theme.name;
+        item.appendChild(nameSpan);
 
-      item.addEventListener('mouseleave', () => {
-        if (hoverTimer !== null) {
-          clearTimeout(hoverTimer);
-          hoverTimer = null;
-        }
-        // Revert immediately to committed state
-        const committed = getRetroTheme();
-        if (committed !== null && THEMES[committed]) {
-          applyRetroColors(THEMES[committed]);
-        } else {
-          clearRetroColors();
-        }
-      });
+        // Hover preview with 50ms debounce on forward-apply; immediate revert on mouseleave
+        item.addEventListener('mouseenter', () => {
+          if (hoverTimer !== null) clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(() => {
+            applyRetroColors(theme, true);
+          }, 50);
+        });
 
-      item.addEventListener('click', () => {
-        void (async () => {
-          const isPro = await fetchIsPro();
-          if (isPro) {
-            setRetroTheme(theme.id);
-            closePanel();
-            renderToggleIcon();
-            updateRetroActiveStates();
-          } else {
-            closePanel();
-            navigate('/pricing');
+        item.addEventListener('mouseleave', () => {
+          if (hoverTimer !== null) {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
           }
-        })();
-      });
+          // Revert immediately to committed state
+          const committed = getRetroTheme();
+          if (committed !== null && THEMES[committed]) {
+            applyRetroColors(THEMES[committed]);
+          } else {
+            clearRetroColors();
+          }
+        });
 
-      retroGroup.appendChild(item);
-    }
+        item.addEventListener('click', () => {
+          void (async () => {
+            const isPro = await fetchIsPro();
+            if (isPro) {
+              setRetroTheme(theme.id);
+              closePanel();
+              renderToggleIcon();
+              updateRetroActiveStates();
+            } else {
+              closePanel();
+              navigate('/pricing');
+            }
+          })();
+        });
+
+        retroGroup.appendChild(item);
+      }
+
+      updateRetroActiveStates();
+    })();
   }
 
   // ── Assemble root ──────────────────────────────────────────────────────
@@ -269,11 +293,14 @@ export function createThemeDropdown(): HTMLDivElement {
       hoverTimer = null;
     }
     // Revert to committed state in case of interrupted hover
-    const committed = getRetroTheme();
-    if (committed !== null && THEMES[committed]) {
-      applyRetroColors(THEMES[committed]);
-    } else {
-      clearRetroColors();
+    // Only attempt if retro modules are loaded (loadedThemes is populated)
+    if (retroApi !== null && loadedThemes !== null) {
+      const committed = retroApi.getRetroTheme();
+      if (committed !== null && loadedThemes[committed]) {
+        retroApi.applyRetroColors(loadedThemes[committed]);
+      } else {
+        retroApi.clearRetroColors();
+      }
     }
   }
 
@@ -283,17 +310,20 @@ export function createThemeDropdown(): HTMLDivElement {
 
   function renderToggleIcon(): void {
     btn.textContent = '';
-    const retroId = getRetroTheme();
-    if (retroId !== null) {
-      const theme = THEMES[retroId];
-      // Show the theme's first nav pixel icon to indicate which retro theme is active
-      if (theme?.nav[0]) {
-        btn.appendChild(createPixelIcon(theme.nav[0].i, 16));
+    // Only attempt retro icon if retro modules are loaded
+    if (retroApi !== null && loadedThemes !== null) {
+      const retroId = retroApi.getRetroTheme();
+      if (retroId !== null) {
+        const theme = loadedThemes[retroId];
+        // Show the theme's first nav pixel icon to indicate which retro theme is active
+        if (theme?.nav[0]) {
+          btn.appendChild(createPixelIcon(theme.nav[0].i, 16));
+          return;
+        }
+        // Fallback if theme data is missing
+        btn.appendChild(createIcon(Palette, { size: 'sm', class: 'text-text-secondary' }));
         return;
       }
-      // Fallback if theme data is missing
-      btn.appendChild(createIcon(Palette, { size: 'sm', class: 'text-text-secondary' }));
-      return;
     }
     const pref = getThemePreference();
     btn.appendChild(
@@ -310,7 +340,8 @@ export function createThemeDropdown(): HTMLDivElement {
   }
 
   function updateRetroActiveStates(): void {
-    const committed = getRetroTheme();
+    if (retroApi === null) return;
+    const committed = retroApi.getRetroTheme();
     const items = panel.querySelectorAll<HTMLButtonElement>('[data-retro-theme]');
     items.forEach((item) => {
       const isActive = item.dataset['retroTheme'] === committed;
@@ -328,7 +359,8 @@ export function createThemeDropdown(): HTMLDivElement {
     const pref = getThemePreference();
     const items = baseGroup.querySelectorAll<HTMLButtonElement>('[data-theme]');
     items.forEach((item) => {
-      const isActive = item.dataset['theme'] === pref && getRetroTheme() === null;
+      const isActive =
+        item.dataset['theme'] === pref && (retroApi?.getRetroTheme() ?? null) === null;
       // aria-pressed is not allowed on role="menuitem" — use data-active + CSS classes
       item.dataset['active'] = isActive ? 'true' : 'false';
       if (isActive) {

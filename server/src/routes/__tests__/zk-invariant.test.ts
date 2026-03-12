@@ -30,6 +30,7 @@ describe('ZK invariant — DB schema (TEST-04)', () => {
     'accounts',
     'verification',
     'marketing_subscribers',
+    'audit_logs',
   ];
 
   test('non-secrets tables contain no secretId-shaped column', async () => {

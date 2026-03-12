@@ -8,7 +8,8 @@
  */
 
 import { Circle, CheckCircle2, Clock, Trash2, Lock, Bell, TriangleAlert } from 'lucide';
-import { authClient } from '../api/auth-client.js';
+import { authClient, isSession } from '../api/auth-client.js';
+import type { Session } from '../api/auth-client.js';
 import {
   fetchDashboardSecrets,
   deleteDashboardSecret,
@@ -30,38 +31,6 @@ import {
   captureSubscriptionActivated,
 } from '../analytics/posthog.js';
 import type { DashboardSecretItem } from '../../../shared/types/api.js';
-
-// ---------------------------------------------------------------------------
-// Auth session types + guard (same pattern as Phase 22)
-// ---------------------------------------------------------------------------
-
-/**
- * Shape of a Better Auth session user.
- * Typed explicitly to avoid unsafe `any` member access on the library return value.
- */
-interface SessionUser {
-  id: string;
-  name?: string | null;
-  email: string;
-}
-
-/**
- * Shape of the session object returned by getSession().
- */
-interface Session {
-  user: SessionUser;
-}
-
-/**
- * Type guard: verify that a value matches the Session shape.
- */
-function isSession(value: unknown): value is Session {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  if (typeof obj['user'] !== 'object' || obj['user'] === null) return false;
-  const user = obj['user'] as Record<string, unknown>;
-  return typeof user['id'] === 'string' && typeof user['email'] === 'string';
-}
 
 // ---------------------------------------------------------------------------
 // Status configuration
@@ -433,11 +402,6 @@ function createDeleteAccountModal(triggerEl: HTMLElement): HTMLElement {
 // ---------------------------------------------------------------------------
 
 type TabValue = 'all' | 'active' | 'viewed' | 'expired' | 'deleted';
-
-function filterSecrets(allSecrets: DashboardSecretItem[], tab: TabValue): DashboardSecretItem[] {
-  if (tab === 'all') return allSecrets;
-  return allSecrets.filter((s) => s.status === tab);
-}
 
 /**
  * Re-render the tbody with the filtered list of secrets.
@@ -858,24 +822,18 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
   }
 
   // --- Fetch dashboard secrets ---
-  let allSecrets: DashboardSecretItem[];
-
   try {
     const response = await fetchDashboardSecrets();
-    allSecrets = response.secrets;
+    if (response.secrets.length === 0 && !response.nextCursor) {
+      renderEmptyState(secretsSection);
+      return;
+    }
+    renderSecretsTable(secretsSection, response.secrets, response.nextCursor);
   } catch {
     showToast('Failed to load secrets. Please refresh.');
     renderEmptyState(secretsSection);
     return;
   }
-
-  // --- Render content based on secrets count ---
-  if (allSecrets.length === 0) {
-    renderEmptyState(secretsSection);
-    return;
-  }
-
-  renderSecretsTable(secretsSection, allSecrets);
 }
 
 // ---------------------------------------------------------------------------
@@ -919,12 +877,19 @@ function renderEmptyState(container: HTMLElement): void {
 // Secrets table with tab filter
 // ---------------------------------------------------------------------------
 
-function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSecretItem[]): void {
+export function renderSecretsTable(
+  container: HTMLElement,
+  initialSecrets: DashboardSecretItem[],
+  initialNextCursor: string | null,
+): void {
   // Module-level state for this table instance
-  const allSecrets: DashboardSecretItem[] = [...initialSecrets];
-  let currentTab: TabValue = 'all';
+  let currentCursor: string | null = initialNextCursor;
+  let currentStatus: TabValue = 'all';
+  let isLoadingMore = false;
+  // Per-page rows accumulator (used for delete handler — does not grow unboundedly, only current page)
+  let pageRows: DashboardSecretItem[] = [...initialSecrets];
 
-  // --- Tab bar ---
+  // --- Tab bar (same structure as before) ---
   const tabNav = document.createElement('nav');
   tabNav.setAttribute('role', 'tablist');
   tabNav.setAttribute('aria-label', 'Filter by status');
@@ -945,8 +910,8 @@ function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSec
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-selected', tab === currentTab ? 'true' : 'false');
-    btn.className = getTabClass(tab === currentTab);
+    btn.setAttribute('aria-selected', tab === currentStatus ? 'true' : 'false');
+    btn.className = getTabClass(tab === currentStatus);
     btn.textContent = tabLabels[tab];
     tabButtons.set(tab, btn);
     tabNav.appendChild(btn);
@@ -954,7 +919,7 @@ function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSec
 
   container.appendChild(tabNav);
 
-  // --- Table wrapper (horizontally scrollable for mobile) ---
+  // --- Table wrapper ---
   const tableWrapper = document.createElement('div');
   tableWrapper.className =
     'overflow-x-auto bg-surface border border-surface-border rounded-xl shadow-sm';
@@ -963,10 +928,8 @@ function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSec
   table.className = 'min-w-full';
   table.setAttribute('aria-label', 'Your secrets');
 
-  // thead
   const thead = document.createElement('thead');
   thead.className = 'bg-surface-raised/50';
-
   const headerRow = document.createElement('tr');
   const columns = ['Label', 'Created', 'Expires', 'Status', 'Notification', 'Delete'];
   for (const col of columns) {
@@ -980,32 +943,54 @@ function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSec
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  // tbody
   const tbody = document.createElement('tbody');
   table.appendChild(tbody);
   tableWrapper.appendChild(table);
   container.appendChild(tableWrapper);
 
+  // --- Load More button (hidden initially if no nextCursor) ---
+  const loadMoreWrapper = document.createElement('div');
+  loadMoreWrapper.className = 'flex justify-center pt-2';
+
+  const loadMoreBtn = document.createElement('button');
+  loadMoreBtn.type = 'button';
+  loadMoreBtn.textContent = 'Load more';
+  loadMoreBtn.className =
+    'px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium ' +
+    'hover:bg-surface-raised hover:text-text-primary focus:ring-2 focus:ring-accent ' +
+    'focus:ring-offset-2 focus:ring-offset-surface focus:outline-hidden transition-all ' +
+    'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  loadMoreBtn.style.display = currentCursor ? '' : 'none';
+
+  loadMoreWrapper.appendChild(loadMoreBtn);
+  container.appendChild(loadMoreWrapper);
+
+  // --- Aria-live status region for accessibility ---
+  const statusRegion = document.createElement('div');
+  statusRegion.setAttribute('aria-live', 'polite');
+  statusRegion.className = 'sr-only';
+  container.appendChild(statusRegion);
+
   // --- Delete handler ---
   function handleDelete(id: string, triggerEl: HTMLElement): void {
-    const item = allSecrets.find((s) => s.id === id);
+    const item = pageRows.find((s) => s.id === id);
     if (!item) return;
 
     const modal = createConfirmModal(
       item.label,
       triggerEl,
       () => {
-        // On confirm
         void (async () => {
           triggerEl.setAttribute('disabled', '');
           try {
             await deleteDashboardSecret(id);
-            // Update status in place
-            const target = allSecrets.find((s) => s.id === id);
+            // Update status in pageRows (do not re-fetch — preserve cursor state)
+            const target = pageRows.find((s) => s.id === id);
             if (target) {
               target.status = 'deleted';
             }
-            renderTableBody(tbody, filterSecrets(allSecrets, currentTab), handleDelete);
+            // Re-render current page rows only (server-driven — no filterSecrets)
+            renderTableBody(tbody, pageRows, handleDelete);
             showToast('Secret deleted.');
           } catch {
             triggerEl.removeAttribute('disabled');
@@ -1014,28 +999,97 @@ function renderSecretsTable(container: HTMLElement, initialSecrets: DashboardSec
         })();
       },
       () => {
-        // On cancel — nothing extra needed; close() in modal returns focus to triggerEl
+        /* cancel — no action needed */
       },
     );
-
     document.body.appendChild(modal);
   }
 
-  // Initial render
-  renderTableBody(tbody, filterSecrets(allSecrets, currentTab), handleDelete);
+  // --- fetchPage: fetch one page and append/replace rows ---
+  async function fetchPage(): Promise<void> {
+    const isFirstPage = currentCursor === null && pageRows.length === 0;
+    try {
+      const response = await fetchDashboardSecrets({
+        cursor: currentCursor ?? undefined,
+        status: currentStatus,
+      });
+
+      // On first page fetch (tab switch cleared pageRows): set tbody
+      // On Load More: APPEND rows
+      if (isFirstPage || pageRows.length === 0) {
+        pageRows = [...response.secrets];
+        renderTableBody(tbody, pageRows, handleDelete);
+      } else {
+        // Append new rows to pageRows accumulator
+        const newItems = response.secrets;
+        pageRows = [...pageRows, ...newItems];
+        // Append only the new rows to tbody (avoid full re-render)
+        for (const item of newItems) {
+          const tempTbody = document.createElement('tbody');
+          renderTableBody(tempTbody, [item], handleDelete);
+          while (tempTbody.firstChild) {
+            tbody.appendChild(tempTbody.firstChild);
+          }
+        }
+      }
+
+      currentCursor = response.nextCursor;
+      loadMoreBtn.style.display = currentCursor ? '' : 'none';
+
+      if (response.secrets.length > 0) {
+        statusRegion.textContent = `${response.secrets.length.toString()} more secrets loaded`;
+      }
+    } catch {
+      showToast('Failed to load secrets. Please try again.');
+    } finally {
+      isLoadingMore = false;
+      // Restore Load More button state
+      const spinner = loadMoreBtn.querySelector('span[aria-hidden]');
+      if (spinner) spinner.remove();
+      loadMoreBtn.textContent = 'Load more';
+      loadMoreBtn.disabled = false;
+    }
+  }
+
+  // --- Load More click handler ---
+  loadMoreBtn.addEventListener('click', () => {
+    if (isLoadingMore || !currentCursor) return;
+    isLoadingMore = true;
+    loadMoreBtn.disabled = true;
+
+    // Show spinner
+    loadMoreBtn.textContent = 'Loading\u2026';
+    const spinner = document.createElement('span');
+    spinner.className =
+      'inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin mr-2 align-middle';
+    spinner.setAttribute('aria-hidden', 'true');
+    loadMoreBtn.prepend(spinner);
+
+    void fetchPage();
+  });
 
   // --- Tab click handlers ---
   for (const [tab, btn] of tabButtons) {
     btn.addEventListener('click', () => {
+      if (tab === currentStatus) return; // no-op if already on this tab
       // Update selected state
       for (const [t, b] of tabButtons) {
         b.setAttribute('aria-selected', t === tab ? 'true' : 'false');
         b.className = getTabClass(t === tab);
       }
-      currentTab = tab;
-      renderTableBody(tbody, filterSecrets(allSecrets, currentTab), handleDelete);
+      currentStatus = tab;
+      currentCursor = null;
+      isLoadingMore = false;
+      pageRows = [];
+      // Clear tbody
+      while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+      loadMoreBtn.style.display = 'none';
+      void fetchPage();
     });
   }
+
+  // Initial render using the already-fetched first page
+  renderTableBody(tbody, pageRows, handleDelete);
 }
 
 function getTabClass(isActive: boolean): string {

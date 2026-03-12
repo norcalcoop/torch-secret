@@ -184,7 +184,8 @@ describe('GET /api/dashboard/secrets — authenticated', () => {
       .set('Cookie', userASessionCookie)
       .expect(200);
 
-    expect(res.body).toEqual({ secrets: [] });
+    expect(res.body.secrets).toEqual([]);
+    expect(res.body.nextCursor).toBeNull();
   });
 
   test('returns secrets belonging to the authenticated user', async () => {
@@ -233,7 +234,7 @@ describe('GET /api/dashboard/secrets — authenticated', () => {
       .update(secrets)
       .set({ createdAt: new Date(Date.now() - 5000) })
       .where(eq(secrets.id, id1));
-    const _id2 = await insertTestSecret({ userId: userAId, label: 'Second' });
+    await insertTestSecret({ userId: userAId, label: 'Second' });
 
     const res = await request(app)
       .get('/api/dashboard/secrets')
@@ -563,5 +564,154 @@ describe('cross-user isolation', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].status).toBe('active');
     expect(rows[0].userId).toBe(userAId);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/dashboard/secrets — pagination (API-02)
+// ---------------------------------------------------------------------------
+describe('GET /api/dashboard/secrets — pagination (API-02)', () => {
+  test('returns at most 20 secrets and non-null nextCursor when >20 exist', async () => {
+    // Insert 21 secrets with distinct createdAt timestamps for deterministic ordering
+    for (let i = 0; i < 21; i++) {
+      const id = await insertTestSecret({ userId: userAId });
+      await db
+        .update(secrets)
+        .set({ createdAt: new Date(Date.now() - i * 1000) })
+        .where(eq(secrets.id, id));
+    }
+
+    const res = await request(app)
+      .get('/api/dashboard/secrets')
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(res.body.secrets.length).toBe(20);
+    expect(res.body.nextCursor).not.toBeNull();
+    expect(typeof res.body.nextCursor).toBe('string');
+  });
+
+  test('returns nextCursor: null when ≤20 secrets exist', async () => {
+    // Insert 5 secrets
+    for (let i = 0; i < 5; i++) {
+      const id = await insertTestSecret({ userId: userAId });
+      await db
+        .update(secrets)
+        .set({ createdAt: new Date(Date.now() - i * 1000) })
+        .where(eq(secrets.id, id));
+    }
+
+    const res = await request(app)
+      .get('/api/dashboard/secrets')
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(res.body.secrets).toHaveLength(5);
+    expect(res.body.nextCursor).toBeNull();
+  });
+
+  test('second page fetched with cursor returns correct continuation', async () => {
+    // Insert 21 secrets with distinct createdAt timestamps
+    const insertedIds: string[] = [];
+    for (let i = 0; i < 21; i++) {
+      const id = await insertTestSecret({ userId: userAId });
+      await db
+        .update(secrets)
+        .set({ createdAt: new Date(Date.now() - i * 1000) })
+        .where(eq(secrets.id, id));
+      insertedIds.push(id);
+    }
+
+    // Fetch page 1
+    const page1 = await request(app)
+      .get('/api/dashboard/secrets')
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(page1.body.secrets).toHaveLength(20);
+    const cursor = page1.body.nextCursor as string;
+    expect(cursor).not.toBeNull();
+
+    const page1Ids = (page1.body.secrets as { id: string }[]).map((s) => s.id);
+
+    // Fetch page 2 using cursor
+    const page2 = await request(app)
+      .get(`/api/dashboard/secrets?cursor=${encodeURIComponent(cursor)}`)
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(page2.body.secrets).toHaveLength(1);
+    expect(page2.body.nextCursor).toBeNull();
+
+    // The second page's secret must NOT appear in the first page
+    const page2Id = (page2.body.secrets as { id: string }[])[0].id;
+    expect(page1Ids).not.toContain(page2Id);
+  });
+
+  test('returns 400 for malformed cursor', async () => {
+    // URL-encoded '!!!not-base64'
+    await request(app)
+      .get('/api/dashboard/secrets?cursor=%21%21%21not-base64')
+      .set('Cookie', userASessionCookie)
+      .expect(400);
+  });
+
+  test('returns 400 for invalid status value', async () => {
+    await request(app)
+      .get('/api/dashboard/secrets?status=invalid')
+      .set('Cookie', userASessionCookie)
+      .expect(400);
+  });
+
+  test('status=active returns only active secrets', async () => {
+    // Insert 3 active + 2 viewed secrets
+    for (let i = 0; i < 3; i++) {
+      await insertTestSecret({ userId: userAId, status: 'active' });
+    }
+    for (let i = 0; i < 2; i++) {
+      await insertTestSecret({ userId: userAId, status: 'viewed' });
+    }
+
+    const res = await request(app)
+      .get('/api/dashboard/secrets?status=active')
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(res.body.secrets).toHaveLength(3);
+    const statuses = (res.body.secrets as { status: string }[]).map((s) => s.status);
+    expect(statuses.every((s) => s === 'active')).toBe(true);
+  });
+
+  test('status filter is preserved across cursor pages', async () => {
+    // Insert 21 active secrets with distinct createdAt timestamps
+    for (let i = 0; i < 21; i++) {
+      const id = await insertTestSecret({ userId: userAId, status: 'active' });
+      await db
+        .update(secrets)
+        .set({ createdAt: new Date(Date.now() - i * 1000) })
+        .where(eq(secrets.id, id));
+    }
+
+    // Fetch page 1 with status=active filter
+    const page1 = await request(app)
+      .get('/api/dashboard/secrets?status=active')
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(page1.body.secrets).toHaveLength(20);
+    expect(page1.body.nextCursor).not.toBeNull();
+
+    const cursor = page1.body.nextCursor as string;
+
+    // Fetch page 2 preserving status filter
+    const page2 = await request(app)
+      .get(`/api/dashboard/secrets?status=active&cursor=${encodeURIComponent(cursor)}`)
+      .set('Cookie', userASessionCookie)
+      .expect(200);
+
+    expect(page2.body.secrets).toHaveLength(1);
+    expect(page2.body.nextCursor).toBeNull();
+    const statuses = (page2.body.secrets as { status: string }[]).map((s) => s.status);
+    expect(statuses.every((s) => s === 'active')).toBe(true);
   });
 });

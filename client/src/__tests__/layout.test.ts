@@ -36,7 +36,6 @@ vi.mock('../components/theme-toggle.js', () => ({
     btn.textContent = 'Theme';
     return btn;
   }),
-  RETRO_ENABLED: false,
 }));
 
 let mainEl: HTMLElement;

@@ -7,7 +7,11 @@ dist/
 .claude.local.md
 CLAUDE.md
 .claude/
-.planning/
+.planning/**
+!.planning/ROADMAP.md
+!.planning/STATE.md
+!.planning/launch/
+!.planning/launch/**
 .infisical.json
 .DS_Store
 cached-*.md
@@ -15,6 +19,7 @@ cached-*.md
 !docs/screenshots/*.png
 !screenshots/*.png
 .playwright-mcp/
+docs/archive/
 
 # Playwright
 test-results/
@@ -23,9 +28,6 @@ blob-report/
 
 # Coverage
 coverage/
-
-# UAT browser eval workspace
-.planning/security/
 
 # UAT browser automation
 e2e/e2e-config.json

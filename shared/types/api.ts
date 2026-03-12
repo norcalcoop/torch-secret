@@ -100,7 +100,16 @@ export interface DashboardSecretItem {
 /** Response from GET /api/dashboard/secrets */
 export interface DashboardListResponse {
   secrets: DashboardSecretItem[];
+  nextCursor: string | null;
 }
+
+/** Query params schema for GET /api/dashboard/secrets (API-02 cursor pagination) */
+export const DashboardQuerySchema = z.object({
+  cursor: z.string().optional(),
+  status: z.enum(['all', 'active', 'viewed', 'expired', 'deleted']).optional().default('all'),
+});
+
+export type DashboardQuery = z.infer<typeof DashboardQuerySchema>;
 
 /** Response from DELETE /api/dashboard/secrets/:id on success */
 export interface DashboardDeleteResponse {
@@ -111,7 +120,7 @@ export interface DashboardDeleteResponse {
 // Phase 34: Stripe Pro Billing
 // ---------------------------------------------------------------------------
 
-/** Response from GET /api/me — includes subscription tier (Phase 34) */
+/** Response from GET /api/me — includes subscription tier and Stripe customer ID (Phase 34, 68) */
 export interface MeResponse {
   user: {
     id: string;
@@ -121,6 +130,7 @@ export interface MeResponse {
     image: string | null;
     createdAt: string; // ISO string
     subscriptionTier: 'free' | 'pro';
+    stripeCustomerId: string | null;
   };
 }
 

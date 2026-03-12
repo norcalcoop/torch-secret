@@ -2,13 +2,14 @@ import { type Store, rateLimit } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { Redis } from 'ioredis';
 import { logger } from './logger.js';
+import { env } from '../config/env.js';
 
 /**
  * E2E tests share one server across 3 browsers; raise limits to prevent 429s during test runs.
  * Requires BOTH NODE_ENV=test AND E2E_TEST=true to activate — prevents accidental bypass in
  * production if only one variable is set (SR-014 safety gate).
  */
-const isE2E = process.env.NODE_ENV === 'test' && process.env.E2E_TEST === 'true';
+const isE2E = env.NODE_ENV === 'test' && env.E2E_TEST === 'true';
 
 /**
  * Create a RedisStore for rate limiting when a Redis client is provided,
@@ -194,6 +195,31 @@ export function createVerifyTightLimiter(redisClient?: Redis) {
       message: 'Too many password attempts. Please wait before trying again.',
     },
     store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:verify:tight:')),
+    passOnStoreError: true,
+  });
+}
+
+/**
+ * Create a rate limiter for GET /api/health.
+ *
+ * Limits to 60 req/min per IP — prevents health polling from amplifying
+ * DB load (each health check runs SELECT 1 against the pool).
+ *
+ * standardHeaders: 'draft-8' per REQUIREMENTS GH-02.
+ * passOnStoreError: true — allows health check through if Redis is down
+ * (better to return health info than to fail the health endpoint itself).
+ *
+ * No isE2E multiplier applied — health checks in E2E don't need raised limits
+ * (60/min is not reachable in normal E2E runs).
+ */
+export function createHealthLimiter(redisClient?: Redis) {
+  return rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    limit: 60, // 60 req/min per IP
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    statusCode: 429,
+    store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:health:')),
     passOnStoreError: true,
   });
 }
