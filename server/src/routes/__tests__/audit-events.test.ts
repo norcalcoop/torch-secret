@@ -156,6 +156,10 @@ describe('AUTH-02 — audit event writes', () => {
       .post('/api/auth/request-password-reset')
       .send({ email, redirectTo: 'http://localhost/reset-password' });
 
+    // fireAuditEvent is fire-and-forget — allow the microtask queue to flush
+    // before querying the DB so the audit row is visible.
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
     const result = await db.execute(sql`
       SELECT event_type, ip_hash FROM audit_logs
       WHERE user_id = ${userId} AND event_type = 'password_reset_requested'

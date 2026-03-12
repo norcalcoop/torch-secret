@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
+import type { Express } from 'express';
 import type { Redis } from 'ioredis';
 import { toNodeHandler } from 'better-auth/node';
 import {
@@ -41,7 +42,7 @@ import { env } from './config/env.js';
  * 10. static assets + SPA catch-all (production only, when client/dist exists)
  * 11. errorHandler  -- MUST be last
  */
-export function buildApp(redisClient?: Redis): express.Application {
+export function buildApp(redisClient?: Redis): Express {
   const app = express();
 
   // Trust first proxy hop (enables correct req.ip for rate limiting

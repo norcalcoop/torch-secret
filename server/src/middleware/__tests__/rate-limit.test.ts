@@ -36,9 +36,11 @@ describe('createVerifyTightLimiter — configuration unit test (SR-015, nyquist)
   });
 
   test('uses limit=5 in production (NODE_ENV !== test)', async () => {
-    // Temporarily set env to non-test to inspect the production limiter config
+    // Temporarily set env to non-test to inspect the production limiter config.
+    // REDIS_URL must also be stubbed because the Zod env schema requires it in production.
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('E2E_TEST', 'false');
+    vi.stubEnv('REDIS_URL', 'redis://localhost:6379');
 
     // Re-import the module so the isE2E constant is re-evaluated
     const { createVerifyTightLimiter } = await import('../rate-limit.js');
