@@ -153,7 +153,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 - [x] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI (completed 2026-03-11)
 - [x] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint (completed 2026-03-11)
 - [x] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock (completed 2026-03-11)
-- [ ] **Phase 73: Health Router Redis Wiring** — Convert healthRouter singleton to createHealthRouter(redisClient?) factory; close FINDING-01 integration gap from v5.3 audit
+- [x] **Phase 73: Health Router Redis Wiring** — Convert healthRouter singleton to createHealthRouter(redisClient?) factory; close FINDING-01 integration gap from v5.3 audit (completed 2026-03-12)
 
 ## Phase Details
 
@@ -303,4 +303,4 @@ Plans:
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
 | 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
 | 72. TypeScript + Docs Cleanup | 2/2 | Complete    | 2026-03-12 | - |
-| 73. Health Router Redis Wiring | 1/2 | In Progress|  | - |
+| 73. Health Router Redis Wiring | 2/2 | Complete   | 2026-03-12 | - |
