@@ -303,4 +303,4 @@ Plans:
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
 | 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
 | 72. TypeScript + Docs Cleanup | 2/2 | Complete    | 2026-03-12 | - |
-| 73. Health Router Redis Wiring | 2/2 | Complete   | 2026-03-12 | - |
+| 73. Health Router Redis Wiring | 2/2 | Complete    | 2026-03-12 | - |
