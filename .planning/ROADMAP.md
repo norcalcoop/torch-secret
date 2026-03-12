@@ -9,7 +9,7 @@
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 - ✅ **v5.1 Email Infrastructure** — Phases 46-53 (complete 2026-03-06)
 - ✅ **v5.2 Tech Debt & Launch Prep** — Phases 54-63 (complete 2026-03-09)
-- 🚧 **v5.3 Post-Launch Hardening** — Phases 65-73 (in progress)
+- ✅ **v5.3 Post-Launch Hardening** — Phases 65-73 (shipped 2026-03-12)
 
 ## Phases
 
@@ -142,165 +142,19 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v5.3 Post-Launch Hardening (In Progress)
+<details>
+<summary>✅ v5.3 Post-Launch Hardening (Phases 65-73) — SHIPPED 2026-03-12</summary>
 
-**Milestone Goal:** Address the highest-impact technical debt, security vulnerabilities, performance bottlenecks, and GDPR compliance gaps identified in the post-launch codebase and GitHub audit.
+- [x] Phase 65: Quick Wins (3/3 plans) — completed 2026-03-10
+- [x] Phase 66: Billing Lifecycle (3/3 plans) — completed 2026-03-10
+- [x] Phase 67: Bundle Performance (3/3 plans) — completed 2026-03-11
+- [x] Phase 68: API & Schema Quality (3/3 plans) — completed 2026-03-11
+- [x] Phase 69: Dashboard Pagination (3/3 plans) — completed 2026-03-11
+- [x] Phase 70: Auth Observability & GDPR Export (4/4 plans) — completed 2026-03-11
+- [x] Phase 71: Infrastructure Hardening (2/2 plans) — completed 2026-03-11
+- [x] Phase 72: TypeScript + Docs Cleanup (2/2 plans) — completed 2026-03-12
+- [x] Phase 73: Health Router Redis Wiring (2/2 plans) — completed 2026-03-12
 
-- [x] **Phase 65: Quick Wins** — Process stability handlers, GitHub/CI fixes, canonical isSession guard (completed 2026-03-10)
-- [x] **Phase 66: Billing Lifecycle** — Dunning email, subscription sync, verify-checkout fail-closed guard (completed 2026-03-10)
-- [x] **Phase 67: Bundle Performance** — Retro theme dynamic import, passphrase wordlist lazy-load (completed 2026-03-11)
-- [x] **Phase 68: API & Schema Quality** — Expired-row cleanup, select projection fix, pgEnum migration (completed 2026-03-11)
-- [x] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI (completed 2026-03-11)
-- [x] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint (completed 2026-03-11)
-- [x] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock (completed 2026-03-11)
-- [x] **Phase 73: Health Router Redis Wiring** — Convert healthRouter singleton to createHealthRouter(redisClient?) factory; close FINDING-01 integration gap from v5.3 audit (completed 2026-03-12)
+See [v5.3 Roadmap Archive](milestones/v5.3-ROADMAP.md) for full phase details.
 
-## Phase Details
-
-### Phase 65: Quick Wins
-**Goal**: Critical process stability and CI hygiene improvements ship as a single coherent batch — server crash handlers, dangerous response body fix, health endpoint abuse protection, and a canonical auth type guard replacing scattered duplicates
-**Depends on**: Phase 63 (v5.2 complete)
-**Requirements**: SRVR-01, SRVR-02, GH-01, GH-02, GH-03, QUAL-02
-**Success Criteria** (what must be TRUE):
-  1. An unhandled Promise rejection or uncaught exception causes the server to log at fatal level and exit — the process no longer crashes silently without a trace
-  2. Starting the server with `E2E_TEST=true` outside of test mode throws immediately at startup, preventing accidental rate-limit disable on staging or production
-  3. A Stripe webhook signature failure returns `{ error: 'Webhook signature verification failed' }` with no interpolated exception text in the response body
-  4. `GET /api/health` is protected by a rate limiter (60 req/min per IP) so repeated health polling cannot amplify DB load
-  5. All GitHub Actions in `ci.yml` are pinned to commit SHAs and the workflow declares `permissions: contents: read` at the workflow level
-  6. A single `isSession()` type guard is exported from `client/src/api/auth-client.ts` and all pages import it from there — no duplicate implementations remain in dashboard, create, login, or register pages
-**Plans**: 3 plans
-
-Plans:
-- [ ] 65-01-PLAN.md — Wave 0 test scaffolds (process-handlers, env, webhooks, rate-limit, auth-client)
-- [ ] 65-02-PLAN.md — Server hardening: fatalHandler, E2E guard, webhook JSON responses, health limiter
-- [ ] 65-03-PLAN.md — CI SHA pinning + isSession consolidation
-
-### Phase 66: Billing Lifecycle
-**Goal**: The Stripe webhook handler covers the full subscription lifecycle — failed payments trigger dunning email, mid-period plan changes sync the database tier, and the verify-checkout endpoint cannot be bypassed by a race window
-**Depends on**: Phase 65
-**Requirements**: BILL-01, BILL-02, BILL-03
-**Success Criteria** (what must be TRUE):
-  1. When Stripe fires `invoice.payment_failed`, a dunning email is dispatched via Resend notifying the user of the payment failure
-  2. When Stripe fires `customer.subscription.updated`, the user's `subscriptionTier` in the database is updated to reflect the new plan — mid-period upgrades and downgrades are handled correctly
-  3. When `verify-checkout` sees `session.customer` set but `dbUser.stripeCustomerId` is null, it returns 403 — the race window bypass is closed
-**Plans**: 3 plans
-
-Plans:
-- [ ] 66-01-PLAN.md — Wave 0 TDD stubs for BILL-01, BILL-02, BILL-03 across three test files
-- [ ] 66-02-PLAN.md — sendDunningEmail + invoice.payment_failed + customer.subscription.updated webhook cases
-- [ ] 66-03-PLAN.md — verify-checkout fail-closed guard + column projection fix
-
-### Phase 67: Bundle Performance
-**Goal**: Production JavaScript bundle sheds approximately 2,880 lines of retro theme code and 280KB of passphrase wordlist data that are never needed on initial page load
-**Depends on**: Phase 65
-**Requirements**: BNDL-01, BNDL-02
-**Success Criteria** (what must be TRUE):
-  1. With `VITE_RETRO_ENABLED=false` (production default), retro theme modules (`retro-data.ts`, `retro-icons.ts`, `retro-theme.ts`, `retro-effects.ts`) are not included in any Vite output chunk — Vite bundle analysis shows zero retro code in production build
-  2. The passphrase wordlist is not present in the initial bundle — it loads on demand via dynamic import the first time the passphrase tab is selected, and all passphrase generation tests continue to pass
-**Plans**: 3 plans
-
-Plans:
-- [ ] 67-01-PLAN.md — Wave 0 scaffolding: install visualizer, migrate retro-gate.test.ts to vi.stubEnv, create passphrase-lazy-load.test.ts stubs
-- [ ] 67-02-PLAN.md — BNDL-01: retro gate dynamic imports in app.ts + theme-toggle.ts, strip retro FOWT from index.html
-- [ ] 67-03-PLAN.md — BNDL-02: passphrase lazy-load in create.ts, loading UX, error/retry, test migration
-
-### Phase 68: API & Schema Quality
-**Goal**: Three targeted backend improvements ship together: expired secrets are cleaned up opportunistically on meta lookup, billing queries no longer select-star user rows, and status columns are enforced at the database level with pgEnum
-**Depends on**: Phase 65
-**Requirements**: API-01, API-03, QUAL-01
-**Success Criteria** (what must be TRUE):
-  1. When `getSecretMeta()` encounters a row where `expiresAt <= now`, it deletes the row and returns the same not-found response as if the secret never existed — no stale expired rows accumulate from meta-only lookups
-  2. The billing route and `/api/me` endpoint query the database projecting only `stripeCustomerId` — no full user row is fetched and transmitted for operations that need only the customer ID
-  3. `secrets.status` and `marketingSubscribers.status` columns are backed by Postgres `pgEnum` types — inserting an invalid status value is rejected at the database level; a migration applies the change without data loss
-**Plans**: 3 plans
-
-Plans:
-- [ ] 68-01-PLAN.md — Wave 0 test scaffolding: RED tests for getSecretMeta() expired-row cleanup
-- [ ] 68-02-PLAN.md — API-01 + API-03: getSecretMeta() cleanup + select projection fixes
-- [ ] 68-03-PLAN.md — QUAL-01: pgEnum schema declarations and migration
-
-### Phase 69: Dashboard Pagination
-**Goal**: The dashboard secret list supports cursor-based pagination so users with many secrets are not forced to load the full history in a single response
-**Depends on**: Phase 68
-**Requirements**: API-02
-**Success Criteria** (what must be TRUE):
-  1. `GET /api/dashboard/secrets` accepts an optional `cursor` query parameter and returns at most a defined page size of secrets plus a `nextCursor` field in the response body
-  2. When more secrets exist beyond the current page, a "Load more" control is visible on the dashboard — clicking it fetches the next page and appends the results below the existing list without a full-page reload
-  3. When no further secrets exist, `nextCursor` is null and the "Load more" control is hidden
-**Plans**: 3 plans
-
-Plans:
-- [ ] 69-01-PLAN.md — Wave 1: RED test scaffolds for server pagination + client Load More button; fix breaking `{ secrets: [] }` assertion
-- [ ] 69-02-PLAN.md — Wave 2: Server implementation — DashboardQuerySchema, validateQuery(), getUserSecrets() cursor pagination, route update
-- [ ] 69-03-PLAN.md — Wave 3: Client implementation — fetchDashboardSecrets() options, renderSecretsTable() server-driven tabs + Load More button
-
-### Phase 70: Auth Observability & GDPR Export
-**Goal**: Auth events are durably recorded in an audit log table and users can export their own data as required by GDPR Article 20
-**Depends on**: Phase 69
-**Requirements**: AUTH-01, AUTH-02, GDPR-01
-**Success Criteria** (what must be TRUE):
-  1. An `audit_logs` table exists in the database with columns `id`, `event_type`, `user_id`, `ip_hash`, `user_agent`, `created_at` — the table has no `secretId` column (ZK-safe by design) and a cascading FK to users
-  2. The five auth lifecycle events — `sign_up`, `sign_in`, `password_reset_requested`, `oauth_connect`, `logout` — each write a row to `audit_logs` at the moment the event occurs
-  3. An authenticated `GET /api/me/export` request returns a JSON payload containing the user's profile metadata and their audit log entries — no ciphertext is included (secrets are zeroed/deleted at retrieval time)
-**Plans**: 4 plans
-
-Plans:
-- [ ] 70-01-PLAN.md — Wave 0: RED test scaffolds for audit-logs-schema, audit-events, zk-invariant update, me/export stubs
-- [ ] 70-02-PLAN.md — Wave 1: audit_logs schema + authEventTypeEnum + migration + audit.service.ts
-- [ ] 70-03-PLAN.md — Wave 2a: event wiring in auth.ts (sign_up, oauth_connect, password_reset_requested, sign_in, logout)
-- [ ] 70-04-PLAN.md — Wave 2b: GET /api/me/export route on meRouter
-
-### Phase 71: Infrastructure Hardening
-**Goal**: Redis is enforced as a production requirement rather than an optional convenience, and the expiration worker acquires a distributed lock so horizontal scaling does not cause duplicate cleanup runs
-**Depends on**: Phase 70
-**Requirements**: INFR-01, INFR-02
-**Success Criteria** (what must be TRUE):
-  1. Starting the server in `NODE_ENV=production` without `REDIS_URL` set causes Zod env validation to fail at startup — the server does not start with MemoryStore in production
-  2. The expiration worker attempts to acquire a Redis `SET NX EX 299` lock before each cleanup run — if the lock is already held by another instance, the worker skips that run rather than performing duplicate DB deletes
-  3. `.env.example` documents `REDIS_URL` as required in production with a clear comment explaining that MemoryStore is dev-only
-**Plans**: 2 plans
-
-Plans:
-- [ ] 71-01-PLAN.md — INFR-01: env guard Zod refine + REDIS_URL production tests + .env.example update
-- [ ] 71-02-PLAN.md — INFR-02: Redis client threading (server.ts → app.ts → worker) + distributed lock guard + tests
-
-### Phase 72: Fix Test Failures, Linting, TypeScript and Code Quality Errors
-
-**Goal**: Eliminate all 18 TypeScript compiler errors accumulated during v5.3, commit the outstanding staged rate-limit test change, and bring documentation (CHANGELOG, INVARIANTS.md, package.json) current with the v5.3 milestone.
-**Requirements**: none (cleanup phase — no numbered requirement IDs)
-**Depends on**: Phase 71
-**Plans**: 2 plans
-
-Plans:
-- [ ] 72-01-PLAN.md — TypeScript fixes: buildApp() return type, RETRO_ENABLED stale import, commit staged rate-limit change
-- [ ] 72-02-PLAN.md — Documentation: INVARIANTS.md Redis row, CHANGELOG v5.3.0 entry, package.json + README version bump
-
-### Phase 73: Health Router Redis Wiring
-**Goal**: Close FINDING-01 from v5.3 milestone audit — convert `healthRouter` from a module-level singleton to a `createHealthRouter(redisClient?)` factory so the health endpoint rate limiter receives the shared Redis client and uses RedisStore (not MemoryStore) in production, matching the pattern of all other rate-limited routers
-**Depends on**: Phase 72 (v5.3 stable baseline)
-**Requirements**: GH-02 (integration wiring fix — requirement satisfied, wiring gap closed)
-**Gap Closure**: Closes FINDING-01 from v5.3-MILESTONE-AUDIT.md
-**Success Criteria** (what must be TRUE):
-  1. `server/src/routes/health.ts` exports `createHealthRouter(redisClient?: Redis): Router` — no longer exports a pre-built `healthRouter` singleton
-  2. `server/src/app.ts` calls `createHealthRouter(redisClient)` to mount the health router, passing the shared Redis client
-  3. All tests that previously imported `healthRouter` from `health.ts` now use `createHealthRouter()` or `createHealthRouter(mockRedis)` as appropriate
-  4. When `REDIS_URL` is configured in production, the health limiter uses RedisStore — confirmed by the same Redis client injection pattern as `createSecretsRouter`
-**Plans**: 2 plans
-
-Plans:
-- [ ] 73-01-PLAN.md — Wave 0: test stubs for healthRouter factory conversion
-- [ ] 73-02-PLAN.md — Convert healthRouter to createHealthRouter(redisClient?) factory; update app.ts; update tests
-
-## Progress
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 65. Quick Wins | 3/3 | Complete    | 2026-03-10 | - |
-| 66. Billing Lifecycle | 3/3 | Complete    | 2026-03-10 | - |
-| 67. Bundle Performance | 3/3 | Complete    | 2026-03-11 | - |
-| 68. API & Schema Quality | 3/3 | Complete    | 2026-03-11 | - |
-| 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
-| 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
-| 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
-| 72. TypeScript + Docs Cleanup | 2/2 | Complete    | 2026-03-12 | - |
-| 73. Health Router Redis Wiring | 2/2 | Complete    | 2026-03-12 | - |
+</details>
