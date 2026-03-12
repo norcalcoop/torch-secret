@@ -127,6 +127,10 @@ describe('AUTH-02 — audit event writes', () => {
 
     await request(app).post('/api/auth/sign-out').set('Cookie', cookie).send({});
 
+    // fireAuditEvent is fire-and-forget — allow the microtask queue to flush
+    // before querying the DB so the audit row is visible.
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
     const result = await db.execute(sql`
       SELECT event_type FROM audit_logs
       WHERE user_id = ${userId} AND event_type = 'logout'
