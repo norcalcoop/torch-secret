@@ -9,7 +9,7 @@
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 - ✅ **v5.1 Email Infrastructure** — Phases 46-53 (complete 2026-03-06)
 - ✅ **v5.2 Tech Debt & Launch Prep** — Phases 54-63 (complete 2026-03-09)
-- 🚧 **v5.3 Post-Launch Hardening** — Phases 65-71 (in progress)
+- 🚧 **v5.3 Post-Launch Hardening** — Phases 65-72 (in progress)
 
 ## Phases
 
@@ -263,6 +263,17 @@ Plans:
 - [ ] 71-01-PLAN.md — INFR-01: env guard Zod refine + REDIS_URL production tests + .env.example update
 - [ ] 71-02-PLAN.md — INFR-02: Redis client threading (server.ts → app.ts → worker) + distributed lock guard + tests
 
+### Phase 72: Fix Test Failures, Linting, TypeScript and Code Quality Errors
+
+**Goal**: Eliminate all 18 TypeScript compiler errors accumulated during v5.3, commit the outstanding staged rate-limit test change, and bring documentation (CHANGELOG, INVARIANTS.md, package.json) current with the v5.3 milestone.
+**Requirements**: none (cleanup phase — no numbered requirement IDs)
+**Depends on**: Phase 71
+**Plans**: 2 plans
+
+Plans:
+- [ ] 72-01-PLAN.md — TypeScript fixes: buildApp() return type, RETRO_ENABLED stale import, commit staged rate-limit change
+- [ ] 72-02-PLAN.md — Documentation: INVARIANTS.md Redis row, CHANGELOG v5.3.0 entry, package.json + README version bump
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -274,3 +285,4 @@ Plans:
 | 69. Dashboard Pagination | 3/3 | Complete    | 2026-03-11 | - |
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
 | 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
+| 72. TypeScript + Docs Cleanup | 0/2 | In Progress | - | - |
