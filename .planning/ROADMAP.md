@@ -9,7 +9,7 @@
 - ✅ **v5.0 Product Launch Checklist** — Phases 31-45 (shipped 2026-03-03)
 - ✅ **v5.1 Email Infrastructure** — Phases 46-53 (complete 2026-03-06)
 - ✅ **v5.2 Tech Debt & Launch Prep** — Phases 54-63 (complete 2026-03-09)
-- 🚧 **v5.3 Post-Launch Hardening** — Phases 65-72 (in progress)
+- 🚧 **v5.3 Post-Launch Hardening** — Phases 65-73 (in progress)
 
 ## Phases
 
@@ -153,6 +153,7 @@ See [v5.2 Roadmap Archive](milestones/v5.2-ROADMAP.md) for full phase details.
 - [x] **Phase 69: Dashboard Pagination** — Cursor pagination on getUserSecrets, Load More UI (completed 2026-03-11)
 - [x] **Phase 70: Auth Observability & GDPR Export** — audit_logs table, auth event writes, data export endpoint (completed 2026-03-11)
 - [x] **Phase 71: Infrastructure Hardening** — Redis required in production, distributed expiration lock (completed 2026-03-11)
+- [ ] **Phase 73: Health Router Redis Wiring** — Convert healthRouter singleton to createHealthRouter(redisClient?) factory; close FINDING-01 integration gap from v5.3 audit
 
 ## Phase Details
 
@@ -274,6 +275,22 @@ Plans:
 - [ ] 72-01-PLAN.md — TypeScript fixes: buildApp() return type, RETRO_ENABLED stale import, commit staged rate-limit change
 - [ ] 72-02-PLAN.md — Documentation: INVARIANTS.md Redis row, CHANGELOG v5.3.0 entry, package.json + README version bump
 
+### Phase 73: Health Router Redis Wiring
+**Goal**: Close FINDING-01 from v5.3 milestone audit — convert `healthRouter` from a module-level singleton to a `createHealthRouter(redisClient?)` factory so the health endpoint rate limiter receives the shared Redis client and uses RedisStore (not MemoryStore) in production, matching the pattern of all other rate-limited routers
+**Depends on**: Phase 72 (v5.3 stable baseline)
+**Requirements**: GH-02 (integration wiring fix — requirement satisfied, wiring gap closed)
+**Gap Closure**: Closes FINDING-01 from v5.3-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. `server/src/routes/health.ts` exports `createHealthRouter(redisClient?: Redis): Router` — no longer exports a pre-built `healthRouter` singleton
+  2. `server/src/app.ts` calls `createHealthRouter(redisClient)` to mount the health router, passing the shared Redis client
+  3. All tests that previously imported `healthRouter` from `health.ts` now use `createHealthRouter()` or `createHealthRouter(mockRedis)` as appropriate
+  4. When `REDIS_URL` is configured in production, the health limiter uses RedisStore — confirmed by the same Redis client injection pattern as `createSecretsRouter`
+**Plans**: 2 plans
+
+Plans:
+- [ ] 73-01-PLAN.md — Wave 0: test stubs for healthRouter factory conversion
+- [ ] 73-02-PLAN.md — Convert healthRouter to createHealthRouter(redisClient?) factory; update app.ts; update tests
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -286,3 +303,4 @@ Plans:
 | 70. Auth Observability & GDPR Export | 4/4 | Complete    | 2026-03-11 | - |
 | 71. Infrastructure Hardening | 2/2 | Complete   | 2026-03-11 | - |
 | 72. TypeScript + Docs Cleanup | 2/2 | Complete    | 2026-03-12 | - |
+| 73. Health Router Redis Wiring | 0/2 | Pending | - | - |
