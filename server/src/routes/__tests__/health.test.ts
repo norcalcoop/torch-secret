@@ -5,7 +5,12 @@ import { createHealthRouter } from '../../routes/health.js';
 import { buildApp } from '../../app.js';
 import { pool } from '../../db/connection.js';
 
-const mockRedis = { call: vi.fn() } as unknown as Redis;
+const mockRedis = {
+  call: vi.fn().mockImplementation((command: string) => {
+    if (command === 'SCRIPT') return Promise.resolve('fakeSha1234567890');
+    return Promise.resolve([1, Date.now() + 60_000]); // EVALSHA: [hitCount, resetTime]
+  }),
+} as unknown as Redis;
 
 afterAll(async () => {
   await pool.end();
