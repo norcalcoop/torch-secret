@@ -176,12 +176,11 @@ describe('passphrase lazy-load (BNDL-02)', () => {
     expect(passphraseTab).not.toBeNull();
     passphraseTab!.click();
 
-    // Flush microtasks so the dynamic import settles and initPassphrasePanel() completes
-    await new Promise((r) => setTimeout(r, 50));
-
-    // Assert: passphrase input is in the DOM
-    const passphraseInput = container.querySelector('#passphrase-input');
-    expect(passphraseInput).not.toBeNull();
+    // Wait for the dynamic import to settle and initPassphrasePanel() to update the DOM.
+    // vi.waitFor polls until the assertion passes, avoiding the timing race of a fixed setTimeout.
+    await vi.waitFor(() => {
+      expect(container.querySelector('#passphrase-input')).not.toBeNull();
+    });
 
     // Assert: spinner (role=status from loading-spinner) is gone
     const spinner = container.querySelector('[role=status]');
