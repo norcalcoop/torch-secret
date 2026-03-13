@@ -106,7 +106,7 @@ Progress: [██████████] 100%
 | 2 | Pre-launch human verification checklist (migrated from Phase 64) | 2026-03-13 | — | Spot-Checked | [2-pre-launch-human-verification-checklist](./quick/2-pre-launch-human-verification-checklist/) |
 | 3 | Apply security dependency patches — PR #6 + esbuild CVE-2025-31125 | 2026-03-12 | abff85e | Verified | [3-apply-security-dependency-patches-pr-6-e](./quick/3-apply-security-dependency-patches-pr-6-e/) |
 | 4 | Close open quick tasks — spot-check checklist, close task 2 | 2026-03-13 | — | Verified | [4-are-any-of-the-three-quick-items-still-o](./quick/4-are-any-of-the-three-quick-items-still-o/) |
-| 5 | Fix OpenSSF Scorecard failing checks — SHA pins, Dockerfile digest, SECURITY.md, checklist | 2026-03-13 | 666ab0b | Verified | [5-fix-openssf-scorecard-failing-checks-to-](./quick/5-fix-openssf-scorecard-failing-checks-to-/) |
+| 5 | Fix OpenSSF Scorecard failing checks — SHA pins, Dockerfile digest, SECURITY.md, checklist | 2026-03-13 | 666ab0b | Needs Review | [5-fix-openssf-scorecard-failing-checks-to-](./quick/5-fix-openssf-scorecard-failing-checks-to-/) |
 
 ### Blockers/Concerns
 
