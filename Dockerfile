@@ -2,7 +2,8 @@
 # Stage 1: Install ALL dependencies (dev + prod)
 # Needed for: Vite frontend build, native modules (argon2)
 # ============================================================
-FROM node:24-slim AS deps
+FROM node:24-slim@sha256:b4687aef2571c632a1953695ce4d61d6462a7eda471fe6e272eebf0418f276ba AS deps
+# To update digest: docker pull node:24-slim && docker inspect --format='{{index .RepoDigests 0}}' node:24-slim
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -26,7 +27,8 @@ RUN npm run build:client
 # - Non-root user (node, UID 1000)
 # - Includes tsx for running TypeScript server directly
 # ============================================================
-FROM node:24-slim AS production
+FROM node:24-slim@sha256:b4687aef2571c632a1953695ce4d61d6462a7eda471fe6e272eebf0418f276ba AS production
+# To update digest: docker pull node:24-slim && docker inspect --format='{{index .RepoDigests 0}}' node:24-slim
 ENV NODE_ENV=production
 WORKDIR /app
 
