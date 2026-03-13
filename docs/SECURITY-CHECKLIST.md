@@ -28,13 +28,10 @@ Go to: **github.com/norcalcoop/torch-secret → Settings → Branches → Add br
 - [ ] Sign in with GitHub
 - [ ] Enter repository URL: `https://github.com/norcalcoop/torch-secret`
 - [ ] Complete the questionnaire (Passing level requires ~30 criteria — most are already met given the existing CI, tests, SECURITY.md, and docs)
-- [ ] Obtain the badge URL and add it to README.md:
-
-```markdown
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/XXXX/badge)](https://bestpractices.coreinfrastructure.org/projects/XXXX)
-```
-
-Replace `XXXX` with the project ID assigned during registration.
+- [ ] Note the numeric project ID assigned (shown in the project URL after registration)
+- [ ] Update README.md: replace the two `TODO` placeholders in the CII badge line with your real project ID
+- [ ] Update this checklist: replace `XXXX` below with your real project ID
+- [ ] Verify the badge renders correctly: `https://bestpractices.coreinfrastructure.org/projects/XXXX/badge`
 
 ---
 
