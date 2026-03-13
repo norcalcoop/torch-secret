@@ -2,9 +2,7 @@
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/norcalcoop/torch-secret/badge)](https://securityscorecards.dev/viewer/?uri=github.com/norcalcoop/torch-secret)
 
-<!-- TODO: Replace TODO in the URL below with your real CII project ID after registering at https://bestpractices.coreinfrastructure.org/en/projects/new -->
-
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/TODO/badge)](https://bestpractices.coreinfrastructure.org/projects/TODO)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12158/badge)](https://www.bestpractices.dev/projects/12158)
 [![CI](https://github.com/norcalcoop/torch-secret/actions/workflows/ci.yml/badge.svg)](https://github.com/norcalcoop/torch-secret/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-torchsecret.com-orange)](https://torchsecret.com)
 [![License](https://img.shields.io/github/license/norcalcoop/torch-secret)](LICENSE)
