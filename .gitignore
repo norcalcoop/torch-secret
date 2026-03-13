@@ -10,8 +10,6 @@ CLAUDE.md
 .planning/**
 !.planning/ROADMAP.md
 !.planning/STATE.md
-!.planning/launch/
-!.planning/launch/**
 .infisical.json
 .DS_Store
 cached-*.md
