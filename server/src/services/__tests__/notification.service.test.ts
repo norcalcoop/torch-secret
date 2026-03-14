@@ -48,8 +48,25 @@ vi.mock('../../config/env.js', () => ({
 import { resend } from '../email.js';
 import { sendSecretViewedNotification, sendDunningEmail } from '../notification.service.js';
 
+/** Pro user row returned by the DB tier-check inside sendSecretViewedNotification */
+const PRO_USER_ROW = { subscriptionTier: 'pro' as const };
+const FREE_USER_ROW = { subscriptionTier: 'free' as const };
+
+/** Helper: wire mockDbSelect to return a Pro tier row (sendSecretViewedNotification path) */
+function setupProTierMock() {
+  mockDbSelect.mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([PRO_USER_ROW]),
+      }),
+    }),
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: Pro tier so ZK + logging tests can reach the resend.emails.send call
+  setupProTierMock();
 });
 
 // ---------------------------------------------------------------------------
@@ -57,7 +74,11 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 describe('sendSecretViewedNotification — ZK invariant', () => {
   test('email subject does not contain a nanoid-pattern secret ID', async () => {
-    await sendSecretViewedNotification('user@example.com', new Date('2026-01-01T00:00:00Z'));
+    await sendSecretViewedNotification(
+      'user@example.com',
+      new Date('2026-01-01T00:00:00Z'),
+      'user-id-1',
+    );
     const call = vi.mocked(resend.emails.send).mock.calls[0]?.[0];
     expect(call).toBeDefined();
     // nanoid default: 21 chars from [A-Za-z0-9_-]
@@ -66,7 +87,11 @@ describe('sendSecretViewedNotification — ZK invariant', () => {
   });
 
   test('email body does not contain a nanoid-pattern secret ID', async () => {
-    await sendSecretViewedNotification('user@example.com', new Date('2026-01-01T00:00:00Z'));
+    await sendSecretViewedNotification(
+      'user@example.com',
+      new Date('2026-01-01T00:00:00Z'),
+      'user-id-1',
+    );
     const call = vi.mocked(resend.emails.send).mock.calls[0]?.[0];
     expect(call).toBeDefined();
     const nanoidPattern = /[A-Za-z0-9_-]{21}/;
@@ -74,7 +99,11 @@ describe('sendSecretViewedNotification — ZK invariant', () => {
   });
 
   test('Resend send payload does not contain a secretId field', async () => {
-    await sendSecretViewedNotification('user@example.com', new Date('2026-01-01T00:00:00Z'));
+    await sendSecretViewedNotification(
+      'user@example.com',
+      new Date('2026-01-01T00:00:00Z'),
+      'user-id-1',
+    );
     const call = vi.mocked(resend.emails.send).mock.calls[0]?.[0];
     expect(call).toBeDefined();
     expect(JSON.stringify(call)).not.toContain('secretId');
@@ -90,9 +119,48 @@ describe('sendSecretViewedNotification — structured logging on error', () => {
       error: { message: 'Resend outage' },
     } as never);
 
-    await sendSecretViewedNotification('user@example.com', new Date());
+    await sendSecretViewedNotification('user@example.com', new Date(), 'user-id-1');
 
     expect(mockLoggerError).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C-2: Retroactive Pro gate — silently skips email for free-tier creators
+// ---------------------------------------------------------------------------
+describe('sendSecretViewedNotification — Pro tier gate', () => {
+  test('does not send email when user is free tier', async () => {
+    mockDbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([FREE_USER_ROW]),
+        }),
+      }),
+    });
+
+    await sendSecretViewedNotification('user@example.com', new Date(), 'user-id-free');
+
+    expect(resend.emails.send).not.toHaveBeenCalled();
+  });
+
+  test('does not send email when user row is not found', async () => {
+    mockDbSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    });
+
+    await sendSecretViewedNotification('user@example.com', new Date(), 'user-id-missing');
+
+    expect(resend.emails.send).not.toHaveBeenCalled();
+  });
+
+  test('sends email when user is Pro tier', async () => {
+    await sendSecretViewedNotification('user@example.com', new Date(), 'user-id-pro');
+
+    expect(resend.emails.send).toHaveBeenCalledOnce();
   });
 });
 

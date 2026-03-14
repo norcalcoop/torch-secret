@@ -131,6 +131,25 @@ export function createSecretsRouter(redisClient?: Redis) {
         // protectionType === 'passphrase' + userId present: allowed (any authenticated tier)
       }
 
+      // Enforce notify tier cap: email notifications are a Pro feature
+      // Anonymous users are already handled above (notify forced to false at createSecret call).
+      // Defense-in-depth: if an authenticated free user sends notify=true, reject with 403.
+      if (body.notify === true && userId) {
+        const userRow = await db
+          .select({ subscriptionTier: users.subscriptionTier })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const tier = userRow[0]?.subscriptionTier ?? 'free';
+        if (tier !== 'pro') {
+          res.status(403).json({
+            error: 'pro_required',
+            message: 'Email notifications are a Pro feature. Upgrade to unlock them.',
+          });
+          return;
+        }
+      }
+
       const secret = await createSecret(
         body.ciphertext,
         body.expiresIn,

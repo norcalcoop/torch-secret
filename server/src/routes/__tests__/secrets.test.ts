@@ -609,7 +609,22 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
     vi.mocked(sendSecretViewedNotification).mockResolvedValue(undefined);
   });
 
-  test('createSecret persists notify=true when userId provided', async () => {
+  test('createSecret with notify=true from a free user returns 403 pro_required', async () => {
+    // notifyUserId is a free-tier user (default on registration)
+    const res = await request(notifyTestApp)
+      .post('/api/secrets')
+      .set('Cookie', notifyUserSessionCookie)
+      .send({ ciphertext: VALID_CIPHERTEXT, expiresIn: '1h', notify: true })
+      .expect(403);
+
+    expect(res.body.error).toBe('pro_required');
+    expect(res.body.message).toContain('Email notifications are a Pro feature');
+  });
+
+  test('createSecret persists notify=true when userId is Pro', async () => {
+    // Upgrade the test user to Pro for this test
+    await db.update(users).set({ subscriptionTier: 'pro' }).where(eq(users.id, notifyUserId));
+
     const createRes = await request(notifyTestApp)
       .post('/api/secrets')
       .set('Cookie', notifyUserSessionCookie)
@@ -626,6 +641,9 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
     expect(row).toBeDefined();
     expect(row.notify).toBe(true);
     expect(row.userId).toBe(notifyUserId);
+
+    // Restore free tier
+    await db.update(users).set({ subscriptionTier: 'free' }).where(eq(users.id, notifyUserId));
   });
 
   test('createSecret stores notify=false for anonymous secrets even if client sends notify:true', async () => {
@@ -667,12 +685,14 @@ describe('Phase 26: notify persistence and notification dispatch', () => {
     // Allow fire-and-forget to resolve
     await new Promise((resolve) => setImmediate(resolve));
 
-    // sendSecretViewedNotification should have been called with an email string and a Date
+    // sendSecretViewedNotification should have been called with email, Date, and userId
     expect(sendSecretViewedNotification).toHaveBeenCalledOnce();
-    const [emailArg, dateArg] = vi.mocked(sendSecretViewedNotification).mock.calls[0];
+    const [emailArg, dateArg, userIdArg] = vi.mocked(sendSecretViewedNotification).mock.calls[0];
     expect(typeof emailArg).toBe('string');
     expect(emailArg).toBe(NOTIFY_TEST_EMAIL);
     expect(dateArg).toBeInstanceOf(Date);
+    expect(typeof userIdArg).toBe('string');
+    expect(userIdArg).toBe(notifyUserId);
   });
 
   test('retrieveAndDestroy does not dispatch notification when notify=false', async () => {

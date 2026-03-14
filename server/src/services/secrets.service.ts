@@ -145,7 +145,7 @@ export async function retrieveAndDestroy(id: string): Promise<Secret | null> {
     // Only fires if the owner opted in AND the lookup returned a valid email
     // userId !== null is defense-in-depth (anonymous secrets always have notify=false)
     if (secretRow.notify && secretRow.userId !== null && userEmail) {
-      void sendSecretViewedNotification(userEmail, new Date());
+      void sendSecretViewedNotification(userEmail, new Date(), secretRow.userId);
     }
 
     // Return the original secret row (with real ciphertext from Step 1)
@@ -312,7 +312,7 @@ export async function verifyAndRetrieve(
       // Only fires if the owner opted in AND the lookup returned a valid email
       // userId !== null is defense-in-depth (anonymous secrets always have notify=false)
       if (secretRow.notify && secretRow.userId !== null && userEmail) {
-        void sendSecretViewedNotification(userEmail, new Date());
+        void sendSecretViewedNotification(userEmail, new Date(), secretRow.userId);
       }
 
       return { success: true, secret: secretRow };
