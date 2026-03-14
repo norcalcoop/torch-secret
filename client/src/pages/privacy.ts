@@ -59,7 +59,7 @@ export function renderPrivacyPage(container: HTMLElement): void {
     {
       heading: 'How We Use Data',
       paragraphs: [
-        'We use collected data for: secret delivery and automatic destruction after one view; user authentication and session management; rate limiting to prevent abuse; and sending optional notification emails (per-secret opt-in, available to authenticated users only).',
+        'We use collected data for: secret delivery and automatic destruction after one view; user authentication and session management; rate limiting to prevent abuse; and sending optional notification emails (per-secret opt-in, available to Pro subscribers).',
       ],
     },
     {

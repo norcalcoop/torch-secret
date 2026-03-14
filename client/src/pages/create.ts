@@ -166,9 +166,16 @@ function createLabelField(): HTMLElement {
 /**
  * Creates the email notification checkbox for authenticated users.
  * Only injected into the DOM for logged-in users (progressive enhancement).
+ *
+ * When isPro is false (free tier): checkbox is disabled, a Pro badge is shown,
+ * and clicking the wrapper opens an upgrade popover linking to /pricing.
+ * getValue() always returns false for free users.
+ *
+ * When isPro is true: checkbox is fully interactive, getValue() returns checkbox.checked.
+ *
  * Returns element and a getValue() accessor bound to the checkbox state.
  */
-function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean } {
+function createNotifyToggle(isPro: boolean): { element: HTMLElement; getValue: () => boolean } {
   const wrapper = document.createElement('div');
   wrapper.className =
     'flex items-center gap-3 border border-border rounded-lg bg-surface/80 backdrop-blur-md px-4 py-3';
@@ -177,17 +184,79 @@ function createNotifyToggle(): { element: HTMLElement; getValue: () => boolean }
   checkbox.type = 'checkbox';
   checkbox.id = 'notify-toggle';
   checkbox.name = 'notify-toggle';
-  checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
 
   const label = document.createElement('label');
   label.htmlFor = 'notify-toggle';
-  label.className = 'text-sm text-text-secondary cursor-pointer select-none';
   label.textContent = 'Email me when this secret is viewed';
+
+  if (isPro) {
+    checkbox.className = 'w-4 h-4 accent-accent cursor-pointer';
+    label.className = 'text-sm text-text-secondary cursor-pointer select-none';
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(label);
+    return { element: wrapper, getValue: () => checkbox.checked };
+  }
+
+  // Free tier: disabled toggle with Pro badge and upgrade popover
+  checkbox.disabled = true;
+  checkbox.className = 'w-4 h-4 accent-accent opacity-50 cursor-not-allowed';
+
+  label.className = 'text-sm text-text-secondary opacity-50 cursor-not-allowed select-none';
+
+  const proBadge = document.createElement('span');
+  proBadge.className =
+    'ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-surface-raised text-text-muted border border-border';
+  proBadge.textContent = 'Pro';
+  label.appendChild(proBadge);
+
+  // Popover anchored to wrapper
+  wrapper.style.position = 'relative';
+
+  const popover = document.createElement('div');
+  popover.id = 'notify-pro-popover';
+  popover.hidden = true;
+  popover.className =
+    'absolute z-50 mt-1 w-56 rounded-lg border border-border bg-surface shadow-lg p-3 space-y-2 text-left';
+  popover.style.top = '100%';
+  popover.style.left = '0';
+
+  const popoverDesc = document.createElement('p');
+  popoverDesc.className = 'text-xs text-text-secondary';
+  popoverDesc.textContent = 'Email notifications are a Pro feature.';
+
+  const popoverCta = document.createElement('a');
+  popoverCta.href = '/pricing';
+  popoverCta.className = 'inline-block text-xs font-medium text-accent hover:underline';
+  popoverCta.textContent = 'Upgrade \u2192';
+  popoverCta.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.history.pushState({}, '', '/pricing');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+
+  popover.appendChild(popoverDesc);
+  popover.appendChild(popoverCta);
 
   wrapper.appendChild(checkbox);
   wrapper.appendChild(label);
+  wrapper.appendChild(popover);
 
-  return { element: wrapper, getValue: () => checkbox.checked };
+  // Toggle popover on wrapper click (capture phase so it fires before outside-click handler)
+  wrapper.addEventListener(
+    'click',
+    (e) => {
+      e.stopPropagation();
+      popover.hidden = !popover.hidden;
+    },
+    { capture: true },
+  );
+
+  // Close on outside click
+  document.addEventListener('click', () => {
+    popover.hidden = true;
+  });
+
+  return { element: wrapper, getValue: () => false };
 }
 
 /**
@@ -1444,7 +1513,7 @@ export function renderCreatePage(container: HTMLElement): void {
     labelInput.value = prefillLabel;
   }
 
-  const notifyToggle = createNotifyToggle();
+  let notifyToggle = createNotifyToggle(false); // placeholder — replaced in auth IIFE with tier-aware version
   // Apply notify prefill synchronously
   if (prefillNotify) {
     const notifyCheckbox =
@@ -1479,7 +1548,8 @@ export function renderCreatePage(container: HTMLElement): void {
   form.appendChild(submitButton);
 
   // -- Notify toggle getValue accessor (bound to the toggle created synchronously above) --
-  const getNotifyEnabled: () => boolean = notifyToggle.getValue;
+  // Must be `let` so the auth IIFE can rebind it after replacing the toggle with a tier-aware version.
+  let getNotifyEnabled: () => boolean = () => notifyToggle.getValue();
 
   // -- Submit handler --
   form.addEventListener('submit', (e) => {
@@ -1648,8 +1718,16 @@ export function renderCreatePage(container: HTMLElement): void {
         oldPanel.parentElement?.insertBefore(protectionPanel.element, oldPanel);
         oldPanel.remove();
 
-        // labelInput and notifyToggle already exist in DOM from synchronous creation above.
-        // getNotifyEnabled is already set. No further DOM injection needed.
+        // Step A: Replace notify toggle with tier-aware version (C-2: Pro gate)
+        // The free-user placeholder (isPro=false) is swapped for the correct variant here.
+        const oldToggle = notifyToggle.element;
+        notifyToggle = createNotifyToggle(isPro);
+        oldToggle.parentElement?.insertBefore(notifyToggle.element, oldToggle);
+        oldToggle.remove();
+        // Step B: Rebind getNotifyEnabled to the new toggle's getValue.
+        // Without this rebind, getNotifyEnabled remains bound to the free-user
+        // toggle's getValue (always returns false), so Pro users could never set notify=true.
+        getNotifyEnabled = () => notifyToggle.getValue();
       }
     } catch {
       // Auth check failure: label field remains visible but non-functional for server-side
