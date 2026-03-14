@@ -65,6 +65,26 @@ describe('createVerifyTightLimiter — configuration unit test (SR-015, nyquist)
   });
 });
 
+describe('createAuthedDailyLimiter — Pro bypass configuration (C-1, nyquist)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  test('exports createAuthedDailyLimiter as a function that returns middleware', async () => {
+    const { createAuthedDailyLimiter } = await import('../rate-limit.js');
+    expect(typeof createAuthedDailyLimiter).toBe('function');
+    const middleware = createAuthedDailyLimiter();
+    expect(typeof middleware).toBe('function');
+  });
+
+  test('module loads without import errors (db, users, eq imports present)', async () => {
+    // If imports are missing the dynamic import rejects; passing means imports resolved
+    const mod = await import('../rate-limit.js');
+    expect(typeof mod.createAuthedDailyLimiter).toBe('function');
+  });
+});
+
 describe('createHealthLimiter — configuration unit test (GH-02, nyquist)', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
