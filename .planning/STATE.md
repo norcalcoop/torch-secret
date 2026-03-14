@@ -5,7 +5,7 @@ milestone_name: milestone
 status: completed
 stopped_at: Completed quick-17 (Pro rate limit bypass — Unlimited secrets claim now true)
 last_updated: "2026-03-14T01:28:38.553Z"
-last_activity: "2026-03-14 - Added quick tasks 7–16: messaging/content/pricing consistency remediation items from audit (10 tasks, all Pending)"
+last_activity: "2026-03-14 - Completed quick task 8: Gate email notifications to Pro tier (server guard + retroactive gating + UI lock)"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -109,7 +109,7 @@ Progress: [██████████] 100%
 | 5 | Fix OpenSSF Scorecard failing checks — SHA pins, Dockerfile digest, SECURITY.md, checklist | 2026-03-13 | 666ab0b | Needs Review | [5-fix-openssf-scorecard-failing-checks-to-](./quick/5-fix-openssf-scorecard-failing-checks-to-/) |
 | 6 | OpenSSF Scorecard remaining improvements — CODEOWNERS, CII badge placeholder, checklist steps | 2026-03-13 | e5b1984 | Verified | [6-implement-openssf-scorecard-improvement-](./quick/6-implement-openssf-scorecard-improvement-/) |
 | 7 | C-1: Raise rate limit for Pro users to make "Unlimited secrets" claim true | 2026-03-14 | — | Pending | [7-c1-raise-pro-rate-limit](./quick/7-c1-raise-pro-rate-limit/) |
-| 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | — | Pending | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
+| 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | 366a011 | Verified | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
 | 9 | C-3: Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | — | Pending | [9-c3-remove-team-tier-from-ssr](./quick/9-c3-remove-team-tier-from-ssr/) |
 | 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | — | Pending | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
 | 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | — | Pending | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
@@ -127,6 +127,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-14T01:28:38.550Z
-Stopped at: Completed quick-17 (Pro rate limit bypass — Unlimited secrets claim now true)
+Stopped at: Completed quick-8 (C-2: Gate email notifications to Pro tier)
 Resume file: None
 Next action: /gsd:plan-phase 65
