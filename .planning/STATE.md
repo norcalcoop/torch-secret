@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-12 after v5.3 milestone completed)
 Phase: 70 of 71 (Auth Observability + GDPR Export) — All 4 plans complete
 Plan: P01 test scaffold, P02 audit.service.ts, P03 auth hooks, P04 GDPR export
 Status: Phase 70 complete — Phase 71 next
-Last activity: 2026-03-13 - Completed quick task 5: SHA-pinned codeql-action/upload-sarif, digest-pinned node:24-slim Dockerfile, removed duplicate scorecard.yaml, created docs/SECURITY-CHECKLIST.md
+Last activity: 2026-03-14 - Added quick tasks 7–16: messaging/content/pricing consistency remediation items from audit (10 tasks, all Pending)
 
 Progress: [██████████] 100%
 
@@ -108,6 +108,16 @@ Progress: [██████████] 100%
 | 4 | Close open quick tasks — spot-check checklist, close task 2 | 2026-03-13 | — | Verified | [4-are-any-of-the-three-quick-items-still-o](./quick/4-are-any-of-the-three-quick-items-still-o/) |
 | 5 | Fix OpenSSF Scorecard failing checks — SHA pins, Dockerfile digest, SECURITY.md, checklist | 2026-03-13 | 666ab0b | Needs Review | [5-fix-openssf-scorecard-failing-checks-to-](./quick/5-fix-openssf-scorecard-failing-checks-to-/) |
 | 6 | OpenSSF Scorecard remaining improvements — CODEOWNERS, CII badge placeholder, checklist steps | 2026-03-13 | e5b1984 | Verified | [6-implement-openssf-scorecard-improvement-](./quick/6-implement-openssf-scorecard-improvement-/) |
+| 7 | C-1: Raise rate limit for Pro users to make "Unlimited secrets" claim true | 2026-03-14 | — | Pending | [7-c1-raise-pro-rate-limit](./quick/7-c1-raise-pro-rate-limit/) |
+| 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | — | Pending | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
+| 9 | C-3: Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | — | Pending | [9-c3-remove-team-tier-from-ssr](./quick/9-c3-remove-team-tier-from-ssr/) |
+| 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | — | Pending | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
+| 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | — | Pending | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
+| 12 | S-3: Add minimal priority email support for Pro users | 2026-03-14 | — | Pending | [12-s3-add-priority-email-support](./quick/12-s3-add-priority-email-support/) |
+| 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Pending | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
+| 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Pending | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
+| 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Pending | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
+| 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Pending | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
 
 ### Blockers/Concerns
 
