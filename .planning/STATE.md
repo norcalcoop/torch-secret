@@ -5,7 +5,7 @@ milestone_name: milestone
 status: completed
 stopped_at: Completed quick-18 (Remove Team tier references from SSR pages)
 last_updated: "2026-03-14T01:28:38.553Z"
-last_activity: "2026-03-14 - Completed quick task 8: Gate email notifications to Pro tier (server guard + retroactive gating + UI lock)"
+last_activity: "2026-03-14 - Completed quick task 18: Remove Team tier references from SSR pages"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -119,7 +119,7 @@ Progress: [██████████] 100%
 | 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Pending | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
 | 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Pending | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
 | 17 | Raise rate limit for Pro users (fix Unlimited secrets claim) | 2026-03-14 | 2e33e97 | Verified | [17-raise-rate-limit-for-pro-users-fix-unlim](./quick/17-raise-rate-limit-for-pro-users-fix-unlim/) |
-| 18 | Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | fc7b7f7 | Verified | [18-remove-team-tier-references-from-ssr-pag](./quick/18-remove-team-tier-references-from-ssr-pag/) |
+| 18 | Remove Team tier references from SSR pages | 2026-03-14 | fc7b7f7 | Verified | [18-remove-team-tier-references-from-ssr-pag](./quick/18-remove-team-tier-references-from-ssr-pag/) |
 
 ### Blockers/Concerns
 
