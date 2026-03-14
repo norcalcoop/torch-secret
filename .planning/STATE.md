@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-12 after v5.3 milestone completed)
 Phase: 70 of 71 (Auth Observability + GDPR Export) — All 4 plans complete
 Plan: P01 test scaffold, P02 audit.service.ts, P03 auth hooks, P04 GDPR export
 Status: Phase 70 complete — Phase 71 next
-Last activity: 2026-03-14 - Completed quick task 10: Split "Password protection" into free/pro rows on pricing page
+Last activity: 2026-03-14 - Completed quick task 11: Fix dashboard upgrade button price anchor
 
 Progress: [██████████] 100%
 
@@ -112,7 +112,7 @@ Progress: [██████████] 100%
 | 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | 366a011 | Verified | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
 | 9 | C-3: Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | — | Pending | [9-c3-remove-team-tier-from-ssr](./quick/9-c3-remove-team-tier-from-ssr/) |
 | 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | bdee8da | Verified | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
-| 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | — | Pending | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
+| 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | 5363200 | Verified | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
 | 12 | S-3: Add minimal priority email support for Pro users | 2026-03-14 | — | Pending | [12-s3-add-priority-email-support](./quick/12-s3-add-priority-email-support/) |
 | 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Pending | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
 | 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Pending | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
@@ -128,6 +128,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-14T12:12:30Z
-Stopped at: Completed quick-10 (S-1: Split password protection into free/pro rows on pricing page)
+Stopped at: Completed quick-11 (S-2: Fix dashboard upgrade button price anchor)
 Resume file: None
 Next action: /gsd:plan-phase 65
