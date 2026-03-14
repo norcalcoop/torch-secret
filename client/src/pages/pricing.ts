@@ -70,16 +70,17 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
 const FREE_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'One-time encrypted secrets', included: true },
   { text: 'Up to 7-day expiration', included: true },
-  { text: 'Password protection', included: true },
+  { text: 'Auto-generated passphrase protection', included: true },
   { text: 'Anonymous — no account required', included: true },
   { text: '30-day expiration', included: false },
   { text: 'Secret dashboard & history', included: false },
+  { text: 'Custom password protection', included: false },
 ];
 
 const PRO_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'Unlimited secrets', included: true },
   { text: 'Up to 30-day expiration', included: true },
-  { text: 'Password protection', included: true },
+  { text: 'Custom password protection', included: true },
   { text: 'Secret dashboard & history', included: true },
   { text: 'Email notification on view', included: true },
   { text: 'Priority support', included: true },
