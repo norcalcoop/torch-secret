@@ -75,7 +75,6 @@ ${H2('At-a-glance comparison')}
     <tr><td>API</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>Self-host</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>View receipts</td><td>Yes (Pro)</td><td>No</td></tr>
-    <tr><td>Team dashboard</td><td>Yes (Team plan)</td><td>No</td></tr>
     <tr><td>Custom domains</td><td>Planned</td><td>Yes ($35/month)</td></tr>
     <tr><td>Free tier</td><td>Yes (unlimited, anonymous)</td><td>Yes (rate-limited)</td></tr>
     <tr><td>Paid starts at</td><td>$7/month (Pro)</td><td>$35/month (Identity+)</td></tr>
@@ -114,14 +113,13 @@ ${H2('Pricing')}
   <tbody>
     <tr><td>Free</td><td>Unlimited anonymous secrets</td><td>Rate-limited</td></tr>
     <tr><td>Pro</td><td>$7/month — history, view receipts</td><td>—</td></tr>
-    <tr><td>Team</td><td>$29/month — shared dashboard, 5 users</td><td>—</td></tr>
     <tr><td>Identity/Branding</td><td>Planned</td><td>$35/month — custom domains only</td></tr>
     <tr><td>Self-host</td><td>Free (open source)</td><td>Free (open source)</td></tr>
   </tbody>
 </table>
 </div>
 ${P("OneTimeSecret's paid tier is essentially a custom domain and branding product. There are no team features, no audit logs, no view receipts at any price. Their paid tier makes sense if your company wants secrets to come from <code>secrets.yourcompany.com</code>.")}
-${P("Torch Secret's paid tier unlocks usage features: a personal history of secrets you've sent, view receipts (know when a secret was opened), and an extended 30-day expiration. The Team plan adds shared visibility for your team.")}
+${P("Torch Secret's paid tier unlocks usage features: a personal history of secrets you've sent, view receipts (know when a secret was opened), and an extended 30-day expiration.")}
 
 ${HR}
 
@@ -241,7 +239,6 @@ ${H2('At-a-glance comparison')}
     <tr><td>View count expiration</td><td>No (one view only)</td><td>Yes (expire after N views)</td></tr>
     <tr><td>API</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>Self-host</td><td>Yes</td><td>Yes (Docker)</td></tr>
-    <tr><td>Team features</td><td>Yes (Team plan)</td><td>Yes (Pro plan)</td></tr>
     <tr><td>Custom domains</td><td>Planned</td><td>Yes (Pro)</td></tr>
     <tr><td>Requests (collect secrets)</td><td>No</td><td>Yes (paid)</td></tr>
     <tr><td>Free tier</td><td>Yes (unlimited, anonymous)</td><td>Open source only</td></tr>
@@ -275,7 +272,6 @@ ${UL_CLOSE}
 ${P('Torch Secret is free to use with no account required. The free tier has no arbitrary limits — create as many anonymous secrets as you need. Paid tiers unlock account features:')}
 ${UL_OPEN}
 ${LI(`${STRONG('Pro:')} $7/month — share history, view receipts, 30-day expiration`)}
-${LI(`${STRONG('Team:')} $29/month for 5 users — shared dashboard, team management, usage analytics`)}
 ${UL_CLOSE}
 
 ${HR}
@@ -592,7 +588,7 @@ ${HR}
 
 ${H2('Ads')}
 ${P(`${STRONG('Privnote:')} Ad-supported. Ads appear on the interface for a tool you're using to handle sensitive credentials. This is not inherently a security risk, but it creates a trust friction: a tool monetized through third-party ad networks, handling your secrets, with no auditable code.`)}
-${P(`${STRONG('Torch Secret:')} No ads. Free tier is funded by Pro/Team subscriptions.`)}
+${P(`${STRONG('Torch Secret:')} No ads. Free tier is funded by Pro subscriptions.`)}
 
 ${HR}
 
