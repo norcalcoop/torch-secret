@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-12 after v5.3 milestone completed)
 Phase: 70 of 71 (Auth Observability + GDPR Export) — All 4 plans complete
 Plan: P01 test scaffold, P02 audit.service.ts, P03 auth hooks, P04 GDPR export
 Status: Phase 70 complete — Phase 71 next
-Last activity: 2026-03-14 - Added quick tasks 7–16: messaging/content/pricing consistency remediation items from audit (10 tasks, all Pending)
+Last activity: 2026-03-14 - Completed quick task 17: Raise rate limit for Pro users (fix Unlimited secrets claim)
 
 Progress: [██████████] 100%
 
@@ -118,6 +118,7 @@ Progress: [██████████] 100%
 | 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Pending | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
 | 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Pending | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
 | 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Pending | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
+| 17 | Raise rate limit for Pro users (fix Unlimited secrets claim) | 2026-03-14 | 2e33e97 | Verified | [17-raise-rate-limit-for-pro-users-fix-unlim](./quick/17-raise-rate-limit-for-pro-users-fix-unlim/) |
 
 ### Blockers/Concerns
 
