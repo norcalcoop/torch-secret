@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-12 after v5.3 milestone completed)
 Phase: 70 of 71 (Auth Observability + GDPR Export) — All 4 plans complete
 Plan: P01 test scaffold, P02 audit.service.ts, P03 auth hooks, P04 GDPR export
 Status: Phase 70 complete — Phase 71 next
-Last activity: 2026-03-14 - Completed quick task 18: Remove Team tier references from SSR pages (plan doesn't exist)
+Last activity: 2026-03-14 - Completed quick task 10: Split "Password protection" into free/pro rows on pricing page
 
 Progress: [██████████] 100%
 
@@ -111,7 +111,7 @@ Progress: [██████████] 100%
 | 7 | C-1: Raise rate limit for Pro users to make "Unlimited secrets" claim true | 2026-03-14 | — | Pending | [7-c1-raise-pro-rate-limit](./quick/7-c1-raise-pro-rate-limit/) |
 | 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | 366a011 | Verified | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
 | 9 | C-3: Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | — | Pending | [9-c3-remove-team-tier-from-ssr](./quick/9-c3-remove-team-tier-from-ssr/) |
-| 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | — | Pending | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
+| 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | bdee8da | Verified | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
 | 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | — | Pending | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
 | 12 | S-3: Add minimal priority email support for Pro users | 2026-03-14 | — | Pending | [12-s3-add-priority-email-support](./quick/12-s3-add-priority-email-support/) |
 | 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Pending | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
@@ -127,7 +127,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-14T11:14:30.000Z
-Stopped at: Completed quick-18 (Remove Team tier references from SSR pages)
+Last session: 2026-03-14T12:12:30Z
+Stopped at: Completed quick-10 (S-1: Split password protection into free/pro rows on pricing page)
 Resume file: None
 Next action: /gsd:plan-phase 65
