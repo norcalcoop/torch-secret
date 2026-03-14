@@ -716,6 +716,11 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
       })();
     });
     billingRow.appendChild(manageBtn);
+    // Priority support email for Pro users
+    const supportNote = document.createElement('p');
+    supportNote.className = 'mt-2 text-xs text-text-muted';
+    supportNote.textContent = 'Priority support: support@torchsecret.com';
+    billingRow.appendChild(supportNote);
   } else {
     // Free: show upgrade CTA
     const upgradeBtn = document.createElement('button');
@@ -744,7 +749,7 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
     // Sub-note under upgrade button
     const upgradeNote = document.createElement('p');
     upgradeNote.className = 'mt-1.5 text-xs text-text-muted text-center';
-    upgradeNote.textContent = 'Unlocks 30-day secret expiration. Cancel anytime.';
+    upgradeNote.textContent = 'or $5.42/mo billed annually \u00b7 Cancel anytime';
     billingRow.appendChild(upgradeNote);
   }
 

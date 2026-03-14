@@ -10,7 +10,8 @@ import { eq } from 'drizzle-orm';
  * Called with void from secrets.service.ts after the atomic destroy transaction resolves.
  *
  * ZERO-KNOWLEDGE INVARIANT (covers sendSecretViewedNotification + sendDunningEmail):
- * - sendSecretViewedNotification: userEmail is the only identifier passed in.
+ * - sendSecretViewedNotification: userEmail + userId are the only identifiers passed in.
+ *   userId is used ONLY for a Pro tier lookup — it is never stored or logged alongside any secretId.
  *   The email body contains ONLY a timestamp and a generic message.
  *   No secretId, no label, no ciphertext, no IP address may appear in the body.
  *   Resend delivery records log recipient email + subject — neither contains a secretId.
@@ -24,11 +25,23 @@ import { eq } from 'drizzle-orm';
 export async function sendSecretViewedNotification(
   userEmail: string,
   viewedAt: Date,
+  userId: string,
 ): Promise<void> {
+  // Retroactive gate: only send if the creator is still Pro at the time of viewing.
+  // A user may have downgraded since the secret was created — silently skip, no log.
+  const [userRow] = await db
+    .select({ subscriptionTier: users.subscriptionTier })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (userRow?.subscriptionTier !== 'pro') {
+    return;
+  }
+
   const { error } = await resend.emails.send({
     from: env.RESEND_FROM_EMAIL,
     to: userEmail,
-    subject: 'Your Torch Secret secret was viewed',
+    subject: 'Someone viewed your secret',
     text: [
       'A secret you created on Torch Secret was viewed and permanently deleted.',
       '',

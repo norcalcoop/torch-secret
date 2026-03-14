@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.3
-milestone_name: Post-Launch Hardening
+milestone: v1.0
+milestone_name: milestone
 status: completed
-stopped_at: Completed 73-02-PLAN.md
-last_updated: "2026-03-12T16:06:12.892Z"
-last_activity: "2026-03-11 — 70-03 complete: auth event hooks wired (sign_up, sign_in, logout, password_reset_requested, oauth_connect) via databaseHooks + justSignedUpUserIds Set; AUTH-02 done; 649 tests GREEN"
+stopped_at: "Completed quick-20 (M-series copy fixes: pricing, email subject, SSR pages)"
+last_updated: "2026-03-14T12:59:16.800Z"
+last_activity: "2026-03-14 - Completed quick task 11: Fix dashboard upgrade button price anchor"
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 25
-  completed_plans: 25
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 100
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-12 after v5.3 milestone completed)
 Phase: 70 of 71 (Auth Observability + GDPR Export) — All 4 plans complete
 Plan: P01 test scaffold, P02 audit.service.ts, P03 auth hooks, P04 GDPR export
 Status: Phase 70 complete — Phase 71 next
-Last activity: 2026-03-13 - Completed quick task 5: SHA-pinned codeql-action/upload-sarif, digest-pinned node:24-slim Dockerfile, removed duplicate scorecard.yaml, created docs/SECURITY-CHECKLIST.md
+Last activity: 2026-03-14 - Completed quick task 19: Implement minimal priority email support for Pro users
 
 Progress: [██████████] 100%
 
@@ -108,6 +108,20 @@ Progress: [██████████] 100%
 | 4 | Close open quick tasks — spot-check checklist, close task 2 | 2026-03-13 | — | Verified | [4-are-any-of-the-three-quick-items-still-o](./quick/4-are-any-of-the-three-quick-items-still-o/) |
 | 5 | Fix OpenSSF Scorecard failing checks — SHA pins, Dockerfile digest, SECURITY.md, checklist | 2026-03-13 | 666ab0b | Needs Review | [5-fix-openssf-scorecard-failing-checks-to-](./quick/5-fix-openssf-scorecard-failing-checks-to-/) |
 | 6 | OpenSSF Scorecard remaining improvements — CODEOWNERS, CII badge placeholder, checklist steps | 2026-03-13 | e5b1984 | Verified | [6-implement-openssf-scorecard-improvement-](./quick/6-implement-openssf-scorecard-improvement-/) |
+| 7 | C-1: Raise rate limit for Pro users to make "Unlimited secrets" claim true | 2026-03-14 | — | Pending | [7-c1-raise-pro-rate-limit](./quick/7-c1-raise-pro-rate-limit/) |
+| 8 | C-2: Gate email notifications to Pro tier (server check + UI lock) | 2026-03-14 | 366a011 | Verified | [8-c2-gate-email-notifications-to-pro](./quick/8-c2-gate-email-notifications-to-pro/) |
+| 9 | C-3: Remove Team tier references from SSR pages (plan doesn't exist) | 2026-03-14 | — | Pending | [9-c3-remove-team-tier-from-ssr](./quick/9-c3-remove-team-tier-from-ssr/) |
+| 10 | S-1: Split "Password protection" into free/pro rows on pricing page | 2026-03-14 | bdee8da | Verified | [10-s1-split-password-protection-pricing](./quick/10-s1-split-password-protection-pricing/) |
+| 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | 5363200 | Verified | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
+| 19 | S-3: Implement minimal priority email support for Pro users | 2026-03-14 | dcde193 | Verified | [19-s3-add-priority-email-support](./quick/19-s3-add-priority-email-support/) |
+| 12 | S-3: Add minimal priority email support for Pro users | 2026-03-14 | — | Pending | [12-s3-add-priority-email-support](./quick/12-s3-add-priority-email-support/) |
+| 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Completed via #20 | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
+| 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Completed via #20 | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
+| 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Completed via #20 | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
+| 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Completed via #20 | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
+| 17 | Raise rate limit for Pro users (fix Unlimited secrets claim) | 2026-03-14 | 2e33e97 | Verified | [17-raise-rate-limit-for-pro-users-fix-unlim](./quick/17-raise-rate-limit-for-pro-users-fix-unlim/) |
+| 18 | Remove Team tier references from SSR pages | 2026-03-14 | fc7b7f7 | Verified | [18-remove-team-tier-references-from-ssr-pag](./quick/18-remove-team-tier-references-from-ssr-pag/) |
+| 20 | M-series copy fixes: pricing rate limits, email subject, SSR competitor pages | 2026-03-14 | 062775e | Verified | [20-complete-m-series-copy-fixes-disclose-an](./quick/20-complete-m-series-copy-fixes-disclose-an/) |
 
 ### Blockers/Concerns
 
@@ -115,7 +129,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-13T14:01:00Z
-Stopped at: Completed quick-6 (OpenSSF Scorecard remaining improvements — CODEOWNERS, CII badge placeholder, checklist steps)
+Last session: 2026-03-14T14:04:47.608Z
+Stopped at: Completed quick-20 (M-series copy fixes: pricing transparency, email subject, SSR pages)
 Resume file: None
-Next action: /gsd:plan-phase 65
+Next action: /gsd:quick or /gsd:new-milestone

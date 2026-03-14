@@ -1,8 +1,11 @@
 import { type Store, rateLimit } from 'express-rate-limit';
 import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import type { Redis } from 'ioredis';
+import { eq } from 'drizzle-orm';
 import { logger } from './logger.js';
 import { env } from '../config/env.js';
+import { db } from '../db/connection.js';
+import { users } from '../db/schema.js';
 
 /**
  * E2E tests share one server across 3 browsers; raise limits to prevent 429s during test runs.
@@ -125,18 +128,29 @@ export function createAnonDailyLimiter(redisClient?: Redis) {
 export function createAuthedDailyLimiter(redisClient?: Redis) {
   return rateLimit({
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
-    limit: isE2E ? 1000 : 20, // 20 creations per day for authenticated users (1000 in E2E)
+    limit: isE2E ? 1000 : 20, // 20 creations per day for free authenticated users (1000 in E2E)
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     statusCode: 429,
     message: {
       error: 'rate_limited',
-      message: 'Daily limit reached. You can create 20 secrets per day.',
+      message:
+        'Daily limit reached. Free accounts can create 20 secrets per day. Upgrade to Pro for unlimited secrets.',
     },
     store: wrapStoreWithWarnOnError(createStore(redisClient, 'rl:authed:d:')),
     passOnStoreError: true,
-    // Skip anonymous users — they use the anon hourly/daily limiters
-    skip: (_req, res) => !(res.locals.user as unknown),
+    // Skip anonymous users OR Pro users (Pro = unlimited secrets per pricing page)
+    skip: async (_req, res) => {
+      const user = res.locals.user as { id: string } | undefined;
+      if (!user) return true; // anonymous — anon limiters apply
+      const userRow = await db
+        .select({ subscriptionTier: users.subscriptionTier })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+      const tier = userRow[0]?.subscriptionTier ?? 'free';
+      return tier === 'pro'; // Pro users bypass; free users are counted
+    },
     // Per-user counter keyed on userId, not IP — avoids shared-IP false positives
     keyGenerator: (_req, res) => (res.locals.user as { id: string }).id,
   });

@@ -61,6 +61,16 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     answer:
       'No. Secrets are encrypted in your browser using AES-256-GCM before being sent to our servers. The encryption key lives only in the URL fragment and is never transmitted to us — we cannot read your secrets even if compelled to.',
   },
+  {
+    question: 'How do I reach priority support?',
+    answer:
+      "Pro subscribers get priority email support. Reach us at support@torchsecret.com and we'll respond within one business day.",
+  },
+  {
+    question: 'Are there limits on anonymous use?',
+    answer:
+      'Anonymous use is limited to 3 secrets per hour and 10 secrets per day. Creating a free account raises these limits.',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -70,19 +80,21 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
 const FREE_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'One-time encrypted secrets', included: true },
   { text: 'Up to 7-day expiration', included: true },
-  { text: 'Password protection', included: true },
+  { text: 'Passphrase protection (free account required)', included: true },
   { text: 'Anonymous — no account required', included: true },
+  { text: 'Up to 10 secrets/day (anonymous)', included: true },
   { text: '30-day expiration', included: false },
   { text: 'Secret dashboard & history', included: false },
+  { text: 'Custom password protection', included: false },
 ];
 
 const PRO_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'Unlimited secrets', included: true },
   { text: 'Up to 30-day expiration', included: true },
-  { text: 'Password protection', included: true },
+  { text: 'Custom password protection', included: true },
   { text: 'Secret dashboard & history', included: true },
   { text: 'Email notification on view', included: true },
-  { text: 'Priority support', included: true },
+  { text: 'Priority email support', included: true },
 ];
 
 // ---------------------------------------------------------------------------

@@ -70,7 +70,7 @@ ${HR}
 ${H2('The best OneTimeSecret alternatives')}
 
 ${H3('1. Torch Secret — Best for zero-knowledge encryption')}
-${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro, $29/month Team`)}
+${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro`)}
 ${P('Torch Secret is the most direct upgrade from OneTimeSecret if your reason for switching is the server-side encryption model. The core function is identical: paste a secret, get a link, share it, it disappears after one view. The difference is architectural.')}
 ${P(`${STRONG('How it works:')} AES-256-GCM encryption runs in your browser using the Web Crypto API. The encryption key is generated locally and embedded only in the URL fragment (<code>#key</code>). Per HTTP spec, URL fragments are never transmitted to servers — our server receives only the encrypted ciphertext. We cannot read what we store.`)}
 ${P(`${STRONG('What you get beyond OneTimeSecret:')}`)}
@@ -78,7 +78,6 @@ ${UL_OPEN}
 ${LI('True zero-knowledge — verifiable via open source code')}
 ${LI('View receipts — know when your secret was opened (Pro)')}
 ${LI("Secret history — review what you've sent (Pro)")}
-${LI('Team dashboard — shared visibility for your team (Team plan)')}
 ${LI('Free tier with no rate limits (anonymous use)')}
 ${LI('PADME padding — prevents ciphertext length from leaking secret length')}
 ${UL_CLOSE}
@@ -140,7 +139,7 @@ ${H2('Which alternative is right for you?')}
   </thead>
   <tbody>
     <tr><td>OTS's server-side encryption is the problem</td><td>Torch Secret</td></tr>
-    <tr><td>You need team features + view receipts</td><td>Torch Secret (Pro/Team)</td></tr>
+    <tr><td>You need view receipts + personal history</td><td>Torch Secret (Pro)</td></tr>
     <tr><td>You need audit logs for compliance</td><td>Password Pusher (Pro)</td></tr>
     <tr><td>You need to receive secrets inbound</td><td>Password Pusher (Requests)</td></tr>
     <tr><td>You need file sharing</td><td>Password Pusher (Premium)</td></tr>
@@ -178,7 +177,7 @@ ${CTA_BUTTON}
       {
         question: 'Does any OneTimeSecret alternative have team features?',
         answer:
-          'Yes. Torch Secret (Team plan at $29/month) and Password Pusher (Pro plan at $29/month) both have team dashboards and multi-user access.',
+          'Password Pusher Pro (at $29/month) has team dashboards and multi-user access. Torch Secret Pro ($7/month) is single-user but includes a personal dashboard with view receipts.',
       },
       {
         question: 'Can I get view receipts in any OneTimeSecret alternative?',
@@ -221,7 +220,7 @@ ${HR}
 ${H2('The best Password Pusher alternatives')}
 
 ${H3('1. Torch Secret — Best for zero-knowledge + free hosted access')}
-${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro, $29/month Team`)}
+${P(`${STRONG('URL:')} torchsecret.com | ${STRONG('Pricing:')} Free (anonymous), $7/month Pro`)}
 ${P("If the server-side encryption is why you're switching, Torch Secret is the most direct answer. It handles the same core job — share a secret once, it disappears — but with client-side AES-256-GCM. The encryption key exists only in the URL fragment and never reaches our server. We store only ciphertext.")}
 ${P(`${STRONG('Where Torch Secret improves on Password Pusher:')}`)}
 ${UL_OPEN}
