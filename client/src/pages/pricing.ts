@@ -61,6 +61,11 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     answer:
       'No. Secrets are encrypted in your browser using AES-256-GCM before being sent to our servers. The encryption key lives only in the URL fragment and is never transmitted to us — we cannot read your secrets even if compelled to.',
   },
+  {
+    question: 'How do I reach priority support?',
+    answer:
+      "Pro subscribers get priority email support. Reach us at support@torchsecret.com and we'll respond within one business day.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -83,7 +88,7 @@ const PRO_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'Custom password protection', included: true },
   { text: 'Secret dashboard & history', included: true },
   { text: 'Email notification on view', included: true },
-  { text: 'Priority support', included: true },
+  { text: 'Priority email support', included: true },
 ];
 
 // ---------------------------------------------------------------------------
