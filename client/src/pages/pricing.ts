@@ -66,6 +66,11 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     answer:
       "Pro subscribers get priority email support. Reach us at support@torchsecret.com and we'll respond within one business day.",
   },
+  {
+    question: 'Are there limits on anonymous use?',
+    answer:
+      'Anonymous use is limited to 3 secrets per hour and 10 secrets per day. Creating a free account raises these limits.',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -75,8 +80,9 @@ export const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
 const FREE_FEATURES: Array<{ text: string; included: boolean }> = [
   { text: 'One-time encrypted secrets', included: true },
   { text: 'Up to 7-day expiration', included: true },
-  { text: 'Auto-generated passphrase protection', included: true },
+  { text: 'Passphrase protection (free account required)', included: true },
   { text: 'Anonymous — no account required', included: true },
+  { text: 'Up to 10 secrets/day (anonymous)', included: true },
   { text: '30-day expiration', included: false },
   { text: 'Secret dashboard & history', included: false },
   { text: 'Custom password protection', included: false },
