@@ -716,6 +716,11 @@ export async function renderDashboardPage(container: HTMLElement): Promise<void>
       })();
     });
     billingRow.appendChild(manageBtn);
+    // Priority support email for Pro users
+    const supportNote = document.createElement('p');
+    supportNote.className = 'mt-2 text-xs text-text-muted';
+    supportNote.textContent = 'Priority support: support@torchsecret.com';
+    billingRow.appendChild(supportNote);
   } else {
     // Free: show upgrade CTA
     const upgradeBtn = document.createElement('button');
