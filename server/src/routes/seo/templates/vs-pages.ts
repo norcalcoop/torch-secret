@@ -75,7 +75,7 @@ ${H2('At-a-glance comparison')}
     <tr><td>API</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>Self-host</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>View receipts</td><td>Yes (Pro)</td><td>No</td></tr>
-    <tr><td>Custom domains</td><td>Planned</td><td>Yes ($35/month)</td></tr>
+    <tr><td>Custom domains</td><td>Not available</td><td>Yes ($35/month)</td></tr>
     <tr><td>Free tier</td><td>Yes (unlimited, anonymous)</td><td>Yes (rate-limited)</td></tr>
     <tr><td>Paid starts at</td><td>$7/month (Pro)</td><td>$35/month (Identity+)</td></tr>
   </tbody>
@@ -113,7 +113,7 @@ ${H2('Pricing')}
   <tbody>
     <tr><td>Free</td><td>Unlimited anonymous secrets</td><td>Rate-limited</td></tr>
     <tr><td>Pro</td><td>$7/month — history, view receipts</td><td>—</td></tr>
-    <tr><td>Identity/Branding</td><td>Planned</td><td>$35/month — custom domains only</td></tr>
+    <tr><td>Identity/Branding</td><td>Not available</td><td>$35/month — custom domains only</td></tr>
     <tr><td>Self-host</td><td>Free (open source)</td><td>Free (open source)</td></tr>
   </tbody>
 </table>
@@ -235,11 +235,11 @@ ${H2('At-a-glance comparison')}
     <tr><td>Recipient needs an account</td><td>No</td><td>No</td></tr>
     <tr><td>Password protection</td><td>Yes (Argon2id)</td><td>Yes (server-side)</td></tr>
     <tr><td>File sharing</td><td>No</td><td>Yes (paid)</td></tr>
-    <tr><td>Audit logs</td><td>Planned</td><td>Yes (paid hosted)</td></tr>
+    <tr><td>Audit logs</td><td>Not available</td><td>Yes (paid hosted)</td></tr>
     <tr><td>View count expiration</td><td>No (one view only)</td><td>Yes (expire after N views)</td></tr>
     <tr><td>API</td><td>Yes</td><td>Yes</td></tr>
     <tr><td>Self-host</td><td>Yes</td><td>Yes (Docker)</td></tr>
-    <tr><td>Custom domains</td><td>Planned</td><td>Yes (Pro)</td></tr>
+    <tr><td>Custom domains</td><td>Not available</td><td>Yes (Pro)</td></tr>
     <tr><td>Requests (collect secrets)</td><td>No</td><td>Yes (paid)</td></tr>
     <tr><td>Free tier</td><td>Yes (unlimited, anonymous)</td><td>Open source only</td></tr>
     <tr><td>Paid starts at</td><td>$7/month (Pro)</td><td>$19/month (Premium)</td></tr>
