@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Completed quick-19 (S-3: Add priority email support)"
+stopped_at: "Completed quick-20 (M-series copy fixes: pricing, email subject, SSR pages)"
 last_updated: "2026-03-14T12:59:16.800Z"
 last_activity: "2026-03-14 - Completed quick task 11: Fix dashboard upgrade button price anchor"
 progress:
@@ -115,12 +115,13 @@ Progress: [██████████] 100%
 | 11 | S-2: Fix dashboard upgrade button price anchor ($7/mo vs $5.42/mo) | 2026-03-14 | 5363200 | Verified | [11-s2-fix-dashboard-price-anchor](./quick/11-s2-fix-dashboard-price-anchor/) |
 | 19 | S-3: Implement minimal priority email support for Pro users | 2026-03-14 | dcde193 | Verified | [19-s3-add-priority-email-support](./quick/19-s3-add-priority-email-support/) |
 | 12 | S-3: Add minimal priority email support for Pro users | 2026-03-14 | — | Pending | [12-s3-add-priority-email-support](./quick/12-s3-add-priority-email-support/) |
-| 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Pending | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
-| 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Pending | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
-| 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Pending | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
-| 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Pending | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
+| 13 | M-1: Disclose anonymous rate limits (3/hr, 10/day) on pricing page | 2026-03-14 | — | Completed via #20 | [13-m1-disclose-anon-rate-limits-on-pricing](./quick/13-m1-disclose-anon-rate-limits-on-pricing/) |
+| 14 | M-2: Fix redundant "Torch Secret secret" in notification email subject | 2026-03-14 | — | Completed via #20 | [14-m2-fix-email-subject-redundancy](./quick/14-m2-fix-email-subject-redundancy/) |
+| 15 | M-3: Replace "Planned" with "Not available" in SSR competitor pages | 2026-03-14 | — | Completed via #20 | [15-m3-replace-planned-in-ssr-pages](./quick/15-m3-replace-planned-in-ssr-pages/) |
+| 16 | M-4: Fix anonymous + password protection contradiction on pricing page | 2026-03-14 | — | Completed via #20 | [16-m4-fix-anon-password-contradiction](./quick/16-m4-fix-anon-password-contradiction/) |
 | 17 | Raise rate limit for Pro users (fix Unlimited secrets claim) | 2026-03-14 | 2e33e97 | Verified | [17-raise-rate-limit-for-pro-users-fix-unlim](./quick/17-raise-rate-limit-for-pro-users-fix-unlim/) |
 | 18 | Remove Team tier references from SSR pages | 2026-03-14 | fc7b7f7 | Verified | [18-remove-team-tier-references-from-ssr-pag](./quick/18-remove-team-tier-references-from-ssr-pag/) |
+| 20 | M-series copy fixes: pricing rate limits, email subject, SSR competitor pages | 2026-03-14 | 062775e | Verified | [20-complete-m-series-copy-fixes-disclose-an](./quick/20-complete-m-series-copy-fixes-disclose-an/) |
 
 ### Blockers/Concerns
 
@@ -128,7 +129,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-14T12:59:16.798Z
-Stopped at: Completed quick-19 (S-3: Add priority email support)
+Last session: 2026-03-14T14:04:47.608Z
+Stopped at: Completed quick-20 (M-series copy fixes: pricing transparency, email subject, SSR pages)
 Resume file: None
-Next action: /gsd:plan-phase 65
+Next action: /gsd:quick or /gsd:new-milestone
