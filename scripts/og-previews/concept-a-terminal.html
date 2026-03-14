@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OG Concept A — Terminal Burn</title>
+    <style>
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
+          format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* Preview wrapper — centers the 1200×630 canvas */
+      .preview-wrapper {
+        min-height: 100vh;
+        background: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+      }
+
+      /* The actual OG image canvas */
+      .og-canvas {
+        width: 1200px;
+        height: 630px;
+        background: #080608;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 72px 96px;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      /* Scanline texture overlay */
+      .og-canvas::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.15) 2px,
+          rgba(0, 0, 0, 0.15) 4px
+        );
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      /* Corner vignette */
+      .og-canvas::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at center, transparent 40%, #000 130%);
+        pointer-events: none;
+        z-index: 5;
+      }
+
+      .prompt-line {
+        font-size: 22px;
+        color: #4d8bf5;
+        letter-spacing: 0.02em;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 20;
+      }
+
+      .command {
+        font-size: 22px;
+        color: #e8dcc8;
+        letter-spacing: 0.02em;
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 20;
+      }
+
+      .command .secret-text {
+        color: #ff9f1c;
+      }
+
+      .output-line {
+        font-size: 20px;
+        color: #888;
+        margin-bottom: 12px;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 20;
+      }
+
+      .output-success {
+        font-size: 20px;
+        color: #ff9f1c;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 20;
+      }
+
+      .url-line {
+        font-size: 18px;
+        color: #4d8bf5;
+        opacity: 0.7;
+        margin-bottom: 48px;
+        letter-spacing: 0.01em;
+        position: relative;
+        z-index: 20;
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: absolute;
+        bottom: 56px;
+        left: 96px;
+        z-index: 20;
+      }
+
+      .flame-svg {
+        width: 28px;
+        height: 28px;
+        color: #ff9f1c;
+      }
+
+      .brand-name {
+        font-size: 20px;
+        color: #e8dcc8;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .tagline {
+        position: absolute;
+        bottom: 58px;
+        right: 96px;
+        font-size: 16px;
+        color: #555;
+        letter-spacing: 0.05em;
+        z-index: 20;
+      }
+
+      .glow-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          #ff9f1c44,
+          #ff9f1c88,
+          #ff9f1c44,
+          transparent
+        );
+        z-index: 20;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-wrapper">
+      <div class="og-canvas">
+        <div class="glow-line"></div>
+
+        <div class="prompt-line">user@torchsecret:~$</div>
+        <div class="command">
+          torch-secret send <span class="secret-text">"deploy password: hunter2"</span>
+        </div>
+
+        <div class="output-line">▸ Encrypting with AES-256-GCM...</div>
+        <div class="output-line">▸ Key stored in URL fragment only. Server is blind.</div>
+        <div class="output-success">🔥 Ready. Burns on first read.</div>
+        <div class="url-line">https://torchsecret.com/s/x7mK9#[key never touches server]</div>
+
+        <div class="brand-row">
+          <svg
+            class="flame-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+            />
+          </svg>
+          <span class="brand-name">Torch Secret</span>
+        </div>
+
+        <div class="tagline">zero-knowledge · one view · self-destruct</div>
+      </div>
+    </div>
+  </body>
+</html>
