@@ -61,7 +61,7 @@ describe('sendSecretViewedNotification', () => {
       from: string;
     };
     expect(callArgs.to).toBe('user@example.com');
-    expect(callArgs.subject).toBe('Your Torch Secret secret was viewed');
+    expect(callArgs.subject).toBe('Someone viewed your secret');
   });
 
   it('email body contains the viewedAt timestamp', async () => {
